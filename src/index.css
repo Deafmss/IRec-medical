@@ -1,0 +1,795 @@
+/* ==========================================
+   DESIGN SYSTEM - PROJECT iRec
+   Premium Medical Green & White Theme (Light & Dark Mode)
+   ========================================== */
+
+:root {
+  /* Typography */
+  --font-primary: 'Inter', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+
+  /* Color Palette - HSL (Clean Medical Blue & White) */
+  --bg-primary: #f0f4f8;                 /* Soft blue-ish clinical white */
+  --bg-secondary: #ffffff;               /* Pure hospital white */
+  --text-primary: #0f172a;               /* Deep slate blue/navy */
+  --text-secondary: #334155;             /* Muted steel blue */
+  --text-muted: #64748b;                 /* Soft slate gray */
+  
+  --primary: hsl(210, 100%, 40%);        /* Medical Cobalt Blue */
+  --primary-light: hsl(210, 100%, 50%);
+  --primary-glow: hsla(210, 100%, 40%, 0.1);
+  
+  --accent: hsl(199, 89%, 48%);          /* Clinical Cyan / Aqua */
+  --accent-light: hsl(199, 89%, 60%);
+  
+  --success: hsl(142, 71%, 40%);         /* Healing Green */
+  --success-light: hsl(142, 71%, 50%);
+  --success-glow: hsla(142, 71%, 40%, 0.1);
+  
+  --warning: hsl(38, 92%, 50%);          /* Warning Yellow */
+  --danger: hsl(350, 89%, 55%);          /* Red Flag / Emergency red */
+  --danger-glow: hsla(350, 89%, 55%, 0.15);
+  
+  --border-color: #e2e8f0;               /* Soft border with a touch of slate */
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.04), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-glow: 0 0 24px rgba(14, 165, 233, 0.08);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s ease;
+}
+
+/* Dark Mode Variables (High-Tech Surgical Console Theme) */
+:root[data-theme='dark'] {
+  --bg-primary: #050d0a;               /* Deep forest black */
+  --bg-secondary: #0c1813;             /* Dark charcoal green */
+  --text-primary: #f0fdf4;             /* Mint white text */
+  --text-secondary: #889e94;           /* Muted sage green */
+  --text-muted: #526b5e;               /* Darker sage gray */
+  
+  --border-color: #162d23;
+  --glass-bg: rgba(12, 24, 19, 0.78);
+  --glass-border: rgba(22, 45, 35, 0.5);
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  
+  --primary: hsl(150, 70%, 45%);       /* Bright Medical Green */
+  --primary-light: hsl(150, 70%, 55%);
+  --primary-glow: hsla(150, 70%, 45%, 0.18);
+  
+  --accent: hsl(185, 75%, 45%);
+  --accent-light: hsl(185, 75%, 55%);
+}
+
+/* Theme Toggle Button Styles */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--border-color);
+  transform: scale(1.05);
+}
+
+/* Reset & Global Base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+input, button, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  outline: none;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* 
+   RESPONSIVE LAYOUT ENGINE (Mobile-first to Desktop-first Grid)
+   =========================================================== */
+
+/* Container default (Mobile) */
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  overflow-x: hidden; /* Prevent horizontal page overflow */
+}
+
+/* Hide desktop elements on mobile */
+.sidebar {
+  display: none;
+}
+
+.mobile-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 900;
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px 20px 90px 20px; /* space for bottom nav bar on mobile */
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Bottom Navigation Bar (Mobile) */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  padding: 0 10px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  background: none;
+  border: none;
+  flex: 1;
+  padding: 8px 0;
+  gap: 4px;
+}
+
+.nav-item svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
+  transition: var(--transition-fast);
+}
+
+.nav-item.active {
+  color: var(--primary);
+}
+
+.nav-item.active svg {
+  stroke: var(--primary);
+  transform: translateY(-2px);
+}
+
+/* Responsive Grid Adjustments */
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-charts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ==========================================
+   DESKTOP / NOTEBOOK LAYOUT (WIDTH >= 768px)
+   ========================================== */
+@media (min-width: 768px) {
+  .app-container {
+    flex-direction: row;
+    align-items: stretch;
+    padding-left: 260px;
+    transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .app-container.sidebar-collapsed {
+    padding-left: 80px;
+  }
+
+  /* Hide mobile elements */
+  .bottom-nav {
+    display: none;
+  }
+
+  .mobile-header {
+    display: none;
+  }
+
+  /* Show Sidebar (Fixed Positioning) */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 260px;
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    padding: 28px 24px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    z-index: 990;
+    flex-shrink: 0;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+
+  .app-container.sidebar-collapsed .sidebar {
+    width: 80px;
+    padding: 28px 12px;
+  }
+
+  .app-container.sidebar-collapsed .sidebar-logo {
+    justify-content: center !important;
+  }
+
+  .app-container.sidebar-collapsed .sidebar-logo-text,
+  .app-container.sidebar-collapsed .sidebar-text,
+  .app-container.sidebar-collapsed .sidebar-profile-info {
+    display: none !important;
+  }
+
+  .app-container.sidebar-collapsed .sidebar-item {
+    justify-content: center;
+    padding: 12px 0;
+  }
+
+  .app-container.sidebar-collapsed .sidebar-profile {
+    justify-content: center !important;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 36px;
+    padding-left: 6px;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    gap: 12px;
+    transition: var(--transition-fast);
+  }
+
+  .sidebar-item svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2.2;
+    transition: var(--transition-fast);
+  }
+
+  .sidebar-item:hover {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    padding-left: 20px;
+  }
+
+  .sidebar-item.active {
+    background-color: var(--primary-glow);
+    color: var(--primary);
+  }
+
+  .sidebar-item.active svg {
+    stroke: var(--primary);
+  }
+
+  .sidebar-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+    margin-top: auto;
+  }
+
+  .profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  /* Main Content Area adjustments */
+  .main-content {
+    padding: 40px 48px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* 2-Column Grid on Dashboard */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Horizontal Grid for charts */
+  .history-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 18px;
+  transition: var(--transition-smooth);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  border-color: var(--primary-light);
+}
+
+/* Premium Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px var(--primary-glow), var(--shadow-glow);
+  opacity: 0.95;
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.btn-secondary:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Typography styles */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--accent-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Status Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  gap: 4px;
+}
+
+.badge-success {
+  background-color: var(--success-glow);
+  color: var(--success-light);
+}
+
+.badge-danger {
+  background-color: var(--danger-glow);
+  color: var(--danger);
+}
+
+/* ==========================================
+   NEW STYLES: CHAT ASSISTANT, DIÁRIO DE CUIDADOS & PRINT
+   ========================================== */
+
+/* Chatbot Typing Indicator */
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1.0); }
+}
+
+/* Premium Checklist Styles */
+.premium-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition-smooth);
+}
+
+.premium-checkbox-label:hover {
+  border-color: var(--primary);
+  background-color: var(--primary-glow);
+  transform: translateX(4px);
+}
+
+.premium-checkbox-input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--text-muted);
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+}
+
+.premium-checkbox-input:checked {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  border-color: var(--primary);
+}
+
+.premium-checkbox-input:checked::before {
+  content: '✓';
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.premium-checkbox-label.checked {
+  border-color: var(--primary);
+  background-color: var(--primary-glow);
+  opacity: 0.85;
+}
+
+/* Hotspot pulse effect */
+.map-hotspot {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background-color: rgba(16, 185, 129, 0.4);
+  border: 2px solid var(--primary-light);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 11px;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  transition: var(--transition-smooth);
+}
+
+.map-hotspot::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: inherit;
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.map-hotspot:hover {
+  transform: scale(1.2);
+  background-color: var(--primary);
+  box-shadow: 0 0 12px var(--primary);
+}
+
+/* print styles for clinical reports */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12px !important;
+  }
+  
+  .sidebar,
+  .bottom-nav,
+  .mobile-header,
+  .btn,
+  .badge,
+  .no-print,
+  select,
+  input[type="range"],
+  .sidebar-logo {
+    display: none !important;
+  }
+  
+  .app-container {
+    display: block !important;
+    min-height: auto !important;
+  }
+  
+  .main-content {
+    padding: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  .glass-card {
+    background: none !important;
+    backdrop-filter: none !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    margin-bottom: 20px !important;
+    padding: 15px !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .history-charts-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 15px !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+
+  .print-only-flex {
+    display: flex !important;
+  }
+}
+
+.print-only,
+.print-only-flex {
+  display: none;
+}
+
+/* Chat Layout Wrapper & Responsive Height */
+.chat-layout-container {
+  display: flex;
+  gap: 20px;
+  height: 100%; /* Take full available height from flex parent */
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+  z-index: 1; /* Stacking context to fix WebKit overflow clip bug */
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Chat History Sidebar & Mobile Drawer */
+.mobile-history-toggle {
+  display: none !important;
+}
+
+.chat-history-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  background-color: var(--bg-secondary);
+  border-left: 1px solid var(--border-color);
+  padding: 16px;
+  gap: 12px;
+  flex-shrink: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 1023px) {
+  .mobile-history-toggle {
+    display: flex !important;
+  }
+  
+  .chat-history-sidebar {
+    position: absolute !important;
+    right: 0 !important;
+    left: auto !important;
+    top: 0;
+    bottom: 0;
+    z-index: 1200;
+    width: 260px !important;
+    height: 100% !important;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 1px solid var(--border-color);
+  }
+  
+  .chat-history-sidebar.mobile-visible {
+    transform: translateX(0);
+    visibility: visible;
+  }
+}
+
+/* Chat Tab Layout Locking (Viewport Fit) */
+.app-container.chat-tab-active {
+  height: 100vh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+/* Full-width layout optimization for the Care Assistant Chat */
+@media (min-width: 768px) {
+  .main-content.chat-tab-active {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .main-content.chat-tab-active {
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: calc(100dvh - 60px) !important; /* Subtract mobile header height */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  
+  .chat-layout-container {
+    padding: 12px 12px 80px 12px; /* Add bottom padding on mobile to account for bottom-nav */
+  }
+}
+
+/* Autocomplete Dropdown Option Styling */
+.autocomplete-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.15s ease;
+  color: var(--text-primary);
+}
+
+.autocomplete-option:hover {
+  background-color: var(--border-color);
+  color: var(--primary);
+}
+
+
