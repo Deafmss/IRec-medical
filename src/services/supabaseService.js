@@ -293,7 +293,88 @@ export const getClinicalProfile = async (userId = null) => {
       .eq('id', resolvedId)
       .single();
       
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user && session.user.id === resolvedId) {
+          const user = session.user;
+          const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email.split('@')[0];
+          const payload = {
+            id: user.id,
+            role: 'patient',
+            name: name,
+            email: user.email,
+            crm: null,
+            specialty: null,
+            rqe: null,
+            birth_date: null,
+            gender: null
+          };
+          
+          const { error: insertError } = await supabase
+            .from('clinical_profile')
+            .insert(payload);
+            
+          if (!insertError) {
+            const { data: newData, error: newError } = await supabase
+              .from('clinical_profile')
+              .select('*')
+              .eq('id', resolvedId)
+              .single();
+              
+            if (!newError && newData) {
+              return {
+                id: newData.id,
+                role: newData.role,
+                name: newData.name,
+                email: newData.email,
+                crm: newData.crm || '',
+                specialty: newData.specialty || '',
+                rqe: newData.rqe || '',
+                birthDate: newData.birth_date || '',
+                gender: newData.gender || '',
+                healthUnit: newData.health_unit || '',
+                hasDiabetes: newData.has_diabetes,
+                hasHypertension: newData.has_hypertension,
+                hasVenousInsufficiency: newData.has_venous_insufficiency,
+                hasPeripheralArterialDisease: newData.has_peripheral_arterial_disease,
+                isSmoker: newData.is_smoker,
+                isObese: newData.is_obese,
+                hasAmputationHistory: newData.has_amputation_history,
+                otherConditions: newData.other_conditions || '',
+                medications: newData.medications || '',
+                allergies: newData.allergies || '',
+                attachedExams: newData.attached_exams || [],
+                triageAlerts: newData.triage_alerts || [],
+                cpf: newData.cpf || '',
+                rg: newData.rg || '',
+                cns: newData.cns || '',
+                phone: newData.phone || '',
+                emergencyContactName: newData.emergency_contact_name || '',
+                emergencyContactPhone: newData.emergency_contact_phone || '',
+                cep: newData.cep || '',
+                street: newData.street || '',
+                number: newData.number || '',
+                complement: newData.complement || '',
+                neighborhood: newData.neighborhood || '',
+                city: newData.city || '',
+                state: newData.state || '',
+                weight: newData.weight || '',
+                height: newData.height || '',
+                bloodType: newData.blood_type || '',
+                mobility: newData.mobility || '',
+                nutritionalStatus: newData.nutritional_status || '',
+                alcoholism: newData.alcoholism || false,
+                hasCaregiver: newData.has_caregiver || false,
+                caregiverName: newData.caregiver_name || '',
+                avatarUrl: newData.avatar_url || ''
+              };
+            }
+          }
+        }
+      }
+      throw error;
+    }
     
     // Map snake_case columns to camelCase for frontend
     return {

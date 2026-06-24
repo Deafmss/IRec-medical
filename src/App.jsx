@@ -153,6 +153,8 @@ export default function App() {
             setCurrentUser(profile);
             if (profile.role === 'doctor') {
               setActiveTab('doctor-dashboard');
+            } else {
+              setActiveTab('dashboard');
             }
           }
         } else if (event === 'SIGNED_OUT') {
