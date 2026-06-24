@@ -79,18 +79,26 @@ export default function App() {
     };
   }, [currentUser, activeCallSession]);
   
-  // Theme state: light or dark (persisted in localStorage)
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('irec-theme');
-    if (saved) return saved;
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return systemPrefersDark ? 'dark' : 'light';
-  });
+  // Theme state: defaults to light theme
+  const [theme, setTheme] = useState('light');
 
+  // Load user-specific theme when currentUser changes
+  useEffect(() => {
+    const themeKey = currentUser ? `irec-theme-${currentUser.id}` : 'irec-theme-guest';
+    const savedTheme = localStorage.getItem(themeKey);
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else {
+      setTheme('light'); // default is light
+    }
+  }, [currentUser]);
+
+  // Apply theme class and save to localStorage
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('irec-theme', theme);
-  }, [theme]);
+    const themeKey = currentUser ? `irec-theme-${currentUser.id}` : 'irec-theme-guest';
+    localStorage.setItem(themeKey, theme);
+  }, [theme, currentUser]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
