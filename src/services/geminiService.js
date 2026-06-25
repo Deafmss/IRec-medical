@@ -432,3 +432,73 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código ma
   }
 };
 
+// 5. Format dictated/typed text into a structured SOAP medical note
+export const formatSOAPNote = async (noteText, patientProfile, woundEntries, doctorProfile) => {
+  if (!isGeminiConfigured) {
+    return null;
+  }
+
+  try {
+    const formattedWounds = woundEntries.map(entry => `
+- Data: ${entry.date}
+  Tipo da Ferida: ${entry.type}
+  Estágio: ${entry.lesionStage}
+  Área Estimada: ${entry.aiAreaCm2 ? `${entry.aiAreaCm2} cm²` : 'N/A'}
+  Composição Tecidual: Necrose ${entry.aiTissueAnalysis?.necrose || 0}%, Fibrina ${entry.aiTissueAnalysis?.fibrina || 0}%, Granulação ${entry.aiTissueAnalysis?.granulacao || 0}%, Epitelização ${entry.aiTissueAnalysis?.epitelizacao || 0}%
+  Nível de Dor: ${entry.pain}/10
+  Exsudato: ${entry.exudate}
+  Conduta Prescrita Anteriormente: ${entry.appliedDressing || 'Não prescrito'} (${entry.dressingFrequency || 'Não informada'})
+  Notas Médicas Anteriores: ${entry.doctorNotes || 'Sem notas adicionais'}
+`).join('\n');
+
+    const systemPrompt = `Você é um assistente de inteligência artificial de alta especialização médica em cicatrização de feridas (Wound Care) e clínica geral.
+Sua tarefa é receber um texto ditado ou digitado pelo médico/enfermeiro e estruturá-lo no formato de prontuário eletrônico padrão SOAP (Subjetivo, Objetivo, Avaliação, Plano), adaptado para a realidade do paciente e lesões ativas.
+
+DADOS DO PACIENTE:
+- Nome: ${patientProfile.name}
+- Idade/Nascimento: ${patientProfile.birthDate || 'Não informada'}
+- Sexo: ${patientProfile.gender || 'Não informado'}
+- Diabetes: ${patientProfile.hasDiabetes ? 'Sim' : 'Não'}
+- Hipertensão: ${patientProfile.hasHypertension ? 'Sim' : 'Não'}
+- Insuficiência Venosa: ${patientProfile.hasVenousInsufficiency ? 'Sim' : 'Não'}
+- Doença Arterial Periférica: ${patientProfile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
+- Tabagismo: ${patientProfile.isSmoker ? 'Sim (Fumante)' : 'Não'}
+- Obesidade: ${patientProfile.isObese ? 'Sim' : 'Não'}
+- Histórico de Amputação: ${patientProfile.hasAmputationHistory ? 'Sim' : 'Não'}
+- Alergias Conhecidas: ${patientProfile.allergies || 'Nenhuma'}
+- Medicamentos Contínuos: ${patientProfile.medications || 'Nenhum'}
+
+HISTÓRICO RECENTE DA LESÃO:
+${formattedWounds || 'Sem registros de lesões anteriores.'}
+
+INSTRUÇÕES DE FORMATAÇÃO DO SOAP:
+1. **S - Subjetivo**: Sintomas relatados pelo paciente, queixas de dor, histórico de sintomas relatado.
+2. **O - Objetivo**: Achados físicos do exame clínico, mensurações da ferida, aspecto do tecido (necrose, fibrina, granulação), tipo e quantidade de exsudato, odor, temperatura local.
+3. **A - Avaliação**: Diagnóstico de enfermagem/médico, classificação da lesão (Ex: Úlcera Venosa Estágio III) e análise da evolução (melhorou, estável, piorou).
+4. **P - Plano**: Conduta terapêutica, cobertura prescrita, frequência de troca, procedimentos e orientações de autocuidado (ex: repouso, elevação de membros, controle de comorbidades).
+
+Retorne o texto formatado estritamente como um documento SOAP em português (PT-BR), legível, organizado e profissional. Use cabeçalhos claros com negrito (ex: **S - Subjetivo:**, **O - Objetivo:**, etc.) e bullets. Seja preciso e evite inventar dados que não estejam implícitos no texto ditado ou no histórico do paciente.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          { role: 'user', parts: [{ text: systemPrompt }] },
+          { role: 'user', parts: [{ text: `Texto ditado pelo profissional: "${noteText}"` }] }
+        ]
+      })
+    });
+
+    if (!response.ok) throw new Error(`Falha no SOAP do Gemini: ${response.statusText}`);
+    const result = await response.json();
+    return result.candidates[0].content.parts[0].text.trim();
+  } catch (err) {
+    console.error("Erro ao formatar nota SOAP via Gemini API:", err);
+    return null;
+  }
+};
+
+

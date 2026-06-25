@@ -8,9 +8,11 @@ import {
   addDoctorNote,
   issueDocument,
   getPatientDocuments,
-  updateClinicalProfile
+  updateClinicalProfile,
+  createAuditLog
 } from '../services/supabaseService';
-import { chatWithDoctorCopilot } from '../services/geminiService';
+import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
+import { exportFHIRBundle } from '../services/fhirService';
 
 const ALL_SPECIALTIES = [
   'Acupuntura',
@@ -124,6 +126,7 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
   // STT Dictation, AI Note Suggestion, and Gallery Compare
   const [isRecordingNote, setIsRecordingNote] = useState(false);
   const [generatingAISummary, setGeneratingAISummary] = useState(false);
+  const [isFormattingSOAP, setIsFormattingSOAP] = useState(false);
   const [compareEntries, setCompareEntries] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
   const recognitionRef = useRef(null);
@@ -202,6 +205,28 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
       await followPatient(doctorProfile.id, patient.id);
     }
     loadLists();
+  };
+
+  const handleExportFHIR = async () => {
+    try {
+      const bundle = exportFHIRBundle(selectedPatient, selectedPatientEntries);
+      if (!bundle) return;
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bundle, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `fhir-bundle-${selectedPatient.name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+
+      // Log audit trail action
+      await createAuditLog('EXPORT_FHIR_JSON', selectedPatient.id, { patient_name: selectedPatient.name });
+      alert("Prontuário exportado no padrão HL7 FHIR JSON com sucesso!");
+    } catch (err) {
+      console.error("Erro ao exportar FHIR:", err);
+      alert("Erro ao exportar prontuário no padrão FHIR.");
+    }
   };
 
   const handleSaveNote = async () => {
@@ -290,6 +315,30 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
       setGeneratingAISummary(false);
     }
   };
+
+  const handleFormatSOAP = async () => {
+    if (!selectedPatient || !selectedEntry) return;
+    if (!doctorNote || !doctorNote.trim()) {
+      alert("Por favor, digite ou dite um texto na evolução clínica antes de organizar com o formato SOAP.");
+      return;
+    }
+    
+    setIsFormattingSOAP(true);
+    try {
+      const formatted = await formatSOAPNote(doctorNote, selectedPatient, selectedPatientEntries, doctorProfile);
+      if (formatted) {
+        setDoctorNote(formatted);
+      } else {
+        alert("Não foi possível formatar a nota SOAP no momento. Tente novamente.");
+      }
+    } catch (err) {
+      console.error("Erro ao formatar nota SOAP com IA:", err);
+      alert("Erro de comunicação com o serviço de formatação SOAP.");
+    } finally {
+      setIsFormattingSOAP(false);
+    }
+  };
+
 
   useEffect(() => {
     return () => {
@@ -1342,6 +1391,13 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
                   >
                     {isFollowing(selectedPatient.id) ? 'Deixar de Acompanhar' : 'Acompanhar este Paciente'}
                   </button>
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={handleExportFHIR}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--primary-glow)', color: 'var(--primary)', borderColor: 'var(--primary-light)' }}
+                  >
+                    📥 Exportar FHIR
+                  </button>
                 </div>
               </div>
 
@@ -1766,6 +1822,29 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
                                   }}
                                 >
                                   {generatingAISummary ? '⏳ Sugerindo...' : '💡 Sugerir Nota por IA'}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={handleFormatSOAP}
+                                  className="btn btn-secondary"
+                                  disabled={isFormattingSOAP}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontSize: '11.5px',
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontWeight: '700',
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)',
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  {isFormattingSOAP ? '⏳ Formatando...' : '📝 Organizar com IA (SOAP)'}
                                 </button>
                               </div>
 

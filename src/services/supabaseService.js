@@ -261,6 +261,36 @@ export const getCurrentUser = async () => {
   }
 };
 
+// 4.1. Log Clinical Actions for Compliance (Audit Logs)
+export const createAuditLog = async (action, targetId = null, details = {}) => {
+  if (!isSupabaseConfigured) return null;
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !session.user) return null;
+    
+    const payload = {
+      user_id: session.user.id,
+      action: action,
+      target_id: targetId,
+      details: details
+    };
+    
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .insert(payload)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Erro ao registrar log de auditoria no Supabase:', err);
+    return null;
+  }
+};
+
+
 
 const getActiveUserId = async () => {
   if (isSupabaseConfigured) {
@@ -453,7 +483,7 @@ export const getClinicalProfile = async (userId = null) => {
     }
     
     // Map snake_case columns to camelCase for frontend
-    return {
+    const resultProfile = {
       id: data.id,
       role: data.role,
       name: data.name,
@@ -499,6 +529,18 @@ export const getClinicalProfile = async (userId = null) => {
       caregiverName: data.caregiver_name || '',
       avatarUrl: data.avatar_url || ''
     };
+
+    // Log view action if viewed by another user (e.g. doctor)
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user && session.user.id !== resolvedId) {
+        createAuditLog('VIEW_PATIENT_RECORD', resolvedId, { patient_name: data.name });
+      }
+    } catch (auditErr) {
+      console.warn('Erro ao disparar log de auditoria:', auditErr);
+    }
+
+    return resultProfile;
   } catch (err) {
     console.error('Erro ao buscar perfil do Supabase (usando local):', err);
     return getLocalProfile(resolvedId);
@@ -585,6 +627,10 @@ export const updateClinicalProfile = async (arg1, arg2 = null) => {
       .eq('id', userId);
 
     if (error) throw error;
+    
+    // Log audit log
+    createAuditLog('UPDATE_CLINICAL_PROFILE', userId, { fields_updated: Object.keys(payload) });
+
     return profile;
   } catch (err) {
     console.error('Erro ao atualizar perfil no Supabase:', err);
@@ -824,6 +870,9 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null) => {
       .single();
 
     if (error) throw error;
+
+    // Log audit log
+    createAuditLog('ADD_WOUND_ENTRY', patientId, { entry_id: data.id, entry_type: entry.type });
 
     return { ...entry, id: data.id, patientId, photo: photoUrl };
   } catch (err) {
