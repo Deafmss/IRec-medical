@@ -10,7 +10,7 @@ import DoctorDashboard from './components/DoctorDashboard';
 import PatientDocuments from './components/PatientDocuments';
 import UserProfileModal from './components/UserProfileModal';
 import Telemedicine from './components/Telemedicine';
-import { getClinicalProfile, getWoundEntries, addWoundEntry, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
+import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export default function App() {
@@ -85,12 +85,8 @@ export default function App() {
   // Load user-specific theme when currentUser changes
   useEffect(() => {
     const themeKey = currentUser ? `irec-theme-${currentUser.id}` : 'irec-theme-guest';
-    const savedTheme = localStorage.getItem(themeKey);
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else {
-      setTheme('light'); // default is light
-    }
+    const savedTheme = localStorage.getItem(themeKey) || 'light';
+    setTheme(prev => prev !== savedTheme ? savedTheme : prev);
   }, [currentUser]);
 
   // Apply theme class and save to localStorage

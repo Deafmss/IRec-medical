@@ -8,84 +8,11 @@ import {
   addDoctorNote,
   issueDocument,
   getPatientDocuments,
-  updateClinicalProfile,
   createAuditLog
 } from '../services/supabaseService';
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
 
-const ALL_SPECIALTIES = [
-  'Acupuntura',
-  'Alergia e Imunologia',
-  'Anestesiologia',
-  'Angiologia',
-  'Cardiologia',
-  'Cirurgia Cardiovascular',
-  'Cirurgia da Mão',
-  'Cirurgia de Cabeça e Pescoço',
-  'Cirurgia do Aparelho Digestivo',
-  'Cirurgia Geral',
-  'Cirurgia Oncológica',
-  'Cirurgia Pediátrica',
-  'Cirurgia Plástica',
-  'Cirurgia Torácica',
-  'Cirurgia Vascular',
-  'Clínico Geral',
-  'Coloproctologia',
-  'Dermatologia',
-  'Endocrinologia e Metabologia',
-  'Endoscopia',
-  'Gastroenterologia',
-  'Genética Médica',
-  'Geriatria',
-  'Ginecologia e Obstetrícia',
-  'Hematologia e Hemoterapia',
-  'Homeopatia',
-  'Infectologia',
-  'Mastologia',
-  'Medicina de Emergência',
-  'Medicina de Família e Comunidade',
-  'Medicina do Trabalho',
-  'Medicina de Tráfego',
-  'Medicina Esportiva',
-  'Medicina Física e Reabilitação',
-  'Medicina Intensiva',
-  'Medicina Legal e Perícia Médica',
-  'Medicina Nuclear',
-  'Medicina Preventiva e Social',
-  'Nefrologia',
-  'Neurocirurgia',
-  'Neurologia',
-  'Nutrologia',
-  'Oftalmologia',
-  'Oncologia Clínica',
-  'Ortopedia e Traumatologia',
-  'Otorrinolaringologia',
-  'Patologia',
-  'Patologia Clínica/Medicina Laboratorial',
-  'Pediatria',
-  'Pneumologia',
-  'Psiquiatria',
-  'Radiologia e Diagnóstico por Imagem',
-  'Radioterapia',
-  'Reumatologia',
-  'Urologia',
-  'Estomaterapia',
-  'Enfermagem Geral',
-  'Enfermagem em Dermatologia',
-  'Enfermagem em Terapia Intensiva',
-  'Enfermagem em Saúde da Família',
-  'Enfermagem Obstétrica',
-  'Enfermagem Pediátrica',
-  'Enfermagem Oncológica',
-  'Enfermagem de Urgência e Emergência',
-  'Enfermagem do Trabalho',
-  'Enfermagem em Centro Cirúrgico',
-  'Enfermagem Nefrológica',
-  'Enfermagem em Saúde Mental e Psiquiatria',
-  'Enfermagem Geronto-Geriátrica',
-  'Enfermagem em Infectologia'
-];
 
 export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppActiveTab, onProfileUpdate, onEditProfile, onOpenChat }) {
   const [activeTab, setActiveTab] = useState('my-patients'); // 'my-patients' or 'all-patients'
@@ -325,7 +252,7 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
     
     setIsFormattingSOAP(true);
     try {
-      const formatted = await formatSOAPNote(doctorNote, selectedPatient, selectedPatientEntries, doctorProfile);
+      const formatted = await formatSOAPNote(doctorNote, selectedPatient, selectedPatientEntries);
       if (formatted) {
         setDoctorNote(formatted);
       } else {

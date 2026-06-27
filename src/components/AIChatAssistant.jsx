@@ -607,7 +607,6 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
             onClick={() => setShowHistoryMobile(prev => !prev)}
             style={{
               background: 'none',
-              border: 'none',
               cursor: 'pointer',
               padding: '6px',
               alignItems: 'center',

@@ -103,7 +103,7 @@ export const exportObservationToFHIR = (profile, entry) => {
       } else {
         effectiveDate = new Date(entry.date).toISOString();
       }
-    } catch (e) {
+    } catch {
       effectiveDate = new Date().toISOString();
     }
   }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { updateClinicalProfile, getAssignedDoctor, getLocalHealthcareResources } from '../services/supabaseService';
+import { updateClinicalProfile, getAssignedDoctor } from '../services/supabaseService';
 import LocalResourcesPanel from './LocalResourcesPanel';
 
 // Helper to generate precise caret/daily tasks based on clinical history, comorbidities, and active wound status

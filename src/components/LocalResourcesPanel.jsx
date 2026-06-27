@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { geocodeAddress, fetchNearbyHealthcareResources } from '../services/locationService';
+import { geocodeAddress, fetchNearbyHealthcareResources, getDistance } from '../services/locationService';
 import { updateClinicalProfile } from '../services/supabaseService';
 
 export default function LocalResourcesPanel({ clinicalProfile, compact = false }) {
@@ -300,7 +300,6 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
         mapInstanceRef.current.setView([coords.lat, coords.lon], 14);
       }
 
-      const map = mapInstanceRef.current;
       const markersGroup = markersGroupRef.current;
 
       // Clear old markers

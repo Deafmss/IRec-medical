@@ -31,7 +31,7 @@ export async function geocodeAddress(profile) {
   const { street, number, neighborhood, city, state } = profile;
   
   // Try precise address first
-  let query = '';
+  let query;
   if (street && city && state) {
     query = `${street} ${number || ''}, ${neighborhood || ''}, ${city} - ${state}, Brasil`;
   } else if (city && state) {

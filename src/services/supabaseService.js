@@ -735,7 +735,7 @@ export const uploadAvatar = async (userId, file) => {
         saveLocalProfile(resolvedId, profile);
       }
       return base64;
-    } catch (e) {
+    } catch {
       return null;
     }
   }
@@ -896,7 +896,9 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null) => {
     if (photoFile) {
       try {
         photoUrl = await fileToBase64(photoFile);
-      } catch (e) {}
+      } catch (photoErr) {
+        console.error('Erro ao converter foto offline:', photoErr);
+      }
     }
     const newEntry = { ...entry, patientId, id: Date.now(), photo: photoUrl };
     const localEntries = getLocalEntries(patientId);
@@ -1672,7 +1674,9 @@ export const sendChatMessage = async (senderId, recipientId, text, fileObj = nul
       try {
         const base64 = await fileToBase64(fileObj);
         newMsg.fileUrl = base64;
-      } catch (e) {}
+      } catch (fileErr) {
+        console.error('Erro ao converter arquivo offline no chat:', fileErr);
+      }
     }
     const msgs = getLocalMessages();
     msgs.push(newMsg);
@@ -1808,7 +1812,7 @@ export const checkIncomingCalls = async (userId) => {
       };
     }
     return null;
-  } catch (err) {
+  } catch {
     const calls = getLocalCalls();
     const ringing = calls.find(c => c.receiverId === userId && c.status === 'ringing');
     return ringing ? {
@@ -1850,7 +1854,7 @@ export const checkCallStatus = async (callId) => {
       receiverId: data.receiver_id,
       status: data.status
     };
-  } catch (err) {
+  } catch {
     const calls = getLocalCalls();
     const call = calls.find(c => c.id.toString() === callId.toString());
     return call ? {
@@ -1894,7 +1898,7 @@ export const updateLastSeen = async (userId) => {
       .single();
     if (error) throw error;
     return data;
-  } catch (err) {
+  } catch {
     return null;
   }
 };

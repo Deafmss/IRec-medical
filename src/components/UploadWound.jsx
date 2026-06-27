@@ -135,9 +135,6 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
         setAnalysisStep('');
         
         let mockResult = {};
-        const profileDiabetes = clinicalProfile?.hasDiabetes;
-        const profileHypertension = clinicalProfile?.hasHypertension;
-        const profileSmoker = clinicalProfile?.isSmoker;
 
         if (demoScenario === 'venosa') {
           mockResult = {

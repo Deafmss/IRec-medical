@@ -158,12 +158,15 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
 
   useEffect(() => {
     if (bmi) {
-      setFormData(prev => ({
-        ...prev,
-        isObese: bmi >= 30
-      }));
+      const shouldBeObese = bmi >= 30;
+      if (formData.isObese !== shouldBeObese) {
+        setFormData(prev => ({
+          ...prev,
+          isObese: shouldBeObese
+        }));
+      }
     }
-  }, [bmi]);
+  }, [bmi, formData.isObese]);
 
   const getBmiCategory = (value) => {
     if (!value) return null;

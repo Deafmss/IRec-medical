@@ -221,11 +221,6 @@ export default function Login({ onLoginSuccess }) {
   };
 
   const selectedSpecialties = specialty ? specialty.split(',').map(s => s.trim()).filter(Boolean) : [];
-  const isNurse = selectedSpecialties.length > 0 && selectedSpecialties.every(s => 
-    s.toLowerCase().includes('estomaterapia') || 
-    s.toLowerCase().includes('enfermagem') || 
-    s.toLowerCase().includes('enfermeir')
-  );
 
   const filteredOptions = ALL_SPECIALTIES.filter(s => 
     s.toLowerCase().includes(specSearch.toLowerCase()) && 

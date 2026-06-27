@@ -433,7 +433,7 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código ma
 };
 
 // 5. Format dictated/typed text into a structured SOAP medical note
-export const formatSOAPNote = async (noteText, patientProfile, woundEntries, doctorProfile) => {
+export const formatSOAPNote = async (noteText, patientProfile, woundEntries) => {
   if (!isGeminiConfigured) {
     return null;
   }
