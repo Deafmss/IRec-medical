@@ -160,7 +160,15 @@ export const signUpUser = async (email, password, name, role, additionalData = {
       email,
       password,
       options: {
-        data: { name, role }
+        data: { 
+          name, 
+          role,
+          crm: additionalData.crm || null,
+          specialty: additionalData.specialty || null,
+          rqe: additionalData.rqe || null,
+          birthDate: additionalData.birthDate || null,
+          gender: additionalData.gender || null
+        }
       }
     });
 
@@ -168,7 +176,13 @@ export const signUpUser = async (email, password, name, role, additionalData = {
     const user = authData.user;
     if (!user) throw new Error('Falha ao registrar usuário.');
 
-    // Insert profile data
+    // If the session is null, it means email verification is enabled on Supabase.
+    // We throw a custom error to let the UI know that signup was successful but confirmation is pending.
+    if (!authData.session) {
+      throw new Error('CONFIRM_EMAIL');
+    }
+
+    // Insert or update profile data (upsert to avoid conflict with the database trigger)
     const payload = {
       id: user.id,
       role: role,
@@ -183,7 +197,7 @@ export const signUpUser = async (email, password, name, role, additionalData = {
 
     const { error: profileError } = await supabase
       .from('clinical_profile')
-      .insert(payload);
+      .upsert(payload);
 
     if (profileError) throw profileError;
 

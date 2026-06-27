@@ -124,11 +124,28 @@ export default function Login({ onLoginSuccess }) {
           additionalData = { crm, specialty, rqe };
         }
 
-        const profile = await signUpUser(email, password, name, role, additionalData);
-        setSuccessMsg('Cadastro realizado com sucesso! Redirecionando...');
-        setTimeout(() => {
-          onLoginSuccess(profile);
-        }, 1500);
+        try {
+          const profile = await signUpUser(email, password, name, role, additionalData);
+          setSuccessMsg('Cadastro realizado com sucesso! Redirecionando...');
+          setTimeout(() => {
+            onLoginSuccess(profile);
+          }, 1500);
+        } catch (signUpErr) {
+          if (signUpErr.message === 'CONFIRM_EMAIL') {
+            setSuccessMsg('Cadastro realizado com sucesso! Enviamos um e-mail de confirmação. Por favor, verifique sua caixa de entrada para ativar a conta antes de fazer login.');
+            setEmail('');
+            setPassword('');
+            setName('');
+            setCrm('');
+            setSpecialty('');
+            setRqe('');
+            setBirthDate('');
+            setGender('');
+            setIsRegistering(false);
+          } else {
+            throw signUpErr;
+          }
+        }
       } else {
         if (!email || !password) {
           throw new Error('Por favor, preencha e-mail e senha.');
