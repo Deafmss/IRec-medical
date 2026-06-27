@@ -40,6 +40,17 @@ export async function geocodeAddress(profile) {
     return null;
   }
 
+  const cacheKey = `irec_geocode_cache_${profile.id || 'guest'}_${query.replace(/\s+/g, '_')}`;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      console.log(`[iRec Geocode Cache] Returning cached coordinates for address: ${query}`);
+      return JSON.parse(cached);
+    }
+  } catch (err) {
+    console.debug('Failed to load geocode cache:', err);
+  }
+
   const userAgent = 'iRecMedicalApp/1.0 (contact@irec.example.com)';
 
   try {
@@ -49,11 +60,17 @@ export async function geocodeAddress(profile) {
     let data = await res.json();
 
     if (data && data.length > 0) {
-      return {
+      const result = {
         lat: parseFloat(data[0].lat),
         lon: parseFloat(data[0].lon),
         displayName: data[0].display_name
       };
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(result));
+      } catch (err) {
+        console.debug('Failed to save geocode cache:', err);
+      }
+      return result;
     }
 
     // Fallback: If street geocoding failed, try just city and state
@@ -64,11 +81,17 @@ export async function geocodeAddress(profile) {
       res = await fetch(url, { headers: { 'User-Agent': userAgent } });
       data = await res.json();
       if (data && data.length > 0) {
-        return {
+        const result = {
           lat: parseFloat(data[0].lat),
           lon: parseFloat(data[0].lon),
           displayName: data[0].display_name
         };
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(result));
+        } catch (err) {
+          console.debug('Failed to save fallback geocode cache:', err);
+        }
+        return result;
       }
     }
   } catch (err) {
@@ -89,6 +112,21 @@ export async function fetchNearbyHealthcareResources(lat, lon, radiusMeters = 70
   
   if (isNaN(numLat) || isNaN(numLon)) {
     return { hospitals: [], pharmacies: [] };
+  }
+
+  const cacheKey = `irec_resources_cache_${numLat.toFixed(4)}_${numLon.toFixed(4)}`;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      // Cache valid for 3 hours
+      if (Date.now() - parsed.timestamp < 3 * 60 * 60 * 1000) {
+        console.log(`[iRec Resource Cache] Returning cached local resources for coordinates: ${numLat}, ${numLon}`);
+        return parsed.data;
+      }
+    }
+  } catch (err) {
+    console.debug('Failed to read resources cache:', err);
   }
 
   const hospitals = [];
@@ -179,11 +217,11 @@ export async function fetchNearbyHealthcareResources(lat, lon, radiusMeters = 70
     nwr["building"~"hospital|clinic"](around:${radiusMeters},${numLat},${numLon});
   );out center;`;
 
-  // List of public Overpass mirrors to try in rotation
+  // List of public Overpass mirrors to try in parallel
   const mirrors = [
-    'https://overpass.kumi.systems/api/interpreter',
-    'https://lz4.overpass-api.de/api/interpreter',
     'https://overpass-api.de/api/interpreter',
+    'https://lz4.overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
     'https://z.overpass-api.de/api/interpreter'
   ];
 
@@ -191,12 +229,10 @@ export async function fetchNearbyHealthcareResources(lat, lon, radiusMeters = 70
   let querySuccess = false;
   const userAgent = 'iRecMedicalApp/1.0 (contact@irec.example.com)';
 
-  // Try mirrors in sequence
-  for (const mirror of mirrors) {
-    console.log(`Querying Overpass mirror: ${mirror}...`);
+  const fetchFromMirror = async (mirror) => {
     const url = `${mirror}?data=${encodeURIComponent(query)}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout per mirror
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
 
     try {
       const res = await fetch(url, { 
@@ -204,24 +240,42 @@ export async function fetchNearbyHealthcareResources(lat, lon, radiusMeters = 70
         signal: controller.signal
       });
       clearTimeout(timeoutId);
-
       if (res.ok) {
         const data = await res.json();
-        rawElements = data.elements || [];
-        querySuccess = true;
-        console.log(`Overpass query succeeded on mirror ${mirror}. Found ${rawElements.length} elements.`);
-        break; // Stop querying other mirrors
-      } else {
-        console.warn(`Mirror ${mirror} returned status ${res.status}`);
+        return data.elements || [];
       }
+      throw new Error(`Mirror returned status ${res.status}`);
     } catch (err) {
       clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
-        console.warn(`Mirror ${mirror} request timed out (4s limit reached).`);
-      } else {
-        console.warn(`Mirror ${mirror} error:`, err.message);
-      }
+      throw err;
     }
+  };
+
+  const anySuccessful = async (promises) => {
+    if (Promise.any) {
+      return Promise.any(promises);
+    }
+    return new Promise((resolve, reject) => {
+      let errors = [];
+      let rejected = 0;
+      promises.forEach(p => {
+        Promise.resolve(p).then(resolve).catch(err => {
+          errors.push(err);
+          rejected++;
+          if (rejected === promises.length) {
+            reject(new Error("All promises failed"));
+          }
+        });
+      });
+    });
+  };
+
+  try {
+    rawElements = await anySuccessful(mirrors.map(mirror => fetchFromMirror(mirror)));
+    querySuccess = true;
+    console.log(`Overpass parallel query succeeded. Found ${rawElements.length} elements.`);
+  } catch (err) {
+    console.warn('All Overpass parallel interpreter queries failed or timed out:', err);
   }
 
   // Parse Overpass elements if query succeeded
@@ -382,5 +436,15 @@ export async function fetchNearbyHealthcareResources(lat, lon, radiusMeters = 70
   hospitals.sort((a, b) => a.distance - b.distance);
   pharmacies.sort((a, b) => a.distance - b.distance);
 
-  return { hospitals, pharmacies };
+  const result = { hospitals, pharmacies };
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify({
+      timestamp: Date.now(),
+      data: result
+    }));
+  } catch (err) {
+    console.debug('Failed to write resources cache:', err);
+  }
+
+  return result;
 }
