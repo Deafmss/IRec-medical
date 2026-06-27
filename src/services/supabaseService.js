@@ -473,7 +473,8 @@ export const getClinicalProfile = async (userId = null) => {
                 alcoholism: newData.alcoholism || false,
                 hasCaregiver: newData.has_caregiver || false,
                 caregiverName: newData.caregiver_name || '',
-                avatarUrl: newData.avatar_url || ''
+                avatarUrl: newData.avatar_url || '',
+                lastSeenAt: newData.last_seen_at || ''
               };
             }
           }
@@ -527,7 +528,8 @@ export const getClinicalProfile = async (userId = null) => {
       alcoholism: data.alcoholism || false,
       hasCaregiver: data.has_caregiver || false,
       caregiverName: data.caregiver_name || '',
-      avatarUrl: data.avatar_url || ''
+      avatarUrl: data.avatar_url || '',
+      lastSeenAt: data.last_seen_at || ''
     };
 
     // Log view action if viewed by another user (e.g. doctor)
@@ -1036,7 +1038,8 @@ export const getAllPatients = async () => {
       alcoholism: item.alcoholism || false,
       hasCaregiver: item.has_caregiver || false,
       caregiverName: item.caregiver_name || '',
-      avatarUrl: item.avatar_url || ''
+      avatarUrl: item.avatar_url || '',
+      lastSeenAt: item.last_seen_at || ''
     }));
   } catch (err) {
     console.error('Erro ao buscar todos os pacientes do Supabase, caindo para local:', err);
@@ -1081,7 +1084,8 @@ export const getAllNurses = async () => {
       phone: item.phone || '',
       avatarUrl: item.avatar_url || '',
       city: item.city || '',
-      state: item.state || ''
+      state: item.state || '',
+      lastSeenAt: item.last_seen_at || ''
     }));
   } catch (err) {
     console.error('Erro ao buscar enfermeiros do Supabase, caindo para local:', err);
@@ -1227,7 +1231,8 @@ export const getAssignedPatients = async (doctorId) => {
       alcoholism: item.alcoholism || false,
       hasCaregiver: item.has_caregiver || false,
       caregiverName: item.caregiver_name || '',
-      avatarUrl: item.avatar_url || ''
+      avatarUrl: item.avatar_url || '',
+      lastSeenAt: item.last_seen_at || ''
     }));
   } catch (err) {
     console.error('Erro ao buscar pacientes acompanhados do Supabase, caindo para local:', err);
@@ -1279,7 +1284,9 @@ export const getAssignedDoctor = async (patientId) => {
       crm: profile.crm || '',
       specialty: profile.specialty || '',
       city: profile.city || '',
-      state: profile.state || ''
+      state: profile.state || '',
+      avatarUrl: profile.avatar_url || '',
+      lastSeenAt: profile.last_seen_at || ''
     };
   } catch (err) {
     console.error('Erro ao buscar médico acompanhante no Supabase:', err);
@@ -1859,5 +1866,22 @@ export const subscribeToSignalingEvents = (onMessageReceived, onIncomingCall, on
   return () => {
     chatChannel.removeEventListener('message', listener);
   };
+};
+
+// Update last seen timestamp for user presence
+export const updateLastSeen = async (userId) => {
+  if (!isSupabaseConfigured || !userId) return null;
+  try {
+    const { data, error } = await supabase
+      .from('clinical_profile')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('id', userId)
+      .select('id, last_seen_at')
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    return null;
+  }
 };
 

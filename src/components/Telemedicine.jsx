@@ -92,7 +92,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const audioCtxRef = useRef(null);
   const ringIntervalRef = useRef(null);
 
-  // Initial load: Fetch Contacts
+  // Initial load & Polling: Fetch Contacts for real-time presence/last_seen_at sync
   useEffect(() => {
     async function loadContacts() {
       try {
@@ -125,6 +125,10 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       }
     }
     loadContacts();
+
+    // Poll contacts presence every 10 seconds
+    const interval = setInterval(loadContacts, 10000);
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   // Handle Target Contact selection if redirected
@@ -196,6 +200,12 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       setMessages(prev => {
         if (chatHistory.length !== prev.length || (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].id !== prev[prev.length - 1]?.id)) {
           setTimeout(scrollToBottom, 100);
+          if (chatHistory.length > prev.length) {
+            const lastMsg = chatHistory[chatHistory.length - 1];
+            if (lastMsg && lastMsg.sender_id !== currentUser.id) {
+              playNotificationSound();
+            }
+          }
           return chatHistory;
         }
         return prev;
@@ -213,6 +223,9 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           setMessages(prev => {
             if (prev.some(m => m.id === newMsg.id)) return prev;
             setTimeout(scrollToBottom, 100);
+            if (newMsg.senderId !== currentUser.id) {
+              playNotificationSound();
+            }
             return [...prev, newMsg];
           });
         }
@@ -392,6 +405,37 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       ringIntervalRef.current = null;
     }
   };
+
+  const playNotificationSound = () => {
+    try {
+      if (muteAudio) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      const ctx = audioCtxRef.current || new AudioContextClass();
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = ctx;
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+      
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.08); // A5
+      
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch (e) {
+      console.warn('Erro ao reproduzir som de notificação:', e);
+    }
+  };
+
 
   // Pulse oximeter heart rate beep sound
   const playHeartBeatBeep = () => {
@@ -1292,6 +1336,19 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               contacts.map(c => {
                 const active = selectedContact && selectedContact.id === c.id;
                 const contactInitials = c.name ? c.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0,2).toUpperCase() : '?';
+                
+                const isOnline = (() => {
+                  if (!c.lastSeenAt) return false;
+                  try {
+                    const lastSeen = new Date(c.lastSeenAt).getTime();
+                    const now = new Date().getTime();
+                    // Consider online if active in the last 35 seconds
+                    return (now - lastSeen) < 35000;
+                  } catch (e) {
+                    return false;
+                  }
+                })();
+
                 return (
                   <div 
                     key={c.id} 
@@ -1332,8 +1389,20 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                       ) : contactInitials}
                     </div>
                     <div style={{ flex: 1, overflow: 'hidden' }}>
-                      <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {c.name}
+                        <span 
+                          style={{ 
+                            display: 'inline-block', 
+                            width: '8px', 
+                            height: '8px', 
+                            borderRadius: '50%', 
+                            backgroundColor: isOnline ? '#10b981' : '#94a3b8',
+                            boxShadow: isOnline ? '0 0 8px #10b981' : 'none',
+                            flexShrink: 0
+                          }} 
+                          title={isOnline ? "Online" : "Offline"}
+                        />
                       </p>
                       <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {c.role === 'doctor' || c.crm ? (c.specialty || 'Clínico iRec') : 'Paciente'}

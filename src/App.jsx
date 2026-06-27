@@ -10,7 +10,7 @@ import DoctorDashboard from './components/DoctorDashboard';
 import PatientDocuments from './components/PatientDocuments';
 import UserProfileModal from './components/UserProfileModal';
 import Telemedicine from './components/Telemedicine';
-import { getClinicalProfile, getWoundEntries, addWoundEntry, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus } from './services/supabaseService';
+import { getClinicalProfile, getWoundEntries, addWoundEntry, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export default function App() {
@@ -189,6 +189,21 @@ export default function App() {
       }
     }
     loadPatientData();
+  }, [currentUser]);
+
+  // Update last seen presence status periodically
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    // Update immediately on mount/login
+    updateLastSeen(currentUser.id);
+    
+    // Polling every 15 seconds
+    const interval = setInterval(() => {
+      updateLastSeen(currentUser.id);
+    }, 15000);
+    
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   const handleLoginSuccess = (profile) => {
