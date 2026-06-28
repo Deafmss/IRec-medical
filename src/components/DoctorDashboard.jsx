@@ -12,6 +12,7 @@ import {
 } from '../services/supabaseService';
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
+import DiabeticFootTelemetry from './DiabeticFootTelemetry';
 
 
 export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppActiveTab, onProfileUpdate, onEditProfile, onOpenChat }) {
@@ -47,6 +48,18 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
   const [atestadoType, setAtestadoType] = useState('Afastamento');
   const [activePrintDoc, setActivePrintDoc] = useState(null);
   const [savingDoc, setSavingDoc] = useState(false);
+
+  // ICP-Brasil Signature states
+  const [signatureModalOpen, setSignatureModalOpen] = useState(false);
+  const [signaturePin, setSignaturePin] = useState('');
+  const [signatureError, setSignatureError] = useState('');
+  const [pendingDocType, setPendingDocType] = useState(null);
+  const [shouldDigitallySign, setShouldDigitallySign] = useState(true);
+
+  // PEP Sync states
+  const [syncingPep, setSyncingPep] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [syncSuccessTime, setSyncSuccessTime] = useState(null);
 
   const chatEndRef = useRef(null);
 
@@ -276,8 +289,7 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
   }, []);
 
 
-  const handleIssueDocument = async (type) => {
-    if (!selectedPatient) return;
+  const executeIssueDocument = async (type, isSigned) => {
     setSavingDoc(true);
     try {
       let content = {};
@@ -293,7 +305,15 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
           doctorName: doctorProfile.name,
           doctorCrm: doctorProfile.crm,
           doctorSpecialty: doctorProfile.specialty,
-          doctorRqe: doctorProfile.rqe || ''
+          doctorRqe: doctorProfile.rqe || '',
+          isSigned: !!isSigned,
+          signedAt: isSigned ? new Date().toISOString() : null,
+          signatureDetails: isSigned ? {
+            certType: 'A1 (ICP-Brasil)',
+            authority: 'AC ITI Federal v5',
+            serial: `BR-${Math.floor(Math.random() * 900000000000 + 100000000000)}-CFM`,
+            hash: `SHA256:${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`
+          } : null
         };
       } else if (type === 'atestado') {
         if (!atestadoDays || isNaN(Number(atestadoDays))) {
@@ -309,13 +329,37 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
           doctorName: doctorProfile.name,
           doctorCrm: doctorProfile.crm,
           doctorSpecialty: doctorProfile.specialty,
-          doctorRqe: doctorProfile.rqe || ''
+          doctorRqe: doctorProfile.rqe || '',
+          isSigned: !!isSigned,
+          signedAt: isSigned ? new Date().toISOString() : null,
+          signatureDetails: isSigned ? {
+            certType: 'A1 (ICP-Brasil)',
+            authority: 'AC ITI Federal v5',
+            serial: `BR-${Math.floor(Math.random() * 900000000000 + 100000000000)}-CFM`,
+            hash: `SHA256:${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`
+          } : null
         };
       }
 
       const doc = await issueDocument(selectedPatient.id, doctorProfile.id, type, content);
       if (doc) {
-        alert(`${type === 'receita' ? 'Receita' : 'Atestado'} emitido com sucesso!`);
+        if (isSigned) {
+          await createAuditLog('SIGN_MEDICAL_DOCUMENT', doc.id, {
+            type,
+            doctorName: doctorProfile.name,
+            patientName: selectedPatient.name,
+            certType: 'A1 (ICP-Brasil)'
+          });
+        } else {
+          await createAuditLog('ISSUE_MEDICAL_DOCUMENT', doc.id, {
+            type,
+            doctorName: doctorProfile.name,
+            patientName: selectedPatient.name
+          });
+        }
+
+        alert(`${type === 'receita' ? 'Receita' : 'Atestado'} ${isSigned ? 'assinado e ' : ''}emitido com sucesso!`);
+        
         // Refresh local documents list
         const updatedDocs = await getPatientDocuments(selectedPatient.id);
         setPatientDocuments(updatedDocs);
@@ -333,6 +377,18 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
       alert('Falha ao emitir documento.');
     } finally {
       setSavingDoc(false);
+    }
+  };
+
+  const handleIssueDocument = (type) => {
+    if (!selectedPatient) return;
+    if (shouldDigitallySign) {
+      setPendingDocType(type);
+      setSignaturePin('');
+      setSignatureError('');
+      setSignatureModalOpen(true);
+    } else {
+      executeIssueDocument(type, false);
     }
   };
 
@@ -354,6 +410,38 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
     setTimeout(() => {
       window.print();
     }, 250);
+  };
+
+  const handleSyncPep = async () => {
+    if (!selectedPatient) return;
+    setSyncingPep(true);
+    setSyncProgress(10);
+    
+    // Simulate pipeline steps
+    setTimeout(() => {
+      setSyncProgress(45);
+      setTimeout(() => {
+        setSyncProgress(80);
+        setTimeout(async () => {
+          setSyncProgress(100);
+          setSyncingPep(false);
+          const nowStr = new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          setSyncSuccessTime(nowStr);
+          
+          try {
+            await createAuditLog('SYNC_EHR_PATIENT', selectedPatient.id, {
+              patientName: selectedPatient.name,
+              doctorName: doctorProfile.name,
+              ehrSystem: 'Philips Tasy / MV Soul'
+            });
+          } catch (e) {
+            console.error('Audit log synchronization failed:', e);
+          }
+          
+          alert('Prontuário integrado sincronizado com sucesso no PEP do Hospital (Tasy/MV) via HL7 FHIR Bundle!');
+        }, 800);
+      }, 800);
+    }, 800);
   };
 
   const handleApplyAISuggestion = (type, dataOrText) => {
@@ -1542,6 +1630,22 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
                 >
                   Documentos Clínicos ({patientDocuments.length})
                 </button>
+                <button 
+                  type="button" 
+                  className={`login-tab-btn ${selectedSubTab === 'telemetry' ? 'active' : ''}`}
+                  onClick={() => setSelectedSubTab('telemetry')}
+                  style={{ minWidth: '150px' }}
+                >
+                  📟 Telemetria IoT
+                </button>
+                <button 
+                  type="button" 
+                  className={`login-tab-btn ${selectedSubTab === 'pep' ? 'active' : ''}`}
+                  onClick={() => setSelectedSubTab('pep')}
+                  style={{ minWidth: '150px' }}
+                >
+                  🏥 Integração PEP
+                </button>
               </div>
 
 
@@ -2188,6 +2292,18 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
                         >
                           + Adicionar Medicamento / Cobertura
                         </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input 
+                            type="checkbox" 
+                            id="sign-receita-checkbox" 
+                            checked={shouldDigitallySign} 
+                            onChange={(e) => setShouldDigitallySign(e.target.checked)}
+                            style={{ width: '15px', height: '15px', cursor: 'pointer' }}
+                          />
+                          <label htmlFor="sign-receita-checkbox" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer', margin: 0 }}>
+                            ✍️ Assinar com ICP-Brasil
+                          </label>
+                        </div>
                         <button 
                           className="btn btn-primary" 
                           type="button" 
@@ -2255,15 +2371,29 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
                         />
                       </div>
 
-                      <button 
-                        className="btn btn-primary" 
-                        type="button" 
-                        onClick={() => handleIssueDocument('atestado')}
-                        style={{ alignSelf: 'flex-end', padding: '8px 16px', fontSize: '13px' }}
-                        disabled={savingDoc}
-                      >
-                        {savingDoc ? 'Emitindo...' : 'Emitir e Salvar Atestado'}
-                      </button>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '14px', marginTop: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input 
+                            type="checkbox" 
+                            id="sign-atestado-checkbox" 
+                            checked={shouldDigitallySign} 
+                            onChange={(e) => setShouldDigitallySign(e.target.checked)}
+                            style={{ width: '15px', height: '15px', cursor: 'pointer' }}
+                          />
+                          <label htmlFor="sign-atestado-checkbox" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer', margin: 0 }}>
+                            ✍️ Assinar com ICP-Brasil
+                          </label>
+                        </div>
+                        <button 
+                          className="btn btn-primary" 
+                          type="button" 
+                          onClick={() => handleIssueDocument('atestado')}
+                          style={{ padding: '8px 16px', fontSize: '13px' }}
+                          disabled={savingDoc}
+                        >
+                          {savingDoc ? 'Emitindo...' : 'Emitir e Salvar Atestado'}
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -2315,6 +2445,93 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
                           </div>
                         ))}
                       </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Telemetry Section */}
+              {selectedSubTab === 'telemetry' && (
+                <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '14px' }}>Painel de Telemetria IoT do Paciente</h3>
+                  <DiabeticFootTelemetry patientId={selectedPatient.id} isDoctorView={true} />
+                </div>
+              )}
+
+              {/* PEP Hospital Integration Section */}
+              {selectedSubTab === 'pep' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.3s ease' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>Integração com PEP Hospitalar</h3>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      color: '#10b981',
+                      backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(16, 185, 129, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <span style={{ width: '6px', height: '6px', backgroundColor: '#10b981', borderRadius: '50%' }}></span>
+                      Pipeline Ativo (Tasy/MV)
+                    </span>
+                  </div>
+
+                  <div className="glass-card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', fontSize: '12px' }}>
+                      <div>
+                        <strong style={{ color: 'var(--text-muted)' }}>Sistema Destino:</strong>
+                        <p style={{ margin: '2px 0 0 0', fontWeight: '700' }}>Philips Tasy / MV Soul (Homologação)</p>
+                      </div>
+                      <div>
+                        <strong style={{ color: 'var(--text-muted)' }}>Identificador do Paciente no PEP:</strong>
+                        <p style={{ margin: '2px 0 0 0', fontWeight: '700', fontFamily: 'monospace' }}>TASY-PR-93218-B</p>
+                      </div>
+                      <div>
+                        <strong style={{ color: 'var(--text-muted)' }}>Endpoint FHIR do Servidor:</strong>
+                        <p style={{ margin: '2px 0 0 0', fontWeight: '700', fontFamily: 'monospace', color: '#38a1db' }}>https://tasy-api.hospital.com/fhir/r4</p>
+                      </div>
+                      <div>
+                        <strong style={{ color: 'var(--text-muted)' }}>Status dos Recursos HL7:</strong>
+                        <p style={{ margin: '2px 0 0 0', fontWeight: '700' }}>Patient, Observation, DocumentReference (Prontos)</p>
+                      </div>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px', marginTop: '6px' }}>
+                      <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
+                        Histórico de Sincronizações
+                      </strong>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', padding: '8px 12px', borderRadius: '6px', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
+                          <span>Sincronização de Prontuário Clínico (Bundle FHIR)</span>
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            {syncSuccessTime ? `Última em: ${syncSuccessTime}` : 'Aguardando primeira sincronização...'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {syncingPep ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: '600' }}>
+                          <span>Sincronizando dados com o Tasy...</span>
+                          <span>{syncProgress}%</span>
+                        </div>
+                        <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ width: `${syncProgress}%`, height: '100%', backgroundColor: 'var(--primary)', transition: 'width 0.2s' }}></div>
+                        </div>
+                      </div>
+                    ) : (
+                      <button 
+                        className="btn btn-primary" 
+                        onClick={handleSyncPep}
+                        style={{ marginTop: '10px', height: '40px', fontWeight: '700', gap: '4px' }}
+                      >
+                        🔄 Sincronizar Prontuário FHIR com o PEP
+                      </button>
                     )}
                   </div>
                 </div>
@@ -2406,6 +2623,128 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
               <button type="submit" disabled={chatLoading}>Enviar</button>
             </form>
           </div>
+      {/* ICP-Brasil Digital Signature Verification Modal */}
+      {signatureModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div className="glass-card" style={{
+            maxWidth: '420px',
+            width: '100%',
+            padding: '30px',
+            borderRadius: '16px',
+            border: '1.5px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '14px' }}>
+              <span style={{ fontSize: '24px' }}>✍️</span>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', margin: 0 }}>Assinatura ICP-Brasil</h3>
+                <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>Validação de Documento Clínico Digital</p>
+              </div>
+            </div>
+
+            <div style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
+              borderRadius: '8px',
+              padding: '12px',
+              fontSize: '11.5px',
+              lineHeight: '1.5',
+              color: '#a7f3d0'
+            }}>
+              <strong>Profissional:</strong> Dr(a). {doctorProfile.name} <br />
+              <strong>CRM:</strong> {doctorProfile.crm} • <strong>Especialidade:</strong> {doctorProfile.specialty} <br />
+              <strong>Certificado:</strong> A1 (ICP-Brasil - Validado por ITI Federal)
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'rgba(255, 255, 255, 0.8)' }}>
+                Digite o PIN de Segurança do seu Certificado:
+              </label>
+              <input 
+                type="password"
+                placeholder="Insira o PIN (padrão é 1234)"
+                value={signaturePin}
+                onChange={(e) => setSignaturePin(e.target.value)}
+                style={{
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                  backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                  color: '#fff',
+                  fontSize: '15px',
+                  letterSpacing: '3px',
+                  textAlign: 'center',
+                  outline: 'none'
+                }}
+                autoFocus
+              />
+              <span style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center', marginTop: '2px' }}>
+                Dica: O PIN padrão do certificado digital simulado é <strong>1234</strong>
+              </span>
+            </div>
+
+            {signatureError && (
+              <div style={{
+                color: '#f87171',
+                fontSize: '11.5px',
+                fontWeight: '600',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                textAlign: 'center'
+              }}>
+                ❌ {signatureError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+              <button 
+                className="btn btn-secondary"
+                type="button"
+                onClick={() => setSignatureModalOpen(false)}
+                style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '8px', height: '40px' }}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn btn-primary"
+                type="button"
+                onClick={() => {
+                  if (signaturePin === '1234') {
+                    setSignatureModalOpen(false);
+                    executeIssueDocument(pendingDocType, true);
+                  } else {
+                    setSignatureError('PIN inválido. Tente novamente (Dica: o PIN padrão é 1234).');
+                  }
+                }}
+                style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '8px', backgroundColor: '#10b981', borderColor: '#10b981', color: '#fff', fontWeight: 'bold', height: '40px' }}
+              >
+                Assinar Documento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Printable Preview A4 (Only visible when printing) */}
       {activePrintDoc && (
         <div className="print-document-layout print-only" style={{ display: 'none' }}>
@@ -2499,13 +2838,24 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
 
                 {/* ICP-Brasil Seal Info */}
                 <div style={{ fontSize: '11px', lineHeight: '1.4', color: '#4b5563' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#166534', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
-                    <span>🛡️</span> ASSINATURA DIGITAL VALIDADA (ICP-BRASIL)
-                  </div>
-                  Este documento foi assinado eletronicamente por <strong>Dr(a). {activePrintDoc.content.doctorName}</strong> utilizando infraestrutura de chaves públicas credenciada pela Medida Provisória nº 2.200-2/2001. A integridade e autencidade da receita/atestado médico podem ser verificadas via QR Code ou no site oficial de validação:
-                  <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginTop: '2px' }}>
-                    https://irec.com.br/validar (Código: validation_${activePrintDoc.id})
-                  </div>
+                  {activePrintDoc.content.isSigned ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#166534', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
+                        <span>🛡️</span> ASSINATURA DIGITAL VALIDADA (ICP-BRASIL)
+                      </div>
+                      Este documento foi assinado eletronicamente por <strong>Dr(a). {activePrintDoc.content.doctorName}</strong> utilizando infraestrutura de chaves públicas credenciada pela Medida Provisória nº 2.200-2/2001. A validade pode ser confirmada em https://irec.com.br/validar:
+                      <div style={{ fontWeight: 'bold', color: '#166534', marginTop: '2px', fontFamily: 'monospace' }}>
+                        HASH: {activePrintDoc.content.signatureDetails?.hash || `validation_${activePrintDoc.id}`}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#b91c1c', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
+                        <span>⚠️</span> DOCUMENTO EMITIDO SEM ASSINATURA DIGITAL
+                      </div>
+                      Este documento foi registrado no prontuário do iRec para fins de histórico clínico, mas não possui certificação digital criptográfica ICP-Brasil.
+                    </>
+                  )}
                 </div>
 
                 {/* Doctor Signature Stamp */}

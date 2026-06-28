@@ -10,12 +10,18 @@ import {
   getAssignedPatients,
   getAssignedDoctor,
   getAllPatients,
-  getAllNurses
+  getAllNurses,
+  getAllDoctors,
+  getAllClinicians,
+  getAllReceivedMessages
 } from '../services/supabaseService';
 
-export default function Telemedicine({ currentUser, activeCallSession, setActiveCallSession, targetContactId = null, isAppActiveTab, setAppActiveTab }) {
+export default function Telemedicine({ currentUser, activeCallSession, setActiveCallSession, targetContactId = null, isAppActiveTab, setAppActiveTab, onUnreadCountChange }) {
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('all');
   const [messages, setMessages] = useState([]);
   const [newMessageText, setNewMessageText] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
@@ -98,26 +104,52 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       try {
         if (currentUser.role === 'doctor') {
           const assigned = await getAssignedPatients(currentUser.id);
-          const all = await getAllPatients();
-          const merged = [...assigned];
-          all.forEach(p => {
-            if (!merged.some(m => m.id === p.id)) {
-              merged.push(p);
+          const allPatients = await getAllPatients();
+          const clinicians = await getAllClinicians();
+          const list = [];
+          
+          // Add assigned patients
+          assigned.forEach(p => {
+            list.push({ ...p, role: 'patient', chatType: 'assigned_patient' });
+          });
+
+          // Add other patients
+          allPatients.forEach(p => {
+            if (!list.some(l => l.id === p.id)) {
+              list.push({ ...p, role: 'patient', chatType: 'other_patient' });
             }
           });
-          setContacts(merged);
+
+          // Add other clinicians (doctors + nurses, excluding self)
+          clinicians.forEach(c => {
+            if (c.id !== currentUser.id && !list.some(l => l.id === c.id)) {
+              list.push({ ...c, role: 'doctor', chatType: 'clinician' });
+            }
+          });
+
+          setContacts(list);
         } else {
           const doctor = await getAssignedDoctor(currentUser.id);
+          const allDoctors = await getAllDoctors();
           const nurses = await getAllNurses();
           const list = [];
+
           if (doctor) {
-            list.push({ ...doctor, role: 'doctor' });
+            list.push({ ...doctor, role: 'doctor', chatType: 'assigned_doctor' });
           }
-          nurses.forEach(n => {
-            if (!list.some(l => l.id === n.id)) {
-              list.push({ ...n, role: 'doctor' });
+
+          allDoctors.forEach(d => {
+            if ((!doctor || d.id !== doctor.id) && !list.some(l => l.id === d.id)) {
+              list.push({ ...d, role: 'doctor', chatType: 'doctor' });
             }
           });
+
+          nurses.forEach(n => {
+            if (!list.some(l => l.id === n.id)) {
+              list.push({ ...n, role: 'doctor', chatType: 'nurse' });
+            }
+          });
+
           setContacts(list);
         }
       } catch (err) {
@@ -131,6 +163,31 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     return () => clearInterval(interval);
   }, [currentUser]);
 
+  // Filter and search contacts
+  const filteredContacts = contacts.filter(c => {
+    // 1. Search Query
+    const nameMatch = c.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const specialtyMatch = c.specialty?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = nameMatch || specialtyMatch;
+    
+    if (!matchesSearch) return false;
+
+    // 2. Filter tabs
+    if (selectedFilter === 'all') return true;
+
+    if (currentUser.role === 'doctor') {
+      if (selectedFilter === 'assigned') return c.chatType === 'assigned_patient';
+      if (selectedFilter === 'other_patients') return c.chatType === 'other_patient';
+      if (selectedFilter === 'clinicians') return c.chatType === 'clinician';
+    } else {
+      if (selectedFilter === 'assigned_doctor') return c.chatType === 'assigned_doctor';
+      if (selectedFilter === 'doctors') return c.chatType === 'doctor' || c.chatType === 'assigned_doctor';
+      if (selectedFilter === 'nurses') return c.chatType === 'nurse';
+    }
+
+    return true;
+  });
+
   // Handle Target Contact selection if redirected
   useEffect(() => {
     if (targetContactId && contacts.length > 0) {
@@ -141,10 +198,10 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           setMobileView('chat');
         }
       }
-    } else if (contacts.length > 0 && !selectedContact) {
-      setSelectedContact(contacts[0]);
+    } else if (filteredContacts.length > 0 && !selectedContact) {
+      setSelectedContact(filteredContacts[0]);
     }
-  }, [contacts, targetContactId, isMobile]);
+  }, [contacts, filteredContacts, targetContactId, isMobile]);
 
   // Synchronize internal Telemedicine state with global activeCallSession from App.jsx
   useEffect(() => {
@@ -214,6 +271,71 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
     return () => clearInterval(interval);
   }, [selectedContact, currentUser]);
+
+  // Poll received messages to compute unread counts for all contacts in real-time
+  useEffect(() => {
+    if (!currentUser) return;
+
+    async function checkUnreadMessages() {
+      try {
+        const received = await getAllReceivedMessages(currentUser.id);
+        const readTimes = JSON.parse(localStorage.getItem('irec_chat_read_times') || '{}');
+        
+        const counts = {};
+        let newTotal = 0;
+        
+        received.forEach(msg => {
+          // If the message is not from the active chat
+          if (!selectedContact || msg.senderId !== selectedContact.id) {
+            const lastRead = readTimes[msg.senderId] || '';
+            if (msg.createdAt > lastRead) {
+              counts[msg.senderId] = (counts[msg.senderId] || 0) + 1;
+              newTotal++;
+            }
+          }
+        });
+
+        setUnreadCounts(prev => {
+          const prevTotal = Object.values(prev).reduce((acc, curr) => acc + curr, 0);
+          if (newTotal > prevTotal) {
+            // Play notification chime for new message in background chats
+            playNotificationSound();
+          }
+          return counts;
+        });
+
+        if (onUnreadCountChange) {
+          onUnreadCountChange(newTotal);
+        }
+      } catch (err) {
+        console.error('Erro ao verificar mensagens não lidas:', err);
+      }
+    }
+
+    checkUnreadMessages();
+    const interval = setInterval(checkUnreadMessages, 3000);
+    return () => clearInterval(interval);
+  }, [currentUser, selectedContact, onUnreadCountChange]);
+
+  // Mark all messages from the selected contact as read
+  useEffect(() => {
+    if (!selectedContact || !currentUser) return;
+
+    const readTimes = JSON.parse(localStorage.getItem('irec_chat_read_times') || '{}');
+    readTimes[selectedContact.id] = new Date().toISOString();
+    localStorage.setItem('irec_chat_read_times', JSON.stringify(readTimes));
+
+    // Clear unread counts locally immediately
+    setUnreadCounts(prev => {
+      const next = { ...prev };
+      delete next[selectedContact.id];
+      const newTotal = Object.values(next).reduce((acc, curr) => acc + curr, 0);
+      if (onUnreadCountChange) {
+        onUnreadCountChange(newTotal);
+      }
+      return next;
+    });
+  }, [selectedContact, currentUser, messages, onUnreadCountChange]);
 
   // Subscribe to real-time local signaling channel events (same-machine inter-tab sync)
   useEffect(() => {
@@ -1327,13 +1449,152 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
             </p>
           </div>
 
+          {/* Search bar */}
+          <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-primary)' }}>
+            <input 
+              type="text" 
+              placeholder="🔍 Buscar contatos..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                fontSize: '12px',
+                outline: 'none'
+              }}
+            />
+          </div>
+
+          {/* Filter Tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', padding: '8px 10px', gap: '6px', overflowX: 'auto', backgroundColor: 'var(--bg-primary)', scrollbarWidth: 'none' }}>
+            <button 
+              type="button"
+              onClick={() => setSelectedFilter('all')} 
+              style={{
+                padding: '4px 10px',
+                fontSize: '10.5px',
+                fontWeight: '700',
+                borderRadius: '6px',
+                border: '1px solid',
+                borderColor: selectedFilter === 'all' ? 'var(--primary)' : 'var(--border-color)',
+                backgroundColor: selectedFilter === 'all' ? 'var(--primary-glow)' : 'transparent',
+                color: selectedFilter === 'all' ? 'var(--primary)' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Todos
+            </button>
+            {currentUser.role === 'doctor' ? (
+              <>
+                <button 
+                  type="button"
+                  onClick={() => setSelectedFilter('assigned')} 
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '10.5px',
+                    fontWeight: '700',
+                    borderRadius: '6px',
+                    border: '1px solid',
+                    borderColor: selectedFilter === 'assigned' ? 'var(--primary)' : 'var(--border-color)',
+                    backgroundColor: selectedFilter === 'assigned' ? 'var(--primary-glow)' : 'transparent',
+                    color: selectedFilter === 'assigned' ? 'var(--primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Meus Pacientes
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setSelectedFilter('other_patients')} 
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '10.5px',
+                    fontWeight: '700',
+                    borderRadius: '6px',
+                    border: '1px solid',
+                    borderColor: selectedFilter === 'other_patients' ? 'var(--primary)' : 'var(--border-color)',
+                    backgroundColor: selectedFilter === 'other_patients' ? 'var(--primary-glow)' : 'transparent',
+                    color: selectedFilter === 'other_patients' ? 'var(--primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Rede Geral
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setSelectedFilter('clinicians')} 
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '10.5px',
+                    fontWeight: '700',
+                    borderRadius: '6px',
+                    border: '1px solid',
+                    borderColor: selectedFilter === 'clinicians' ? 'var(--primary)' : 'var(--border-color)',
+                    backgroundColor: selectedFilter === 'clinicians' ? 'var(--primary-glow)' : 'transparent',
+                    color: selectedFilter === 'clinicians' ? 'var(--primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Profissionais
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  type="button"
+                  onClick={() => setSelectedFilter('doctors')} 
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '10.5px',
+                    fontWeight: '700',
+                    borderRadius: '6px',
+                    border: '1px solid',
+                    borderColor: selectedFilter === 'doctors' ? 'var(--primary)' : 'var(--border-color)',
+                    backgroundColor: selectedFilter === 'doctors' ? 'var(--primary-glow)' : 'transparent',
+                    color: selectedFilter === 'doctors' ? 'var(--primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Médicos
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setSelectedFilter('nurses')} 
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '10.5px',
+                    fontWeight: '700',
+                    borderRadius: '6px',
+                    border: '1px solid',
+                    borderColor: selectedFilter === 'nurses' ? 'var(--primary)' : 'var(--border-color)',
+                    backgroundColor: selectedFilter === 'nurses' ? 'var(--primary-glow)' : 'transparent',
+                    color: selectedFilter === 'nurses' ? 'var(--primary)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Enfermeiros
+                </button>
+              </>
+            )}
+          </div>
+
           <div className="contacts-list" style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
-            {contacts.length === 0 ? (
+            {filteredContacts.length === 0 ? (
               <div style={{ padding: '20px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
-                Nenhum contato disponível.
+                Nenhum contato encontrado.
               </div>
             ) : (
-              contacts.map(c => {
+              filteredContacts.map(c => {
                 const active = selectedContact && selectedContact.id === c.id;
                 const contactInitials = c.name ? c.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0,2).toUpperCase() : '?';
                 
@@ -1388,25 +1649,47 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                         <img src={c.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : contactInitials}
                     </div>
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
-                      <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {c.name}
-                        <span 
-                          style={{ 
-                            display: 'inline-block', 
-                            width: '8px', 
-                            height: '8px', 
-                            borderRadius: '50%', 
-                            backgroundColor: isOnline ? '#10b981' : '#94a3b8',
-                            boxShadow: isOnline ? '0 0 8px #10b981' : 'none',
-                            flexShrink: 0
-                          }} 
-                          title={isOnline ? "Online" : "Offline"}
-                        />
-                      </p>
-                      <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {c.role === 'doctor' || c.crm ? (c.specialty || 'Clínico iRec') : 'Paciente'}
-                      </p>
+                    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {c.name}
+                          <span 
+                            style={{ 
+                              display: 'inline-block', 
+                              width: '8px', 
+                              height: '8px', 
+                              borderRadius: '50%', 
+                              backgroundColor: isOnline ? '#10b981' : '#94a3b8',
+                              boxShadow: isOnline ? '0 0 8px #10b981' : 'none',
+                              flexShrink: 0
+                            }} 
+                            title={isOnline ? "Online" : "Offline"}
+                          />
+                        </p>
+                        <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {c.role === 'doctor' || c.crm ? (c.specialty || 'Clínico iRec') : 'Paciente'}
+                        </p>
+                      </div>
+
+                      {/* Unread message badge */}
+                      {unreadCounts[c.id] > 0 && (
+                        <div style={{
+                          backgroundColor: 'var(--danger)',
+                          color: '#ffffff',
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          padding: '2px 6px',
+                          borderRadius: '10px',
+                          minWidth: '18px',
+                          height: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          {unreadCounts[c.id]}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

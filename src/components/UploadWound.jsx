@@ -1,6 +1,130 @@
-import React, { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { addWoundEntry as addWoundEntryService } from '../services/supabaseService';
 import { analyzeWoundWithAI, isGeminiConfigured } from '../services/geminiService';
+
+function WoundTissueOverlay({ entry }) {
+  const canvasRef = useRef(null);
+  const [hoveredTissue, setHoveredTissue] = useState(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 120, 120);
+
+    const necrose = parseFloat(entry.aiTissueAnalysis?.necrose || 0);
+    const fibrina = parseFloat(entry.aiTissueAnalysis?.fibrina || 0);
+    const granulacao = parseFloat(entry.aiTissueAnalysis?.granulacao || 0);
+    const total = necrose + fibrina + granulacao;
+
+    if (total === 0) return;
+
+    const centerX = 60;
+    const centerY = 60;
+    const radius = 35;
+
+    let startAngle = -0.5 * Math.PI;
+
+    const tissues = [
+      { name: 'Necrose', value: necrose, color: 'rgba(0, 0, 0, 0.55)' },
+      { name: 'Fibrina', value: fibrina, color: 'rgba(240, 173, 78, 0.55)' },
+      { name: 'Granulação', value: granulacao, color: 'rgba(217, 83, 79, 0.55)' }
+    ].filter(t => t.value > 0);
+
+    tissues.forEach(t => {
+      const sliceAngle = (t.value / total) * 2 * Math.PI;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+      ctx.closePath();
+      ctx.fillStyle = t.color;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      startAngle += sliceAngle;
+    });
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+  }, [entry]);
+
+  const handleMouseMove = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const dist = Math.sqrt((x - 60) * (x - 60) + (y - 60) * (y - 60));
+    if (dist <= 35) {
+      const angle = Math.atan2(y - 60, x - 60);
+      let normalizedAngle = angle + 0.5 * Math.PI;
+      if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+
+      const necrose = parseFloat(entry.aiTissueAnalysis?.necrose || 0);
+      const fibrina = parseFloat(entry.aiTissueAnalysis?.fibrina || 0);
+      const granulacao = parseFloat(entry.aiTissueAnalysis?.granulacao || 0);
+      const total = necrose + fibrina + granulacao;
+
+      let currentAngle = 0;
+      const tissues = [
+        { name: 'Necrose', value: necrose },
+        { name: 'Fibrina', value: fibrina },
+        { name: 'Granulação', value: granulacao }
+      ].filter(t => t.value > 0);
+
+      let found = null;
+      tissues.forEach(t => {
+        const sliceAngle = (t.value / total) * 2 * Math.PI;
+        if (normalizedAngle >= currentAngle && normalizedAngle < currentAngle + sliceAngle) {
+          found = `${t.name}: ${t.value}%`;
+        }
+        currentAngle += sliceAngle;
+      });
+
+      setHoveredTissue(found || 'Lesão Segmentada');
+    } else {
+      setHoveredTissue(null);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredTissue(null);
+  };
+
+  return (
+    <div style={{ position: 'absolute', top: 0, left: 0, width: '120px', height: '120px', cursor: 'crosshair' }}>
+      <canvas ref={canvasRef} width={120} height={120} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} />
+      {hoveredTissue && (
+        <div style={{
+          position: 'absolute',
+          top: '4px',
+          left: '4px',
+          right: '4px',
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          color: '#fff',
+          fontSize: '9.5px',
+          padding: '4px 6px',
+          borderRadius: '4px',
+          textAlign: 'center',
+          fontWeight: '700',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          pointerEvents: 'none',
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.3)',
+          zIndex: 10
+        }}>
+          {hoveredTissue}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const GLOSSARY_DB = {
   exsudato: { 
@@ -134,7 +258,7 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
         setIsAnalyzing(false);
         setAnalysisStep('');
         
-        let mockResult = {};
+        let mockResult;
 
         if (demoScenario === 'venosa') {
           mockResult = {
@@ -354,19 +478,20 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
           >
             {image ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <img 
-                  src={image} 
-                  alt="Pré-visualização da ferida" 
-                  style={{ 
-                    width: '120px', 
-                    height: '120px', 
-                    objectFit: 'cover', 
-                    borderRadius: '16px', 
-                    border: '3px solid var(--primary)',
-                    marginBottom: '10px',
-                    boxShadow: 'var(--shadow-md)'
-                  }} 
-                />
+                <div style={{ width: '120px', height: '120px', borderRadius: '16px', overflow: 'hidden', border: '3px solid var(--primary)', marginBottom: '10px', boxShadow: 'var(--shadow-md)', position: 'relative' }}>
+                  <img 
+                    src={image} 
+                    alt="Pré-visualização da ferida" 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover'
+                    }} 
+                  />
+                  {result && (
+                    <WoundTissueOverlay entry={{ aiTissueAnalysis: result.aiTissueAnalysis }} />
+                  )}
+                </div>
                 <h4 style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '14px' }}>Foto da Ferida Carregada</h4>
                 <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Clique para tirar outra foto ou alterar o arquivo.</p>
               </div>

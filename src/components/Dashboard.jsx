@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { updateClinicalProfile, getAssignedDoctor } from '../services/supabaseService';
 import LocalResourcesPanel from './LocalResourcesPanel';
+import DiabeticFootTelemetry from './DiabeticFootTelemetry';
 
 // Helper to generate precise caret/daily tasks based on clinical history, comorbidities, and active wound status
 const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = null) => {
@@ -221,6 +222,11 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   const [assignedClinician, setAssignedClinician] = useState(null);
   const [showMapModal, setShowMapModal] = useState(false);
 
+  // Gamification & Healing Slider states
+  const [healingWeek, setHealingWeek] = useState(1);
+  const [whatsappSent, setWhatsappSent] = useState(false);
+  const [showWhatsappNotify, setShowWhatsappNotify] = useState(false);
+
   // Fetch assigned doctor on component mount or clinical profile update
   useEffect(() => {
     async function loadDoctor() {
@@ -305,6 +311,14 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
     ));
   };
 
+  const triggerSimulatedWhatsapp = () => {
+    setWhatsappSent(true);
+    setShowWhatsappNotify(true);
+    setTimeout(() => {
+      setShowWhatsappNotify(false);
+    }, 6000);
+  };
+
   const handleProfileSave = async (e) => {
     e.preventDefault();
     const updated = await updateClinicalProfile(profileForm);
@@ -336,7 +350,38 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   const isDoctorLocal = assignedClinician && docCity === patientCity && docState === patientState;
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" style={{ position: 'relative' }}>
+      {/* Floating Simulated WhatsApp Notification */}
+      {showWhatsappNotify && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          width: '320px',
+          backgroundColor: '#ffffff',
+          borderRadius: '12px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15)',
+          borderLeft: '5px solid #25d366',
+          padding: '12px 14px',
+          zIndex: 99999,
+          display: 'flex',
+          gap: '10px',
+          color: '#1f2937',
+          fontFamily: 'system-ui, sans-serif'
+        }}>
+          <div style={{ fontSize: '20px', marginTop: '2px' }}>🟢</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+              <span style={{ fontWeight: '800', fontSize: '12.5px', color: '#111827' }}>iRec Saúde Diária</span>
+              <span style={{ fontSize: '10px', color: '#6b7280' }}>Agora mesmo</span>
+            </div>
+            <strong style={{ display: 'block', fontSize: '12px', color: '#374151' }}>Olá {clinicalProfile.name}!</strong>
+            <p style={{ margin: '2px 0 0 0', fontSize: '11.5px', color: '#4b5563', lineHeight: '1.4' }}>
+              Não se esqueça de preencher seu Diário de Cuidados hoje. Sua taxa de adesão atual de <strong>{complianceScore}%</strong> garante uma cicatrização rápida! 🩹
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header Profile Section */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
@@ -457,6 +502,98 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                   </div>
                 </label>
               ))}
+            </div>
+          </div>
+
+          {/* Gamificação & Régua Evolutiva */}
+          <div className="glass-card" style={{ width: '100%', margin: 0, background: 'linear-gradient(135deg, var(--glass-bg), rgba(14, 165, 233, 0.03))' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              🎯 Jornada de Recuperação & Estímulo
+            </h3>
+            <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
+              Acompanhe a projeção visual da cicatrização e simule as ferramentas de engajamento do iRec.
+            </p>
+
+            {/* Healing Week Slider */}
+            <div style={{ backgroundColor: 'var(--bg-primary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
+                <span>Projeção Evolutiva:</span>
+                <span style={{ color: 'var(--primary)' }}>Semana {healingWeek} de 6</span>
+              </div>
+
+              {/* Slider Input */}
+              <input 
+                type="range"
+                min="1"
+                max="6"
+                value={healingWeek}
+                onChange={(e) => setHealingWeek(parseInt(e.target.value))}
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  borderRadius: '3px',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  marginBottom: '12px',
+                  accentColor: 'var(--primary)'
+                }}
+              />
+
+              {/* Simulated Wound State View */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '10px' }}>
+                {/* Visual Blob simulating shrinking wound size */}
+                <div style={{
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  position: 'relative'
+                }}>
+                  {healingWeek < 6 ? (
+                    <div style={{
+                      width: `${40 - (healingWeek - 1) * 7}px`,
+                      height: `${40 - (healingWeek - 1) * 7}px`,
+                      borderRadius: '50%',
+                      backgroundColor: healingWeek === 1 ? 'rgba(217, 83, 79, 0.7)' : healingWeek <= 3 ? 'rgba(240, 173, 78, 0.7)' : 'rgba(92, 184, 92, 0.7)',
+                      transition: 'all 0.3s ease',
+                      border: '1.5px solid rgba(255, 255, 255, 0.4)'
+                    }} />
+                  ) : (
+                    <span style={{ fontSize: '20px' }}>🎉</span>
+                  )}
+                </div>
+
+                <div style={{ fontSize: '11.5px', lineHeight: '1.4' }}>
+                  {healingWeek === 1 && <span><strong>Lesão Ativa:</strong> Fase inicial de exsudação e fibrina. Foco na higienização constante e proteção barreira da pele.</span>}
+                  {healingWeek === 2 && <span><strong>Fase Granulativa:</strong> Início do surgimento de pequenos pontos avermelhados de tecido vivo. Lesão estável.</span>}
+                  {healingWeek === 3 && <span><strong>Contração de Bordas:</strong> As bordas da ferida começam a se aproximar. Área da lesão reduzida em cerca de 30%.</span>}
+                  {healingWeek === 4 && <span><strong>Fase Epitelial:</strong> Crescimento de pele nova pelas bordas. Lesão rasa e em fase final de cicatrização.</span>}
+                  {healingWeek === 5 && <span><strong>Cicatrização Próxima:</strong> Apenas um pequeno ponto residual de ferida. Pele ao redor saudável e sem exsudato.</span>}
+                  {healingWeek === 6 && <span style={{ color: 'var(--success-light)', fontWeight: '600' }}><strong>Lesão Fechada!</strong> Pele totalmente íntegra e regenerada. Continue utilizando cremes hidratantes para fortalecer o tecido.</span>}
+                </div>
+              </div>
+            </div>
+
+            {/* Simulated WhatsApp notification block */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+              <div>
+                <strong style={{ fontSize: '11.5px', display: 'block', color: 'var(--text-primary)' }}>Lembretes WhatsApp (Z-API)</strong>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Simule os disparos de autocuidado</span>
+              </div>
+              <button 
+                className="btn btn-secondary" 
+                type="button"
+                onClick={triggerSimulatedWhatsapp}
+                disabled={showWhatsappNotify}
+                style={{ fontSize: '10.5px', padding: '6px 12px', height: '32px', borderRadius: '6px' }}
+              >
+                {whatsappSent ? '🔄 Re-enviar Alerta' : '📱 Testar Alerta'}
+              </button>
             </div>
           </div>
 
@@ -856,6 +993,9 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               </button>
             </div>
           </div>
+
+          {/* Diabetic Foot Temperature Telemetry (IoT) */}
+          <DiabeticFootTelemetry patientId={clinicalProfile?.id} />
 
           {/* Suporte Médico & Rede Local */}
           <div className="glass-card" style={{ width: '100%', margin: 0 }}>

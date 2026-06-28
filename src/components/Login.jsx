@@ -509,11 +509,18 @@ export default function Login({ onLoginSuccess }) {
       `}</style>
 
       <div className="login-card">
-        <div className="login-header">
-          <div className="login-logo-badge">R</div>
-          <h2 className="login-title">
-            i<span className="gradient-text">Rec</span>
-          </h2>
+        <div className="login-header" style={{ marginBottom: '10px' }}>
+          <img 
+            src="/logo.png" 
+            alt="iRec Logo" 
+            style={{ 
+              height: '60px', 
+              objectFit: 'contain',
+              maxWidth: '180px',
+              backgroundColor: 'transparent',
+              marginBottom: '10px'
+            }} 
+          />
           <p className="login-subtitle">Plataforma Inteligente de Cuidado de Feridas</p>
         </div>
 

@@ -1110,6 +1110,91 @@ export const getAllNurses = async () => {
   }
 };
 
+// 1.2.1. Get all registered doctors (excluding nurses)
+export const getAllDoctors = async () => {
+  const isNurseSpecialty = (spec) => {
+    const s = (spec || '').toLowerCase();
+    return s.includes('estomaterapia') || s.includes('enfermagem') || s.includes('enfermeir');
+  };
+
+  if (!isSupabaseConfigured) {
+    const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty));
+    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('clinical_profile')
+      .select('*')
+      .eq('role', 'doctor');
+
+    if (error) throw error;
+
+    const filtered = data.filter(item => !isNurseSpecialty(item.specialty));
+
+    return filtered.map(item => ({
+      id: item.id,
+      role: item.role,
+      name: item.name,
+      email: item.email,
+      crm: item.crm || '',
+      specialty: item.specialty || '',
+      rqe: item.rqe || '',
+      birthDate: item.birth_date || '',
+      gender: item.gender || '',
+      healthUnit: item.health_unit || '',
+      phone: item.phone || '',
+      avatarUrl: item.avatar_url || '',
+      city: item.city || '',
+      state: item.state || '',
+      lastSeenAt: item.last_seen_at || ''
+    }));
+  } catch (err) {
+    console.error('Erro ao buscar médicos do Supabase, caindo para local:', err);
+    const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty));
+    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+  }
+};
+
+// 1.2.2. Get all clinical professionals (doctors + nurses)
+export const getAllClinicians = async () => {
+  if (!isSupabaseConfigured) {
+    const users = getLocalUsers().filter(u => u.role === 'doctor');
+    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('clinical_profile')
+      .select('*')
+      .eq('role', 'doctor');
+
+    if (error) throw error;
+
+    return data.map(item => ({
+      id: item.id,
+      role: item.role,
+      name: item.name,
+      email: item.email,
+      crm: item.crm || '',
+      specialty: item.specialty || '',
+      rqe: item.rqe || '',
+      birthDate: item.birth_date || '',
+      gender: item.gender || '',
+      healthUnit: item.health_unit || '',
+      phone: item.phone || '',
+      avatarUrl: item.avatar_url || '',
+      city: item.city || '',
+      state: item.state || '',
+      lastSeenAt: item.last_seen_at || ''
+    }));
+  } catch (err) {
+    console.error('Erro ao buscar profissionais do Supabase, caindo para local:', err);
+    const users = getLocalUsers().filter(u => u.role === 'doctor');
+    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+  }
+};
+
 // 2. Follow a patient (Add assignment)
 export const followPatient = async (doctorId, patientId) => {
   if (!doctorId || !patientId) return false;
@@ -1585,6 +1670,43 @@ export const getChatMessages = async (userId, contactId) => {
       (m.senderId === userId && m.recipientId === contactId) ||
       (m.senderId === contactId && m.recipientId === userId)
     ).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }
+};
+
+// 1.3. Fetch all messages received by a specific user
+export const getAllReceivedMessages = async (userId) => {
+  if (!userId) return [];
+
+  if (!isSupabaseConfigured) {
+    const msgs = getLocalMessages();
+    return msgs.filter(m => m.recipientId === userId)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('recipient_id', userId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    return data.map(item => ({
+      id: item.id,
+      senderId: item.sender_id,
+      recipientId: item.recipient_id,
+      message: item.message,
+      fileUrl: item.file_url,
+      fileName: item.file_name,
+      fileType: item.file_type,
+      createdAt: item.created_at
+    }));
+  } catch (err) {
+    console.error('Erro ao buscar mensagens recebidas no Supabase:', err);
+    const msgs = getLocalMessages();
+    return msgs.filter(m => m.recipientId === userId)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   }
 };
 

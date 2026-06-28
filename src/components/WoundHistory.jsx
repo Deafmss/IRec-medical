@@ -1,4 +1,128 @@
-import React from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+function WoundTissueOverlay({ entry }) {
+  const canvasRef = useRef(null);
+  const [hoveredTissue, setHoveredTissue] = useState(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 120, 120);
+
+    const necrose = parseFloat(entry.aiTissueAnalysis?.necrose || 0);
+    const fibrina = parseFloat(entry.aiTissueAnalysis?.fibrina || 0);
+    const granulacao = parseFloat(entry.aiTissueAnalysis?.granulacao || 0);
+    const total = necrose + fibrina + granulacao;
+
+    if (total === 0) return;
+
+    const centerX = 60;
+    const centerY = 60;
+    const radius = 35;
+
+    let startAngle = -0.5 * Math.PI;
+
+    const tissues = [
+      { name: 'Necrose', value: necrose, color: 'rgba(0, 0, 0, 0.55)' },
+      { name: 'Fibrina', value: fibrina, color: 'rgba(240, 173, 78, 0.55)' },
+      { name: 'Granulação', value: granulacao, color: 'rgba(217, 83, 79, 0.55)' }
+    ].filter(t => t.value > 0);
+
+    tissues.forEach(t => {
+      const sliceAngle = (t.value / total) * 2 * Math.PI;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+      ctx.closePath();
+      ctx.fillStyle = t.color;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      startAngle += sliceAngle;
+    });
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+  }, [entry]);
+
+  const handleMouseMove = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const dist = Math.sqrt((x - 60) * (x - 60) + (y - 60) * (y - 60));
+    if (dist <= 35) {
+      const angle = Math.atan2(y - 60, x - 60);
+      let normalizedAngle = angle + 0.5 * Math.PI;
+      if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+
+      const necrose = parseFloat(entry.aiTissueAnalysis?.necrose || 0);
+      const fibrina = parseFloat(entry.aiTissueAnalysis?.fibrina || 0);
+      const granulacao = parseFloat(entry.aiTissueAnalysis?.granulacao || 0);
+      const total = necrose + fibrina + granulacao;
+
+      let currentAngle = 0;
+      const tissues = [
+        { name: 'Necrose', value: necrose },
+        { name: 'Fibrina', value: fibrina },
+        { name: 'Granulação', value: granulacao }
+      ].filter(t => t.value > 0);
+
+      let found = null;
+      tissues.forEach(t => {
+        const sliceAngle = (t.value / total) * 2 * Math.PI;
+        if (normalizedAngle >= currentAngle && normalizedAngle < currentAngle + sliceAngle) {
+          found = `${t.name}: ${t.value}%`;
+        }
+        currentAngle += sliceAngle;
+      });
+
+      setHoveredTissue(found || 'Lesão Segmentada');
+    } else {
+      setHoveredTissue(null);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredTissue(null);
+  };
+
+  return (
+    <div style={{ position: 'absolute', top: 0, left: 0, width: '120px', height: '120px', cursor: 'crosshair' }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+      <canvas ref={canvasRef} width={120} height={120} />
+      {hoveredTissue && (
+        <div style={{
+          position: 'absolute',
+          top: '4px',
+          left: '4px',
+          right: '4px',
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          color: '#fff',
+          fontSize: '9.5px',
+          padding: '4px 6px',
+          borderRadius: '4px',
+          textAlign: 'center',
+          fontWeight: '700',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          pointerEvents: 'none',
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.3)',
+          zIndex: 10
+        }}>
+          {hoveredTissue}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function WoundHistory({ entries, clinicalProfile }) {
   const maxPain = 10;
@@ -230,7 +354,7 @@ export default function WoundHistory({ entries, clinicalProfile }) {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px' }}>
               {/* Photo Column */}
               <div style={{ width: '120px', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-                <div style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'var(--border-color)', border: '1px solid var(--border-color)' }}>
+                <div style={{ width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'var(--border-color)', border: '1px solid var(--border-color)', position: 'relative' }}>
                   <img 
                     src={entry.photo} 
                     alt="Lesão" 
@@ -239,6 +363,7 @@ export default function WoundHistory({ entries, clinicalProfile }) {
                       e.target.src = 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=200&auto=format&fit=crop&q=60';
                     }}
                   />
+                  <WoundTissueOverlay entry={entry} />
                 </div>
                 {entry.clinicalOutcome && (
                   <div style={{ fontSize: '10px', textAlign: 'center', fontWeight: '600', color: 'var(--text-muted)', backgroundColor: 'var(--bg-primary)', padding: '4px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>

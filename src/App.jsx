@@ -20,6 +20,7 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [activeCallSession, setActiveCallSession] = useState(null);
   const [telemedicineContactId, setTelemedicineContactId] = useState(null);
+  const [unreadChatMessagesCount, setUnreadChatMessagesCount] = useState(0);
 
   // Global incoming call listener (polling + BroadcastChannel)
   useEffect(() => {
@@ -88,6 +89,15 @@ export default function App() {
     const savedTheme = localStorage.getItem(themeKey) || 'light';
     setTheme(prev => prev !== savedTheme ? savedTheme : prev);
   }, [currentUser]);
+
+  // Update browser document title with unread count
+  useEffect(() => {
+    if (unreadChatMessagesCount > 0) {
+      document.title = `(${unreadChatMessagesCount}) iRec - Telemedicina & Chat`;
+    } else {
+      document.title = 'iRec - Prevenção de Feridas & Telemedicina';
+    }
+  }, [unreadChatMessagesCount]);
 
   // Apply theme class and save to localStorage
   useEffect(() => {
@@ -313,27 +323,17 @@ export default function App() {
       <aside className={`sidebar no-print ${isSidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-logo" style={{ display: 'flex', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', alignItems: 'center', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ 
-              width: '32px', 
-              height: '32px', 
-              borderRadius: '10px', 
-              background: 'linear-gradient(135deg, var(--primary), var(--accent))', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              color: '#ffffff',
-              fontWeight: 'bold',
-              fontSize: '16px',
-              fontFamily: 'var(--font-display)',
-              flexShrink: 0
-            }}>
-              R
-            </div>
-            {!isSidebarCollapsed && (
-              <h1 className="sidebar-logo-text" style={{ fontSize: '20px', fontWeight: '800', fontFamily: 'var(--font-display)' }}>
-                i<span className="gradient-text">Rec</span>
-              </h1>
-            )}
+            <img 
+              src="/logo.png" 
+              alt="iRec Logo" 
+              style={{ 
+                height: isSidebarCollapsed ? '28px' : '36px',
+                objectFit: 'contain',
+                maxWidth: isSidebarCollapsed ? '28px' : '110px',
+                transition: 'all 0.2s ease',
+                backgroundColor: 'transparent'
+              }} 
+            />
           </div>
           {!isSidebarCollapsed && (
             <button 
@@ -377,7 +377,22 @@ export default function App() {
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                 </svg>
-                <span className="sidebar-text">Telemedicina & Chat</span>
+                <span className="sidebar-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '6px' }}>
+                  Telemedicina & Chat
+                  {unreadChatMessagesCount > 0 && (
+                    <span style={{
+                      backgroundColor: 'var(--danger)',
+                      color: '#ffffff',
+                      fontSize: '10.5px',
+                      fontWeight: '800',
+                      padding: '2px 6px',
+                      borderRadius: '10px',
+                      lineHeight: 1
+                    }}>
+                      {unreadChatMessagesCount}
+                    </span>
+                  )}
+                </span>
               </button>
 
               <button 
@@ -435,7 +450,22 @@ export default function App() {
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                 </svg>
-                <span className="sidebar-text">Telemedicina & Chat</span>
+                <span className="sidebar-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '6px' }}>
+                  Telemedicina & Chat
+                  {unreadChatMessagesCount > 0 && (
+                    <span style={{
+                      backgroundColor: 'var(--danger)',
+                      color: '#ffffff',
+                      fontSize: '10.5px',
+                      fontWeight: '800',
+                      padding: '2px 6px',
+                      borderRadius: '10px',
+                      lineHeight: 1
+                    }}>
+                      {unreadChatMessagesCount}
+                    </span>
+                  )}
+                </span>
               </button>
 
               <button 
@@ -554,24 +584,16 @@ export default function App() {
 
       <header className="mobile-header no-print">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ 
-            width: '28px', 
-            height: '28px', 
-            borderRadius: '8px', 
-            background: 'linear-gradient(135deg, var(--primary), var(--accent))', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            color: '#ffffff',
-            fontWeight: 'bold',
-            fontSize: '14px',
-            fontFamily: 'var(--font-display)'
-          }}>
-            R
-          </div>
-          <h1 style={{ fontSize: '18px', fontWeight: '800', fontFamily: 'var(--font-display)' }}>
-            i<span className="gradient-text">Rec</span>
-          </h1>
+          <img 
+            src="/logo.png" 
+            alt="iRec Logo" 
+            style={{ 
+              height: '28px',
+              objectFit: 'contain',
+              maxWidth: '90px',
+              backgroundColor: 'transparent'
+            }} 
+          />
         </div>
         
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -635,6 +657,7 @@ export default function App() {
           targetContactId={telemedicineContactId}
           isAppActiveTab={activeTab === 'telemedicine'}
           setAppActiveTab={setActiveTab}
+          onUnreadCountChange={setUnreadChatMessagesCount}
         />
       </main>
 
@@ -658,11 +681,32 @@ export default function App() {
             <button 
               className={`nav-item ${activeTab === 'telemedicine' ? 'active' : ''}`}
               onClick={() => setActiveTab('telemedicine')}
+              style={{ position: 'relative' }}
             >
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
               </svg>
               Telemedicina
+              {unreadChatMessagesCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '24px',
+                  backgroundColor: 'var(--danger)',
+                  color: '#ffffff',
+                  fontSize: '9px',
+                  fontWeight: '800',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1
+                }}>
+                  {unreadChatMessagesCount}
+                </span>
+              )}
             </button>
 
             <button 
@@ -711,11 +755,32 @@ export default function App() {
             <button 
               className={`nav-item ${activeTab === 'telemedicine' ? 'active' : ''}`}
               onClick={() => setActiveTab('telemedicine')}
+              style={{ position: 'relative' }}
             >
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
               </svg>
               Teleconsulta
+              {unreadChatMessagesCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '24px',
+                  backgroundColor: 'var(--danger)',
+                  color: '#ffffff',
+                  fontSize: '9px',
+                  fontWeight: '800',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1
+                }}>
+                  {unreadChatMessagesCount}
+                </span>
+              )}
             </button>
 
             <button 
