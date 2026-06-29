@@ -166,8 +166,22 @@ Como posso te ajudar hoje?`;
     const threadKey = `irec_chat_threads_${userId}`;
     const activeKey = `irec_chat_active_thread_id_${userId}`;
     
-    const savedThreads = localStorage.getItem(threadKey);
-    const savedActiveId = localStorage.getItem(activeKey);
+    let savedThreads = localStorage.getItem(threadKey);
+    let savedActiveId = localStorage.getItem(activeKey);
+    
+    // Auto-migration: if no user-specific history exists but legacy global history exists, migrate it
+    if (!savedThreads && userId !== 'guest') {
+      const legacyThreads = localStorage.getItem('irec_chat_threads');
+      const legacyActiveId = localStorage.getItem('irec_chat_active_thread_id');
+      if (legacyThreads) {
+        localStorage.setItem(threadKey, legacyThreads);
+        if (legacyActiveId) {
+          localStorage.setItem(activeKey, legacyActiveId);
+        }
+        savedThreads = legacyThreads;
+        savedActiveId = legacyActiveId;
+      }
+    }
     
     if (savedThreads) {
       try {
