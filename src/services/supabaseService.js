@@ -2025,3 +2025,56 @@ export const updateLastSeen = async (userId) => {
   }
 };
 
+// Get all doctors assigned to a patient
+export const getAssignedDoctors = async (patientId) => {
+  if (!patientId) return [];
+
+  if (!isSupabaseConfigured) {
+    const assignments = getLocalAssignments().filter(a => a.patient_id === patientId);
+    const docIds = assignments.map(a => a.doctor_id);
+    return docIds.map(id => {
+      const docProfile = getLocalProfile(id);
+      if (!docProfile) return null;
+      return {
+        id: docProfile.id,
+        name: docProfile.name,
+        role: 'doctor',
+        crm: docProfile.crm || '',
+        specialty: docProfile.specialty || '',
+        city: docProfile.city || '',
+        state: docProfile.state || ''
+      };
+    }).filter(Boolean);
+  }
+
+  try {
+    const { data: assignments, error: assError } = await supabase
+      .from('doctor_patient_assignment')
+      .select('doctor_id')
+      .eq('patient_id', patientId);
+
+    if (assError) throw assError;
+    if (assignments.length === 0) return [];
+
+    const doctorIds = assignments.map(a => a.doctor_id);
+    const { data: profiles, error: profError } = await supabase
+      .from('clinical_profile')
+      .select('*')
+      .in('id', doctorIds);
+
+    if (profError) throw profError;
+    return profiles.map(profile => ({
+      id: profile.id,
+      name: profile.name,
+      role: 'doctor',
+      crm: profile.crm || '',
+      specialty: profile.specialty || '',
+      city: profile.city || '',
+      state: profile.state || ''
+    }));
+  } catch (err) {
+    console.error('Error fetching assigned doctors:', err);
+    return [];
+  }
+};
+

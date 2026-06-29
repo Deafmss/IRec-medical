@@ -9,6 +9,7 @@ import {
   subscribeToSignalingEvents,
   getAssignedPatients,
   getAssignedDoctor,
+  getAssignedDoctors,
   getAllPatients,
   getAllNurses,
   getAllDoctors,
@@ -102,56 +103,19 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   useEffect(() => {
     async function loadContacts() {
       try {
-        if (currentUser.role === 'doctor') {
+        const list = [];
+        if (currentUser.role === 'doctor' || currentUser.role === 'nurse') {
           const assigned = await getAssignedPatients(currentUser.id);
-          const allPatients = await getAllPatients();
-          const clinicians = await getAllClinicians();
-          const list = [];
-          
-          // Add assigned patients
           assigned.forEach(p => {
             list.push({ ...p, role: 'patient', chatType: 'assigned_patient' });
           });
-
-          // Add other patients
-          allPatients.forEach(p => {
-            if (!list.some(l => l.id === p.id)) {
-              list.push({ ...p, role: 'patient', chatType: 'other_patient' });
-            }
+        } else if (currentUser.role === 'patient') {
+          const doctors = await getAssignedDoctors(currentUser.id);
+          doctors.forEach(d => {
+            list.push({ ...d, role: 'doctor', chatType: 'assigned_doctor' });
           });
-
-          // Add other clinicians (doctors + nurses, excluding self)
-          clinicians.forEach(c => {
-            if (c.id !== currentUser.id && !list.some(l => l.id === c.id)) {
-              list.push({ ...c, role: 'doctor', chatType: 'clinician' });
-            }
-          });
-
-          setContacts(list);
-        } else {
-          const doctor = await getAssignedDoctor(currentUser.id);
-          const allDoctors = await getAllDoctors();
-          const nurses = await getAllNurses();
-          const list = [];
-
-          if (doctor) {
-            list.push({ ...doctor, role: 'doctor', chatType: 'assigned_doctor' });
-          }
-
-          allDoctors.forEach(d => {
-            if ((!doctor || d.id !== doctor.id) && !list.some(l => l.id === d.id)) {
-              list.push({ ...d, role: 'doctor', chatType: 'doctor' });
-            }
-          });
-
-          nurses.forEach(n => {
-            if (!list.some(l => l.id === n.id)) {
-              list.push({ ...n, role: 'doctor', chatType: 'nurse' });
-            }
-          });
-
-          setContacts(list);
         }
+        setContacts(list);
       } catch (err) {
         console.error('Erro ao buscar contatos de telemedicina:', err);
       }
@@ -1109,7 +1073,485 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         </div>
       );
     }
-    return <div style={{ display: 'none' }} />;
+    const totalUnread = contacts.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+
+    return (
+      <div style={{
+        position: 'fixed',
+        bottom: '24px',
+        right: '24px',
+        zIndex: 99999,
+        fontFamily: 'var(--font-primary)'
+      }}>
+        {/* Floating Chat Trigger Button */}
+        <button
+          type="button"
+          onClick={() => setShowExpressChat(prev => !prev)}
+          style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--primary)',
+            color: '#ffffff',
+            border: 'none',
+            boxShadow: '0 8px 24px rgba(14, 165, 233, 0.4)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            transition: 'transform 0.2s ease, background-color 0.2s ease',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          title={showExpressChat ? "Fechar Chat de Telemedicina" : "Abrir Chat de Telemedicina"}
+        >
+          {showExpressChat ? (
+            <svg style={{ width: '24px', height: '24px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg style={{ width: '26px', height: '26px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 18.97a5.969 5.969 0 0 1-.749-2.555C3.388 15.11 3.25 13.621 3.25 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+            </svg>
+          )}
+          
+          {totalUnread > 0 && !showExpressChat && (
+            <span style={{
+              position: 'absolute',
+              top: '-2px',
+              right: '-2px',
+              backgroundColor: '#ef4444',
+              color: '#ffffff',
+              borderRadius: '10px',
+              padding: '2px 6px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              border: '2px solid var(--bg-primary)',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
+            }}>
+              {totalUnread}
+            </span>
+          )}
+        </button>
+
+        {/* Floating Express Chat Window */}
+        {showExpressChat && (
+          <div style={{
+            position: 'absolute',
+            bottom: '76px',
+            right: 0,
+            width: isMobile ? 'calc(100vw - 48px)' : '360px',
+            maxWidth: 'calc(100vw - 48px)',
+            height: '450px',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1.5px solid var(--border-color)',
+            borderRadius: '16px',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {selectedContact ? (
+              // Active Conversation Mode
+              <>
+                {/* Header */}
+                <div style={{
+                  padding: '12px 16px',
+                  borderBottom: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--bg-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  {/* Back button */}
+                  <button 
+                    type="button"
+                    onClick={() => setSelectedContact(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: 0.8
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = 1; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = 0.8; }}
+                    title="Voltar para contatos"
+                  >
+                    <svg style={{ width: '18px', height: '18px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                    </svg>
+                  </button>
+                  
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {selectedContact.name}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: selectedContact.online ? '#10b981' : '#64748b' }} />
+                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                        {selectedContact.online ? 'Online' : 'Offline'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="button"
+                    onClick={() => setShowExpressChat(false)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    &times;
+                  </button>
+                </div>
+
+                {/* Messages list */}
+                <div style={{
+                  flex: 1,
+                  padding: '14px',
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  backgroundColor: 'var(--bg-primary)'
+                }}>
+                  {messages.length === 0 ? (
+                    <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px', padding: '0 20px' }}>
+                      Nenhuma mensagem ainda. Envie uma mensagem abaixo.
+                    </div>
+                  ) : (
+                    messages.map(m => {
+                      const isOwn = m.senderId === currentUser.id;
+                      return (
+                        <div 
+                          key={m.id}
+                          style={{
+                            alignSelf: isOwn ? 'flex-end' : 'flex-start',
+                            maxWidth: '85%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: isOwn ? 'flex-end' : 'flex-start',
+                            gap: '2px'
+                          }}
+                        >
+                          <div style={{
+                            padding: '8px 12px',
+                            borderRadius: isOwn ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                            backgroundColor: isOwn ? 'var(--primary)' : 'var(--bg-secondary)',
+                            color: isOwn ? '#ffffff' : 'var(--text-primary)',
+                            fontSize: '12px',
+                            border: isOwn ? 'none' : '1px solid var(--border-color)',
+                            boxShadow: 'var(--shadow-sm)',
+                            wordBreak: 'break-word'
+                          }}>
+                            {m.fileUrl && (
+                              <div style={{ marginBottom: m.message ? '6px' : 0 }}>
+                                {m.fileType === 'photo' ? (
+                                  <a href={m.fileUrl} target="_blank" rel="noopener noreferrer">
+                                    <img 
+                                      src={m.fileUrl} 
+                                      alt="Imagem" 
+                                      style={{
+                                        maxWidth: '100%',
+                                        maxHeight: '120px',
+                                        borderRadius: '6px',
+                                        display: 'block'
+                                      }} 
+                                    />
+                                  </a>
+                                ) : (
+                                  <a 
+                                    href={m.fileUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      padding: '6px 10px',
+                                      borderRadius: '4px',
+                                      backgroundColor: 'rgba(255,255,255,0.15)',
+                                      color: '#ffffff',
+                                      textDecoration: 'none',
+                                      fontSize: '11px',
+                                      fontWeight: '600'
+                                    }}
+                                  >
+                                    📄 {m.fileName || 'Doc'}
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                            {m.message && <span>{m.message}</span>}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>
+                              {new Date(m.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {m.message && (
+                              <button
+                                type="button"
+                                onClick={() => speakMessage(m.id, m.message)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  fontSize: '10px',
+                                  color: speakingMessageId === m.id ? 'var(--primary)' : 'var(--text-secondary)',
+                                  padding: '2px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  opacity: 0.8
+                                }}
+                                title={speakingMessageId === m.id ? "Parar leitura por voz" : "Ouvir mensagem (Acessibilidade)"}
+                              >
+                                {speakingMessageId === m.id ? '⏹️' : '🔊'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={expressMessagesEndRef} />
+                </div>
+
+                {/* Input form */}
+                <form onSubmit={handleSendExpressMessage} style={{
+                  padding: '10px 14px',
+                  borderTop: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--bg-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="file" 
+                      id="express-chat-file" 
+                      onChange={handleExpressFileChange}
+                      style={{ display: 'none' }}
+                      accept="image/*,application/pdf"
+                    />
+                    <label 
+                      htmlFor="express-chat-file" 
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        backgroundColor: expressAttachedFile ? 'var(--primary)' : 'var(--bg-primary)',
+                        cursor: 'pointer',
+                        color: 'var(--text-primary)',
+                        border: '1px solid var(--border-color)',
+                        transition: 'all 0.2s ease'
+                      }}
+                      title="Anexar foto ou PDF"
+                    >
+                      <svg style={{ width: '16px', height: '16px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
+                      </svg>
+                    </label>
+                  </div>
+                  <input 
+                    type="text"
+                    value={expressMessageText}
+                    onChange={(e) => setExpressMessageText(e.target.value)}
+                    placeholder={expressAttachedFile ? "Adicione uma legenda..." : "Digite uma mensagem rápida..."}
+                    style={{
+                      flex: 1,
+                      backgroundColor: 'var(--bg-primary)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '18px',
+                      padding: '8px 14px',
+                      color: 'var(--text-primary)',
+                      fontSize: '12px',
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease'
+                    }}
+                  />
+                  <button 
+                    type="submit"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--primary)',
+                      border: 'none',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      transition: 'opacity 0.2s ease'
+                    }}
+                    title="Enviar mensagem"
+                  >
+                    <svg style={{ width: '14px', height: '14px', transform: 'rotate(45deg)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                    </svg>
+                  </button>
+                </form>
+              </>
+            ) : (
+              // Contacts List Mode
+              <>
+                {/* Header */}
+                <div style={{
+                  padding: '14px 18px',
+                  borderBottom: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--bg-primary)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>
+                    💬 Mensagens de Telemedicina
+                  </span>
+                  <button 
+                    type="button"
+                    onClick={() => setShowExpressChat(false)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    &times;
+                  </button>
+                </div>
+                
+                {/* Contacts list */}
+                <div style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  padding: '8px',
+                  backgroundColor: 'var(--bg-primary)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}>
+                  {contacts.length === 0 ? (
+                    <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                      Nenhum contato ativo encontrado.
+                    </div>
+                  ) : (
+                    contacts.map(c => {
+                      const isOnline = c.online;
+                      const roleLabel = c.chatType === 'assigned_patient' || c.chatType === 'other_patient' ? 'Paciente' : (c.chatType === 'assigned_doctor' ? 'Médico Assistente' : 'Profissional');
+                      const initials = c.name ? c.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
+                      
+                      return (
+                        <div 
+                          key={c.id}
+                          onClick={() => {
+                            setSelectedContact(c);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '10px 12px',
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s ease',
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                        >
+                          <div style={{ position: 'relative', display: 'flex' }}>
+                            <div style={{
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: '50%',
+                              backgroundColor: 'var(--primary-glow)',
+                              border: '1.5px solid var(--primary)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: '800',
+                              color: '#ffffff',
+                              fontSize: '14px'
+                            }}>
+                              {initials}
+                            </div>
+                            <div style={{
+                              position: 'absolute',
+                              bottom: 0,
+                              right: 0,
+                              width: '10px',
+                              height: '10px',
+                              borderRadius: '50%',
+                              backgroundColor: isOnline ? '#10b981' : '#64748b',
+                              border: '2px solid var(--bg-secondary)'
+                            }} />
+                          </div>
+                          
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
+                              <span style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {c.name}
+                              </span>
+                              <span style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>
+                                {roleLabel}
+                              </span>
+                            </div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {c.lastMessageText || 'Clique para conversar.'}
+                            </div>
+                          </div>
+                          
+                          {c.unreadCount > 0 && (
+                            <div style={{
+                              backgroundColor: '#ef4444',
+                              color: '#ffffff',
+                              borderRadius: '10px',
+                              padding: '2px 6px',
+                              fontSize: '10px',
+                              fontWeight: 'bold',
+                              minWidth: '18px',
+                              textAlign: 'center'
+                            }}>
+                              {c.unreadCount}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -1469,124 +1911,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
             />
           </div>
 
-          {/* Filter Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', padding: '8px 10px', gap: '6px', overflowX: 'auto', backgroundColor: 'var(--bg-primary)', scrollbarWidth: 'none' }}>
-            <button 
-              type="button"
-              onClick={() => setSelectedFilter('all')} 
-              style={{
-                padding: '4px 10px',
-                fontSize: '10.5px',
-                fontWeight: '700',
-                borderRadius: '6px',
-                border: '1px solid',
-                borderColor: selectedFilter === 'all' ? 'var(--primary)' : 'var(--border-color)',
-                backgroundColor: selectedFilter === 'all' ? 'var(--primary-glow)' : 'transparent',
-                color: selectedFilter === 'all' ? 'var(--primary)' : 'var(--text-secondary)',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Todos
-            </button>
-            {currentUser.role === 'doctor' ? (
-              <>
-                <button 
-                  type="button"
-                  onClick={() => setSelectedFilter('assigned')} 
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '10.5px',
-                    fontWeight: '700',
-                    borderRadius: '6px',
-                    border: '1px solid',
-                    borderColor: selectedFilter === 'assigned' ? 'var(--primary)' : 'var(--border-color)',
-                    backgroundColor: selectedFilter === 'assigned' ? 'var(--primary-glow)' : 'transparent',
-                    color: selectedFilter === 'assigned' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Meus Pacientes
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setSelectedFilter('other_patients')} 
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '10.5px',
-                    fontWeight: '700',
-                    borderRadius: '6px',
-                    border: '1px solid',
-                    borderColor: selectedFilter === 'other_patients' ? 'var(--primary)' : 'var(--border-color)',
-                    backgroundColor: selectedFilter === 'other_patients' ? 'var(--primary-glow)' : 'transparent',
-                    color: selectedFilter === 'other_patients' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Rede Geral
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setSelectedFilter('clinicians')} 
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '10.5px',
-                    fontWeight: '700',
-                    borderRadius: '6px',
-                    border: '1px solid',
-                    borderColor: selectedFilter === 'clinicians' ? 'var(--primary)' : 'var(--border-color)',
-                    backgroundColor: selectedFilter === 'clinicians' ? 'var(--primary-glow)' : 'transparent',
-                    color: selectedFilter === 'clinicians' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Profissionais
-                </button>
-              </>
-            ) : (
-              <>
-                <button 
-                  type="button"
-                  onClick={() => setSelectedFilter('doctors')} 
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '10.5px',
-                    fontWeight: '700',
-                    borderRadius: '6px',
-                    border: '1px solid',
-                    borderColor: selectedFilter === 'doctors' ? 'var(--primary)' : 'var(--border-color)',
-                    backgroundColor: selectedFilter === 'doctors' ? 'var(--primary-glow)' : 'transparent',
-                    color: selectedFilter === 'doctors' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Médicos
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setSelectedFilter('nurses')} 
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '10.5px',
-                    fontWeight: '700',
-                    borderRadius: '6px',
-                    border: '1px solid',
-                    borderColor: selectedFilter === 'nurses' ? 'var(--primary)' : 'var(--border-color)',
-                    backgroundColor: selectedFilter === 'nurses' ? 'var(--primary-glow)' : 'transparent',
-                    color: selectedFilter === 'nurses' ? 'var(--primary)' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  Enfermeiros
-                </button>
-              </>
-            )}
-          </div>
+
 
           <div className="contacts-list" style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
             {filteredContacts.length === 0 ? (
