@@ -10,6 +10,7 @@ import {
   getAssignedPatients,
   getAssignedDoctor,
   getAssignedDoctors,
+  followPatient,
   getAllPatients,
   getAllNurses,
   getAllDoctors,
@@ -27,6 +28,26 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const [newMessageText, setNewMessageText] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
   const [attachedFileType, setAttachedFileType] = useState(null); // 'photo' or 'document'
+  
+  // Specialist Directory states
+  const [showDirectory, setShowDirectory] = useState(false);
+  const [allDoctorsList, setAllDoctorsList] = useState([]);
+  const [directorySearchQuery, setDirectorySearchQuery] = useState('');
+  const [directoryFilterSpecialty, setDirectoryFilterSpecialty] = useState('all');
+
+  useEffect(() => {
+    if (currentUser?.role === 'patient') {
+      async function loadAllDoctors() {
+        try {
+          const docs = await getAllDoctors();
+          setAllDoctorsList(docs || []);
+        } catch (e) {
+          console.error('Error loading all doctors for directory:', e);
+        }
+      }
+      loadAllDoctors();
+    }
+  }, [currentUser]);
   
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
 
@@ -99,6 +120,8 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const audioCtxRef = useRef(null);
   const ringIntervalRef = useRef(null);
 
+  const [contactsTrigger, setContactsTrigger] = useState(0);
+
   // Initial load & Polling: Fetch Contacts for real-time presence/last_seen_at sync
   useEffect(() => {
     async function loadContacts() {
@@ -125,7 +148,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     // Poll contacts presence every 10 seconds
     const interval = setInterval(loadContacts, 10000);
     return () => clearInterval(interval);
-  }, [currentUser]);
+  }, [currentUser, contactsTrigger]);
 
   // Filter and search contacts
   const filteredContacts = contacts.filter(c => {
@@ -1574,7 +1597,170 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           backgroundColor: 'var(--bg-primary)',
           height: '100%'
         }}>
-          {selectedContact ? (
+          {showDirectory && currentUser?.role === 'patient' ? (
+            // Render Specialist Directory!
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)', padding: '24px', overflowY: 'auto' }}>
+              <div style={{ marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0 }}>🔍 Diretório de Especialistas Clínicos</h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                  Encontre e conecte-se com profissionais de saúde de acordo com suas especialidades.
+                </p>
+              </div>
+
+              {/* Directory Filter & Search */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="Buscar médico por nome..."
+                  value={directorySearchQuery}
+                  onChange={e => setDirectorySearchQuery(e.target.value)}
+                  style={{
+                    flex: 1,
+                    minWidth: '200px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '12.5px',
+                    outline: 'none'
+                  }}
+                />
+                <select
+                  value={directoryFilterSpecialty}
+                  onChange={e => setDirectoryFilterSpecialty(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '12.5px',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="all">Todas as Especialidades</option>
+                  <option value="Clínico Geral">Clínico Geral</option>
+                  <option value="Dermatologia">Dermatologia</option>
+                  <option value="Estomaterapia">Estomaterapia</option>
+                  <option value="Endocrinologia">Endocrinologia</option>
+                  <option value="Angiologia">Angiologia</option>
+                </select>
+              </div>
+
+              {/* Specialist Cards Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                {allDoctorsList
+                  .filter(doc => {
+                    const matchesSearch = doc.name?.toLowerCase().includes(directorySearchQuery.toLowerCase());
+                    const matchesSpecialty = directoryFilterSpecialty === 'all' || doc.specialty?.toLowerCase().includes(directoryFilterSpecialty.toLowerCase());
+                    return matchesSearch && matchesSpecialty;
+                  })
+                  .map(doc => {
+                    const isAlreadyAssigned = contacts.some(c => c.id === doc.id);
+                    const docInitials = doc.name ? doc.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
+                    
+                    return (
+                      <div key={doc.id} className="glass-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px', margin: 0 }}>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <div style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--primary-glow)',
+                            color: 'var(--primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '15px',
+                            fontWeight: '700',
+                            flexShrink: 0
+                          }}>
+                            {docInitials}
+                          </div>
+                          <div>
+                            <h4 style={{ fontSize: '14px', fontWeight: '750', margin: 0, color: 'var(--text-primary)' }}>{doc.name}</h4>
+                            <p style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '600', margin: '2px 0 0 0' }}>
+                              🎓 {doc.specialty || 'Clínico Geral'}
+                            </p>
+                            <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                              🆔 CRM: {doc.crm || 'CRM Indefinido'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4', fontStyle: 'italic' }}>
+                          "Especialista em acompanhamento de lesões complexas, suporte via telemedicina e controle de comorbidades crônicas."
+                        </p>
+
+                        <div style={{ marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
+                          {isAlreadyAssigned ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const contact = contacts.find(c => c.id === doc.id);
+                                if (contact) {
+                                  setSelectedContact(contact);
+                                  setShowDirectory(false);
+                                }
+                              }}
+                              className="btn btn-secondary"
+                              style={{ 
+                                fontSize: '11.5px', 
+                                padding: '6px 12px', 
+                                borderRadius: '6px', 
+                                border: '1px solid var(--primary)', 
+                                color: 'var(--primary)',
+                                fontWeight: '700',
+                                width: '100%'
+                              }}
+                            >
+                              ✓ Cadastrado - Enviar Mensagem
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await followPatient(doc.id, currentUser.id);
+                                  setContactsTrigger(prev => prev + 1);
+                                  setShowDirectory(false);
+                                  const newDoc = {
+                                    id: doc.id,
+                                    name: doc.name,
+                                    role: 'doctor',
+                                    chatType: 'assigned_doctor',
+                                    specialty: doc.specialty,
+                                    crm: doc.crm
+                                  };
+                                  setSelectedContact(newDoc);
+                                } catch (err) {
+                                  console.error('Error assigning doctor:', err);
+                                }
+                              }}
+                              className="btn btn-primary"
+                              style={{ fontSize: '11.5px', padding: '6px 12px', borderRadius: '6px', width: '100%' }}
+                            >
+                              ➕ Iniciar Acompanhamento
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                {allDoctorsList.filter(doc => {
+                  const matchesSearch = doc.name?.toLowerCase().includes(directorySearchQuery.toLowerCase());
+                  const matchesSpecialty = directoryFilterSpecialty === 'all' || doc.specialty?.toLowerCase().includes(directoryFilterSpecialty.toLowerCase());
+                  return matchesSearch && matchesSpecialty;
+                }).length === 0 && (
+                  <div style={{ gridColumn: '1 / -1', padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    Nenhum especialista encontrado para o filtro aplicado.
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : selectedContact ? (
             <>
               {/* Header info */}
               <div style={{
@@ -1910,6 +2096,39 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               }}
             />
           </div>
+
+          {/* Encontrar Médicos Toggle for Patients */}
+          {currentUser?.role === 'patient' && (
+            <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDirectory(!showDirectory);
+                  if (!showDirectory) {
+                    setSelectedContact(null);
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  backgroundColor: showDirectory ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                  color: showDirectory ? 'var(--primary)' : 'var(--text-secondary)',
+                  border: '1.5px dashed var(--border-color)',
+                  borderRadius: '10px',
+                  fontSize: '11.5px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {showDirectory ? '← Voltar para Conversas' : '🔍 Encontrar Especialistas'}
+              </button>
+            </div>
+          )}
 
 
 
