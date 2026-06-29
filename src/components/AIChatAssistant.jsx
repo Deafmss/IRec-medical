@@ -128,8 +128,10 @@ Como posso te ajudar hoje?`;
     return welcomeText;
   };
 
+  const userId = clinicalProfile?.id || 'guest';
+
   const [threads, setThreads] = useState(() => {
-    const saved = localStorage.getItem('irec_chat_threads');
+    const saved = localStorage.getItem(`irec_chat_threads_${userId}`);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -155,9 +157,48 @@ Como posso te ajudar hoje?`;
   });
 
   const [activeThreadId, setActiveThreadId] = useState(() => {
-    const saved = localStorage.getItem('irec_chat_active_thread_id');
+    const saved = localStorage.getItem(`irec_chat_active_thread_id_${userId}`);
     return saved || 'thread-default';
   });
+
+  // Load threads when userId changes
+  useEffect(() => {
+    const threadKey = `irec_chat_threads_${userId}`;
+    const activeKey = `irec_chat_active_thread_id_${userId}`;
+    
+    const savedThreads = localStorage.getItem(threadKey);
+    const savedActiveId = localStorage.getItem(activeKey);
+    
+    if (savedThreads) {
+      try {
+        const parsed = JSON.parse(savedThreads);
+        if (parsed && parsed.length > 0) {
+          setThreads(parsed);
+          setActiveThreadId(savedActiveId || parsed[0].id);
+          return;
+        }
+      } catch (e) {
+        console.error("Erro ao carregar conversas salvas:", e);
+      }
+    }
+    
+    // Default thread fallback if none saved for this user
+    const defaultThread = {
+      id: 'thread-default',
+      title: 'Nova Conversa',
+      messages: [
+        {
+          id: 1,
+          sender: 'ai',
+          text: DEFAULT_WELCOME(clinicalProfile?.name || 'Paciente'),
+          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        }
+      ],
+      updatedAt: Date.now()
+    };
+    setThreads([defaultThread]);
+    setActiveThreadId('thread-default');
+  }, [userId, clinicalProfile?.name]);
 
   const [showHistoryMobile, setShowHistoryMobile] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -216,13 +257,13 @@ Como posso te ajudar hoje?`;
   // Helper to persist threads state
   const saveThreads = (updatedThreads) => {
     setThreads(updatedThreads);
-    localStorage.setItem('irec_chat_threads', JSON.stringify(updatedThreads));
+    localStorage.setItem(`irec_chat_threads_${userId}`, JSON.stringify(updatedThreads));
   };
 
   // Helper to change active thread
   const selectThread = (id) => {
     setActiveThreadId(id);
-    localStorage.setItem('irec_chat_active_thread_id', id);
+    localStorage.setItem(`irec_chat_active_thread_id_${userId}`, id);
   };
 
   // Create new chat thread
@@ -283,15 +324,15 @@ Como posso te ajudar hoje?`;
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Stream responses word-by-word into the active thread
-  const streamResponse = (responseText, existingMessages) => {
+  // Stream responses word-by-word into the target thread
+  const streamResponse = (responseText, existingMessages, threadId) => {
     setIsTyping(true);
     let index = 0;
     let currentText = '';
     
-    // Create placeholder message for streaming in active thread
+    // Create placeholder message for streaming in target thread
     const newMessageId = Date.now();
-    const msgsBase = existingMessages || (threads.find(t => t.id === activeThreadId) || threads[0]).messages;
+    const msgsBase = existingMessages || (threads.find(t => t.id === threadId) || threads[0]).messages;
     const initialThreadMsg = [...msgsBase, {
       id: newMessageId,
       sender: 'ai',
@@ -300,7 +341,7 @@ Como posso te ajudar hoje?`;
     }];
 
     const threadsWithPlaceholder = threads.map(t => 
-      t.id === activeThreadId ? { ...t, messages: initialThreadMsg } : t
+      t.id === threadId ? { ...t, messages: initialThreadMsg } : t
     );
     saveThreads(threadsWithPlaceholder);
 
@@ -308,7 +349,7 @@ Como posso te ajudar hoje?`;
       if (index < responseText.length) {
         currentText += responseText[index];
         setThreads(prevThreads => prevThreads.map(t => {
-          if (t.id === activeThreadId) {
+          if (t.id === threadId) {
             const updatedMsgs = t.messages.map(msg => 
               msg.id === newMessageId ? { ...msg, text: currentText } : msg
             );
@@ -321,10 +362,10 @@ Como posso te ajudar hoje?`;
         clearInterval(interval);
         setIsTyping(false);
         setThreads(prevThreads => {
-          const currentActiveThread = prevThreads.find(t => t.id === activeThreadId) || prevThreads[0];
+          const currentActiveThread = prevThreads.find(t => t.id === threadId) || prevThreads[0];
           
           // Log AI response
-          createAuditLog('AI_CHAT_AI_RESPONSE', activeThreadId, {
+          createAuditLog('AI_CHAT_AI_RESPONSE', threadId, {
             message: responseText,
             threadTitle: currentActiveThread?.title
           });
@@ -337,12 +378,12 @@ Como posso te ajudar hoje?`;
             const detected = detectTopicFromText(userText, responseText);
             if (detected && currentActiveThread.title !== detected) {
               finalThreads = prevThreads.map(t => 
-                t.id === activeThreadId ? { ...t, title: detected } : t
+                t.id === threadId ? { ...t, title: detected } : t
               );
             }
           }
           
-          localStorage.setItem('irec_chat_threads', JSON.stringify(finalThreads));
+          localStorage.setItem(`irec_chat_threads_${userId}`, JSON.stringify(finalThreads));
           return finalThreads;
         });
       }
@@ -412,11 +453,12 @@ Como posso te ajudar hoje?`;
   };
 
   const handleSendMessageFromEditedHistory = async (textToSend, updatedMessages) => {
+    const targetThreadId = activeThreadId;
     // 1. Try real Gemini API response first
     const realResponse = await chatWithAI(textToSend, updatedMessages, clinicalProfile);
     if (realResponse && typeof realResponse === 'object') {
       setIsTyping(false);
-      streamResponse(realResponse.reply, updatedMessages);
+      streamResponse(realResponse.reply, updatedMessages, targetThreadId);
       return;
     }
 
@@ -458,10 +500,10 @@ Como posso te ajudar hoje?`;
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         };
         finalMessages = [...updatedMessages, syncMsg];
-        saveThreads(threads.map(t => t.id === activeThreadId ? { ...t, messages: finalMessages } : t));
+        saveThreads(threads.map(t => t.id === targetThreadId ? { ...t, messages: finalMessages } : t));
       }
 
-      streamResponse(response, finalMessages);
+      streamResponse(response, finalMessages, targetThreadId);
       isSubmittingRef.current = false;
     }, 1000);
   };
@@ -560,6 +602,7 @@ Como posso te ajudar hoje?`;
   const handleSendMessage = async (textToSend) => {
     if (!textToSend.trim() || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
+    const targetThreadId = activeThreadId;
 
     const userMsg = {
       id: Date.now(),
@@ -569,7 +612,7 @@ Como posso te ajudar hoje?`;
     };
     
     // Update thread messages and dynamically update title on first message
-    const currentActiveThread = threads.find(t => t.id === activeThreadId) || threads[0];
+    const currentActiveThread = threads.find(t => t.id === targetThreadId) || threads[0];
     const updatedMessages = [...currentActiveThread.messages, userMsg];
     let newTitle = currentActiveThread.title;
     
@@ -579,7 +622,7 @@ Como posso te ajudar hoje?`;
     }
 
     const updatedThreads = threads.map(t => 
-      t.id === activeThreadId 
+      t.id === targetThreadId 
         ? { ...t, title: newTitle, messages: updatedMessages, updatedAt: Date.now() } 
         : t
     );
@@ -588,12 +631,10 @@ Como posso te ajudar hoje?`;
     setIsTyping(true);
 
     // Save user message to database audit log for compliance
-    createAuditLog('AI_CHAT_USER_MESSAGE', activeThreadId, {
+    createAuditLog('AI_CHAT_USER_MESSAGE', targetThreadId, {
       message: textToSend,
       threadTitle: newTitle
     });
-
-
 
     // 1. Try real Gemini API response first
     const realResponse = await chatWithAI(textToSend, updatedMessages, clinicalProfile);
@@ -611,12 +652,12 @@ Como posso te ajudar hoje?`;
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         };
         finalMessages = [...updatedMessages, syncMsg];
-        const latestThread = threads.find(t => t.id === activeThreadId) || threads[0];
+        const latestThread = threads.find(t => t.id === targetThreadId) || threads[0];
         const withSyncMsg = [...latestThread.messages, userMsg, syncMsg];
-        saveThreads(threads.map(t => t.id === activeThreadId ? { ...t, messages: withSyncMsg } : t));
+        saveThreads(threads.map(t => t.id === targetThreadId ? { ...t, messages: withSyncMsg } : t));
       }
 
-      streamResponse(realResponse.reply, finalMessages);
+      streamResponse(realResponse.reply, finalMessages, targetThreadId);
       isSubmittingRef.current = false;
       return;
     }
@@ -731,7 +772,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
         saveThreads(threads.map(t => t.id === activeThreadId ? { ...t, messages: finalMessages } : t));
       }
 
-      streamResponse(response, finalMessages);
+      streamResponse(response, finalMessages, targetThreadId);
       isSubmittingRef.current = false;
     }, 1000);
   };
