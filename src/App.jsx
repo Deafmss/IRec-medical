@@ -197,6 +197,55 @@ export default function App() {
     loadPatientData();
   }, [currentUser]);
 
+  // Pre-fetch personalized care guide in the background (warm cache)
+  useEffect(() => {
+    async function prefetchCareGuide() {
+      if (!clinicalProfile || !clinicalProfile.id || currentUser?.role !== 'patient') return;
+      
+      const profileId = clinicalProfile.id;
+      const latestWoundEntry = entries && entries.length > 0 ? entries[entries.length - 1] : null;
+      const entryId = latestWoundEntry ? (latestWoundEntry.id || latestWoundEntry.createdAt) : 'no-entry';
+      const cacheKey = `irec_cached_protocol_${profileId}_${entryId}`;
+      
+      // If already cached, do nothing
+      if (localStorage.getItem(cacheKey)) return;
+      
+      try {
+        console.log("Pre-fetching personalized care guide in the background...");
+        // Import dynamically to optimize initial bundle size
+        const { generatePersonalizedProtocol } = await import('./services/geminiService');
+        
+        const result = await generatePersonalizedProtocol(clinicalProfile, latestWoundEntry);
+        
+        if (result) {
+          const cacheData = {
+            protocol: result,
+            profile: {
+              name: clinicalProfile.name,
+              hasDiabetes: clinicalProfile.hasDiabetes,
+              hasHypertension: clinicalProfile.hasHypertension,
+              hasVenousInsufficiency: clinicalProfile.hasVenousInsufficiency,
+              hasPeripheralArterialDisease: clinicalProfile.hasPeripheralArterialDisease,
+              isSmoker: clinicalProfile.isSmoker,
+              isObese: clinicalProfile.isObese,
+              medications: clinicalProfile.medications,
+              allergies: clinicalProfile.allergies,
+              otherConditions: clinicalProfile.otherConditions
+            }
+          };
+          localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+          console.log("Background pre-fetching completed successfully.");
+        }
+      } catch (err) {
+        console.warn("Falha no prefetch do guia de cuidados:", err);
+      }
+    }
+    
+    // Run prefetch after 1.5 seconds to prioritize main rendering thread
+    const timer = setTimeout(prefetchCareGuide, 1500);
+    return () => clearTimeout(timer);
+  }, [clinicalProfile, entries, currentUser]);
+
   // Update last seen presence status periodically
   useEffect(() => {
     if (!currentUser) return;

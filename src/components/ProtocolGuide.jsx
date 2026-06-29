@@ -98,7 +98,6 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
   const [loading, setLoading] = useState(false);
   const [aiProtocol, setAiProtocol] = useState(null);
   const [error, setError] = useState('');
-  const [selectedStaticProtocol, setSelectedStaticProtocol] = useState('venosa');
 
   const latestWoundEntry = entries && entries.length > 0 ? entries[entries.length - 1] : null;
 
@@ -150,8 +149,135 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
         { name: 'Placa de Espuma de Poliuretano (10x10cm)', price: 'R$ 48,00', brand: 'Allevyn' },
         { name: 'Óleo Dersani AGE (100ml)', price: 'R$ 38,90', brand: 'Dersani' }
       ]
+    },
+    arterial: {
+      title: 'Úlcera Arterial (Padrão)',
+      description: 'Lesões causadas por fluxo sanguíneo arterial insuficiente (isquemia). O foco é revascularização e proteção contra infecção. Terapia compressiva é estritamente contraindicada.',
+      steps: [
+        { title: 'Avaliação Vascular', desc: 'Verificar pulsos periféricos (pedioso e tibial posterior) e medir Índice Tornozelo-Braço (ITB). Encaminhar ao cirurgião vascular.' },
+        { title: 'Higiene e Proteção', desc: 'Limpar com soro fisiológico morno sem fricção. Manter a lesão limpa e seca para evitar gangrena úmida.' },
+        { title: 'Tratamento do Leito', desc: 'Se a lesão for seca, manter seca (não umidificar necrose seca). Se houver exsudato leve, usar curativo de hidrocolóide extra fino ou AGE.' },
+        { title: 'Evitar Compressão', desc: 'Nunca aplicar bandagens elásticas ou compressivas. Evitar elevação do membro.' }
+      ],
+      materials: [
+        { name: 'Curativo Hidrocolóide Extra Fino (10x10cm)', price: 'R$ 18,90', brand: 'DuoDerm' },
+        { name: 'Óleo Dersani AGE (100ml)', price: 'R$ 38,90', brand: 'Dersani' },
+        { name: 'Gaze Estéril de Rayon (7.5x7.5cm)', price: 'R$ 12,90', brand: 'Curatec' }
+      ]
+    },
+    queimadura: {
+      title: 'Queimadura de 1º e 2º Grau (Padrão)',
+      description: 'Lesões térmicas ou químicas na epiderme e derme. Foco no controle da dor, prevenção de infecção e manutenção de leito úmido.',
+      steps: [
+        { title: 'Resfriamento', desc: 'Resfriar com água corrente fria (não gelada) por 15-20 minutos imediatamente após o acidente.' },
+        { title: 'Preservação de Flictenas', desc: 'Não romper bolhas (flictenas) íntegras, pois servem como barreira biológica contra infecções.' },
+        { title: 'Curativo e Proteção', desc: 'Aplicar Sulfadiazina de Prata 1% ou curativo de hidrofibra com prata para prevenir infecção e manter a umidade.' },
+        { title: 'Cobertura Secundária', desc: 'Cobrir com gaze estéril e enfaixar sem apertar para proteger contra traumas físicos.' }
+      ],
+      materials: [
+        { name: 'Creme Sulfadiazina de Prata 1% (50g)', price: 'R$ 24,90', brand: 'Prati-Donaduzzi' },
+        { name: 'Curativo de Hidrofibra com Prata (10x10cm)', price: 'R$ 78,00', brand: 'Aquacel' },
+        { name: 'Atadura de Crepe (10cm x 1.8m)', price: 'R$ 4,50', brand: 'Cremer' }
+      ]
+    },
+    dau: {
+      title: 'Dermatite por Umidade (DAU) (Padrão)',
+      description: 'Inflamação e erosão da pele causadas por exposição prolongada a urina, fezes ou suor. Comum em pacientes incontinentes.',
+      steps: [
+        { title: 'Higiene Suave', desc: 'Limpar a área perineal com sabonete de pH neutro ou loção de limpeza sem enxágue. Evitar esfregar a pele.' },
+        { title: 'Barreira de Proteção', desc: 'Aplicar generosamente creme barreira protetor de longa duração (como Cavilon ou óxido de zinco) após cada episódio de incontinência.' },
+        { title: 'Controle de Umidade', desc: 'Trocar fraldas regularmente e usar dispositivos coletores se necessário para manter a pele seca.' }
+      ],
+      materials: [
+        { name: 'Creme Barreira Cavilon Durável (92g)', price: 'R$ 94,00', brand: '3M' },
+        { name: 'Pomada de Óxido de Zinco com Vitamina A/D (120g)', price: 'R$ 18,50', brand: 'Hipoglós' },
+        { name: 'Loção de Limpeza sem Enxágue (240ml)', price: 'R$ 48,00', brand: 'Tena' }
+      ]
+    },
+    friccao: {
+      title: 'Lesão por Fricção (Skin Tear) (Padrão)',
+      description: 'Feridas traumáticas causadas por forças de fricção ou cisalhamento, resultando na separação da epiderme da derme (comum em idosos).',
+      steps: [
+        { title: 'Reposicionamento do Retalho', desc: 'Limpar com soro fisiológico e reposicionar cuidadosamente o retalho de pele sobre o leito da lesão, se possível.' },
+        { title: 'Cobertura Não-Aderente', desc: 'Aplicar curativo não-aderente (como gaze impregnada com petrolato ou silicone) para evitar que o retalho seja removido na troca de curativo.' },
+        { title: 'Fixação Segura', desc: 'Fixar as bordas do curativo com fita microporosa hipoalergênica ou malha tubular, nunca aplicar fitas adesivas fortes diretamente na pele frágil.' }
+      ],
+      materials: [
+        { name: 'Curativo de Gaze Impregnada Adaptic (7.6x7.6cm)', price: 'R$ 14,90', brand: 'Systagenix' },
+        { name: 'Fita Microporosa Hipoalergênica (25mm x 10m)', price: 'R$ 12,00', brand: 'Micropore' },
+        { name: 'Malha Tubular Protetora de Membros', price: 'R$ 32,00', brand: 'Orthometric' }
+      ]
+    },
+    cirurgica: {
+      title: 'Deiscência Cirúrgica (Padrão)',
+      description: 'Separação espontânea das bordas de uma incisão cirúrgica antes da cicatrização completa. Foco no estímulo de granulação e controle bacteriano.',
+      steps: [
+        { title: 'Limpeza Asséptica', desc: 'Lavar exaustivamente com soro fisiológico ou solução de PHMB para remover resíduos e secreções.' },
+        { title: 'Preenchimento de Cavidade', desc: 'Preencher a cavidade com Alginato de Cálcio (se exsudativa) ou Hidrogel com Alginato (se seca) para estimular a granulação de dentro para fora.' },
+        { title: 'Monitoramento de Infecção', desc: 'Avaliar presença de sinais flogísticos (calor, rubor, dor, edema, pus). Encaminhar ao cirurgião se houver suspeita de infecção profunda.' }
+      ],
+      materials: [
+        { name: 'Hidrogel Amorfo com Alginato (85g)', price: 'R$ 42,90', brand: 'Curatec' },
+        { name: 'Placa de Alginato de Cálcio (10x10cm)', price: 'R$ 28,50', brand: 'Curatec' },
+        { name: 'Solução Antisséptica de PHMB (350ml)', price: 'R$ 62,00', brand: 'Prontosan' }
+      ]
     }
   };
+
+  const getMostRelevantStaticProtocol = () => {
+    if (!clinicalProfile) return 'venosa';
+    
+    let bestKey = 'venosa';
+    let bestScore = -1;
+    
+    const scores = {
+      diabetico: clinicalProfile.hasDiabetes ? 10 : 0,
+      venosa: clinicalProfile.hasVenousInsufficiency ? 10 : 0,
+      arterial: clinicalProfile.hasPeripheralArterialDisease ? 10 : 0,
+      pressao: (clinicalProfile.isObese || 
+                clinicalProfile.otherConditions?.toLowerCase().includes('cadeirante') || 
+                clinicalProfile.otherConditions?.toLowerCase().includes('acamado')) ? 10 : 0,
+      queimadura: 0,
+      dau: (clinicalProfile.otherConditions?.toLowerCase().includes('incontinente') || 
+            clinicalProfile.otherConditions?.toLowerCase().includes('fralda')) ? 8 : 0,
+      friccao: (clinicalProfile.age && parseInt(clinicalProfile.age) >= 70) ? 8 : 0,
+      cirurgica: (clinicalProfile.otherConditions?.toLowerCase().includes('cirurgia') || 
+                  clinicalProfile.otherConditions?.toLowerCase().includes('operado')) ? 9 : 0
+    };
+    
+    Object.keys(scores).forEach(key => {
+      if (scores[key] > bestScore) {
+        bestScore = scores[key];
+        bestKey = key;
+      }
+    });
+    
+    return bestKey;
+  };
+
+  const getSortedProtocolKeys = () => {
+    const keys = Object.keys(staticProtocols);
+    if (!clinicalProfile) return keys;
+    
+    const getScore = (key) => {
+      if (key === 'diabetico') return clinicalProfile.hasDiabetes ? 10 : 0;
+      if (key === 'venosa') return clinicalProfile.hasVenousInsufficiency ? 10 : 0;
+      if (key === 'arterial') return clinicalProfile.hasPeripheralArterialDisease ? 10 : 0;
+      if (key === 'pressao') return (clinicalProfile.isObese || 
+                                     clinicalProfile.otherConditions?.toLowerCase().includes('cadeirante') || 
+                                     clinicalProfile.otherConditions?.toLowerCase().includes('acamado')) ? 10 : 0;
+      if (key === 'dau') return (clinicalProfile.otherConditions?.toLowerCase().includes('incontinente') || 
+                                 clinicalProfile.otherConditions?.toLowerCase().includes('fralda')) ? 8 : 0;
+      if (key === 'cirurgica') return (clinicalProfile.otherConditions?.toLowerCase().includes('cirurgia') || 
+                                       clinicalProfile.otherConditions?.toLowerCase().includes('operado')) ? 9 : 0;
+      if (key === 'friccao') return (clinicalProfile.age && parseInt(clinicalProfile.age) >= 70) ? 8 : 0;
+      return 0;
+    };
+    
+    return [...keys].sort((a, b) => getScore(b) - getScore(a));
+  };
+
+  const [selectedStaticProtocol, setSelectedStaticProtocol] = useState(() => getMostRelevantStaticProtocol());
 
   // Load dynamic personalized protocol using Gemini API on mount or update
   useEffect(() => {
@@ -486,7 +612,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
           
           {/* Protocol Selector Tabs */}
           <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px' }}>
-            {Object.keys(staticProtocols).map((key) => (
+            {getSortedProtocolKeys().map((key) => (
               <button
                 key={key}
                 onClick={() => setSelectedStaticProtocol(key)}
