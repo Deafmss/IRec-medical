@@ -22,6 +22,8 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
 
   // Leaflet loading state
   const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const [mapProvider, setMapProvider] = useState('google-free');
+  const [googleEmbedQuery, setGoogleEmbedQuery] = useState('patient'); // 'patient', 'hospital', 'pharmacy'
   
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -434,7 +436,7 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
     } catch (err) {
       console.error('Error updating leaflet markers:', err);
     }
-  }, [leafletLoaded, coords, hospitals, pharmacies, compact, activeKey]);
+  }, [leafletLoaded, coords, hospitals, pharmacies, compact, activeKey, mapProvider]);
 
   // 4.1. Initialize and update Google Map
   useEffect(() => {
@@ -574,7 +576,7 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
     } catch (err) {
       console.error('Error updating Google Maps markers:', err);
     }
-  }, [googleMapsLoaded, coords, hospitals, pharmacies, compact, activeKey]);
+  }, [googleMapsLoaded, coords, hospitals, pharmacies, compact, activeKey, mapProvider]);
 
   // Clean up map instance on unmount
   useEffect(() => {
@@ -802,11 +804,128 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
         </div>
       )}
 
-      {/* Leaflet Map Div */}
-      <div className="glass-card" style={{ padding: 0, overflow: 'hidden', margin: 0, height: '300px', width: '100%', border: '1px solid var(--border-color)', position: 'relative', zIndex: 1 }}>
-        <div ref={mapRef} style={{ width: '100%', height: '100%', zIndex: 1 }} />
+      {/* Map Provider Selector & Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', backgroundColor: 'var(--bg-secondary)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          <button 
+            type="button"
+            onClick={() => setMapProvider('google-free')}
+            style={{
+              padding: '4px 10px',
+              fontSize: '11.5px',
+              fontWeight: '700',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: mapProvider === 'google-free' ? 'var(--primary)' : 'transparent',
+              color: mapProvider === 'google-free' ? '#ffffff' : 'var(--text-secondary)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🗺️ Google Maps (Grátis)
+          </button>
+          <button 
+            type="button"
+            onClick={() => setMapProvider('leaflet')}
+            style={{
+              padding: '4px 10px',
+              fontSize: '11.5px',
+              fontWeight: '700',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: mapProvider === 'leaflet' ? 'var(--primary)' : 'transparent',
+              color: mapProvider === 'leaflet' ? '#ffffff' : 'var(--text-secondary)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            📍 Leaflet (OSM)
+          </button>
+        </div>
+
+        {mapProvider === 'google-free' && coords.lat && coords.lon && (
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button
+              type="button"
+              onClick={() => setGoogleEmbedQuery('patient')}
+              style={{
+                padding: '4px 8px',
+                fontSize: '10.5px',
+                fontWeight: '700',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                cursor: 'pointer',
+                backgroundColor: googleEmbedQuery === 'patient' ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                color: googleEmbedQuery === 'patient' ? 'var(--primary)' : 'var(--text-secondary)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              👤 Meu Local
+            </button>
+            <button
+              type="button"
+              onClick={() => setGoogleEmbedQuery('hospital')}
+              style={{
+                padding: '4px 8px',
+                fontSize: '10.5px',
+                fontWeight: '700',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                cursor: 'pointer',
+                backgroundColor: googleEmbedQuery === 'hospital' ? 'var(--danger-glow)' : 'var(--bg-secondary)',
+                color: googleEmbedQuery === 'hospital' ? 'var(--danger)' : 'var(--text-secondary)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              🏥 Hospitais
+            </button>
+            <button
+              type="button"
+              onClick={() => setGoogleEmbedQuery('pharmacy')}
+              style={{
+                padding: '4px 8px',
+                fontSize: '10.5px',
+                fontWeight: '700',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                cursor: 'pointer',
+                backgroundColor: googleEmbedQuery === 'pharmacy' ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                color: googleEmbedQuery === 'pharmacy' ? 'var(--primary)' : 'var(--text-secondary)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              💊 Farmácias
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Map display area */}
+      <div className="glass-card" style={{ padding: 0, overflow: 'hidden', margin: '0 0 16px 0', height: '300px', width: '100%', border: '1px solid var(--border-color)', position: 'relative', zIndex: 1 }}>
+        {mapProvider === 'google-free' && coords.lat && coords.lon ? (
+          <iframe
+            title="Google Maps"
+            src={
+              googleEmbedQuery === 'hospital'
+                ? `https://maps.google.com/maps?q=hospitais+pronto+socorro+near+${coords.lat},${coords.lon}&t=&z=14&ie=UTF8&iwloc=&output=embed`
+                : googleEmbedQuery === 'pharmacy'
+                ? `https://maps.google.com/maps?q=farmacias+near+${coords.lat},${coords.lon}&t=&z=14&ie=UTF8&iwloc=&output=embed`
+                : `https://maps.google.com/maps?q=${coords.lat},${coords.lon}&t=&z=16&ie=UTF8&iwloc=&output=embed`
+            }
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              zIndex: 1
+            }}
+            allowFullScreen
+            loading="lazy"
+          />
+        ) : (
+          <div ref={mapRef} style={{ width: '100%', height: '100%', zIndex: 1 }} />
+        )}
         
-        {loading && (
+        {loading && mapProvider === 'leaflet' && (
           <div style={{ 
             position: 'absolute', 
             top: 0, left: 0, right: 0, bottom: 0, 
