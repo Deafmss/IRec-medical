@@ -9,6 +9,33 @@ const SUGGESTIONS = [
   { text: 'O que significa exsudato e esfacelo?', icon: '📖' }
 ];
 
+const detectTopicFromText = (userText, aiText = '') => {
+  const combined = (userText + ' ' + aiText).toLowerCase();
+  
+  if (combined.includes('pe de atleta') || combined.includes('pé de atleta') || combined.includes('tinea pedis') || combined.includes('frieira') || combined.includes('friera') || combined.includes('coceira no pe') || combined.includes('coceira no pé') || combined.includes('infeccao fungica') || combined.includes('infecção fúngica')) {
+    return 'Pé de Atleta';
+  }
+  if (combined.includes('cefaleia') || combined.includes('dor de cabeca') || combined.includes('dor de cabeça')) {
+    return 'Cefaleia';
+  }
+  if (combined.includes('gripe') || combined.includes('resfriado') || combined.includes('sintomas gripais') || combined.includes('tosse') || combined.includes('coriza')) {
+    return 'Sintomas Gripais';
+  }
+  if (combined.includes('diabetes') || combined.includes('diabetico') || combined.includes('diabético') || combined.includes('glicemia') || combined.includes('glicose')) {
+    return 'Diabetes';
+  }
+  if (combined.includes('pressao alta') || combined.includes('pressão alta') || combined.includes('hipertensao') || combined.includes('hipertensão')) {
+    return 'Hipertensão';
+  }
+  if (combined.includes('curativo') || combined.includes('cobertura') || combined.includes('hidrogel') || combined.includes('alginato')) {
+    return 'Cuidados com Feridas';
+  }
+  if (combined.includes('exame') || combined.includes('laudo') || combined.includes('sangue') || combined.includes('hemograma')) {
+    return 'Leitura de Exame';
+  }
+  return null;
+};
+
 const EXAM_RESPONSES = {
   'hemograma': `📄 **Leitor de Exames iRec - Interpretação Simplificada**
 
@@ -147,7 +174,7 @@ Como posso te ajudar hoje?`;
   const handleSaveTitle = (id) => {
     if (editingTitle.trim()) {
       const updated = threads.map(t => 
-        t.id === id ? { ...t, title: editingTitle.trim() } : t
+        t.id === id ? { ...t, title: editingTitle.trim(), manuallyRenamed: true } : t
       );
       saveThreads(updated);
     }
@@ -295,10 +322,29 @@ Como posso te ajudar hoje?`;
         setThreads(prevThreads => {
           localStorage.setItem('irec_chat_threads', JSON.stringify(prevThreads));
           const currentActiveThread = prevThreads.find(t => t.id === activeThreadId) || prevThreads[0];
+          
+          // Log AI response
           createAuditLog('AI_CHAT_AI_RESPONSE', activeThreadId, {
             message: responseText,
             threadTitle: currentActiveThread?.title
           });
+
+          // Auto-rename based on clinical topic detection if not manually renamed
+          if (!currentActiveThread?.manuallyRenamed) {
+            const lastUserMsg = [...msgsBase].reverse().find(m => m.sender === 'user');
+            const userText = lastUserMsg ? lastUserMsg.text : '';
+            const detected = detectTopicFromText(userText, responseText);
+            if (detected && currentActiveThread.title !== detected) {
+              const finalThreads = prevThreads.map(t => 
+                t.id === activeThreadId ? { ...t, title: detected } : t
+              );
+              localStorage.setItem('irec_chat_threads', JSON.stringify(finalThreads));
+              setTimeout(() => {
+                setThreads(finalThreads);
+              }, 0);
+            }
+          }
+          
           return prevThreads;
         });
       }
