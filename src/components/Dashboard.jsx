@@ -342,37 +342,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
   return (
     <div className="animate-fade-in" style={{ position: 'relative' }}>
-      {/* Floating Simulated WhatsApp Notification */}
-      {showWhatsappNotify && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          width: '320px',
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15)',
-          borderLeft: '5px solid #25d366',
-          padding: '12px 14px',
-          zIndex: 99999,
-          display: 'flex',
-          gap: '10px',
-          color: '#1f2937',
-          fontFamily: 'system-ui, sans-serif'
-        }}>
-          <div style={{ fontSize: '20px', marginTop: '2px' }}>🟢</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-              <span style={{ fontWeight: '800', fontSize: '12.5px', color: '#111827' }}>iRec Saúde Diária</span>
-              <span style={{ fontSize: '10px', color: '#6b7280' }}>Agora mesmo</span>
-            </div>
-            <strong style={{ display: 'block', fontSize: '12px', color: '#374151' }}>Olá {clinicalProfile.name}!</strong>
-            <p style={{ margin: '2px 0 0 0', fontSize: '11.5px', color: '#4b5563', lineHeight: '1.4' }}>
-              Não se esqueça de preencher seu Diário de Cuidados hoje. Sua taxa de adesão atual de <strong>{complianceScore}%</strong> garante uma cicatrização rápida! 🩹
-            </p>
-          </div>
-        </div>
-      )}
+
       {/* Header Profile Section */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
