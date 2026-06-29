@@ -277,6 +277,31 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
 
   const [selectedStaticProtocol, setSelectedStaticProtocol] = useState(() => getMostRelevantStaticProtocol());
 
+  const [bookingModal, setBookingModal] = useState({
+    isOpen: false,
+    type: 'pickup',
+    itemName: '',
+    itemPrice: '',
+    targetName: '',
+    targetAddress: '',
+    code: ''
+  });
+
+  const handleCheckout = (type, item) => {
+    const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const codePrefix = type === 'pickup' ? 'IREC-RES-' : 'IREC-DEL-';
+    
+    setBookingModal({
+      isOpen: true,
+      type,
+      itemName: item.name,
+      itemPrice: item.price,
+      targetName: type === 'pickup' ? localPharmacy.name : (clinicalProfile?.name || 'Paciente'),
+      targetAddress: type === 'pickup' ? (localPharmacy.address || 'Farmácia Credenciada Local') : `${clinicalProfile?.city || 'Sua cidade'}/${patientState}`,
+      code: `${codePrefix}${randomCode}`
+    });
+  };
+
   // Load dynamic personalized protocol using Gemini API on mount or update
   useEffect(() => {
     async function fetchProtocol() {
@@ -502,7 +527,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                           <button 
                             className="btn btn-secondary" 
-                            onClick={() => alert(`RETIRADA IMEDIATA CONFIRMADA!\n\nSeu pedido de "${item.name}" foi reservado com sucesso!\n\nLocal de Retirada:\n🏪 ${localPharmacy.name}\n📍 ${localPharmacy.address || 'Disponível na sua cidade'}\n\nApresente seu CPF no balcão para retirar em até 24 horas.`)}
+                            onClick={() => handleCheckout('pickup', item)}
                             style={{ 
                               display: 'flex', 
                               flexDirection: 'column', 
@@ -525,7 +550,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
 
                           <button 
                             className="btn btn-primary" 
-                            onClick={() => alert(`COMPRA ONLINE REALIZADA!\n\nO item "${item.name}" foi adquirido via Delivery Express do iRec!\n\nDestino de Entrega:\n📍 Endereço do perfil em ${clinicalProfile?.city || 'sua cidade'}/${patientState}\n\nPrevisão de entrega: em até 24 horas no seu domicílio.`)}
+                            onClick={() => handleCheckout('delivery', item)}
                             style={{ 
                               display: 'flex', 
                               flexDirection: 'column', 
@@ -685,7 +710,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <button 
                       className="btn btn-secondary" 
-                      onClick={() => alert(`RETIRADA IMEDIATA CONFIRMADA!\n\nSeu pedido de "${item.name}" foi reservado com sucesso!\n\nLocal de Retirada:\n🏪 ${localPharmacy.name}\n📍 ${localPharmacy.address || 'Disponível na sua cidade'}\n\nApresente seu CPF no balcão para retirar em até 24 horas.`)}
+                      onClick={() => handleCheckout('pickup', item)}
                       style={{ 
                         display: 'flex', 
                         flexDirection: 'column', 
@@ -708,7 +733,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
 
                     <button 
                       className="btn btn-primary" 
-                      onClick={() => alert(`COMPRA ONLINE REALIZADA!\n\nO item "${item.name}" foi adquirido via Delivery Express do iRec!\n\nDestino de Entrega:\n📍 Endereço do perfil em ${clinicalProfile?.city || 'sua cidade'}/${patientState}\n\nPrevisão de entrega: em até 24 horas no seu domicílio.`)}
+                      onClick={() => handleCheckout('delivery', item)}
                       style={{ 
                         display: 'flex', 
                         flexDirection: 'column', 
@@ -737,11 +762,267 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
         </div>
       )}
 
+      {/* Premium Booking Modal */}
+      {bookingModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          animation: 'fadeIn 0.25s ease-out'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1.5px solid var(--border-color)',
+            borderRadius: '20px',
+            boxShadow: 'var(--shadow-xl)',
+            width: '100%',
+            maxWidth: '420px',
+            padding: '24px',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}>
+            <button
+              onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontSize: '22px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                lineHeight: 1
+              }}
+            >
+              &times;
+            </button>
+
+            {bookingModal.type === 'pickup' ? (
+              // Pickup Mode
+              <>
+                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '28px'
+                  }}>
+                    📍
+                  </div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                    Insumo Reservado!
+                  </h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+                    Apresente o código de barras no balcão da farmácia para retirar em até 24h.
+                  </p>
+                </div>
+
+                <div style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  <div>
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Insumo</span>
+                    <div style={{ fontSize: '13px', fontWeight: '750', color: 'var(--text-primary)' }}>{bookingModal.itemName}</div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Local de Retirada</span>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>🏪 {bookingModal.targetName}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>📍 {bookingModal.targetAddress}</div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                    <div>
+                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Valor</span>
+                      <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>{bookingModal.itemPrice}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Status</span>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'flex-end' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+                        Reservado
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Simulated Barcode */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '12px',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '10px',
+                  border: '1.5px dashed #cbd5e1'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '2px',
+                    height: '40px',
+                    alignItems: 'stretch'
+                  }}>
+                    {[1, 3, 1, 4, 2, 1, 3, 2, 4, 1, 2, 3, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2, 3].map((w, idx) => (
+                      <div key={idx} style={{
+                        width: `${w}px`,
+                        backgroundColor: idx % 2 === 0 ? '#0f172a' : 'transparent'
+                      }} />
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '10.5px', fontFamily: 'monospace', color: '#475569', letterSpacing: '2px', fontWeight: 'bold' }}>
+                    {bookingModal.code}
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bookingModal.targetName + ' ' + bookingModal.targetAddress)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      textDecoration: 'none',
+                      fontSize: '12px',
+                      height: '38px',
+                      padding: 0
+                    }}
+                  >
+                    🗺️ Ver Rota
+                  </a>
+                  <button
+                    onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
+                    className="btn btn-primary"
+                    style={{ fontSize: '12px', height: '38px', padding: 0 }}
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </>
+            ) : (
+              // Delivery Mode
+              <>
+                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '28px'
+                  }}>
+                    🚚
+                  </div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                    Pedido Confirmado!
+                  </h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+                    Seu insumo já está na esteira de envio express do iRec Delivery.
+                  </p>
+                </div>
+
+                <div style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  <div>
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Insumo</span>
+                    <div style={{ fontSize: '13px', fontWeight: '750', color: 'var(--text-primary)' }}>{bookingModal.itemName}</div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Destinatário e Endereço</span>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>👤 {bookingModal.targetName}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>📍 {bookingModal.targetAddress}</div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                    <div>
+                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Previsão de Entrega</span>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)' }}>Em até 24 horas</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Rastreio</span>
+                      <div style={{ fontSize: '11.5px', fontFamily: 'monospace', fontWeight: '800', color: 'var(--text-primary)' }}>
+                        {bookingModal.code}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '12px',
+                  backgroundColor: 'rgba(14, 165, 233, 0.05)',
+                  border: '1px solid rgba(14, 165, 233, 0.15)',
+                  borderRadius: '10px'
+                }}>
+                  <div style={{ fontSize: '20px' }}>📦</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Preparando envio</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Aguardando coleta da transportadora parceira.</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
+                  className="btn btn-primary"
+                  style={{ width: '100%', fontSize: '12px', marginTop: '4px', height: '38px', padding: 0 }}
+                >
+                  Confirmar e Fechar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* CSS Animation injection */}
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </div>
