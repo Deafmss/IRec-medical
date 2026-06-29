@@ -164,6 +164,7 @@ Como posso te ajudar hoje?`;
   const [isTyping, setIsTyping] = useState(false);
   const [showUploadMenu, setShowUploadMenu] = useState(false);
   const messagesEndRef = useRef(null);
+  const isSubmittingRef = useRef(false);
 
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
 
@@ -320,7 +321,6 @@ Como posso te ajudar hoje?`;
         clearInterval(interval);
         setIsTyping(false);
         setThreads(prevThreads => {
-          localStorage.setItem('irec_chat_threads', JSON.stringify(prevThreads));
           const currentActiveThread = prevThreads.find(t => t.id === activeThreadId) || prevThreads[0];
           
           // Log AI response
@@ -329,30 +329,29 @@ Como posso te ajudar hoje?`;
             threadTitle: currentActiveThread?.title
           });
 
+          let finalThreads = prevThreads;
           // Auto-rename based on clinical topic detection if not manually renamed
           if (!currentActiveThread?.manuallyRenamed) {
             const lastUserMsg = [...msgsBase].reverse().find(m => m.sender === 'user');
             const userText = lastUserMsg ? lastUserMsg.text : '';
             const detected = detectTopicFromText(userText, responseText);
             if (detected && currentActiveThread.title !== detected) {
-              const finalThreads = prevThreads.map(t => 
+              finalThreads = prevThreads.map(t => 
                 t.id === activeThreadId ? { ...t, title: detected } : t
               );
-              localStorage.setItem('irec_chat_threads', JSON.stringify(finalThreads));
-              setTimeout(() => {
-                setThreads(finalThreads);
-              }, 0);
             }
           }
           
-          return prevThreads;
+          localStorage.setItem('irec_chat_threads', JSON.stringify(finalThreads));
+          return finalThreads;
         });
       }
     }, 8); // faster typing for medical reports
   };
 
   const handleSendMessage = async (textToSend) => {
-    if (!textToSend.trim()) return;
+    if (!textToSend.trim() || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
     const userMsg = {
       id: Date.now(),
@@ -470,6 +469,7 @@ Como posso te ajudar hoje?`;
       }
 
       streamResponse(realResponse.reply, finalMessages);
+      isSubmittingRef.current = false;
       return;
     }
 
@@ -584,6 +584,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
       }
 
       streamResponse(response, finalMessages);
+      isSubmittingRef.current = false;
     }, 1000);
   };
 
