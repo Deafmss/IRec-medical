@@ -140,6 +140,20 @@ Como posso te ajudar hoje?`;
 
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
 
+  // Renaming chat thread states
+  const [editingThreadId, setEditingThreadId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+
+  const handleSaveTitle = (id) => {
+    if (editingTitle.trim()) {
+      const updated = threads.map(t => 
+        t.id === id ? { ...t, title: editingTitle.trim() } : t
+      );
+      saveThreads(updated);
+    }
+    setEditingThreadId(null);
+  };
+
   const speakMessage = (msgId, text) => {
     if (speakingMessageId === msgId) {
       window.speechSynthesis.cancel();
@@ -207,14 +221,30 @@ Como posso te ajudar hoje?`;
   // Delete chat thread
   const handleDeleteThread = (e, id) => {
     e.stopPropagation();
-    if (threads.length <= 1) {
-      alert("Você precisa manter pelo menos uma conversa no histórico.");
-      return;
-    }
     const updated = threads.filter(t => t.id !== id);
-    saveThreads(updated);
-    if (activeThreadId === id) {
-      selectThread(updated[0].id);
+    if (updated.length === 0) {
+      // If no threads left, automatically create a fresh clean one
+      const newId = `thread-${Date.now()}`;
+      const newThread = {
+        id: newId,
+        title: 'Nova Conversa #1',
+        messages: [
+          {
+            id: Date.now(),
+            sender: 'ai',
+            text: DEFAULT_WELCOME(clinicalProfile?.name || 'Paciente'),
+            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          }
+        ],
+        updatedAt: Date.now()
+      };
+      saveThreads([newThread]);
+      selectThread(newId);
+    } else {
+      saveThreads(updated);
+      if (activeThreadId === id) {
+        selectThread(updated[0].id);
+      }
     }
   };
 
@@ -998,45 +1028,115 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
                 <svg style={{ width: '16px', height: '16px', stroke: t.id === activeThreadId ? 'var(--primary)' : 'var(--text-secondary)', strokeWidth: '2', fill: 'none', flexShrink: 0 }} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <span style={{ 
-                  fontSize: '12.5px', 
-                  color: t.id === activeThreadId ? 'var(--primary)' : 'var(--text-primary)',
-                  fontWeight: t.id === activeThreadId ? '600' : 'normal',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {t.title}
-                </span>
+                {editingThreadId === t.id ? (
+                  <input
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onBlur={() => handleSaveTitle(t.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveTitle(t.id);
+                      if (e.key === 'Escape') setEditingThreadId(null);
+                    }}
+                    autoFocus
+                    style={{
+                      fontSize: '12px',
+                      padding: '2px 4px',
+                      border: '1px solid var(--primary)',
+                      borderRadius: '4px',
+                      backgroundColor: 'var(--bg-primary)',
+                      color: 'var(--text-primary)',
+                      width: '100%',
+                      outline: 'none'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span 
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setEditingThreadId(t.id);
+                      setEditingTitle(t.title);
+                    }}
+                    title="Clique duas vezes para renomear"
+                    style={{ 
+                      fontSize: '12.5px', 
+                      color: t.id === activeThreadId ? 'var(--primary)' : 'var(--text-primary)',
+                      fontWeight: t.id === activeThreadId ? '600' : 'normal',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      cursor: 'text',
+                      flex: 1
+                    }}
+                  >
+                    {t.title}
+                  </span>
+                )}
               </div>
-              <button
-                onClick={(e) => handleDeleteThread(e, t.id)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--text-muted)',
-                  borderRadius: '4px',
-                  transition: 'var(--transition-fast)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--danger)';
-                  e.currentTarget.style.backgroundColor = 'var(--danger-glow)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-                title="Excluir conversa"
-              >
-                <svg style={{ width: '14px', height: '14px', fill: 'none', stroke: 'currentColor', strokeWidth: '2' }} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
+              <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                {editingThreadId !== t.id && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingThreadId(t.id);
+                      setEditingTitle(t.title);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text-muted)',
+                      borderRadius: '4px',
+                      transition: 'var(--transition-fast)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--primary)';
+                      e.currentTarget.style.backgroundColor = 'var(--primary-glow)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-muted)';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                    title="Renomear conversa"
+                  >
+                    <svg style={{ width: '13px', height: '13px', fill: 'none', stroke: 'currentColor', strokeWidth: '2' }} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                    </svg>
+                  </button>
+                )}
+                <button
+                  onClick={(e) => handleDeleteThread(e, t.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-muted)',
+                    borderRadius: '4px',
+                    transition: 'var(--transition-fast)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--danger)';
+                    e.currentTarget.style.backgroundColor = 'var(--danger-glow)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--text-muted)';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                  title="Excluir conversa"
+                >
+                  <svg style={{ width: '14px', height: '14px', fill: 'none', stroke: 'currentColor', strokeWidth: '2' }} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
             </div>
           ))}
         </div>
