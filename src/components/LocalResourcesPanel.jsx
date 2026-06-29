@@ -22,8 +22,8 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
 
   // Leaflet loading state
   const [leafletLoaded, setLeafletLoaded] = useState(false);
-  const [mapProvider, setMapProvider] = useState('google-free');
-  const [googleEmbedQuery, setGoogleEmbedQuery] = useState('patient'); // 'patient', 'hospital', 'pharmacy'
+  const [googleEmbedQuery, setGoogleEmbedQuery] = useState('hospital'); // 'hospital', 'pharmacy'
+  const [mapZoom, setMapZoom] = useState(15);
   
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -436,7 +436,7 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
     } catch (err) {
       console.error('Error updating leaflet markers:', err);
     }
-  }, [leafletLoaded, coords, hospitals, pharmacies, compact, activeKey, mapProvider]);
+  }, [leafletLoaded, coords, hospitals, pharmacies, compact, activeKey]);
 
   // 4.1. Initialize and update Google Map
   useEffect(() => {
@@ -576,7 +576,7 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
     } catch (err) {
       console.error('Error updating Google Maps markers:', err);
     }
-  }, [googleMapsLoaded, coords, hospitals, pharmacies, compact, activeKey, mapProvider]);
+  }, [googleMapsLoaded, coords, hospitals, pharmacies, compact, activeKey]);
 
   // Clean up map instance on unmount
   useEffect(() => {
@@ -804,113 +804,103 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
         </div>
       )}
 
-      {/* Map Provider Selector & Controls */}
+      {/* Map Search & Zoom Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-        <div style={{ display: 'flex', backgroundColor: 'var(--bg-secondary)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-          <button 
-            type="button"
-            onClick={() => setMapProvider('google-free')}
-            style={{
-              padding: '4px 10px',
-              fontSize: '11.5px',
-              fontWeight: '700',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: mapProvider === 'google-free' ? 'var(--primary)' : 'transparent',
-              color: mapProvider === 'google-free' ? '#ffffff' : 'var(--text-secondary)',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            🗺️ Google Maps
-          </button>
-          <button 
-            type="button"
-            onClick={() => setMapProvider('leaflet')}
-            style={{
-              padding: '4px 10px',
-              fontSize: '11.5px',
-              fontWeight: '700',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: mapProvider === 'leaflet' ? 'var(--primary)' : 'transparent',
-              color: mapProvider === 'leaflet' ? '#ffffff' : 'var(--text-secondary)',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            📍 Mapa Alternativo
-          </button>
-        </div>
-
-        {mapProvider === 'google-free' && coords.lat && coords.lon && (
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <button
-              type="button"
-              onClick={() => setGoogleEmbedQuery('patient')}
-              style={{
-                padding: '4px 8px',
-                fontSize: '10.5px',
-                fontWeight: '700',
-                borderRadius: '6px',
-                border: '1px solid var(--border-color)',
-                cursor: 'pointer',
-                backgroundColor: googleEmbedQuery === 'patient' ? 'var(--primary-glow)' : 'var(--bg-secondary)',
-                color: googleEmbedQuery === 'patient' ? 'var(--primary)' : 'var(--text-secondary)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              👤 Meu Local
-            </button>
+        {coords.lat && coords.lon && (
+          <div style={{ display: 'flex', gap: '6px' }}>
             <button
               type="button"
               onClick={() => setGoogleEmbedQuery('hospital')}
               style={{
-                padding: '4px 8px',
-                fontSize: '10.5px',
+                padding: '6px 12px',
+                fontSize: '11px',
                 fontWeight: '700',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 border: '1px solid var(--border-color)',
                 cursor: 'pointer',
                 backgroundColor: googleEmbedQuery === 'hospital' ? 'var(--danger-glow)' : 'var(--bg-secondary)',
                 color: googleEmbedQuery === 'hospital' ? 'var(--danger)' : 'var(--text-secondary)',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
               }}
             >
-              🏥 Hospitais
+              🏥 Buscar Hospitais
             </button>
             <button
               type="button"
               onClick={() => setGoogleEmbedQuery('pharmacy')}
               style={{
-                padding: '4px 8px',
-                fontSize: '10.5px',
+                padding: '6px 12px',
+                fontSize: '11px',
                 fontWeight: '700',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 border: '1px solid var(--border-color)',
                 cursor: 'pointer',
                 backgroundColor: googleEmbedQuery === 'pharmacy' ? 'var(--primary-glow)' : 'var(--bg-secondary)',
                 color: googleEmbedQuery === 'pharmacy' ? 'var(--primary)' : 'var(--text-secondary)',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
               }}
             >
-              💊 Farmácias
+              💊 Buscar Farmácias
             </button>
           </div>
         )}
+
+        {/* Dynamic Zoom Controls */}
+        <div style={{ display: 'flex', backgroundColor: 'var(--bg-secondary)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          <button
+            type="button"
+            onClick={() => setMapZoom(prev => Math.max(prev - 1, 10))}
+            style={{
+              padding: '4px 10px',
+              fontSize: '11px',
+              fontWeight: '700',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: 'transparent',
+              color: 'var(--text-secondary)',
+              transition: 'all 0.2s ease'
+            }}
+            title="Afastar mapa"
+          >
+            ➖ Afastar
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapZoom(prev => Math.min(prev + 1, 20))}
+            style={{
+              padding: '4px 10px',
+              fontSize: '11px',
+              fontWeight: '700',
+              borderRadius: '6px',
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: 'transparent',
+              color: 'var(--text-secondary)',
+              transition: 'all 0.2s ease'
+            }}
+            title="Aproximar mapa"
+          >
+            ➕ Aproximar
+          </button>
+        </div>
       </div>
 
       {/* Map display area */}
       <div className="glass-card" style={{ padding: 0, overflow: 'hidden', margin: '0 0 16px 0', height: '300px', width: '100%', border: '1px solid var(--border-color)', position: 'relative', zIndex: 1 }}>
-        {mapProvider === 'google-free' && coords.lat && coords.lon ? (
+        {coords.lat && coords.lon ? (
           <iframe
             title="Google Maps"
             src={
               googleEmbedQuery === 'hospital'
-                ? `https://maps.google.com/maps?q=hospitais+pronto+socorro+near+${coords.lat},${coords.lon}&t=&z=14&ie=UTF8&iwloc=&output=embed`
-                : googleEmbedQuery === 'pharmacy'
-                ? `https://maps.google.com/maps?q=farmacias+near+${coords.lat},${coords.lon}&t=&z=14&ie=UTF8&iwloc=&output=embed`
-                : `https://maps.google.com/maps?q=${coords.lat},${coords.lon}&t=&z=16&ie=UTF8&iwloc=&output=embed`
+                ? `https://maps.google.com/maps?q=hospitais+pronto+socorro+loc:${coords.lat},${coords.lon}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
+                : `https://maps.google.com/maps?q=farmacias+loc:${coords.lat},${coords.lon}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
             }
             style={{
               width: '100%',
@@ -922,25 +912,8 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
             loading="lazy"
           />
         ) : (
-          <div ref={mapRef} style={{ width: '100%', height: '100%', zIndex: 1 }} />
-        )}
-        
-        {loading && mapProvider === 'leaflet' && (
-          <div style={{ 
-            position: 'absolute', 
-            top: 0, left: 0, right: 0, bottom: 0, 
-            backgroundColor: 'rgba(255, 255, 255, 0.7)', 
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
-            zIndex: 1000 
-          }}>
-            <div style={{ 
-              width: '28px', height: '28px', 
-              border: '3px solid var(--border-color)', 
-              borderTopColor: 'var(--primary)', 
-              borderRadius: '50%', 
-              animation: 'spin 1s linear infinite' 
-            }} />
-            <p style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)', marginTop: '8px' }}>Carregando dados geográficos...</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)', fontSize: '12px' }}>
+            Carregando localização...
           </div>
         )}
       </div>
