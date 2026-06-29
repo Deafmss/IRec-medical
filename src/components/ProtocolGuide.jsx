@@ -98,13 +98,12 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
   const [loading, setLoading] = useState(false);
   const [aiProtocol, setAiProtocol] = useState(null);
   const [error, setError] = useState('');
-
   const latestWoundEntry = entries && entries.length > 0 ? entries[entries.length - 1] : null;
 
   // Static reference protocols (standard fallback/baseline)
   const staticProtocols = {
     venosa: {
-      title: 'Úlcera Venosa (Padrão)',
+      title: 'Úlcera Venosa',
       description: 'Lesões causadas por insuficiência venosa crônica. O foco principal é o controle de exsudato e a terapia compressiva após a cicatrização inicial.',
       steps: [
         { title: 'Higienização', desc: 'Lavar a lesão abundantemente com soro fisiológico morno 0.9% ou solução PHMB em jato suave para preservar o tecido novo de granulação.' },
@@ -116,12 +115,12 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       materials: [
         { name: 'Hidrogel Amorfo com Alginato (85g)', price: 'R$ 42,90', brand: 'Curatec' },
         { name: 'Fita de Alginato de Cálcio (10x10cm)', price: 'R$ 28,50', brand: 'Mepilex' },
-        { name: 'Creme Barreira Protetor (100g)', price: 'R$ 54,00', brand: 'Cavilon' },
+        { name: 'Creme Barreira Prototor (100g)', price: 'R$ 54,00', brand: 'Cavilon' },
         { name: 'Atadura de Algodão Ortópedico', price: 'R$ 8,20', brand: 'Cremer' }
       ]
     },
     diabetico: {
-      title: 'Pé Diabético (Padrão)',
+      title: 'Pé Diabético',
       description: 'Lesões decorrentes de neuropatia e vasculopatia diabética. Exigem alívio total de pressão e monitoramento rigoroso contra infecções silenciadas.',
       steps: [
         { title: 'Inspeção e Limpeza', desc: 'Lavar com soro fisiológico e inspecionar minuciosamente a profundidade e presença de trajetos fistulosos.' },
@@ -136,7 +135,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       ]
     },
     pressao: {
-      title: 'Lesão por Pressão (LPP) (Padrão)',
+      title: 'Lesão por Pressão (LPP)',
       description: 'Lesões na pele causadas por pressão prolongada em áreas com proeminências ósseas (comum em acamados). Exige mudança de decúbito regular.',
       steps: [
         { title: 'Limpeza Suave', desc: 'Limpar com soro fisiológico sob baixa pressão para evitar danos células nos tecidos recém-formados.' },
@@ -151,7 +150,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       ]
     },
     arterial: {
-      title: 'Úlcera Arterial (Padrão)',
+      title: 'Úlcera Arterial',
       description: 'Lesões causadas por fluxo sanguíneo arterial insuficiente (isquemia). O foco é revascularização e proteção contra infecção. Terapia compressiva é estritamente contraindicada.',
       steps: [
         { title: 'Avaliação Vascular', desc: 'Verificar pulsos periféricos (pedioso e tibial posterior) e medir Índice Tornozelo-Braço (ITB). Encaminhar ao cirurgião vascular.' },
@@ -166,7 +165,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       ]
     },
     queimadura: {
-      title: 'Queimadura de 1º e 2º Grau (Padrão)',
+      title: 'Queimadura de 1º e 2º Grau',
       description: 'Lesões térmicas ou químicas na epiderme e derme. Foco no controle da dor, prevenção de infecção e manutenção de leito úmido.',
       steps: [
         { title: 'Resfriamento', desc: 'Resfriar com água corrente fria (não gelada) por 15-20 minutos imediatamente após o acidente.' },
@@ -181,7 +180,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       ]
     },
     dau: {
-      title: 'Dermatite por Umidade (DAU) (Padrão)',
+      title: 'Dermatite por Umidade (DAU)',
       description: 'Inflamação e erosão da pele causadas por exposição prolongada a urina, fezes ou suor. Comum em pacientes incontinentes.',
       steps: [
         { title: 'Higiene Suave', desc: 'Limpar a área perineal com sabonete de pH neutro ou loção de limpeza sem enxágue. Evitar esfregar a pele.' },
@@ -195,7 +194,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       ]
     },
     friccao: {
-      title: 'Lesão por Fricção (Skin Tear) (Padrão)',
+      title: 'Lesão por Fricção (Skin Tear)',
       description: 'Feridas traumáticas causadas por forças de fricção ou cisalhamento, resultando na separação da epiderme da derme (comum em idosos).',
       steps: [
         { title: 'Reposicionamento do Retalho', desc: 'Limpar com soro fisiológico e reposicionar cuidadosamente o retalho de pele sobre o leito da lesão, se possível.' },
@@ -209,7 +208,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       ]
     },
     cirurgica: {
-      title: 'Deiscência Cirúrgica (Padrão)',
+      title: 'Deiscência Cirúrgica',
       description: 'Separação espontânea das bordas de uma incisão cirúrgica antes da cicatrização completa. Foco no estímulo de granulação e controle bacteriano.',
       steps: [
         { title: 'Limpeza Asséptica', desc: 'Lavar exaustivamente com soro fisiológico ou solução de PHMB para remover resíduos e secreções.' },
@@ -219,7 +218,6 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       materials: [
         { name: 'Hidrogel Amorfo com Alginato (85g)', price: 'R$ 42,90', brand: 'Curatec' },
         { name: 'Placa de Alginato de Cálcio (10x10cm)', price: 'R$ 28,50', brand: 'Curatec' },
-        { name: 'Solução Antisséptica de PHMB (350ml)', price: 'R$ 62,00', brand: 'Prontosan' }
       ]
     }
   };
