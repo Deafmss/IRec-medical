@@ -109,6 +109,14 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
   * `Rede de Enfermagem` ➔ **`Enfermagem`**
   * `Guias de Tratamento` ➔ **`Protocolos`**
 
+### 9. Cadastro Completo Obrigatório para Profissionais (`DoctorDashboard.jsx` & `UserProfileModal.jsx` & `supabaseService.js`)
+- **Migração do Banco de Dados:** Adicionamos as colunas `bio`, `education` e `consultation_fee` na tabela `clinical_profile` do Supabase PostgreSQL para permitir o armazenamento completo das informações.
+- **Formulário de Edição Profissional:** Expandimos o `UserProfileModal.jsx` para exibir inputs de Biografia Clínica, Formação Acadêmica e Valor da Consulta para médicos e enfermeiros, além do suporte a fotos de perfil.
+- **Bloqueio Reativo do Dashboard (Completeness Check):** Adicionamos uma validação rígida no `DoctorDashboard.jsx`. Se o profissional não preencher todos os 6 parâmetros obrigatórios (Nome, CRM/COREN, Especialidade, Bio, Formação Acadêmica, Valor da Consulta e Foto), o painel clínico principal é bloqueado por uma tela de regulação com uma lista interativa de progresso e um link direto para preenchimento dos dados.
+
+### 10. Unificação da Rede de Enfermagem (`NursesNetwork.jsx` & `App.jsx`)
+- **Refletindo Fluxo de Especialistas:** Redesenhamos a aba `Enfermagem` para funcionar com a mesma inteligência premium do diretório médico. Os pacientes agora podem buscar, filtrar, conferir valores de visitas domiciliares, analisar currículos, ver depoimentos e se conectar aos enfermeiros em um único clique, com redirecionamento instantâneo ao chat seguro.
+
 ---
 
 ## Como Realizar o Teste no Cenário Real (Desktop vs. Mobile)
