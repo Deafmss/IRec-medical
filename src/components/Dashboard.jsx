@@ -226,6 +226,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   const [healingWeek, setHealingWeek] = useState(1);
   const [whatsappSent, setWhatsappSent] = useState(false);
   const [showWhatsappNotify, setShowWhatsappNotify] = useState(false);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(true);
 
   // Fetch assigned doctor on component mount or clinical profile update
   useEffect(() => {
@@ -311,12 +312,16 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
     ));
   };
 
-  const triggerSimulatedWhatsapp = () => {
-    setWhatsappSent(true);
-    setShowWhatsappNotify(true);
-    setTimeout(() => {
-      setShowWhatsappNotify(false);
-    }, 6000);
+  const handleWhatsappToggle = () => {
+    const nextVal = !whatsappEnabled;
+    setWhatsappEnabled(nextVal);
+    if (nextVal) {
+      setWhatsappSent(true);
+      setShowWhatsappNotify(true);
+      setTimeout(() => {
+        setShowWhatsappNotify(false);
+      }, 6000);
+    }
   };
 
   const handleProfileSave = async (e) => {
@@ -508,36 +513,75 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
           {/* Gamificação & Régua Evolutiva */}
           <div className="glass-card" style={{ width: '100%', margin: 0, background: 'linear-gradient(135deg, var(--glass-bg), rgba(14, 165, 233, 0.03))' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              🎯 Jornada de Recuperação & Estímulo
+              🎯 Cronograma de Evolução Clínica
             </h3>
             <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-              Acompanhe a projeção visual da cicatrização e simule as ferramentas de engajamento do iRec.
+              Acompanhe as fases de cicatrização da lesão e as metas diárias recomendadas.
             </p>
 
-            {/* Healing Week Slider */}
+            {/* Healing Week Progress Timeline */}
             <div style={{ backgroundColor: 'var(--bg-primary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
-                <span>Projeção Evolutiva:</span>
+                <span>Etapa do Tratamento:</span>
                 <span style={{ color: 'var(--primary)' }}>Semana {healingWeek} de 6</span>
               </div>
 
-              {/* Slider Input */}
-              <input 
-                type="range"
-                min="1"
-                max="6"
-                value={healingWeek}
-                onChange={(e) => setHealingWeek(parseInt(e.target.value))}
-                style={{
-                  width: '100%',
-                  height: '6px',
-                  borderRadius: '3px',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  marginBottom: '12px',
-                  accentColor: 'var(--primary)'
-                }}
-              />
+              {/* Interactive Timeline Dots */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', margin: '20px 0 16px 0', padding: '0 10px' }}>
+                <div style={{
+                  position: 'absolute',
+                  left: '10px',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  height: '2px',
+                  backgroundColor: 'var(--border-color)',
+                  zIndex: 1
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  left: '10px',
+                  width: `${((healingWeek - 1) / 5) * 91}%`,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  height: '2px',
+                  backgroundColor: 'var(--primary)',
+                  zIndex: 2,
+                  transition: 'width 0.3s ease'
+                }} />
+                
+                {[1, 2, 3, 4, 5, 6].map(wk => {
+                  const isActive = wk <= healingWeek;
+                  const isCurrent = wk === healingWeek;
+                  return (
+                    <button
+                      key={wk}
+                      type="button"
+                      onClick={() => setHealingWeek(wk)}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        backgroundColor: isCurrent ? 'var(--primary)' : isActive ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                        border: `2px solid ${isActive ? 'var(--primary)' : 'var(--border-color)'}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px',
+                        fontWeight: '800',
+                        color: isCurrent ? '#ffffff' : isActive ? 'var(--primary)' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        zIndex: 3,
+                        transition: 'all 0.2s ease',
+                        boxShadow: isCurrent ? '0 0 10px var(--primary-glow)' : 'none',
+                        outline: 'none'
+                      }}
+                    >
+                      {wk}
+                    </button>
+                  );
+                })}
+              </div>
 
               {/* Simulated Wound State View */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '10px' }}>
@@ -579,21 +623,49 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               </div>
             </div>
 
-            {/* Simulated WhatsApp notification block */}
+            {/* WhatsApp notification block */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
               <div>
-                <strong style={{ fontSize: '11.5px', display: 'block', color: 'var(--text-primary)' }}>Lembretes WhatsApp (Z-API)</strong>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Simule os disparos de autocuidado</span>
+                <strong style={{ fontSize: '11.5px', display: 'block', color: 'var(--text-primary)' }}>Notificações via WhatsApp</strong>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Lembretes diários de curativo e cuidados preventivos</span>
               </div>
-              <button 
-                className="btn btn-secondary" 
-                type="button"
-                onClick={triggerSimulatedWhatsapp}
-                disabled={showWhatsappNotify}
-                style={{ fontSize: '10.5px', padding: '6px 12px', height: '32px', borderRadius: '6px' }}
-              >
-                {whatsappSent ? '🔄 Re-enviar Alerta' : '📱 Testar Alerta'}
-              </button>
+              
+              {/* Toggle Switch */}
+              <label style={{
+                position: 'relative',
+                display: 'inline-block',
+                width: '40px',
+                height: '20px',
+                cursor: 'pointer'
+              }}>
+                <input 
+                  type="checkbox" 
+                  checked={whatsappEnabled}
+                  onChange={handleWhatsappToggle}
+                  style={{ opacity: 0, width: 0, height: 0 }} 
+                />
+                <span style={{
+                  position: 'absolute',
+                  cursor: 'pointer',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  backgroundColor: whatsappEnabled ? 'var(--primary)' : '#cbd5e1',
+                  transition: '0.3s',
+                  borderRadius: '20px'
+                }}>
+                  <span style={{
+                    position: 'absolute',
+                    content: '""',
+                    height: '14px',
+                    width: '14px',
+                    left: whatsappEnabled ? '22px' : '4px',
+                    bottom: '3px',
+                    backgroundColor: 'white',
+                    transition: '0.3s',
+                    borderRadius: '50%',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                  }} />
+                </span>
+              </label>
             </div>
           </div>
 
