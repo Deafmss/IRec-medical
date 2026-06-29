@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { uploadExamFileAndTriage, updateClinicalProfile } from '../services/supabaseService';
+import { uploadExamFileAndTriage, updateClinicalProfile, createAuditLog } from '../services/supabaseService';
 import { chatWithAI } from '../services/geminiService';
 
 const SUGGESTIONS = [
@@ -221,6 +221,8 @@ Como posso te ajudar hoje?`;
   // Delete chat thread
   const handleDeleteThread = (e, id) => {
     e.stopPropagation();
+    const targetThread = threads.find(t => t.id === id);
+    createAuditLog('AI_CHAT_DELETE_VIEW', id, { threadTitle: targetThread?.title });
     const updated = threads.filter(t => t.id !== id);
     if (updated.length === 0) {
       // If no threads left, automatically create a fresh clean one
@@ -254,15 +256,15 @@ Como posso te ajudar hoje?`;
   }, [messages, isTyping]);
 
   // Stream responses word-by-word into the active thread
-  const streamResponse = (responseText) => {
+  const streamResponse = (responseText, existingMessages) => {
     setIsTyping(true);
     let index = 0;
     let currentText = '';
     
     // Create placeholder message for streaming in active thread
     const newMessageId = Date.now();
-    const currentActiveThread = threads.find(t => t.id === activeThreadId) || threads[0];
-    const initialThreadMsg = [...currentActiveThread.messages, {
+    const msgsBase = existingMessages || (threads.find(t => t.id === activeThreadId) || threads[0]).messages;
+    const initialThreadMsg = [...msgsBase, {
       id: newMessageId,
       sender: 'ai',
       text: '',
@@ -292,6 +294,11 @@ Como posso te ajudar hoje?`;
         setIsTyping(false);
         setThreads(prevThreads => {
           localStorage.setItem('irec_chat_threads', JSON.stringify(prevThreads));
+          const currentActiveThread = prevThreads.find(t => t.id === activeThreadId) || prevThreads[0];
+          createAuditLog('AI_CHAT_AI_RESPONSE', activeThreadId, {
+            message: responseText,
+            threadTitle: currentActiveThread?.title
+          });
           return prevThreads;
         });
       }
@@ -326,6 +333,12 @@ Como posso te ajudar hoje?`;
     saveThreads(updatedThreads);
     setInputText('');
     setIsTyping(true);
+
+    // Save user message to database audit log for compliance
+    createAuditLog('AI_CHAT_USER_MESSAGE', activeThreadId, {
+      message: textToSend,
+      threadTitle: newTitle
+    });
 
     // Helper to merge, update and sync profile changes
     const applyProfileUpdates = async (updates) => {
@@ -396,6 +409,7 @@ Como posso te ajudar hoje?`;
       
       // Apply the database updates and state sync
       const updatesList = await applyProfileUpdates(realResponse.profileUpdates);
+      let finalMessages = updatedMessages;
       if (updatesList && updatesList.length > 0) {
         const syncMsg = {
           id: Date.now() + 1,
@@ -403,12 +417,13 @@ Como posso te ajudar hoje?`;
           text: `📋 **[iRec Prontuário]** Ficha clínica atualizada no banco de dados para consulta médica:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         };
+        finalMessages = [...updatedMessages, syncMsg];
         const latestThread = threads.find(t => t.id === activeThreadId) || threads[0];
         const withSyncMsg = [...latestThread.messages, userMsg, syncMsg];
         saveThreads(threads.map(t => t.id === activeThreadId ? { ...t, messages: withSyncMsg } : t));
       }
 
-      streamResponse(realResponse.reply);
+      streamResponse(realResponse.reply, finalMessages);
       return;
     }
 
@@ -510,6 +525,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
 
       setIsTyping(false);
       
+      let finalMessages = updatedMessages;
       if (updatesList && updatesList.length > 0) {
         const syncMsg = {
           id: Date.now() + 1,
@@ -517,12 +533,11 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
           text: `📋 **[iRec Prontuário - Simulado]** Ficha clínica atualizada no banco de dados:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         };
-        const currentActiveThread = threads.find(t => t.id === activeThreadId) || threads[0];
-        const withSyncMsg = [...currentActiveThread.messages, syncMsg];
-        saveThreads(threads.map(t => t.id === activeThreadId ? { ...t, messages: withSyncMsg } : t));
+        finalMessages = [...updatedMessages, syncMsg];
+        saveThreads(threads.map(t => t.id === activeThreadId ? { ...t, messages: finalMessages } : t));
       }
 
-      streamResponse(response);
+      streamResponse(response, finalMessages);
     }, 1000);
   };
 
@@ -553,10 +568,13 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
     saveThreads(updatedThreads);
     setIsTyping(true);
 
+    // Let's call createAuditLog for user upload message!
+    createAuditLog('AI_CHAT_USER_MESSAGE', activeThreadId, {
+      message: userMsg.text,
+      threadTitle: newTitle
+    });
+
     try {
-      // In mock simulation mode, we pass null as the physical file.
-      // The service will still process the exam metadata, apply the triage rules,
-      // and update the Supabase database clinical_profile record!
       const updatedProfile = await uploadExamFileAndTriage(examKey, null, fileName, clinicalProfile);
       if (setClinicalProfile) {
         setClinicalProfile(updatedProfile);
@@ -567,7 +585,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
 
     setTimeout(() => {
       setIsTyping(false);
-      streamResponse(EXAM_RESPONSES[examKey]);
+      streamResponse(EXAM_RESPONSES[examKey], updatedMessages);
     }, 1200);
   };
 
