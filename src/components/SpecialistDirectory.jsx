@@ -103,6 +103,10 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
         }
+        @keyframes scaleUp {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
       `}</style>
       
       <div style={{ marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
@@ -286,19 +290,22 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
             backdropFilter: 'blur(8px)',
             zIndex: 1000,
             display: 'flex',
-            justifyContent: 'flex-end',
+            alignItems: 'center',
+            justifyContent: 'center',
             animation: 'fadeIn 0.3s ease'
           }}>
             <div style={{
-              width: '100%',
-              maxWidth: '420px',
+              width: '90%',
+              maxWidth: '460px',
               backgroundColor: 'var(--bg-secondary)',
-              height: '100%',
-              boxShadow: '-10px 0 30px rgba(0,0,0,0.15)',
+              maxHeight: '90vh',
+              borderRadius: '16px',
+              boxShadow: '0 20px 40px rgba(15, 23, 42, 0.15)',
               display: 'flex',
               flexDirection: 'column',
-              animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-              borderLeft: '1px solid var(--border-color)'
+              animation: 'scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              border: '1px solid var(--border-color)',
+              overflow: 'hidden'
             }}>
               {/* Drawer Header */}
               <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-primary)' }}>
