@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { updateClinicalProfile, getAssignedDoctor } from '../services/supabaseService';
 import LocalResourcesPanel from './LocalResourcesPanel';
-import DiabeticFootTelemetry from './DiabeticFootTelemetry';
+
 
 // Helper to generate precise caret/daily tasks based on clinical history, comorbidities, and active wound status
 const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = null) => {
@@ -222,11 +222,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   const [assignedClinician, setAssignedClinician] = useState(null);
   const [showMapModal, setShowMapModal] = useState(false);
 
-  // Gamification & Healing Slider states
-  const [healingWeek, setHealingWeek] = useState(1);
-  const [whatsappSent, setWhatsappSent] = useState(false);
-  const [showWhatsappNotify, setShowWhatsappNotify] = useState(false);
-  const [whatsappEnabled, setWhatsappEnabled] = useState(true);
+
 
   // Fetch assigned doctor on component mount or clinical profile update
   useEffect(() => {
@@ -312,17 +308,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
     ));
   };
 
-  const handleWhatsappToggle = () => {
-    const nextVal = !whatsappEnabled;
-    setWhatsappEnabled(nextVal);
-    if (nextVal) {
-      setWhatsappSent(true);
-      setShowWhatsappNotify(true);
-      setTimeout(() => {
-        setShowWhatsappNotify(false);
-      }, 6000);
-    }
-  };
+
 
   const handleProfileSave = async (e) => {
     e.preventDefault();
@@ -507,165 +493,6 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                   </div>
                 </label>
               ))}
-            </div>
-          </div>
-
-          {/* Gamificação & Régua Evolutiva */}
-          <div className="glass-card" style={{ width: '100%', margin: 0, background: 'linear-gradient(135deg, var(--glass-bg), rgba(14, 165, 233, 0.03))' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              🎯 Cronograma de Evolução Clínica
-            </h3>
-            <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-              Acompanhe as fases de cicatrização da lesão e as metas diárias recomendadas.
-            </p>
-
-            {/* Healing Week Progress Timeline */}
-            <div style={{ backgroundColor: 'var(--bg-primary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
-                <span>Etapa do Tratamento:</span>
-                <span style={{ color: 'var(--primary)' }}>Semana {healingWeek} de 6</span>
-              </div>
-
-              {/* Interactive Timeline Dots */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', margin: '20px 0 16px 0', padding: '0 10px' }}>
-                <div style={{
-                  position: 'absolute',
-                  left: '10px',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  height: '2px',
-                  backgroundColor: 'var(--border-color)',
-                  zIndex: 1
-                }} />
-                <div style={{
-                  position: 'absolute',
-                  left: '10px',
-                  width: `${((healingWeek - 1) / 5) * 91}%`,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  height: '2px',
-                  backgroundColor: 'var(--primary)',
-                  zIndex: 2,
-                  transition: 'width 0.3s ease'
-                }} />
-                
-                {[1, 2, 3, 4, 5, 6].map(wk => {
-                  const isActive = wk <= healingWeek;
-                  const isCurrent = wk === healingWeek;
-                  return (
-                    <button
-                      key={wk}
-                      type="button"
-                      onClick={() => setHealingWeek(wk)}
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        backgroundColor: isCurrent ? 'var(--primary)' : isActive ? 'var(--primary-glow)' : 'var(--bg-secondary)',
-                        border: `2px solid ${isActive ? 'var(--primary)' : 'var(--border-color)'}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '10px',
-                        fontWeight: '800',
-                        color: isCurrent ? '#ffffff' : isActive ? 'var(--primary)' : 'var(--text-muted)',
-                        cursor: 'pointer',
-                        zIndex: 3,
-                        transition: 'all 0.2s ease',
-                        boxShadow: isCurrent ? '0 0 10px var(--primary-glow)' : 'none',
-                        outline: 'none'
-                      }}
-                    >
-                      {wk}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Simulated Wound State View */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '10px' }}>
-                {/* Visual Blob simulating shrinking wound size */}
-                <div style={{
-                  width: '50px',
-                  height: '50px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-color)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  position: 'relative'
-                }}>
-                  {healingWeek < 6 ? (
-                    <div style={{
-                      width: `${40 - (healingWeek - 1) * 7}px`,
-                      height: `${40 - (healingWeek - 1) * 7}px`,
-                      borderRadius: '50%',
-                      backgroundColor: healingWeek === 1 ? 'rgba(217, 83, 79, 0.7)' : healingWeek <= 3 ? 'rgba(240, 173, 78, 0.7)' : 'rgba(92, 184, 92, 0.7)',
-                      transition: 'all 0.3s ease',
-                      border: '1.5px solid rgba(255, 255, 255, 0.4)'
-                    }} />
-                  ) : (
-                    <span style={{ fontSize: '20px' }}>🎉</span>
-                  )}
-                </div>
-
-                <div style={{ fontSize: '11.5px', lineHeight: '1.4' }}>
-                  {healingWeek === 1 && <span><strong>Lesão Ativa:</strong> Fase inicial de exsudação e fibrina. Foco na higienização constante e proteção barreira da pele.</span>}
-                  {healingWeek === 2 && <span><strong>Fase Granulativa:</strong> Início do surgimento de pequenos pontos avermelhados de tecido vivo. Lesão estável.</span>}
-                  {healingWeek === 3 && <span><strong>Contração de Bordas:</strong> As bordas da ferida começam a se aproximar. Área da lesão reduzida em cerca de 30%.</span>}
-                  {healingWeek === 4 && <span><strong>Fase Epitelial:</strong> Crescimento de pele nova pelas bordas. Lesão rasa e em fase final de cicatrização.</span>}
-                  {healingWeek === 5 && <span><strong>Cicatrização Próxima:</strong> Apenas um pequeno ponto residual de ferida. Pele ao redor saudável e sem exsudato.</span>}
-                  {healingWeek === 6 && <span style={{ color: 'var(--success-light)', fontWeight: '600' }}><strong>Lesão Fechada!</strong> Pele totalmente íntegra e regenerada. Continue utilizando cremes hidratantes para fortalecer o tecido.</span>}
-                </div>
-              </div>
-            </div>
-
-            {/* WhatsApp notification block */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-              <div>
-                <strong style={{ fontSize: '11.5px', display: 'block', color: 'var(--text-primary)' }}>Notificações via WhatsApp</strong>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Lembretes diários de curativo e cuidados preventivos</span>
-              </div>
-              
-              {/* Toggle Switch */}
-              <label style={{
-                position: 'relative',
-                display: 'inline-block',
-                width: '40px',
-                height: '20px',
-                cursor: 'pointer'
-              }}>
-                <input 
-                  type="checkbox" 
-                  checked={whatsappEnabled}
-                  onChange={handleWhatsappToggle}
-                  style={{ opacity: 0, width: 0, height: 0 }} 
-                />
-                <span style={{
-                  position: 'absolute',
-                  cursor: 'pointer',
-                  top: 0, left: 0, right: 0, bottom: 0,
-                  backgroundColor: whatsappEnabled ? 'var(--primary)' : '#cbd5e1',
-                  transition: '0.3s',
-                  borderRadius: '20px'
-                }}>
-                  <span style={{
-                    position: 'absolute',
-                    content: '""',
-                    height: '14px',
-                    width: '14px',
-                    left: whatsappEnabled ? '22px' : '4px',
-                    bottom: '3px',
-                    backgroundColor: 'white',
-                    transition: '0.3s',
-                    borderRadius: '50%',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                  }} />
-                </span>
-              </label>
             </div>
           </div>
 
@@ -1066,8 +893,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
           </div>
 
-          {/* Diabetic Foot Temperature Telemetry (IoT) */}
-          <DiabeticFootTelemetry patientId={clinicalProfile?.id} />
+
 
           {/* Suporte Médico & Rede Local */}
           <div className="glass-card" style={{ width: '100%', margin: 0 }}>

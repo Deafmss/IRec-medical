@@ -12,7 +12,7 @@ import {
 } from '../services/supabaseService';
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
-import DiabeticFootTelemetry from './DiabeticFootTelemetry';
+
 
 
 export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppActiveTab, onProfileUpdate, onEditProfile, onOpenChat }) {
@@ -1630,14 +1630,7 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
                 >
                   Documentos Clínicos ({patientDocuments.length})
                 </button>
-                <button 
-                  type="button" 
-                  className={`login-tab-btn ${selectedSubTab === 'telemetry' ? 'active' : ''}`}
-                  onClick={() => setSelectedSubTab('telemetry')}
-                  style={{ minWidth: '150px' }}
-                >
-                  📟 Telemetria IoT
-                </button>
+
                 <button 
                   type="button" 
                   className={`login-tab-btn ${selectedSubTab === 'pep' ? 'active' : ''}`}
@@ -2450,13 +2443,7 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
                 </div>
               )}
 
-              {/* Telemetry Section */}
-              {selectedSubTab === 'telemetry' && (
-                <div style={{ animation: 'fadeIn 0.3s ease' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '14px' }}>Painel de Telemetria IoT do Paciente</h3>
-                  <DiabeticFootTelemetry patientId={selectedPatient.id} isDoctorView={true} />
-                </div>
-              )}
+
 
               {/* PEP Hospital Integration Section */}
               {selectedSubTab === 'pep' && (
