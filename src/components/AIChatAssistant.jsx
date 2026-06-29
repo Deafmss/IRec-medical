@@ -212,7 +212,7 @@ Como posso te ajudar hoje?`;
     };
     setThreads([defaultThread]);
     setActiveThreadId('thread-default');
-  }, [userId, clinicalProfile?.name]);
+  }, [userId]);
 
   const [showHistoryMobile, setShowHistoryMobile] = useState(false);
   const [inputText, setInputText] = useState('');
