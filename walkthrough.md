@@ -121,6 +121,9 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
 - **Card Flutuante em Primeiro Plano:** Substituímos o painel deslizante lateral (slide-over drawer) por um modal pop-up centralizado na tela.
 - **Efeitos Premium:** O novo card flutuante possui cantos arredondados suavizados (`border-radius: 16px`), sombra difusa elegante (`box-shadow`), e uma transição de surgimento do centro para fora (`scaleUp` com curva `cubic-bezier(0.34, 1.56, 0.64, 1)`), mantendo o fundo desfocado com filtro de vidro (`backdrop-filter: blur(8px)`).
 
+### 12. Reordenação e Agrupamento dos Diretórios (`App.jsx`)
+- **Agrupamento Lógico:** Movemos o item **`Enfermagem`** para ficar imediatamente abaixo de **`Médicos`** no menu lateral, de forma que as duas abas de busca de profissionais fiquem agrupadas lado a lado para melhor usabilidade dos pacientes.
+
 ---
 
 ## Como Realizar o Teste no Cenário Real (Desktop vs. Mobile)
