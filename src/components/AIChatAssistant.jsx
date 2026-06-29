@@ -187,12 +187,47 @@ Como posso te ajudar hoje?`;
       try {
         const parsed = JSON.parse(savedThreads);
         if (parsed && parsed.length > 0) {
-          setThreads(parsed);
-          setActiveThreadId(savedActiveId || parsed[0].id);
+          // Auto-repair and deduplication of local storage threads
+          const seenIds = new Set();
+          const cleanThreads = parsed.map((t, idx) => {
+            let id = t.id;
+            // Ensure every thread has a unique ID to prevent react rendering conflicts
+            if (!id || seenIds.has(id)) {
+              id = `thread-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`;
+            }
+            seenIds.add(id);
+            
+            // Ensure messages inside the thread have unique IDs
+            const seenMsgIds = new Set();
+            const cleanMessages = (t.messages || []).map((m, mIdx) => {
+              let mId = m.id;
+              if (!mId || seenMsgIds.has(mId)) {
+                mId = Date.now() + mIdx + Math.floor(Math.random() * 1000);
+              }
+              seenMsgIds.add(mId);
+              return { ...m, id: mId };
+            });
+
+            return { 
+              ...t, 
+              id, 
+              messages: cleanMessages 
+            };
+          });
+
+          setThreads(cleanThreads);
+          
+          const activeExists = cleanThreads.some(t => t.id === savedActiveId);
+          const finalActiveId = activeExists ? savedActiveId : cleanThreads[0].id;
+          setActiveThreadId(finalActiveId);
+          
+          // Save the repaired clean structure back to localStorage
+          localStorage.setItem(threadKey, JSON.stringify(cleanThreads));
+          localStorage.setItem(activeKey, finalActiveId);
           return;
         }
       } catch (e) {
-        console.error("Erro ao carregar conversas salvas:", e);
+        console.error("Erro ao carregar e reparar conversas salvas:", e);
       }
     }
     
