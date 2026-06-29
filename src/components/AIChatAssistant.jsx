@@ -783,7 +783,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         };
         finalMessages = [...updatedMessages, syncMsg];
-        saveThreads(threads.map(t => t.id === activeThreadId ? { ...t, messages: finalMessages } : t));
+        saveThreads(threads.map(t => t.id === targetThreadId ? { ...t, messages: finalMessages } : t));
       }
 
       streamResponse(response, finalMessages, targetThreadId);
@@ -793,6 +793,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
 
   const handleSimulateExamUpload = async (examKey, fileName) => {
     setShowUploadMenu(false);
+    const targetThreadId = activeThreadId;
     
     // Add user message indicating file attachment
     const userMsg = {
@@ -802,7 +803,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
       time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     };
     
-    const currentActiveThread = threads.find(t => t.id === activeThreadId) || threads[0];
+    const currentActiveThread = threads.find(t => t.id === targetThreadId) || threads[0];
     const updatedMessages = [...currentActiveThread.messages, userMsg];
     
     let newTitle = currentActiveThread.title;
@@ -811,7 +812,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
     }
 
     const updatedThreads = threads.map(t => 
-      t.id === activeThreadId 
+      t.id === targetThreadId 
         ? { ...t, title: newTitle, messages: updatedMessages, updatedAt: Date.now() } 
         : t
     );
@@ -819,7 +820,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
     setIsTyping(true);
 
     // Let's call createAuditLog for user upload message!
-    createAuditLog('AI_CHAT_USER_MESSAGE', activeThreadId, {
+    createAuditLog('AI_CHAT_USER_MESSAGE', targetThreadId, {
       message: userMsg.text,
       threadTitle: newTitle
     });
@@ -835,7 +836,7 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
 
     setTimeout(() => {
       setIsTyping(false);
-      streamResponse(EXAM_RESPONSES[examKey], updatedMessages);
+      streamResponse(EXAM_RESPONSES[examKey], updatedMessages, targetThreadId);
     }, 1200);
   };
 
