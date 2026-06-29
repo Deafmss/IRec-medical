@@ -117,6 +117,10 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
 ### 10. Unificação da Rede de Enfermagem (`NursesNetwork.jsx` & `App.jsx`)
 - **Refletindo Fluxo de Especialistas:** Redesenhamos a aba `Enfermagem` para funcionar com a mesma inteligência premium do diretório médico. Os pacientes agora podem buscar, filtrar, conferir valores de visitas domiciliares, analisar currículos, ver depoimentos e se conectar aos enfermeiros em um único clique, com redirecionamento instantâneo ao chat seguro.
 
+### 11. Design de Ficha Clínica Centralizada e Flutuante (`SpecialistDirectory.jsx` & `NursesNetwork.jsx`)
+- **Card Flutuante em Primeiro Plano:** Substituímos o painel deslizante lateral (slide-over drawer) por um modal pop-up centralizado na tela.
+- **Efeitos Premium:** O novo card flutuante possui cantos arredondados suavizados (`border-radius: 16px`), sombra difusa elegante (`box-shadow`), e uma transição de surgimento do centro para fora (`scaleUp` com curva `cubic-bezier(0.34, 1.56, 0.64, 1)`), mantendo o fundo desfocado com filtro de vidro (`backdrop-filter: blur(8px)`).
+
 ---
 
 ## Como Realizar o Teste no Cenário Real (Desktop vs. Mobile)
