@@ -158,20 +158,54 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
     async function fetchProtocol() {
       if (activeTab !== 'ai-protocol' || !clinicalProfile) return;
 
+      const profileId = clinicalProfile.id || 'guest';
+      const entryId = latestWoundEntry ? (latestWoundEntry.id || latestWoundEntry.createdAt) : 'no-entry';
+      const cacheKey = `irec_cached_protocol_${profileId}_${entryId}`;
+      const cached = localStorage.getItem(cacheKey);
+
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          // Only use cache if the clinical profile characteristics haven't changed
+          const profileKeys = ['name', 'hasDiabetes', 'hasHypertension', 'hasVenousInsufficiency', 'hasPeripheralArterialDisease', 'isSmoker', 'isObese', 'medications', 'allergies', 'otherConditions'];
+          const profileMatch = profileKeys.every(k => parsed.profile?.[k] === clinicalProfile[k]);
+          
+          if (profileMatch && parsed.protocol) {
+            console.log("Using cached personalized protocol...");
+            setAiProtocol(parsed.protocol);
+            return;
+          }
+        } catch (e) {
+          console.error("Erro ao ler protocolo cacheado:", e);
+        }
+      }
+
       setLoading(true);
       setError('');
       try {
         console.log("Generating personalized clinical protocol via Gemini...");
         const result = await generatePersonalizedProtocol(clinicalProfile, latestWoundEntry);
         
-        if (result) {
-          setAiProtocol(result);
-        } else {
-          // If Gemini fails or key is missing, build simulated personalized protocol locally
-          console.warn("Gemini protocol generation returned null. Using simulated rule-based protocol.");
-          const simulated = generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry);
-          setAiProtocol(simulated);
-        }
+        const finalProtocol = result || generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry);
+        setAiProtocol(finalProtocol);
+        
+        // Cache the result along with the profile properties
+        const cacheData = {
+          protocol: finalProtocol,
+          profile: {
+            name: clinicalProfile.name,
+            hasDiabetes: clinicalProfile.hasDiabetes,
+            hasHypertension: clinicalProfile.hasHypertension,
+            hasVenousInsufficiency: clinicalProfile.hasVenousInsufficiency,
+            hasPeripheralArterialDisease: clinicalProfile.hasPeripheralArterialDisease,
+            isSmoker: clinicalProfile.isSmoker,
+            isObese: clinicalProfile.isObese,
+            medications: clinicalProfile.medications,
+            allergies: clinicalProfile.allergies,
+            otherConditions: clinicalProfile.otherConditions
+          }
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
       } catch (err) {
         console.error("Failed to generate protocol:", err);
         const simulated = generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry);
@@ -271,7 +305,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
                 animation: 'spin 1s linear infinite' 
               }} />
               <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>Gerando Seu Guia de Cicatrização Personalizado...</h4>
+                <h4 style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>Gerando Seu Guia de Cuidados Personalizado...</h4>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '380px', margin: '4px auto 0' }}>
                   Cruzando dados do seu histórico evolutivo, tipo de lesão e suas comorbidades com os Manuais Clínicos oficiais de Curativos.
                 </p>
