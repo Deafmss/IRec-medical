@@ -822,7 +822,7 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
               transition: 'all 0.2s ease'
             }}
           >
-            🗺️ Google Maps (Grátis)
+            🗺️ Google Maps
           </button>
           <button 
             type="button"
@@ -839,7 +839,7 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
               transition: 'all 0.2s ease'
             }}
           >
-            📍 Leaflet (OSM)
+            📍 Mapa Alternativo
           </button>
         </div>
 
