@@ -581,6 +581,101 @@ export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppAct
     return matchesSearch;
   });
 
+  const isProfileComplete = 
+    doctorProfile?.crm && doctorProfile.crm.trim().length > 0 &&
+    doctorProfile?.specialty && doctorProfile.specialty.trim().length > 0 &&
+    doctorProfile?.bio && doctorProfile.bio.trim().length > 0 &&
+    doctorProfile?.education && doctorProfile.education.trim().length > 0 &&
+    doctorProfile?.consultationFee !== null && doctorProfile?.consultationFee !== undefined &&
+    doctorProfile?.avatarUrl && doctorProfile.avatarUrl.trim().length > 0;
+
+  if (!isProfileComplete) {
+    return (
+      <div style={{
+        maxWidth: '560px',
+        margin: '60px auto',
+        padding: '32px',
+        backgroundColor: 'var(--bg-secondary)',
+        borderRadius: '16px',
+        border: '1px solid var(--border-color)',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+        textAlign: 'center',
+        fontFamily: 'var(--font-primary)'
+      }}>
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--primary-glow)',
+          color: 'var(--primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '28px',
+          margin: '0 auto 20px auto'
+        }}>
+          🛡️
+        </div>
+        <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '10px', color: 'var(--text-primary)' }}>
+          Perfil Profissional Obrigatório
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px' }}>
+          Para atuar na plataforma iRec, o preenchimento de todos os dados profissionais é obrigatório por normas de regulação médica. Isso garante total clareza e segurança para os pacientes na escolha do profissional.
+        </p>
+
+        {/* Checklist */}
+        <div style={{
+          textAlign: 'left',
+          backgroundColor: 'var(--bg-primary)',
+          padding: '20px',
+          borderRadius: '12px',
+          border: '1px solid var(--border-color)',
+          marginBottom: '28px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+            <span>{doctorProfile?.name ? '✅' : '❌'}</span>
+            <span style={{ color: doctorProfile?.name ? 'var(--text-primary)' : 'var(--text-muted)' }}>Nome Completo</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+            <span>{doctorProfile?.crm && doctorProfile.crm.trim().length > 0 ? '✅' : '❌'}</span>
+            <span style={{ color: doctorProfile?.crm ? 'var(--text-primary)' : 'var(--text-muted)' }}>CRM / COREN (Registro Profissional)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+            <span>{doctorProfile?.specialty && doctorProfile.specialty.trim().length > 0 ? '✅' : '❌'}</span>
+            <span style={{ color: doctorProfile?.specialty ? 'var(--text-primary)' : 'var(--text-muted)' }}>Especialidade de Atuação</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+            <span>{doctorProfile?.bio && doctorProfile.bio.trim().length > 0 ? '✅' : '❌'}</span>
+            <span style={{ color: doctorProfile?.bio ? 'var(--text-primary)' : 'var(--text-muted)' }}>Biografia Clínica (Apresentação)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+            <span>{doctorProfile?.education && doctorProfile.education.trim().length > 0 ? '✅' : '❌'}</span>
+            <span style={{ color: doctorProfile?.education ? 'var(--text-primary)' : 'var(--text-muted)' }}>Formação Acadêmica e Títulos</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+            <span>{doctorProfile?.consultationFee !== null && doctorProfile?.consultationFee !== undefined ? '✅' : '❌'}</span>
+            <span style={{ color: doctorProfile?.consultationFee ? 'var(--text-primary)' : 'var(--text-muted)' }}>Valor da Consulta / Procedimento</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+            <span>{doctorProfile?.avatarUrl && doctorProfile.avatarUrl.trim().length > 0 ? '✅' : '❌'}</span>
+            <span style={{ color: doctorProfile?.avatarUrl ? 'var(--text-primary)' : 'var(--text-muted)' }}>Foto de Identificação Profissional</span>
+          </div>
+        </div>
+
+        <button
+          onClick={onEditProfile}
+          className="btn btn-primary"
+          style={{ width: '100%', padding: '12px', borderRadius: '10px', fontWeight: '700', fontSize: '13.5px' }}
+        >
+          ✍️ Preencher e Completar Perfil
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="doctor-dashboard-wrapper">
       <style>{`

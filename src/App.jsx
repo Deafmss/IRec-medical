@@ -319,7 +319,14 @@ export default function App() {
       case 'history':
         return <WoundHistory entries={entries} clinicalProfile={clinicalProfile} />;
       case 'nurses':
-        return <NursesNetwork clinicalProfile={clinicalProfile} />;
+        return (
+          <NursesNetwork 
+            currentUser={currentUser} 
+            clinicalProfile={clinicalProfile} 
+            setActiveTab={setActiveTab} 
+            setTelemedicineContactId={setTelemedicineContactId} 
+          />
+        );
       case 'protocols':
         return <ProtocolGuide clinicalProfile={clinicalProfile} entries={entries} />;
       default:

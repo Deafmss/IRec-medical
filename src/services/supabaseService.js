@@ -543,7 +543,10 @@ export const getClinicalProfile = async (userId = null) => {
       hasCaregiver: data.has_caregiver || false,
       caregiverName: data.caregiver_name || '',
       avatarUrl: data.avatar_url || '',
-      lastSeenAt: data.last_seen_at || ''
+      lastSeenAt: data.last_seen_at || '',
+      bio: data.bio || '',
+      education: data.education || '',
+      consultationFee: data.consultation_fee ? parseFloat(data.consultation_fee) : null
     };
 
     // Log view action if viewed by another user (e.g. doctor)
@@ -634,7 +637,10 @@ export const updateClinicalProfile = async (arg1, arg2 = null) => {
       alcoholism: profile.alcoholism || false,
       has_caregiver: profile.hasCaregiver || false,
       caregiver_name: profile.caregiverName || null,
-      avatar_url: profile.avatarUrl || null
+      avatar_url: profile.avatarUrl || null,
+      bio: profile.bio || null,
+      education: profile.education || null,
+      consultation_fee: profile.consultationFee || null
     };
 
     const { error } = await supabase

@@ -83,6 +83,9 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
     crm: currentUser.crm || '',
     specialty: currentUser.specialty || '',
     rqe: currentUser.rqe || '',
+    bio: currentUser.bio || '',
+    education: currentUser.education || '',
+    consultationFee: currentUser.consultationFee || '',
     birthDate: currentUser.birthDate || '',
     gender: currentUser.gender || '',
     healthUnit: currentUser.healthUnit || '',
@@ -235,6 +238,9 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
         crm: formData.crm,
         specialty: formData.specialty,
         rqe: formData.rqe,
+        bio: formData.bio,
+        education: formData.education,
+        consultationFee: formData.consultationFee ? parseFloat(formData.consultationFee) : null,
         birthDate: formData.birthDate,
         gender: formData.gender,
         healthUnit: formData.healthUnit,
@@ -562,6 +568,39 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
                     />
                   </div>
                 )}
+                
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label>Biografia de Atendimento</label>
+                  <textarea 
+                    className="form-control" 
+                    placeholder="Descreva sua experiência clínica, especialidades secundárias e abordagem de cuidado..."
+                    value={formData.bio} 
+                    onChange={e => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                    style={{ minHeight: '80px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '10px 12px', fontSize: '13px', fontFamily: 'inherit', outline: 'none' }}
+                  />
+                </div>
+                
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label>Formação Acadêmica e Certificados</label>
+                  <textarea 
+                    className="form-control" 
+                    placeholder="Ex: Graduação em Enfermagem - USP; Especialização em Estomaterapia - SOBEST..."
+                    value={formData.education} 
+                    onChange={e => setFormData(prev => ({ ...prev, education: e.target.value }))}
+                    style={{ minHeight: '80px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '10px 12px', fontSize: '13px', fontFamily: 'inherit', outline: 'none' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Valor da Consulta Particular (R$)</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    placeholder="Ex: 250"
+                    value={formData.consultationFee} 
+                    onChange={e => setFormData(prev => ({ ...prev, consultationFee: e.target.value }))} 
+                  />
+                </div>
                 <div className="form-group" style={{ gridColumn: 'span 2' }}>
                   <h3 style={{ fontSize: '14px', fontWeight: '700', marginTop: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
                     Endereço Comercial / Clínica
