@@ -349,6 +349,214 @@ Como posso te ajudar hoje?`;
     }, 8); // faster typing for medical reports
   };
 
+  // Helper to merge, update and sync profile changes
+  const applyProfileUpdates = async (updates) => {
+    if (!updates || Object.keys(updates).length === 0) return null;
+    
+    const updatedProfile = { ...clinicalProfile };
+    const changedFields = [];
+
+    const keyMap = {
+      name: 'Nome',
+      birthDate: 'Nascimento',
+      gender: 'Sexo',
+      healthUnit: 'Unidade de Saúde',
+      hasDiabetes: 'Diabetes',
+      hasHypertension: 'Hipertensão',
+      hasVenousInsufficiency: 'Insuf. Venosa',
+      hasPeripheralArterialDisease: 'Doença Arterial',
+      isSmoker: 'Fumante',
+      isObese: 'Obesidade',
+      hasAmputationHistory: 'Histórico de Amputação',
+      medications: 'Medicamentos',
+      allergies: 'Alergias',
+      otherConditions: 'Outras Condições'
+    };
+
+    Object.keys(updates).forEach(key => {
+      const val = updates[key];
+      
+      if (key === 'triageAlerts') {
+        if (Array.isArray(val)) {
+          const currentAlerts = clinicalProfile.triageAlerts || [];
+          const mergedAlerts = [...currentAlerts];
+          val.forEach(alert => {
+            if (alert && !mergedAlerts.includes(alert)) {
+              mergedAlerts.push(alert);
+              changedFields.push(`Alerta de Risco: ${alert}`);
+            }
+          });
+          updatedProfile.triageAlerts = mergedAlerts;
+        }
+      } else if (val !== undefined && val !== null && val !== '') {
+        if (updatedProfile[key] !== val) {
+          updatedProfile[key] = val;
+          const displayVal = typeof val === 'boolean' ? (val ? 'Sim' : 'Não') : String(val);
+          changedFields.push(`${keyMap[key] || key}: ${displayVal}`);
+        }
+      }
+    });
+
+    if (changedFields.length > 0) {
+      try {
+        const savedProfile = await updateClinicalProfile(updatedProfile);
+        if (setClinicalProfile) {
+          setClinicalProfile(savedProfile);
+        }
+        return changedFields;
+      } catch (err) {
+        console.error("Erro ao salvar perfil atualizado:", err);
+      }
+    }
+    return null;
+  };
+
+  const handleSendMessageFromEditedHistory = async (textToSend, updatedMessages) => {
+    // 1. Try real Gemini API response first
+    const realResponse = await chatWithAI(textToSend, updatedMessages, clinicalProfile);
+    if (realResponse && typeof realResponse === 'object') {
+      setIsTyping(false);
+      streamResponse(realResponse.reply, updatedMessages);
+      return;
+    }
+
+    // 2. Fallback to local static QA rules if Gemini is not set up
+    setTimeout(async () => {
+      let response = '';
+      const cleanInput = textToSend.toLowerCase().trim();
+      const mockUpdates = {};
+      
+      if (cleanInput.includes('diabet') || cleanInput.includes('açúcar') || cleanInput.includes('glicem')) {
+        if (!clinicalProfile.hasDiabetes) mockUpdates.hasDiabetes = true;
+      }
+      if (cleanInput.includes('pressão alta') || cleanInput.includes('hiperten')) {
+        if (!clinicalProfile.hasHypertension) mockUpdates.hasHypertension = true;
+      }
+
+      const updatesList = await applyProfileUpdates(mockUpdates);
+      const matchedKey = Object.keys(AI_RESPONSES).find(key => 
+        cleanInput.includes(key.toLowerCase()) || key.toLowerCase().includes(cleanInput)
+      );
+
+      if (matchedKey && matchedKey !== 'default') {
+        response = AI_RESPONSES[matchedKey];
+      } else {
+        response = `Entendi a sua dúvida corrigida sobre "${textToSend}". Como seu assistente de cuidados gerais:
+1. Para sintomas leves (resfriados, dores leves), repouse e hidrate-se.
+2. Em caso de feridas, higienize com soro fisiológico morno.
+3. Em caso de gravidade, procure pronto-socorro imediatamente.`;
+      }
+
+      setIsTyping(false);
+      
+      let finalMessages = updatedMessages;
+      if (updatesList && updatesList.length > 0) {
+        const syncMsg = {
+          id: Date.now() + 1,
+          sender: 'ai',
+          text: `📋 **[iRec Prontuário - Simulado]** Ficha clínica atualizada no banco de dados:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
+          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        };
+        finalMessages = [...updatedMessages, syncMsg];
+        saveThreads(threads.map(t => t.id === activeThreadId ? { ...t, messages: finalMessages } : t));
+      }
+
+      streamResponse(response, finalMessages);
+      isSubmittingRef.current = false;
+    }, 1000);
+  };
+
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editingMessageText, setEditingMessageText] = useState('');
+
+  const handleStartEditMessage = (msgId, text) => {
+    setEditingMessageId(msgId);
+    setEditingMessageText(text);
+  };
+
+  const handleSaveEditMessage = async (msgId) => {
+    if (!editingMessageText.trim()) return;
+
+    const currentActiveThread = threads.find(t => t.id === activeThreadId) || threads[0];
+    const msgIndex = currentActiveThread.messages.findIndex(m => m.id === msgId);
+    if (msgIndex === -1) return;
+
+    const editedMsg = {
+      ...currentActiveThread.messages[msgIndex],
+      text: editingMessageText
+    };
+
+    const updatedMessages = [...currentActiveThread.messages.slice(0, msgIndex), editedMsg];
+    
+    const updatedThreads = threads.map(t => 
+      t.id === activeThreadId ? { ...t, messages: updatedMessages, updatedAt: Date.now() } : t
+    );
+    saveThreads(updatedThreads);
+    setEditingMessageId(null);
+
+    setIsTyping(true);
+    await handleSendMessageFromEditedHistory(editingMessageText, updatedMessages);
+  };
+
+  const handleReprocessMessage = async (msgId) => {
+    const currentActiveThread = threads.find(t => t.id === activeThreadId) || threads[0];
+    const msgIndex = currentActiveThread.messages.findIndex(m => m.id === msgId);
+    if (msgIndex === -1) return;
+
+    const updatedMessages = currentActiveThread.messages.slice(0, msgIndex + 1);
+    const targetMsgText = currentActiveThread.messages[msgIndex].text;
+
+    const updatedThreads = threads.map(t => 
+      t.id === activeThreadId ? { ...t, messages: updatedMessages, updatedAt: Date.now() } : t
+    );
+    saveThreads(updatedThreads);
+
+    setIsTyping(true);
+    await handleSendMessageFromEditedHistory(targetMsgText, updatedMessages);
+  };
+
+  const handleAutocorrectText = () => {
+    if (!inputText.trim()) return;
+    
+    const typoCorrections = {
+      'pascente': 'paciente',
+      'pascentes': 'pacientes',
+      'spary': 'spray',
+      'sensoro': 'sensor',
+      'whatasapp': 'WhatsApp',
+      'whats': 'WhatsApp',
+      'renomer': 'renomear',
+      'decente': 'decente',
+      'inciada': 'iniciada',
+      'hisotorico': 'histórico',
+      'pe': 'pé',
+      'pomadas': 'pomada',
+      'copiloto': 'copiloto',
+      'com': 'Como',
+      'trato': 'trato'
+    };
+
+    const words = inputText.split(/(\s+)/);
+    let correctedCount = 0;
+    
+    const correctedWords = words.map(w => {
+      const cleanWord = w.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "");
+      const correction = typoCorrections[cleanWord];
+      if (correction) {
+        correctedCount++;
+        const isCapitalized = w[0] === w[0].toUpperCase() && w[0] !== w[0].toLowerCase();
+        return isCapitalized 
+          ? correction[0].toUpperCase() + correction.slice(1)
+          : correction;
+      }
+      return w;
+    });
+
+    if (correctedCount > 0) {
+      setInputText(correctedWords.join(''));
+    }
+  };
+
   const handleSendMessage = async (textToSend) => {
     if (!textToSend.trim() || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
@@ -385,67 +593,7 @@ Como posso te ajudar hoje?`;
       threadTitle: newTitle
     });
 
-    // Helper to merge, update and sync profile changes
-    const applyProfileUpdates = async (updates) => {
-      if (!updates || Object.keys(updates).length === 0) return null;
-      
-      const updatedProfile = { ...clinicalProfile };
-      const changedFields = [];
 
-      const keyMap = {
-        name: 'Nome',
-        birthDate: 'Nascimento',
-        gender: 'Sexo',
-        healthUnit: 'Unidade de Saúde',
-        hasDiabetes: 'Diabetes',
-        hasHypertension: 'Hipertensão',
-        hasVenousInsufficiency: 'Insuf. Venosa',
-        hasPeripheralArterialDisease: 'Doença Arterial',
-        isSmoker: 'Fumante',
-        isObese: 'Obesidade',
-        hasAmputationHistory: 'Histórico de Amputação',
-        medications: 'Medicamentos',
-        allergies: 'Alergias',
-        otherConditions: 'Outras Condições'
-      };
-
-      Object.keys(updates).forEach(key => {
-        const val = updates[key];
-        
-        if (key === 'triageAlerts') {
-          if (Array.isArray(val)) {
-            const currentAlerts = clinicalProfile.triageAlerts || [];
-            const mergedAlerts = [...currentAlerts];
-            val.forEach(alert => {
-              if (alert && !mergedAlerts.includes(alert)) {
-                mergedAlerts.push(alert);
-                changedFields.push(`Alerta de Risco: ${alert}`);
-              }
-            });
-            updatedProfile.triageAlerts = mergedAlerts;
-          }
-        } else if (val !== undefined && val !== null && val !== '') {
-          if (updatedProfile[key] !== val) {
-            updatedProfile[key] = val;
-            const displayVal = typeof val === 'boolean' ? (val ? 'Sim' : 'Não') : String(val);
-            changedFields.push(`${keyMap[key] || key}: ${displayVal}`);
-          }
-        }
-      });
-
-      if (changedFields.length > 0) {
-        try {
-          const savedProfile = await updateClinicalProfile(updatedProfile);
-          if (setClinicalProfile) {
-            setClinicalProfile(savedProfile);
-          }
-          return changedFields;
-        } catch (err) {
-          console.error("Erro ao salvar perfil atualizado:", err);
-        }
-      }
-      return null;
-    };
 
     // 1. Try real Gemini API response first
     const realResponse = await chatWithAI(textToSend, updatedMessages, clinicalProfile);
@@ -769,12 +917,111 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
                   boxShadow: isExamReport ? '0 6px 20px rgba(14, 165, 233, 0.08)' : 'var(--shadow-sm)',
                   whiteSpace: 'pre-line'
                 }}>
-                  {msg.text}
+                  {editingMessageId === msg.id ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '220px' }}>
+                      <textarea
+                        value={editingMessageText}
+                        onChange={(e) => setEditingMessageText(e.target.value)}
+                        style={{
+                          width: '100%',
+                          minHeight: '60px',
+                          fontSize: '13.5px',
+                          padding: '8px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--primary)',
+                          backgroundColor: 'var(--bg-primary)',
+                          color: 'var(--text-primary)',
+                          resize: 'vertical',
+                          outline: 'none'
+                        }}
+                      />
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditingMessageId(null)}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '11px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border-color)',
+                            backgroundColor: 'transparent',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveEditMessage(msg.id)}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '11px',
+                            borderRadius: '4px',
+                            border: 'none',
+                            backgroundColor: 'var(--primary)',
+                            color: '#ffffff',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Salvar e Enviar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    msg.text
+                  )}
                 </div>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', padding: '0 4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', padding: '0 4px' }}>
                   <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                     {msg.time}
                   </span>
+                  {msg.sender === 'user' && editingMessageId !== msg.id && (
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditMessage(msg.id, msg.text)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '10px',
+                          color: 'var(--text-muted)',
+                          padding: '2px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                          transition: 'color 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                        title="Editar mensagem"
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleReprocessMessage(msg.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '10px',
+                          color: 'var(--text-muted)',
+                          padding: '2px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px',
+                          transition: 'color 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                        title="Reprocessar pergunta"
+                      >
+                        🔄 Reprocessar
+                      </button>
+                    </div>
+                  )}
                   {msg.sender === 'ai' && (
                     <button
                       type="button"
@@ -800,7 +1047,6 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
                     </button>
                   )}
                 </div>
-
               </div>
             );
           })}
@@ -992,6 +1238,32 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
             <svg style={{ width: '20px', height: '20px', fill: 'none', stroke: 'currentColor', strokeWidth: '2.2' }} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32a1.5 1.5 0 01-2.12-2.121L16.208 6" />
             </svg>
+          </button>
+
+          {/* Autocorrect button */}
+          <button 
+            type="button"
+            onClick={handleAutocorrectText}
+            disabled={isTyping || !inputText.trim()}
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              padding: '0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--primary)',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-sm)',
+              transition: 'var(--transition-fast)'
+            }}
+            title="✨ Corrigir ortografia automaticamente"
+          >
+            ✨
           </button>
 
           <input 
