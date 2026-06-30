@@ -339,7 +339,7 @@ Sua resposta deve ser estritamente em formato JSON correspondente a este modelo 
 };
 
 // 4. Generate Personalized Clinical Protocol backed by official medical documentation
-export const generatePersonalizedProtocol = async (clinicalProfile, latestWoundEntry) => {
+export const generatePersonalizedProtocol = async (clinicalProfile, latestWoundEntry, isClinician = false) => {
   if (!isGeminiConfigured) {
     return null; // Fallback to simulated/static protocols
   }
@@ -364,7 +364,7 @@ export const generatePersonalizedProtocol = async (clinicalProfile, latestWoundE
 ` : 'Sem lesão ativa cadastrada.';
 
     const systemPrompt = `Você é um enfermeiro estomaterapeuta e consultor clínico sênior de feridas cutâneas de alta especialização, credenciado pela SOBEST (Associação Brasileira de Estomaterapia) e amparado pelas resoluções do COFEN (Conselho Federal de Enfermagem).
-Sua missão é gerar um **Guia de Protocolos Clínicos Personalizado** para um paciente baseado na sua ficha clínica de comorbidades, alergias, idade e no estado atual de suas lesões cutâneas.
+Sua missão é gerar um **Guia de Protocolos Clínicos Personalizado** ${isClinician ? 'para ser consumido por um profissional de saúde (Médico ou Enfermeiro) sob a forma de apoio à decisão clínica' : 'para um paciente sob a forma de guia de autocuidado doméstico'} baseado na ficha clínica de comorbidades, alergias, idade e no estado atual de suas lesões cutâneas.
 
 PERFIL DO PACIENTE:
 - Nome: ${clinicalProfile.name}
@@ -383,15 +383,16 @@ DIRETRIZES DE TRATAMENTO E RESPALDO MÉDICO:
 - **Insuficiência Venosa / Úlcera Venosa**: Se não houver doença arterial associada, recomende terapia compressiva (Bota de Unna ou bandagens).
 - **Lesão por Pressão (LPP)**: Recomende controle de umidade, mudança de decúbito de 2h/2h e colchão pneumático.
 - **Dor**: Adicione cuidados gentis na limpeza se a dor for moderada/alta.
+${isClinician ? '- **Foco Clínico**: Como este guia é direcionado a PROFISSIONAIS (médicos e enfermeiros), evite termos amadores de autocuidado doméstico básico. Redija as etapas em formato de condutas de enfermagem/médica (ex: monitoramento de bordas, exsudação, critérios de desbridamento instrumental, etc.).' : ''}
 
 Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código markdown ou texto extra, no seguinte formato exato:
 {
-  "title": "Nome do Protocolo Customizado (Ex: Protocolo de Úlcera Venosa e Hipertensão)",
+  "title": "${isClinician ? 'Condutas Clínicas de Apoio à Decisão para: ' + clinicalProfile.name : 'Nome do Protocolo Customizado (Ex: Protocolo de Úlcera Venosa e Hipertensão)'}",
   "description": "Explicação clínica personalizada relacionando a lesão às comorbidades do paciente e os cuidados sistêmicos (ex: controle da glicose, repouso com pernas elevadas, etc.)",
   "steps": [
     {
-      "title": "Título do Passo 1 (Ex: Higienização da Lesão)",
-      "desc": "Instruções detalhadas em português de como executar esse passo (ex: Lavar o leito com soro fisiológico morno por irrigação...)"
+      "title": "Título do Passo 1 (Ex: ${isClinician ? 'Avaliação Exsudativa e Limpeza do Leito' : 'Higienização da Lesão'})",
+      "desc": "Instruções detalhadas em português de como executar esse passo (ex: ${isClinician ? 'Avaliar volume e aspecto do exsudato. Irrigar leito com PHMB sob pressão controlada...' : 'Lavar o Leito com soro fisiológico morno por irrigação...'})"
     },
     {
       "title": "Título do Passo 2...",
@@ -401,8 +402,8 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código ma
   "materials": [
     {
       "name": "Nome exato da cobertura/produto recomendado (Ex: Hidrogel com Alginato 85g)",
-      "price": "Preço aproximado em R$ (Ex: R$ 42,90)",
-      "brand": "Exemplo de marca de referência confiável (Ex: Curatec)"
+      "price": "${isClinician ? 'Instrução de Troca (Ex: Aplicar a cada 48h-72h)' : 'Preço aproximado em R$ (Ex: R$ 42,90)'}",
+      "brand": "${isClinician ? 'Mecanismo de Ação Sugerido (Ex: Promove desbridamento autolítico e mantém umidade)' : 'Exemplo de marca de referência confiável (Ex: Curatec)'}"
     }
   ],
   "scientificBacking": "Citações e referências oficiais de diretrizes clínicas que respaldam estas condutas (Ex: Resolução COFEN 567/2018 e Manual de Feridas do Ministério da Saúde/2016)",

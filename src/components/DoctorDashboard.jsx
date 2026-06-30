@@ -15,12 +15,20 @@ import { exportFHIRBundle } from '../services/fhirService';
 
 
 
-export default function DoctorDashboard({ doctorProfile, setActiveTab: setAppActiveTab, onProfileUpdate, onEditProfile, onOpenChat }) {
+export default function DoctorDashboard({ 
+  doctorProfile, 
+  setActiveTab: setAppActiveTab, 
+  onProfileUpdate, 
+  onEditProfile, 
+  onOpenChat,
+  selectedPatient,
+  setSelectedPatient,
+  selectedPatientEntries,
+  setSelectedPatientEntries 
+}) {
   const [activeTab, setActiveTab] = useState('my-patients'); // 'my-patients' or 'all-patients'
   const [patients, setPatients] = useState([]);
   const [myPatients, setMyPatients] = useState([]);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [selectedPatientEntries, setSelectedPatientEntries] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
   
   // Search & Filter

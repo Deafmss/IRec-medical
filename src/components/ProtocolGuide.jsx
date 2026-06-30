@@ -3,9 +3,74 @@ import { getLocalHealthcareResources } from '../services/supabaseService';
 import { generatePersonalizedProtocol, isGeminiConfigured } from '../services/geminiService';
 
 // Client-side rule-based fallback generator in case Gemini fails or is offline
-function generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry) {
+function generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician = false) {
   const woundType = latestWoundEntry?.type || (clinicalProfile.hasDiabetes ? 'Pé Diabético' : clinicalProfile.hasVenousInsufficiency ? 'Úlcera Venosa' : 'Lesão Cutânea');
   
+  if (isClinician) {
+    const title = `Condutas Clínicas de Apoio à Decisão para: ${clinicalProfile.name}`;
+    const description = `Diretrizes clínicas e condutas terapêuticas recomendadas para o manejo técnico de ${clinicalProfile.name} acometido por ${woundType}. Baseado em consensos científicos e manuais de estomaterapia de alto nível.`;
+    
+    const steps = [
+      { 
+        title: 'Avaliação Inicial do Leito e Bordas', 
+        desc: 'Avaliar integridade das bordas, grau de exsudação e presença de maceração perilesional. Irrigar o leito da ferida abundantemente com solução antisséptica de PHMB ou Soro Fisiológico 0.9% morno sob pressão controlada para redução de carga microbiana sem lesionar granulação.' 
+      }
+    ];
+    
+    const necrose = latestWoundEntry?.aiTissueAnalysis?.necrose || 0;
+    const fibrina = latestWoundEntry?.aiTissueAnalysis?.fibrina || 0;
+    
+    if (necrose > 0) {
+      steps.push({
+        title: 'Condutas de Desbridamento Instrumental e Autolítico',
+        desc: 'Avaliar indicação de desbridamento cortante instrumental conservador (slicing ou square) se houver profissional qualificado e ausência de isquemia crítica. Prescrever Hidrogel com Alginato no leito da lesão para promover desbridamento autolítico seguro. Proteger a pele perilesional.'
+      });
+    } else if (fibrina > 0) {
+      steps.push({
+        title: 'Manejo de Esfacelos e Exsudato',
+        desc: 'Indicar cobertura de Alginato de Cálcio e Sódio ou Fibra de Carboximetilcelulose (CMC) se houver exsudação moderada a alta. Em caso de baixa exsudação, optar por hidrogel amorfo para promover umidade ideal no leito.'
+      });
+    } else {
+      steps.push({
+        title: 'Estímulo ao Tecido de Granulação e Epitelização',
+        desc: 'Garantir microambiente de cicatrização em meio úmido ideal. Indicar aplicação de Ácidos Graxos Essenciais (AGE) ou placas de hidrocolóide/espuma de poliuretano conforme taxa exsudativa para proteger os queratinócitos em divisão.'
+      });
+    }
+    
+    if (clinicalProfile.hasDiabetes) {
+      steps.push({
+        title: 'Protocolo de Offloading (Descarga) e Controle Metabólico',
+        desc: 'Orientar descarga total da área afetada (offloading) através de calçados terapêuticos de descarga ou gesso de contato total. Monitoramento glicêmico rigoroso com meta de HbA1c < 7.0% para otimizar cicatrização.'
+      });
+    }
+    
+    if (clinicalProfile.hasVenousInsufficiency) {
+      steps.push({
+        title: 'Terapia Compressiva Multibandas',
+        desc: 'Realizar avaliação arterial prévia (mensurar pulso pedioso e ITB). Se ITB > 0.8, prescrever enfaixamento compressivo de curta elasticidade (ex: Bota de Unna ou bandagens multibandas de 2/4 camadas) para combater a hipertensão venosa.'
+      });
+    }
+
+    const materials = [
+      { name: 'Alginato de Cálcio e Sódio', brand: 'Feridas cavitárias ou planas com exsudação moderada a alta.', price: 'Uso Tópico • Troca 24h a 48h' },
+      { name: 'Hidrogel Amorfo com Alginato', brand: 'Desbridamento autolítico e hidratação de tecidos necróticos secos.', price: 'Uso Tópico • Troca a cada 48h' },
+      { name: 'Placa de Hidrocolóide Extra Fino', brand: 'Proteção e barreira em feridas limpas com baixo exsudato.', price: 'Uso Tópico • Troca até 7 dias' }
+    ];
+
+    const scientificBacking = 'Resolução COFEN nº 567/2018 (Diretrizes para o tratamento de feridas por enfermeiros) • Consenso WUWHS (Manejo de Exsudato em Feridas/2019).';
+    const specialistRecommendation = 'Se houver sinais de infecção sistêmica ou isquemia de membro (ITB < 0.5), encaminhar com urgência ao Cirurgião Vascular. Controle glicêmico com endocrinologista.';
+
+    return {
+      title,
+      description,
+      steps,
+      materials,
+      scientificBacking,
+      specialistRecommendation
+    };
+  }
+
+  // Standard patient simulated protocol
   const title = `Guia Clínico Personalizado: ${woundType} com ${
     [
       clinicalProfile.hasDiabetes ? 'Diabetes' : null,
@@ -93,12 +158,29 @@ function generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry
   };
 }
 
-export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
+const formatMaterialsForView = (materialsList, isClinician) => {
+  if (!materialsList) return [];
+  if (!isClinician) return materialsList;
+  
+  return materialsList.map(item => {
+    const isPriceAlreadyClinical = item.price && (item.price.includes('Troca') || item.price.includes('Uso') || item.price.includes('Aplicar'));
+    const isBrandAlreadyClinical = item.brand && (item.brand.includes('Indicação') || item.brand.includes('Mecanismo') || item.brand.includes('ferida') || item.brand.includes('Ferida'));
+
+    return {
+      ...item,
+      brand: isBrandAlreadyClinical ? item.brand : `Cobertura recomendada para o manejo da lesão.`,
+      price: isPriceAlreadyClinical ? item.price : `Uso Tópico • Conforme evolução`
+    };
+  });
+}
+
+export default function ProtocolGuide({ currentUser, clinicalProfile, entries = [], setActiveTab: setAppActiveTab }) {
   const [activeTab, setActiveTab] = useState('ai-protocol');
   const [loading, setLoading] = useState(false);
   const [aiProtocol, setAiProtocol] = useState(null);
   const [error, setError] = useState('');
   const latestWoundEntry = entries && entries.length > 0 ? entries[entries.length - 1] : null;
+  const isClinician = currentUser?.role === 'doctor';
 
   // Static reference protocols (standard fallback/baseline)
   const staticProtocols = {
@@ -315,11 +397,12 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
-          // Only use cache if the clinical profile characteristics haven't changed
+          // Only use cache if the clinical profile characteristics and clinician mode match
           const profileKeys = ['name', 'hasDiabetes', 'hasHypertension', 'hasVenousInsufficiency', 'hasPeripheralArterialDisease', 'isSmoker', 'isObese', 'medications', 'allergies', 'otherConditions'];
           const profileMatch = profileKeys.every(k => parsed.profile?.[k] === clinicalProfile[k]);
+          const modeMatch = parsed.isClinician === isClinician;
           
-          if (profileMatch && parsed.protocol) {
+          if (profileMatch && modeMatch && parsed.protocol) {
             console.log("Using cached personalized protocol...");
             setAiProtocol(parsed.protocol);
             return;
@@ -333,14 +416,15 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
       setError('');
       try {
         console.log("Generating personalized clinical protocol via Gemini...");
-        const result = await generatePersonalizedProtocol(clinicalProfile, latestWoundEntry);
+        const result = await generatePersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
         
-        const finalProtocol = result || generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry);
+        const finalProtocol = result || generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
         setAiProtocol(finalProtocol);
         
         // Cache the result along with the profile properties
         const cacheData = {
           protocol: finalProtocol,
+          isClinician: isClinician,
           profile: {
             name: clinicalProfile.name,
             hasDiabetes: clinicalProfile.hasDiabetes,
@@ -357,7 +441,7 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
         localStorage.setItem(cacheKey, JSON.stringify(cacheData));
       } catch (err) {
         console.error("Failed to generate protocol:", err);
-        const simulated = generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry);
+        const simulated = generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
         setAiProtocol(simulated);
       } finally {
         setLoading(false);
@@ -370,6 +454,55 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
   const localResources = getLocalHealthcareResources(clinicalProfile?.city, clinicalProfile?.state);
   const localPharmacy = localResources?.pharmacies[0] || { name: 'Farmácia Local', address: 'Próxima a você' };
   const patientState = clinicalProfile?.state ? clinicalProfile.state.toUpperCase() : 'UF';
+
+  if (isClinician && !clinicalProfile) {
+    return (
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '60px 20px',
+        textAlign: 'center',
+        backgroundColor: 'var(--bg-secondary)',
+        borderRadius: '16px',
+        border: '1px solid var(--border-color)',
+        margin: '40px auto',
+        maxWidth: '560px',
+        fontFamily: 'var(--font-primary)',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.03)'
+      }}>
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--primary-glow)',
+          color: 'var(--primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '28px',
+          marginBottom: '20px'
+        }}>
+          📋
+        </div>
+        <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', color: 'var(--text-primary)' }}>
+          Nenhum Paciente Ativo
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '24px', maxWidth: '420px' }}>
+          Para visualizar os guias e protocolos clínicos personalizados, acesse a **Lista de Pacientes** e selecione um caso ativo para análise.
+        </p>
+        <button
+          onClick={() => setAppActiveTab('doctor-dashboard')}
+          className="btn btn-primary"
+          style={{ padding: '10px 24px', borderRadius: '10px', fontWeight: '700', fontSize: '13px' }}
+        >
+          Voltar para Lista de Pacientes
+        </button>
+      </div>
+    );
+  }
 
   const activeStatic = staticProtocols[selectedStaticProtocol];
   const isAiActive = activeTab === 'ai-protocol';
@@ -480,7 +613,9 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
 
               {/* Steps List */}
               <div>
-                <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>Instruções de Curativo e Autocuidado Passo a Passo</h3>
+                <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>
+                  {isClinician ? 'Condutas e Diretrizes Clínicas de Manejo' : 'Instruções de Curativo e Autocuidado Passo a Passo'}
+                </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {aiProtocol.steps && aiProtocol.steps.map((step, idx) => (
                     <div key={idx} className="glass-card animate-fade-in" style={{ padding: '14px 16px', margin: 0 }}>
@@ -512,65 +647,73 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
               {/* Recommended Materials */}
               {aiProtocol.materials && aiProtocol.materials.length > 0 && (
                 <div>
-                  <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>Insumos Recomendados para o Seu Curativo</h3>
+                  <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>
+                    {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : 'Insumos Recomendados para o Seu Curativo'}
+                  </h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {aiProtocol.materials.map((item, idx) => (
+                    {formatMaterialsForView(aiProtocol.materials, isClinician).map((item, idx) => (
                       <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div>
                             <h4 style={{ fontSize: '13.5px', fontWeight: '700' }}>{item.name}</h4>
-                            <p style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Marca sugerida: {item.brand}</p>
+                            <p style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                              {isClinician ? 'Indicação: ' : 'Marca sugerida: '}{item.brand}
+                            </p>
                           </div>
-                          <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.price}</span>
+                          <span style={{ fontSize: isClinician ? '11.5px' : '14px', fontWeight: isClinician ? '600' : '800', color: isClinician ? 'var(--primary)' : 'var(--text-primary)' }}>
+                            {item.price}
+                          </span>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <button 
-                            className="btn btn-secondary" 
-                            onClick={() => handleCheckout('pickup', item)}
-                            style={{ 
-                              display: 'flex', 
-                              flexDirection: 'column', 
-                              alignItems: 'center', 
-                              justifyContent: 'center', 
-                              height: '48px', 
-                              padding: '4px 6px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              textAlign: 'center'
-                            }}
-                          >
-                            <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                              📍 Retirada Rápida
-                            </span>
-                            <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {localPharmacy.name}
-                            </span>
-                          </button>
+                        {!isClinician && (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <button 
+                              className="btn btn-secondary" 
+                              onClick={() => handleCheckout('pickup', item)}
+                              style={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                height: '48px', 
+                                padding: '4px 6px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                textAlign: 'center'
+                              }}
+                            >
+                              <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                📍 Retirada Rápida
+                              </span>
+                              <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {localPharmacy.name}
+                              </span>
+                            </button>
 
-                          <button 
-                            className="btn btn-primary" 
-                            onClick={() => handleCheckout('delivery', item)}
-                            style={{ 
-                              display: 'flex', 
-                              flexDirection: 'column', 
-                              alignItems: 'center', 
-                              justifyContent: 'center', 
-                              height: '48px', 
-                              padding: '4px 6px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              textAlign: 'center'
-                            }}
-                          >
-                            <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                              🚚 Envio Expresso
-                            </span>
-                            <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              Receba em 24h em {patientState}
-                            </span>
-                          </button>
-                        </div>
+                            <button 
+                              className="btn btn-primary" 
+                              onClick={() => handleCheckout('delivery', item)}
+                              style={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                height: '48px', 
+                                padding: '4px 6px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                textAlign: 'center'
+                              }}
+                            >
+                              <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                🚚 Envio Expresso
+                              </span>
+                              <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                Receba em 24h em {patientState}
+                              </span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -664,7 +807,9 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
 
           {/* Steps List */}
           <div>
-            <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>Instruções de Curativo Passo a Passo</h3>
+            <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>
+              {isClinician ? 'Condutas e Diretrizes Clínicas de Manejo' : 'Instruções de Curativo Passo a Passo'}
+            </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {activeStatic.steps.map((step, idx) => (
                 <div key={idx} className="glass-card" style={{ padding: '14px 16px', margin: 0 }}>
@@ -694,70 +839,80 @@ export default function ProtocolGuide({ clinicalProfile, entries = [] }) {
           </div>
 
           {/* Materials */}
-          <div>
-            <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>Insumos Recomendados para {activeStatic.title}</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {activeStatic.materials.map((item, idx) => (
-                <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <h4 style={{ fontSize: '13.5px', fontWeight: '700' }}>{item.name}</h4>
-                      <p style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Marca: {item.brand}</p>
+          {activeStatic.materials && activeStatic.materials.length > 0 && (
+            <div>
+              <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>
+                {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : `Insumos Recomendados para ${activeStatic.title}`}
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {formatMaterialsForView(activeStatic.materials, isClinician).map((item, idx) => (
+                  <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <h4 style={{ fontSize: '13.5px', fontWeight: '700' }}>{item.name}</h4>
+                        <p style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                          {isClinician ? 'Indicação: ' : 'Marca: '}{item.brand}
+                        </p>
+                      </div>
+                      <span style={{ fontSize: isClinician ? '11.5px' : '14px', fontWeight: isClinician ? '600' : '800', color: isClinician ? 'var(--primary)' : 'var(--text-primary)' }}>
+                        {item.price}
+                      </span>
                     </div>
-                    <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.price}</span>
-                  </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <button 
-                      className="btn btn-secondary" 
-                      onClick={() => handleCheckout('pickup', item)}
-                      style={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        height: '48px', 
-                        padding: '4px 6px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        textAlign: 'center'
-                      }}
-                    >
-                      <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        📍 Retirada Rápida
-                      </span>
-                      <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {localPharmacy.name}
-                      </span>
-                    </button>
+                    {!isClinician && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <button 
+                          className="btn btn-secondary" 
+                          onClick={() => handleCheckout('pickup', item)}
+                          style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            height: '48px', 
+                            padding: '4px 6px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                          }}
+                        >
+                          <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            📍 Retirada Rápida
+                          </span>
+                          <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {localPharmacy.name}
+                          </span>
+                        </button>
 
-                    <button 
-                      className="btn btn-primary" 
-                      onClick={() => handleCheckout('delivery', item)}
-                      style={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        height: '48px', 
-                        padding: '4px 6px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        textAlign: 'center'
-                      }}
-                    >
-                      <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        🚚 Envio Expresso
-                      </span>
-                      <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        Receba em 24h em {patientState}
-                      </span>
-                    </button>
+                        <button 
+                          className="btn btn-primary" 
+                          onClick={() => handleCheckout('delivery', item)}
+                          style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            height: '48px', 
+                            padding: '4px 6px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                          }}
+                        >
+                          <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            🚚 Envio Expresso
+                          </span>
+                          <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            Receba em 24h em {patientState}
+                          </span>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       )}

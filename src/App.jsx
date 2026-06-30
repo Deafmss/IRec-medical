@@ -22,6 +22,8 @@ export default function App() {
   const [activeCallSession, setActiveCallSession] = useState(null);
   const [telemedicineContactId, setTelemedicineContactId] = useState(null);
   const [unreadChatMessagesCount, setUnreadChatMessagesCount] = useState(0);
+  const [selectedPatientForDoctor, setSelectedPatientForDoctor] = useState(null);
+  const [selectedPatientEntriesForDoctor, setSelectedPatientEntriesForDoctor] = useState([]);
 
   // Global incoming call listener (polling + BroadcastChannel)
   useEffect(() => {
@@ -328,10 +330,30 @@ export default function App() {
           />
         );
       case 'protocols':
-        return <ProtocolGuide clinicalProfile={clinicalProfile} entries={entries} />;
+        const isClinician = currentUser?.role === 'doctor';
+        const targetProfile = isClinician ? selectedPatientForDoctor : clinicalProfile;
+        const targetEntries = isClinician ? selectedPatientEntriesForDoctor : entries;
+        return (
+          <ProtocolGuide 
+            currentUser={currentUser}
+            clinicalProfile={targetProfile} 
+            entries={targetEntries} 
+            setActiveTab={setActiveTab}
+          />
+        );
       default:
         return currentUser?.role === 'doctor' ? (
-          <DoctorDashboard doctorProfile={currentUser} setActiveTab={setActiveTab} onProfileUpdate={setCurrentUser} onEditProfile={() => setShowProfileModal(true)} onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }} />
+          <DoctorDashboard 
+            doctorProfile={currentUser} 
+            setActiveTab={setActiveTab} 
+            onProfileUpdate={setCurrentUser} 
+            onEditProfile={() => setShowProfileModal(true)} 
+            onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }}
+            selectedPatient={selectedPatientForDoctor}
+            setSelectedPatient={setSelectedPatientForDoctor}
+            selectedPatientEntries={selectedPatientEntriesForDoctor}
+            setSelectedPatientEntries={setSelectedPatientEntriesForDoctor}
+          />
         ) : (
           <Dashboard 
             setActiveTab={setActiveTab} 
