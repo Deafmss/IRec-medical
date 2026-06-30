@@ -136,7 +136,7 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
 
 ### 15. Sistema de Venda e Recomendação de Insumos com Links de Afiliados (`AdminPartners.jsx` & `DoctorDashboard.jsx` & `ProtocolGuide.jsx` & `supabaseService.js`)
 - **Criação da Tabela `recommended_materials`:** Migramos e criamos a tabela no banco de dados para associar recomendações com links de afiliados, farmácias indicadas e preços.
-- **Painel Administrativo (`AdminPartners.jsx`):** Criamos uma interface acessível a usuários Administradores (como `admin@irec.com` ou emails contendo `admin`) para cadastrar farmácias físicas/online parceiras com links de afiliados que dão desconto ao paciente e comissão percentual para a plataforma iRec ("Parceiros iRec").
+- **Painel Administrativo (`AdminPartners.jsx`):** Criamos uma interface acessível **exclusivamente** à conta de administrador global (`admin@irec.com`) para cadastrar farmácias físicas/online parceiras com links de afiliados que dão desconto ao paciente e comissão percentual para a plataforma iRec ("Parceiros iRec"). Qualquer outro usuário ou médico clínico comum não possui acesso ou visibilidade deste painel.
 - **Área do Médico (`DoctorDashboard.jsx`):** Inserimos a aba **`Receitar Insumos`** no dossiê de pacientes do painel médico. O profissional de saúde pode prescrever coberturas específicas com seus próprios links afiliados, permitindo a monetização individual do médico ("Parceiros do Dr.").
 - **Interface do Paciente Segmentada (`ProtocolGuide.jsx`):** O paciente agora vê os materiais separados visualmente:
   1. *Insumos Recomendados pelo seu Médico:* Itens vinculados diretamente pelo médico com botões de compra que ativam a comissão do médico.
