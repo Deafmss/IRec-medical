@@ -129,6 +129,11 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
 - **Protocolo Diferenciado e Clínico:** Adaptamos a geração automática por IA (Gemini) e o gerador de simulação local. Para profissionais (médicos/enfermeiros), a linguagem foca em condutas médicas técnicas (desbridamento instrumental conservador, monitoramento de exsudação e controle microbiológico avançado).
 - **Esconder Insumos Comerciais e Carrinho:** Ocultamos todos os botões de compras, marcas comerciais e valores de venda de curativos na visualização do médico, substituindo por uma tabela de **Apoio à Prescrição** detalhando coberturas de alta tecnologia (ex: alginatos, hidrogéis), seus mecanismos de ação e as frequências de trocas sugeridas.
 
+### 14. Otimização da Inicialização do App & Proteção Contra Loading Infinito (`App.jsx` & `supabaseService.js`)
+- **Carregamento Instantâneo via Cache Local:** Ao iniciar a aplicação, a sessão anterior é restaurada imediatamente usando o `localStorage` (0ms). Isso evita que o usuário espere que o banco de dados responda para poder visualizar o dashboard.
+- **Garantia de Timeout de 1.8 segundos:** Implementamos uma trava de segurança baseada no temporizador nativo do navegador. Se a conexão de rede ou a resposta do Supabase falharem ou demorarem mais do que 1.8 segundos, a tela de carregamento é sumariamente fechada, permitindo a entrada tolerante a falhas do usuário.
+- **Eliminação de Chamadas Concorrentes:** Corrigimos o ciclo de montagem que disparava consultas redundantes de carregamento de perfil de usuário concorrentemente, aliviando a carga no banco de dados e estabilizando o boot inicial.
+
 ---
 
 ## Como Realizar o Teste no Cenário Real (Desktop vs. Mobile)
