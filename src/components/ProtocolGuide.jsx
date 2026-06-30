@@ -559,7 +559,9 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
 
       {/* Comorbidity Badges for Active Patient */}
       <div className="glass-card animate-fade-in" style={{ padding: '12px 16px', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Ficha Clínica Ativa:</span>
+        <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+          Ficha Clínica Ativa {clinicalProfile?.name ? `(${clinicalProfile.name})` : ''}:
+        </span>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {clinicalProfile?.hasDiabetes && <span className="badge badge-danger" style={{ fontSize: '10px' }}>Diabetes</span>}
           {clinicalProfile?.hasHypertension && <span className="badge badge-danger" style={{ fontSize: '10px' }}>Hipertensão</span>}
