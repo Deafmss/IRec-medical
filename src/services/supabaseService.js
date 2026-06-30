@@ -202,7 +202,11 @@ export const signUpUser = async (email, password, name, role, additionalData = {
     if (profileError) throw profileError;
 
     // Fetch and return the newly created profile
-    return getClinicalProfile(user.id);
+    const profile = await getClinicalProfile(user.id);
+    if (profile) {
+      localStorage.setItem('irec_active_user', JSON.stringify(profile));
+    }
+    return profile;
   } catch (err) {
     console.error('Erro no cadastro do Supabase:', err);
     throw err;
@@ -233,7 +237,11 @@ export const signInUser = async (email, password) => {
     const user = authData.user;
     if (!user) throw new Error('Falha ao autenticar.');
 
-    return await getClinicalProfile(user.id);
+    const profile = await getClinicalProfile(user.id);
+    if (profile) {
+      localStorage.setItem('irec_active_user', JSON.stringify(profile));
+    }
+    return profile;
   } catch (err) {
     console.error('Erro no login do Supabase:', err);
     throw err;

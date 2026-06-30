@@ -140,42 +140,80 @@ export default function App() {
   // Shared state for wound entries
   const [entries, setEntries] = useState([]);
 
-  // Check auth session on component mount
+  // Check auth session on component mount with 1.5s timeout guarantee and local cache restoration
   useEffect(() => {
+    let resolved = false;
+
+    // Timeout safety fallback: Force disable loading after 1.8 seconds maximum
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        console.warn("⚠️ [iRec] Timeout de inicialização do Supabase atingido. Entrando em modo offline...");
+        setLoadingAuth(false);
+        resolved = true;
+      }
+    }, 1800);
+
+    const resolveAuth = (userProfile) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeoutId);
+      
+      if (userProfile) {
+        setCurrentUser(userProfile);
+        if (userProfile.role === 'doctor') {
+          setActiveTab('doctor-dashboard');
+        } else {
+          setActiveTab('dashboard');
+        }
+      }
+      setLoadingAuth(false);
+    };
+
     async function checkSession() {
       try {
+        // 1. Try reading the last active user session from memory (0ms instant load!)
+        const cached = localStorage.getItem('irec_active_user');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (parsed && parsed.id) {
+              console.log("Restauração rápida da sessão via cache local...");
+              resolveAuth(parsed);
+            }
+          } catch (e) {
+            console.error("Erro ao ler cache de sessão:", e);
+          }
+        }
+
+        // 2. Fetch fresh session from Supabase
         const user = await getCurrentUser();
         if (user) {
-          setCurrentUser(user);
-          if (user.role === 'doctor') {
-            setActiveTab('doctor-dashboard');
-          } else {
-            setActiveTab('dashboard');
-          }
+          localStorage.setItem('irec_active_user', JSON.stringify(user));
+          resolveAuth(user);
+        } else {
+          resolveAuth(null);
         }
       } catch (e) {
         console.warn('Erro ao restaurar sessão:', e);
-      } finally {
-        setLoadingAuth(false);
+        resolveAuth(null);
       }
     }
+    
     checkSession();
 
     // Supabase Auth listener
     if (isSupabaseConfigured && supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (session && session.user) {
+        if (event === 'SIGNED_IN' && session && session.user) {
           const profile = await getClinicalProfile(session.user.id);
           if (profile) {
-            setCurrentUser(profile);
-            if (profile.role === 'doctor') {
-              setActiveTab('doctor-dashboard');
-            } else {
-              setActiveTab('dashboard');
-            }
+            localStorage.setItem('irec_active_user', JSON.stringify(profile));
+            resolveAuth(profile);
           }
         } else if (event === 'SIGNED_OUT') {
           setCurrentUser(null);
+          localStorage.removeItem('irec_active_user');
+          resolveAuth(null);
         }
       });
 
