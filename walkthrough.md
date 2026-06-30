@@ -124,6 +124,11 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
 ### 12. Reordenação e Agrupamento dos Diretórios (`App.jsx`)
 - **Agrupamento Lógico:** Movemos o item **`Enfermagem`** para ficar imediatamente abaixo de **`Médicos`** no menu lateral, de forma que as duas abas de busca de profissionais fiquem agrupadas lado a lado para melhor usabilidade dos pacientes.
 
+### 13. Otimização do Guia de Protocolos Clínicos para Médicos (`App.jsx` & `ProtocolGuide.jsx` & `DoctorDashboard.jsx` & `geminiService.js`)
+- **State Lifting (Paciente Ativo):** Elevamos o estado do paciente ativo sob análise (`selectedPatient` e `selectedPatientEntries`) de dentro do painel do médico para o escopo global em `App.jsx`. Agora, quando o médico navega para a aba lateral de **`Protocolos`**, o sistema lembra qual paciente ele estava analisando e exibe as condutas específicas para ele. Se nenhum paciente estiver selecionado, é apresentado um card instruindo-o a selecionar um paciente na lista primeiro.
+- **Protocolo Diferenciado e Clínico:** Adaptamos a geração automática por IA (Gemini) e o gerador de simulação local. Para profissionais (médicos/enfermeiros), a linguagem foca em condutas médicas técnicas (desbridamento instrumental conservador, monitoramento de exsudação e controle microbiológico avançado).
+- **Esconder Insumos Comerciais e Carrinho:** Ocultamos todos os botões de compras, marcas comerciais e valores de venda de curativos na visualização do médico, substituindo por uma tabela de **Apoio à Prescrição** detalhando coberturas de alta tecnologia (ex: alginatos, hidrogéis), seus mecanismos de ação e as frequências de trocas sugeridas.
+
 ---
 
 ## Como Realizar o Teste no Cenário Real (Desktop vs. Mobile)
