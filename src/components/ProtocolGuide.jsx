@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getLocalHealthcareResources } from '../services/supabaseService';
+import { getLocalHealthcareResources, getRecommendedMaterials } from '../services/supabaseService';
 import { generatePersonalizedProtocol, isGeminiConfigured } from '../services/geminiService';
 
 // Client-side rule-based fallback generator in case Gemini fails or is offline
@@ -179,6 +179,7 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
   const [loading, setLoading] = useState(false);
   const [aiProtocol, setAiProtocol] = useState(null);
   const [error, setError] = useState('');
+  const [dbRecommendedMaterials, setDbRecommendedMaterials] = useState([]);
   const latestWoundEntry = entries && entries.length > 0 ? entries[entries.length - 1] : null;
   const isClinician = currentUser?.role === 'doctor';
 
@@ -451,6 +452,20 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
     fetchProtocol();
   }, [clinicalProfile, latestWoundEntry, activeTab]);
 
+  useEffect(() => {
+    async function loadDbMaterials() {
+      if (clinicalProfile && clinicalProfile.id) {
+        try {
+          const data = await getRecommendedMaterials(clinicalProfile.id);
+          setDbRecommendedMaterials(data);
+        } catch (e) {
+          console.error("Erro ao carregar insumos do banco:", e);
+        }
+      }
+    }
+    loadDbMaterials();
+  }, [clinicalProfile]);
+
   const localResources = getLocalHealthcareResources(clinicalProfile?.city, clinicalProfile?.state);
   const localPharmacy = localResources?.pharmacies[0] || { name: 'Farmácia Local', address: 'Próxima a você' };
   const patientState = clinicalProfile?.state ? clinicalProfile.state.toUpperCase() : 'UF';
@@ -646,79 +661,170 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                 </div>
               </div>
 
-              {/* Recommended Materials */}
-              {aiProtocol.materials && aiProtocol.materials.length > 0 && (
-                <div>
-                  <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>
-                    {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : 'Insumos Recomendados para o Seu Curativo'}
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {formatMaterialsForView(aiProtocol.materials, isClinician).map((item, idx) => (
-                      <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div>
-                            <h4 style={{ fontSize: '13.5px', fontWeight: '700' }}>{item.name}</h4>
-                            <p style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                              {isClinician ? 'Indicação: ' : 'Marca sugerida: '}{item.brand}
-                            </p>
-                          </div>
-                          <span style={{ fontSize: isClinician ? '11.5px' : '14px', fontWeight: isClinician ? '600' : '800', color: isClinician ? 'var(--primary)' : 'var(--text-primary)' }}>
-                            {item.price}
-                          </span>
-                        </div>
-
-                        {!isClinician && (
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                            <button 
-                              className="btn btn-secondary" 
-                              onClick={() => handleCheckout('pickup', item)}
+              {/* Materials Section */}
+              {((aiProtocol.materials && aiProtocol.materials.length > 0) || dbRecommendedMaterials.length > 0) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  
+                  {/* 1. Doctor Partners (Insumos do Médico) */}
+                  {!isClinician && dbRecommendedMaterials.filter(m => m.type === 'doctor_partner').length > 0 && (
+                    <div>
+                      <h3 style={{ fontSize: '14px', fontWeight: '750', marginBottom: '8px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>💊 Insumos Recomendados pelo seu Médico</span>
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {dbRecommendedMaterials.filter(m => m.type === 'doctor_partner').map((item, idx) => (
+                          <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0, borderColor: 'var(--primary-glow)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div>
+                                <h4 style={{ fontSize: '13.5px', fontWeight: '700', margin: 0 }}>{item.name}</h4>
+                                <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Marca sugerida: {item.brand}</p>
+                                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>🏪 Local indicado: {item.pharmacy_name}</p>
+                              </div>
+                              <span style={{ fontSize: '13.5px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.price}</span>
+                            </div>
+                            <a 
+                              href={item.affiliate_link} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="btn btn-primary"
                               style={{ 
                                 display: 'flex', 
-                                flexDirection: 'column', 
                                 alignItems: 'center', 
                                 justifyContent: 'center', 
-                                height: '48px', 
-                                padding: '4px 6px',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                textAlign: 'center'
+                                height: '36px', 
+                                fontSize: '11px', 
+                                fontWeight: '700',
+                                textDecoration: 'none',
+                                borderRadius: '6px'
                               }}
                             >
-                              <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                📍 Retirada Rápida
-                              </span>
-                              <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {localPharmacy.name}
-                              </span>
-                            </button>
-
-                            <button 
-                              className="btn btn-primary" 
-                              onClick={() => handleCheckout('delivery', item)}
-                              style={{ 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                height: '48px', 
-                                padding: '4px 6px',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                textAlign: 'center'
-                              }}
-                            >
-                              <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                🚚 Envio Expresso
-                              </span>
-                              <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                Receba em 24h em {patientState}
-                              </span>
-                            </button>
+                              🛒 Comprar Indicação do Médico
+                            </a>
                           </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* 2. iRec Partners (Parceiros iRec) */}
+                  {!isClinician && dbRecommendedMaterials.filter(m => m.type === 'irec_partner').length > 0 && (
+                    <div>
+                      <h3 style={{ fontSize: '14px', fontWeight: '750', marginBottom: '8px', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>🤝 Parceiros iRec (Melhores Preços)</span>
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {dbRecommendedMaterials.filter(m => m.type === 'irec_partner').map((item, idx) => (
+                          <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0, borderColor: 'rgba(var(--accent-rgb), 0.2)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div>
+                                <h4 style={{ fontSize: '13.5px', fontWeight: '700', margin: 0 }}>{item.name}</h4>
+                                <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Marca: {item.brand}</p>
+                                <p style={{ fontSize: '11px', color: 'var(--accent)', margin: '4px 0 0 0' }}>🏪 Farmácia Credenciada: {item.pharmacy_name}</p>
+                              </div>
+                              <span style={{ fontSize: '13.5px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.price}</span>
+                            </div>
+                            <a 
+                              href={item.affiliate_link} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="btn btn-secondary"
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                height: '36px', 
+                                fontSize: '11px', 
+                                fontWeight: '700',
+                                textDecoration: 'none',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(var(--primary-rgb), 0.12)',
+                                color: 'var(--primary)'
+                              }}
+                            >
+                              🏪 Comprar no Parceiro iRec (Desconto de Convênio)
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. Standard AI Protocol Materials */}
+                  {aiProtocol.materials && aiProtocol.materials.length > 0 && (
+                    <div>
+                      <h3 style={{ fontSize: '14px', fontWeight: '750', marginBottom: '8px' }}>
+                        {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : 'Insumos Sugeridos pelo Protocolo de IA'}
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {formatMaterialsForView(aiProtocol.materials, isClinician).map((item, idx) => (
+                          <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div>
+                                <h4 style={{ fontSize: '13.5px', fontWeight: '700', margin: 0 }}>{item.name}</h4>
+                                <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                                  {isClinician ? 'Indicação: ' : 'Marca sugerida: '}{item.brand}
+                                </p>
+                              </div>
+                              <span style={{ fontSize: isClinician ? '11.5px' : '14px', fontWeight: isClinician ? '600' : '800', color: isClinician ? 'var(--primary)' : 'var(--text-primary)' }}>
+                                {item.price}
+                              </span>
+                            </div>
+
+                            {!isClinician && (
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <button 
+                                  className="btn btn-secondary" 
+                                  onClick={() => handleCheckout('pickup', item)}
+                                  style={{ 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    height: '48px', 
+                                    padding: '4px 6px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'center'
+                                  }}
+                                >
+                                  <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                    📍 Retirada Rápida
+                                  </span>
+                                  <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {localPharmacy.name}
+                                  </span>
+                                </button>
+
+                                <button 
+                                  className="btn btn-primary" 
+                                  onClick={() => handleCheckout('delivery', item)}
+                                  style={{ 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    height: '48px', 
+                                    padding: '4px 6px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    textAlign: 'center'
+                                  }}
+                                >
+                                  <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                    🚚 Envio Expresso
+                                  </span>
+                                  <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    Receba em 24h em {patientState}
+                                  </span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               )}
 

@@ -8,7 +8,10 @@ import {
   addDoctorNote,
   issueDocument,
   getPatientDocuments,
-  createAuditLog
+  createAuditLog,
+  getRecommendedMaterials,
+  addRecommendedMaterial,
+  deleteRecommendedMaterial
 } from '../services/supabaseService';
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
@@ -47,6 +50,14 @@ export default function DoctorDashboard({
 
   // Medical documents and clinical tabs
   const [patientDocuments, setPatientDocuments] = useState([]);
+  const [recommendedMaterials, setRecommendedMaterials] = useState([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [newMatName, setNewMatName] = useState('');
+  const [newMatBrand, setNewMatBrand] = useState('');
+  const [newMatPrice, setNewMatPrice] = useState('');
+  const [newMatAffiliateLink, setNewMatAffiliateLink] = useState('');
+  const [newMatPharmacyName, setNewMatPharmacyName] = useState('');
+  const [addingMat, setAddingMat] = useState(false);
   const [selectedSubTab, setSelectedSubTab] = useState('wounds'); // 'wounds' or 'documents'
   const [selectedDocTab, setSelectedDocTab] = useState('receita'); // 'receita' or 'atestado'
   const [prescriptionItems, setPrescriptionItems] = useState([{ name: '', dosage: '', route: 'Via Oral', instructions: '' }]);
@@ -109,6 +120,19 @@ export default function DoctorDashboard({
         // Fetch patient documents
         const docs = await getPatientDocuments(selectedPatient.id);
         setPatientDocuments(docs);
+        
+        // Fetch recommended materials
+        setLoadingMaterials(true);
+        try {
+          const mats = await getRecommendedMaterials(selectedPatient.id);
+          // Only show doctor-partnered materials in the doctor's tab (filtering out global irec_partners)
+          setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner'));
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoadingMaterials(false);
+        }
+        
         setSelectedSubTab('wounds');
         
         if (history.length > 0) {
@@ -450,6 +474,64 @@ export default function DoctorDashboard({
         }, 800);
       }, 800);
     }, 800);
+  };
+
+  const handleAddMaterial = async (e) => {
+    e.preventDefault();
+    if (!selectedPatient) return;
+    if (!newMatName || !newMatAffiliateLink || !newMatPharmacyName) {
+      alert('Por favor, preencha todos os campos obrigatórios (*).');
+      return;
+    }
+
+    setAddingMat(true);
+    try {
+      const payload = {
+        patient_id: selectedPatient.id,
+        doctor_id: doctorProfile.id,
+        name: newMatName,
+        brand: newMatBrand || 'Genérico/Outros',
+        price: newMatPrice || 'A consultar',
+        affiliate_link: newMatAffiliateLink,
+        pharmacy_name: newMatPharmacyName,
+        type: 'doctor_partner'
+      };
+
+      await addRecommendedMaterial(payload);
+      
+      // Clear inputs
+      setNewMatName('');
+      setNewMatBrand('');
+      setNewMatPrice('');
+      setNewMatAffiliateLink('');
+      setNewMatPharmacyName('');
+      
+      // Reload materials list
+      const mats = await getRecommendedMaterials(selectedPatient.id);
+      setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner'));
+      alert('Insumo recomendado cadastrado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao recomendar insumo. Tente novamente.');
+    } finally {
+      setAddingMat(false);
+    }
+  };
+
+  const handleDeleteMaterial = async (id) => {
+    if (!window.confirm('Tem certeza que deseja remover esta recomendação de insumo?')) return;
+
+    try {
+      await deleteRecommendedMaterial(id);
+      // Reload materials list
+      if (selectedPatient) {
+        const mats = await getRecommendedMaterials(selectedPatient.id);
+        setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir insumo.');
+    }
   };
 
   const handleApplyAISuggestion = (type, dataOrText) => {
@@ -1742,6 +1824,14 @@ export default function DoctorDashboard({
                 >
                   🏥 Integração PEP
                 </button>
+                <button 
+                  type="button" 
+                  className={`login-tab-btn ${selectedSubTab === 'materials' ? 'active' : ''}`}
+                  onClick={() => setSelectedSubTab('materials')}
+                  style={{ minWidth: '150px' }}
+                >
+                  💊 Receitar Insumos
+                </button>
               </div>
 
 
@@ -2623,6 +2713,133 @@ export default function DoctorDashboard({
                         🔄 Sincronizar Prontuário FHIR com o PEP
                       </button>
                     )}
+                  </div>
+                </div>
+              )}
+              {selectedSubTab === 'materials' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.3s ease' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>💊 Prescrever Insumos e Vínculos de Parcerias</h3>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
+                    
+                    {/* List of recommended items */}
+                    <div className="glass-card" style={{ padding: '16px 20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: '750', margin: '0 0 10px 0' }}>Seus Insumos Indicados para este Paciente</h4>
+                      {loadingMaterials ? (
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Carregando recomendados...</p>
+                      ) : recommendedMaterials.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+                          <p style={{ fontSize: '12.5px', margin: 0 }}>Você ainda não indicou insumos parceiros para este paciente.</p>
+                          <p style={{ fontSize: '11px', margin: '4px 0 0 0' }}>Preencha o formulário ao lado para direcionar produtos com seus links afiliados.</p>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto' }}>
+                          {recommendedMaterials.map((mat) => (
+                            <div key={mat.id} className="glass-card" style={{ padding: '12px', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderColor: 'rgba(var(--primary-rgb), 0.12)' }}>
+                              <div>
+                                <h5 style={{ fontSize: '13px', fontWeight: '700', margin: 0 }}>{mat.name}</h5>
+                                <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                                  Marca: {mat.brand} • Preço: {mat.price}
+                                </p>
+                                <p style={{ fontSize: '11px', color: 'var(--primary)', margin: '4px 0 0 0' }}>
+                                  🏪 {mat.pharmacy_name}
+                                </p>
+                              </div>
+                              <button 
+                                onClick={() => handleDeleteMaterial(mat.id)}
+                                className="btn" 
+                                style={{ 
+                                  padding: '4px 8px', 
+                                  height: 'auto', 
+                                  fontSize: '11px', 
+                                  backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+                                  color: 'var(--danger)',
+                                  border: '1px solid rgba(239, 68, 68, 0.15)' 
+                                }}
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add recommendation Form */}
+                    <div className="glass-card" style={{ padding: '16px 20px', margin: 0 }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: '750', margin: '0 0 12px 0' }}>Recomendar Novo Insumo Afiliado</h4>
+                      <form onSubmit={handleAddMaterial} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        
+                        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <label style={{ fontSize: '11px', fontWeight: '700' }}>Insumo / Cobertura *</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            placeholder="Ex: Alginato de Cálcio Curatec Placa"
+                            value={newMatName}
+                            onChange={(e) => setNewMatName(e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label style={{ fontSize: '11px', fontWeight: '700' }}>Marca / Laboratório</label>
+                            <input 
+                              type="text" 
+                              className="form-control" 
+                              placeholder="Ex: Curatec"
+                              value={newMatBrand}
+                              onChange={(e) => setNewMatBrand(e.target.value)}
+                            />
+                          </div>
+                          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label style={{ fontSize: '11px', fontWeight: '700' }}>Preço Estimado</label>
+                            <input 
+                              type="text" 
+                              className="form-control" 
+                              placeholder="Ex: R$ 45,00"
+                              value={newMatPrice}
+                              onChange={(e) => setNewMatPrice(e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <label style={{ fontSize: '11px', fontWeight: '700' }}>Rede de Farmácias / Vendedor *</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            placeholder="Ex: Drogasil Itapuranga ou Farmácia Parceira"
+                            value={newMatPharmacyName}
+                            onChange={(e) => setNewMatPharmacyName(e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <label style={{ fontSize: '11px', fontWeight: '700' }}>Seu Link de Afiliado Particular *</label>
+                          <input 
+                            type="url" 
+                            className="form-control" 
+                            placeholder="Ex: https://afiliado.com/seu-codigo-de-medico"
+                            value={newMatAffiliateLink}
+                            onChange={(e) => setNewMatAffiliateLink(e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <button 
+                          type="submit" 
+                          className="btn btn-primary" 
+                          disabled={addingMat}
+                          style={{ width: '100%', marginTop: '6px', height: '36px', fontSize: '12px' }}
+                        >
+                          {addingMat ? 'Adicionando...' : '➕ Vincular Recomendação Particular'}
+                        </button>
+                      </form>
+                    </div>
+
                   </div>
                 </div>
               )}

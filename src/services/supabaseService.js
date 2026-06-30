@@ -2092,3 +2092,93 @@ export const getAssignedDoctors = async (patientId) => {
   }
 };
 
+// ==========================================
+// 27. Recommended Materials & Affiliate Links
+// ==========================================
+
+export const getRecommendedMaterials = async (patientId = null) => {
+  if (!isSupabaseConfigured) {
+    const data = localStorage.getItem('irec_local_recommended_materials') || '[]';
+    const list = JSON.parse(data);
+    return list.filter(item => {
+      // Return if it is a platform partner (patient_id is null) OR is for this specific patient
+      return !item.patient_id || (patientId && item.patient_id === patientId);
+    });
+  }
+
+  try {
+    if (patientId) {
+      // Fetch both global platform partners (patient_id is null) AND patient-specific doctor partners
+      const { data, error } = await supabase
+        .from('recommended_materials')
+        .select('*')
+        .or(`patient_id.is.null,patient_id.eq.${patientId}`);
+      if (error) throw error;
+      return data;
+    } else {
+      // Just fetch global platform partners
+      const { data, error } = await supabase
+        .from('recommended_materials')
+        .select('*')
+        .is('patient_id', null);
+      if (error) throw error;
+      return data;
+    }
+  } catch (err) {
+    console.error('Error fetching recommended materials:', err);
+    return [];
+  }
+};
+
+export const addRecommendedMaterial = async (material) => {
+  if (!isSupabaseConfigured) {
+    const data = localStorage.getItem('irec_local_recommended_materials') || '[]';
+    const list = JSON.parse(data);
+    const newMaterial = {
+      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+      created_at: new Date().toISOString(),
+      ...material
+    };
+    list.push(newMaterial);
+    localStorage.setItem('irec_local_recommended_materials', JSON.stringify(list));
+    return newMaterial;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('recommended_materials')
+      .insert([material])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error adding recommended material:', err);
+    throw err;
+  }
+};
+
+export const deleteRecommendedMaterial = async (id) => {
+  if (!isSupabaseConfigured) {
+    const data = localStorage.getItem('irec_local_recommended_materials') || '[]';
+    const list = JSON.parse(data);
+    const filtered = list.filter(item => item.id !== id);
+    localStorage.setItem('irec_local_recommended_materials', JSON.stringify(filtered));
+    return true;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('recommended_materials')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error deleting recommended material:', err);
+    throw err;
+  }
+};
+
