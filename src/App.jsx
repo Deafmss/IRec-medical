@@ -324,7 +324,19 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'doctor-dashboard':
-        return <DoctorDashboard doctorProfile={currentUser} setActiveTab={setActiveTab} onProfileUpdate={setCurrentUser} onEditProfile={() => setShowProfileModal(true)} onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }} />;
+        return (
+          <DoctorDashboard 
+            doctorProfile={currentUser} 
+            setActiveTab={setActiveTab} 
+            onProfileUpdate={setCurrentUser} 
+            onEditProfile={() => setShowProfileModal(true)} 
+            onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }}
+            selectedPatient={selectedPatientForDoctor}
+            setSelectedPatient={setSelectedPatientForDoctor}
+            selectedPatientEntries={selectedPatientEntriesForDoctor}
+            setSelectedPatientEntries={setSelectedPatientEntriesForDoctor}
+          />
+        );
       case 'dashboard':
         return (
           <Dashboard 
