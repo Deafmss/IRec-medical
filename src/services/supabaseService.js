@@ -2096,17 +2096,33 @@ export const getAssignedDoctors = async (patientId) => {
 // 27. Recommended Materials & Affiliate Links
 // ==========================================
 
-export const getRecommendedMaterials = async (patientId = null) => {
+export const getRecommendedMaterials = async (patientId = null, doctorId = null) => {
   if (!isSupabaseConfigured) {
     const data = localStorage.getItem('irec_local_recommended_materials') || '[]';
     const list = JSON.parse(data);
+    
+    if (doctorId && !patientId) {
+      // Fetch doctor's own global partner items
+      return list.filter(item => item.doctor_id === doctorId && !item.patient_id);
+    }
+    
     return list.filter(item => {
-      // Return if it is a platform partner (patient_id is null) OR is for this specific patient
       return !item.patient_id || (patientId && item.patient_id === patientId);
     });
   }
 
   try {
+    if (doctorId && !patientId) {
+      // Fetch doctor's own global partner items
+      const { data, error } = await supabase
+        .from('recommended_materials')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .is('patient_id', null);
+      if (error) throw error;
+      return data;
+    }
+    
     if (patientId) {
       // Fetch both global platform partners (patient_id is null) AND patient-specific doctor partners
       const { data, error } = await supabase
@@ -2120,7 +2136,8 @@ export const getRecommendedMaterials = async (patientId = null) => {
       const { data, error } = await supabase
         .from('recommended_materials')
         .select('*')
-        .is('patient_id', null);
+        .is('patient_id', null)
+        .is('doctor_id', null);
       if (error) throw error;
       return data;
     }

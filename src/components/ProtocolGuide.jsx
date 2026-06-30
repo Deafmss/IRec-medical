@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getLocalHealthcareResources, getRecommendedMaterials } from '../services/supabaseService';
+import { getLocalHealthcareResources, getRecommendedMaterials, getAssignedDoctors } from '../services/supabaseService';
 import { generatePersonalizedProtocol, isGeminiConfigured } from '../services/geminiService';
 
 // Client-side rule-based fallback generator in case Gemini fails or is offline
@@ -180,6 +180,7 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
   const [aiProtocol, setAiProtocol] = useState(null);
   const [error, setError] = useState('');
   const [dbRecommendedMaterials, setDbRecommendedMaterials] = useState([]);
+  const [assignedDoctors, setAssignedDoctors] = useState([]);
   const latestWoundEntry = entries && entries.length > 0 ? entries[entries.length - 1] : null;
   const isClinician = currentUser?.role === 'doctor';
 
@@ -458,6 +459,9 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
         try {
           const data = await getRecommendedMaterials(clinicalProfile.id);
           setDbRecommendedMaterials(data);
+          
+          const docs = await getAssignedDoctors(clinicalProfile.id);
+          setAssignedDoctors(docs || []);
         } catch (e) {
           console.error("Erro ao carregar insumos do banco:", e);
         }
@@ -469,6 +473,15 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
   const localResources = getLocalHealthcareResources(clinicalProfile?.city, clinicalProfile?.state);
   const localPharmacy = localResources?.pharmacies[0] || { name: 'Farmácia Local', address: 'Próxima a você' };
   const patientState = clinicalProfile?.state ? clinicalProfile.state.toUpperCase() : 'UF';
+
+  const getDoctorPartners = () => {
+    return dbRecommendedMaterials.filter(m => {
+      if (m.type !== 'doctor_partner') return false;
+      if (m.patient_id === clinicalProfile?.id) return true;
+      const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
+      return m.patient_id === null && isAssigned;
+    });
+  };
 
   if (isClinician && !clinicalProfile) {
     return (
@@ -666,13 +679,13 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   
                   {/* 1. Doctor Partners (Insumos do Médico) */}
-                  {!isClinician && dbRecommendedMaterials.filter(m => m.type === 'doctor_partner').length > 0 && (
+                  {!isClinician && getDoctorPartners().length > 0 && (
                     <div>
                       <h3 style={{ fontSize: '14px', fontWeight: '750', marginBottom: '8px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>💊 Insumos Recomendados pelo seu Médico</span>
                       </h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {dbRecommendedMaterials.filter(m => m.type === 'doctor_partner').map((item, idx) => (
+                        {getDoctorPartners().map((item, idx) => (
                           <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0, borderColor: 'var(--primary-glow)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div>
