@@ -141,12 +141,10 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
 - **Catálogo Geral do Médico (Minhas Parcerias) (`DoctorPartners.jsx`):** Redesenhamos completamente a tela **`Minhas Parcerias`** (🏪) utilizando a identidade visual do iRec (estatísticas, abas estilizadas e abertura de popups modais de cadastro). Separamos as opções em:
   1. *Farmácias Parceiras Gerais:* Redes de farmácias com link geral de comissão do médico.
   2. *Insumos & Produtos Específicos:* Coberturas e produtos específicos recomendados.
-- **Interface do Paciente Dinâmica (`ProtocolGuide.jsx`):** O paciente visualiza nos seus protocolos de curativos os insumos recomendados pelo médico, unindo:
-  1. Recomendações particulares cadastradas pelo médico especificamente para este paciente.
-  2. Recomendações do catálogo global do médico que o acompanha (se o médico indicou marcas parceiras globais, qualquer paciente sob sua responsabilidade as visualizará automaticamente em seus protocolos).
-  3. **Opção Geral de Compra:** Caso o médico tenha cadastrado apenas farmácias parceiras globais (sem cadastrar insumos individuais), essas farmácias aparecem automaticamente como uma das opções de compra premiadas em **qualquer** insumo recomendado nos protocolos do paciente (ao lado de retirada rápida e entrega expressa).
-  4. *Parceiros iRec:* Farmácias e insumos credenciados na plataforma com descontos de convênio e comissão para a plataforma.
-  5. *Insumos Sugeridos pelo Protocolo de IA:* Baseline gerada automaticamente para os curativos.
+- **Interface do Paciente Dinâmica (`ProtocolGuide.jsx`):** O paciente visualiza nos seus protocolos de curativos os insumos recomendados de forma totalmente dinâmica e integrada:
+  1. *Condições de Exibição dos Parceiros do Médico:* Botões e farmácias indicadas pelo médico só aparecem caso os médicos responsáveis pelo paciente tenham de fato parcerias cadastradas. Caso contrário, nenhum botão de redirecionamento ou compra é exibido.
+  2. *Condições de Exibição dos Parceiros iRec:* Parceiros iRec só são exibidos caso estejam devidamente cadastrados pelo usuário Administrador no painel administrativo do iRec.
+  3. *Modal de Redirecionamento com Contagem Regressiva:* Como a plataforma iRec não realiza vendas diretas, removemos o fluxo de "Pedido Confirmado / iRec Delivery" e o substituímos por uma tela de redirecionamento segura com contagem regressiva de 3 segundos (e redirecionamento automático) que exibe o nome do insumo, o parceiro/farmácia de destino e o nome do médico autor (ou indicação oficial iRec). E-commerce simulado desativado.
 - **Painel e Navegação Exclusiva do Administrador (`AdminDashboard.jsx` & `App.jsx` & `supabaseService.js`):** Isolamos completamente a navegação administrativa da clínica. Quando logado como `admin@irec.com`, o menu lateral e inferior oculta as ferramentas médicas (pacientes, telemedicina, etc.) e passa a renderizar exclusivamente o **Painel Admin**, que oferece:
   1. *Desativação Total de Bloqueios de Perfil:* O administrador acessa a ferramenta instantaneamente e sem restrições clínicas.
   2. *Visão Geral & Métricas:* Resumo estatístico completo com totalizadores de Pacientes, Médicos, Enfermeiros, Triagens e Chamadas Concluídas.
