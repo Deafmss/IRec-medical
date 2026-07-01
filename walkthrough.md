@@ -148,10 +148,11 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
   4. *Parceiros iRec:* Farmácias e insumos credenciados na plataforma com descontos de convênio e comissão para a plataforma.
   5. *Insumos Sugeridos pelo Protocolo de IA:* Baseline gerada automaticamente para os curativos.
 - **Painel e Navegação Exclusiva do Administrador (`AdminDashboard.jsx` & `App.jsx` & `supabaseService.js`):** Isolamos completamente a navegação administrativa da clínica. Quando logado como `admin@irec.com`, o menu lateral e inferior oculta as ferramentas médicas (pacientes, telemedicina, etc.) e passa a renderizar exclusivamente o **Painel Admin**, que oferece:
-  1. *Visão Geral & Métricas:* Resumo estatístico segmentado (Total de Pacientes, Médicos, Enfermeiros, Triagens, Chamadas e Parcerias).
-  2. *Usuários Cadastrados:* Diretório completo de usuários com busca em tempo real e filtro por papel de atuação.
-  3. *Parceiros iRec:* Gerenciador integrado de redes parceiras da plataforma com link afiliado global do iRec.
-  4. *Auditoria / Logs:* Registro de auditoria do sistema em tempo real, documentando as ações clínicas dos profissionais para conformidade e segurança.
+  1. *Visão Geral & Métricas:* Resumo estatístico completo segmentado por período (24 horas, 7 dias, 30 dias, todo o período), contendo totalizadores de Pacientes, Médicos, Enfermeiros, Triagens e Chamadas Concluídas.
+  2. *Gráficos de Engajamento & Atendimentos:* Gráficos horizontais nativos em CSS de distribuição de feridas por patologia (Úlcera Diabética, Venosa, LPP, etc.), tempo médio de chamadas em minutos, atendimentos ativos em tempo real na plataforma, e logs operacionais.
+  3. *Usuários Cadastrados:* Diretório completo de usuários com barra de busca e contador banner detalhado segmentado por papel de atuação (Pacientes, Médicos, Enfermeiros) — com exclusão visual da conta de sistema `admin@irec.com`.
+  4. *Parceiros iRec:* Gerenciador de marcas e farmácias conveniadas à empresa iRec (com links afiliados globais e descontos).
+  5. *Auditoria / Logs:* Registro de auditoria em tempo real para conformidade das ações médicas.
 
 ---
 
