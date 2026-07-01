@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments, getAdminWoundEntries } from '../services/supabaseService';
 import AdminReports from './AdminReports';
+import DateRangePicker from './DateRangePicker';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('metrics'); // 'metrics', 'users', 'partners', 'logs'
@@ -16,6 +17,8 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [timePeriod, setTimePeriod] = useState('30d'); // '24h', '7d', '30d', 'all'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [pathologySearch, setPathologySearch] = useState('');
   const [showAllPathologies, setShowAllPathologies] = useState(false);
   const [selectedState, setSelectedState] = useState('all');
@@ -131,18 +134,57 @@ export default function AdminDashboard() {
     
     if (timePeriod === '24h') {
       thresholdDate.setHours(now.getHours() - 24);
+      const callsFiltered = calls.filter(c => new Date(c.created_at || c.createdAt) >= thresholdDate);
+      const logsFiltered = logs.filter(l => new Date(l.created_at) >= thresholdDate);
+      const woundEntriesFiltered = woundEntries.filter(w => new Date(w.created_at) >= thresholdDate);
+      return { callsFiltered, logsFiltered, woundEntriesFiltered };
     } else if (timePeriod === '7d') {
       thresholdDate.setDate(now.getDate() - 7);
+      const callsFiltered = calls.filter(c => new Date(c.created_at || c.createdAt) >= thresholdDate);
+      const logsFiltered = logs.filter(l => new Date(l.created_at) >= thresholdDate);
+      const woundEntriesFiltered = woundEntries.filter(w => new Date(w.created_at) >= thresholdDate);
+      return { callsFiltered, logsFiltered, woundEntriesFiltered };
     } else if (timePeriod === '30d') {
       thresholdDate.setDate(now.getDate() - 30);
+      const callsFiltered = calls.filter(c => new Date(c.created_at || c.createdAt) >= thresholdDate);
+      const logsFiltered = logs.filter(l => new Date(l.created_at) >= thresholdDate);
+      const woundEntriesFiltered = woundEntries.filter(w => new Date(w.created_at) >= thresholdDate);
+      return { callsFiltered, logsFiltered, woundEntriesFiltered };
+    } else if (timePeriod === 'custom') {
+      const callsFiltered = calls.filter(c => {
+        const callDate = new Date(c.created_at || c.createdAt);
+        if (startDate && new Date(startDate) > callDate) return false;
+        if (endDate) {
+          const endLimit = new Date(endDate);
+          endLimit.setHours(23, 59, 59, 999);
+          if (callDate > endLimit) return false;
+        }
+        return true;
+      });
+      const logsFiltered = logs.filter(l => {
+        const logDate = new Date(l.created_at);
+        if (startDate && new Date(startDate) > logDate) return false;
+        if (endDate) {
+          const endLimit = new Date(endDate);
+          endLimit.setHours(23, 59, 59, 999);
+          if (logDate > endLimit) return false;
+        }
+        return true;
+      });
+      const woundEntriesFiltered = woundEntries.filter(w => {
+        const entryDate = new Date(w.created_at);
+        if (startDate && new Date(startDate) > entryDate) return false;
+        if (endDate) {
+          const endLimit = new Date(endDate);
+          endLimit.setHours(23, 59, 59, 999);
+          if (entryDate > endLimit) return false;
+        }
+        return true;
+      });
+      return { callsFiltered, logsFiltered, woundEntriesFiltered };
     } else {
       return { callsFiltered: calls, logsFiltered: logs, woundEntriesFiltered: woundEntries };
     }
-
-    const callsFiltered = calls.filter(c => new Date(c.created_at || c.createdAt) >= thresholdDate);
-    const logsFiltered = logs.filter(l => new Date(l.created_at) >= thresholdDate);
-    const woundEntriesFiltered = woundEntries.filter(w => new Date(w.created_at) >= thresholdDate);
-    return { callsFiltered, logsFiltered, woundEntriesFiltered };
   };
 
   const { callsFiltered, logsFiltered, woundEntriesFiltered } = getFilteredDataByPeriod();
@@ -389,21 +431,15 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        {/* Time period filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)' }}>PERÍODO:</span>
-          <select
-            value={timePeriod}
-            onChange={(e) => setTimePeriod(e.target.value)}
-            className="form-control"
-            style={{ width: '160px', height: '36px', fontSize: '12.5px', cursor: 'pointer', fontWeight: '600' }}
-          >
-            <option value="24h">Últimas 24 Horas</option>
-            <option value="7d">Últimos 7 Dias</option>
-            <option value="30d">Últimos 30 Dias</option>
-            <option value="all">Todo o Período</option>
-          </select>
-        </div>
+        {/* Time period filter (DateRangePicker) */}
+        <DateRangePicker 
+          timePeriod={timePeriod}
+          setTimePeriod={setTimePeriod}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
+        />
       </header>
 
       {/* Main Tab Navigation */}
