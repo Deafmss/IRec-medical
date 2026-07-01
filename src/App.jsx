@@ -750,18 +750,18 @@ export default function App() {
           </button>
         </nav>
 
-        <div className="sidebar-profile" onClick={() => setShowProfileModal(true)} style={{ cursor: 'pointer', transition: 'var(--transition-fast)' }}>
+        <div className="sidebar-profile" onClick={() => !isAdmin && setShowProfileModal(true)} style={{ cursor: isAdmin ? 'default' : 'pointer', transition: 'var(--transition-fast)' }}>
           <div className="profile-avatar" style={{ flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {currentUser.avatarUrl ? (
               <img src={currentUser.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
             ) : (
-              currentUser.name ? currentUser.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'JS'
+              currentUser.name ? currentUser.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'AD'
             )}
           </div>
           <div className="sidebar-profile-info">
             <p style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser.name}</p>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {currentUser.role === 'doctor' ? currentUser.specialty : (clinicalProfile.hasDiabetes ? 'Paciente Diabético' : 'Paciente')}
+              {isAdmin ? 'Administrador iRec' : (currentUser.role === 'doctor' ? currentUser.specialty : (clinicalProfile?.hasDiabetes ? 'Paciente Diabético' : 'Paciente'))}
             </p>
           </div>
         </div>
@@ -783,20 +783,22 @@ export default function App() {
         
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {/* Mobile Profile Button */}
-          <button 
-            className="theme-toggle-btn" 
-            onClick={() => setShowProfileModal(true)}
-            style={{ width: '32px', height: '32px', borderRadius: '8px', overflow: 'hidden', padding: 0 }}
-            title="Editar Perfil"
-          >
-            {currentUser.avatarUrl ? (
-              <img src={currentUser.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
-                {currentUser.name ? currentUser.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'JS'}
-              </span>
-            )}
-          </button>
+          {!isAdmin && (
+            <button 
+              className="theme-toggle-btn" 
+              onClick={() => setShowProfileModal(true)}
+              style={{ width: '32px', height: '32px', borderRadius: '8px', overflow: 'hidden', padding: 0 }}
+              title="Editar Perfil"
+            >
+              {currentUser.avatarUrl ? (
+                <img src={currentUser.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                  {currentUser.name ? currentUser.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'JS'}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Mobile Theme Toggle Button */}
           <button 
