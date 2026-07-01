@@ -363,28 +363,50 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
 
   const [bookingModal, setBookingModal] = useState({
     isOpen: false,
-    type: 'pickup',
     itemName: '',
     itemPrice: '',
-    targetName: '',
-    targetAddress: '',
-    code: ''
+    partnerName: '',
+    doctorName: '',
+    affiliateLink: '',
+    isIrecPartner: false,
+    countdown: 3
   });
 
-  const handleCheckout = (type, item) => {
-    const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const codePrefix = type === 'pickup' ? 'IREC-RES-' : 'IREC-DEL-';
-    
+  const handlePartnerRedirectClick = (itemName, partner) => {
+    let doctorName = '';
+    if (partner.type === 'irec_partner') {
+      doctorName = 'iRec Oficial';
+    } else {
+      doctorName = getDoctorName(partner.doctor_id);
+    }
+
     setBookingModal({
       isOpen: true,
-      type,
-      itemName: item.name,
-      itemPrice: item.price,
-      targetName: type === 'pickup' ? localPharmacy.name : (clinicalProfile?.name || 'Paciente'),
-      targetAddress: type === 'pickup' ? (localPharmacy.address || 'Farmácia Credenciada Local') : `${clinicalProfile?.city || 'Sua cidade'}/${patientState}`,
-      code: `${codePrefix}${randomCode}`
+      itemName: itemName,
+      itemPrice: partner.price || 'A consultar',
+      partnerName: partner.pharmacy_name || partner.brand || partner.name || 'Parceiro Credenciado',
+      doctorName: doctorName,
+      affiliateLink: partner.affiliate_link || '#',
+      isIrecPartner: partner.type === 'irec_partner',
+      countdown: 3
     });
   };
+
+  useEffect(() => {
+    let timer;
+    if (bookingModal.isOpen && bookingModal.countdown > 0) {
+      timer = setTimeout(() => {
+        setBookingModal(prev => ({
+          ...prev,
+          countdown: prev.countdown - 1
+        }));
+      }, 1000);
+    } else if (bookingModal.isOpen && bookingModal.countdown === 0) {
+      window.open(bookingModal.affiliateLink, '_blank');
+      setBookingModal(prev => ({ ...prev, isOpen: false }));
+    }
+    return () => clearTimeout(timer);
+  }, [bookingModal.isOpen, bookingModal.countdown, bookingModal.affiliateLink]);
 
   // Load dynamic personalized protocol using Gemini API on mount or update
   useEffect(() => {
@@ -470,9 +492,41 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
     loadDbMaterials();
   }, [clinicalProfile]);
 
-  const localResources = getLocalHealthcareResources(clinicalProfile?.city, clinicalProfile?.state);
-  const localPharmacy = localResources?.pharmacies[0] || { name: 'Farmácia Local', address: 'Próxima a você' };
-  const patientState = clinicalProfile?.state ? clinicalProfile.state.toUpperCase() : 'UF';
+  const getAvailablePartnersForMaterial = (itemName) => {
+    // 1. Doctor's specific partners for this material
+    const docSpecific = dbRecommendedMaterials.filter(m => {
+      if (m.type !== 'doctor_partner') return false;
+      if (!m.name || m.name.toLowerCase() !== itemName.toLowerCase()) return false;
+      if (m.patient_id === clinicalProfile?.id) return true;
+      const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
+      return m.patient_id === null && isAssigned;
+    });
+
+    // 2. Doctor's general pharmacy links
+    const docGeneral = dbRecommendedMaterials.filter(m => {
+      if (m.type !== 'doctor_general_partner') return false;
+      const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
+      return isAssigned;
+    });
+
+    // 3. iRec's global partners for this material (registered by Admin)
+    const irecSpecific = dbRecommendedMaterials.filter(m => {
+      if (m.type !== 'irec_partner') return false;
+      return m.name && m.name.toLowerCase() === itemName.toLowerCase();
+    });
+
+    return {
+      docSpecific,
+      docGeneral,
+      irecSpecific,
+      hasAny: docSpecific.length > 0 || docGeneral.length > 0 || irecSpecific.length > 0
+    };
+  };
+
+  const getDoctorName = (doctorId) => {
+    const doc = assignedDoctors.find(d => d.id === doctorId);
+    return doc ? doc.name : 'Médico Credenciado';
+  };
 
   const getDoctorPartners = () => {
     return dbRecommendedMaterials.filter(m => {
@@ -484,93 +538,95 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
   };
 
   const renderCheckoutButtons = (item) => {
-    const docGeneralStores = dbRecommendedMaterials.filter(m => {
-      if (m.type !== 'doctor_general_partner') return false;
-      const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
-      return isAssigned;
-    });
+    const { docSpecific, docGeneral, irecSpecific, hasAny } = getAvailablePartnersForMaterial(item.name);
+
+    if (!hasAny) {
+      return (
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>
+          ℹ️ {isClinician 
+            ? 'Adicione este item às suas parcerias no painel para habilitar links afiliados de compra para seus pacientes.' 
+            : 'Consulte o seu médico ou o administrador para obter indicações de compra deste produto.'
+          }
+        </div>
+      );
+    }
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {!isClinician && docGeneralStores.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {docGeneralStores.map((store, idx) => (
-              <a 
-                key={idx}
-                href={store.affiliate_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  backgroundColor: 'rgba(var(--primary-rgb), 0.08)',
-                  color: 'var(--primary)',
-                  border: '1px solid rgba(var(--primary-rgb), 0.15)',
-                  textDecoration: 'none',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  height: '36px',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <span>🏪 Comprar na {store.name} (Indicação do Médico)</span>
-                <span style={{ fontSize: '9px', opacity: 0.8 }}>Indicado ↗</span>
-              </a>
-            ))}
-          </div>
-        )}
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => handleCheckout('pickup', item)}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+        {/* Render Doctor Specific recommendations */}
+        {docSpecific.map((part, pIdx) => (
+          <button
+            key={`doc-spec-${pIdx}`}
+            className="btn btn-primary"
+            onClick={() => handlePartnerRedirectClick(item.name, part)}
             style={{ 
               display: 'flex', 
-              flexDirection: 'column', 
               alignItems: 'center', 
-              justifyContent: 'center', 
-              height: '46px', 
-              padding: '4px 6px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              textAlign: 'center'
+              justifyContent: 'space-between', 
+              padding: '8px 12px', 
+              height: '38px', 
+              borderRadius: '6px', 
+              fontSize: '11.5px', 
+              fontWeight: '700',
+              cursor: 'pointer'
             }}
           >
-            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-              📍 Retirada Rápida
-            </span>
-            <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {localPharmacy.name}
-            </span>
+            <span>🏪 Comprar Indicação do Dr(a). {getDoctorName(part.doctor_id)} ({part.pharmacy_name || part.brand || 'Parceiro'})</span>
+            <span style={{ fontSize: '9px', opacity: 0.85 }}>Comprar ↗</span>
           </button>
+        ))}
 
-          <button 
-            className="btn btn-primary" 
-            onClick={() => handleCheckout('delivery', item)}
+        {/* Render Doctor General Store recommendations */}
+        {docGeneral.map((part, pIdx) => (
+          <button
+            key={`doc-gen-${pIdx}`}
+            className="btn"
+            onClick={() => handlePartnerRedirectClick(item.name, part)}
             style={{ 
               display: 'flex', 
-              flexDirection: 'column', 
               alignItems: 'center', 
-              justifyContent: 'center', 
-              height: '46px', 
-              padding: '4px 6px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              textAlign: 'center'
+              justifyContent: 'space-between', 
+              padding: '8px 12px', 
+              height: '38px', 
+              borderRadius: '6px', 
+              fontSize: '11.5px', 
+              fontWeight: '700',
+              backgroundColor: 'rgba(59, 130, 246, 0.08)',
+              color: 'var(--primary)',
+              border: '1px solid rgba(59, 130, 246, 0.15)',
+              cursor: 'pointer'
             }}
           >
-            <span style={{ fontSize: '10px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
-              🚚 Envio Expresso
-            </span>
-            <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Receba em 24h
-            </span>
+            <span>🏪 Comprar no Parceiro do Dr(a). {getDoctorName(part.doctor_id)} ({part.name})</span>
+            <span style={{ fontSize: '9px', opacity: 0.85 }}>Ir para o site ↗</span>
           </button>
-        </div>
+        ))}
+
+        {/* Render iRec Official partners recommendations */}
+        {irecSpecific.map((part, pIdx) => (
+          <button
+            key={`irec-spec-${pIdx}`}
+            className="btn"
+            onClick={() => handlePartnerRedirectClick(item.name, part)}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              padding: '8px 12px', 
+              height: '38px', 
+              borderRadius: '6px', 
+              fontSize: '11.5px', 
+              fontWeight: '700',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              color: 'var(--success-light)',
+              border: '1px solid rgba(16, 185, 129, 0.15)',
+              cursor: 'pointer'
+            }}
+          >
+            <span>🤝 Comprar no Parceiro iRec ({part.pharmacy_name || 'iRec Oficial'})</span>
+            <span style={{ fontSize: '9px', opacity: 0.85 }}>Comprar ↗</span>
+          </button>
+        ))}
       </div>
     );
   };
@@ -787,10 +843,8 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                               </div>
                               <span style={{ fontSize: '13.5px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.price}</span>
                             </div>
-                            <a 
-                              href={item.affiliate_link} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
+                            <button 
+                              onClick={() => handlePartnerRedirectClick(item.name, item)} 
                               className="btn btn-primary"
                               style={{ 
                                 display: 'flex', 
@@ -799,12 +853,14 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                                 height: '36px', 
                                 fontSize: '11px', 
                                 fontWeight: '700',
-                                textDecoration: 'none',
-                                borderRadius: '6px'
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                width: '100%',
+                                border: 'none'
                               }}
                             >
                               🛒 Comprar Indicação do Médico
-                            </a>
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -828,10 +884,8 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                               </div>
                               <span style={{ fontSize: '13.5px', fontWeight: '800', color: 'var(--text-primary)' }}>{item.price}</span>
                             </div>
-                            <a 
-                              href={item.affiliate_link} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
+                            <button 
+                              onClick={() => handlePartnerRedirectClick(item.name, item)} 
                               className="btn btn-secondary"
                               style={{ 
                                 display: 'flex', 
@@ -840,14 +894,16 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                                 height: '36px', 
                                 fontSize: '11px', 
                                 fontWeight: '700',
-                                textDecoration: 'none',
                                 borderRadius: '6px',
                                 backgroundColor: 'rgba(var(--primary-rgb), 0.12)',
-                                color: 'var(--primary)'
+                                color: 'var(--primary)',
+                                cursor: 'pointer',
+                                width: '100%',
+                                border: 'none'
                               }}
                             >
                               🏪 Comprar no Parceiro iRec (Desconto de Convênio)
-                            </a>
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -1083,201 +1139,111 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
               &times;
             </button>
 
-            {bookingModal.type === 'pickup' ? (
-              // Pickup Mode
-              <>
-                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <div style={{
-                    width: '56px',
-                    height: '56px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '28px'
-                  }}>
-                    📍
-                  </div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                    Insumo Reservado!
-                  </h3>
-                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
-                    Apresente o código de barras no balcão da farmácia para retirar em até 24h.
-                  </p>
-                </div>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: bookingModal.isIrecPartner ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '28px',
+                color: bookingModal.isIrecPartner ? 'var(--success-light)' : 'var(--primary)',
+                animation: 'pulse 2s infinite'
+              }}>
+                {bookingModal.isIrecPartner ? '🤝' : '🏪'}
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                Redirecionando para o Parceiro...
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4' }}>
+                Você está sendo redirecionado para o site parceiro para concluir sua compra com segurança.
+              </p>
+            </div>
 
-                <div style={{
-                  backgroundColor: 'var(--bg-primary)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px'
-                }}>
-                  <div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Insumo</span>
-                    <div style={{ fontSize: '13px', fontWeight: '750', color: 'var(--text-primary)' }}>{bookingModal.itemName}</div>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Local de Retirada</span>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>🏪 {bookingModal.targetName}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>📍 {bookingModal.targetAddress}</div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-                    <div>
-                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Valor</span>
-                      <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>{bookingModal.itemPrice}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Status</span>
-                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'flex-end' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-                        Reservado
-                      </div>
-                    </div>
+            <div style={{
+              backgroundColor: 'var(--bg-primary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div>
+                <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Insumo Recomendado</span>
+                <div style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', marginTop: '2px' }}>{bookingModal.itemName}</div>
+              </div>
+              <div>
+                <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Farmácia / Canal de Venda</span>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginTop: '2px' }}>🏪 {bookingModal.partnerName}</div>
+              </div>
+              <div>
+                <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Indicação & Autoria</span>
+                <div style={{ fontSize: '12.5px', fontWeight: '750', color: bookingModal.isIrecPartner ? 'var(--success-light)' : 'var(--primary)', marginTop: '2px' }}>
+                  {bookingModal.isIrecPartner ? '🤝 Parceiro Credenciado Oficial iRec' : `👨‍⚕️ Indicação de Dr(a). ${bookingModal.doctorName}`}
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                <div>
+                  <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Preço Referência</span>
+                  <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>{bookingModal.itemPrice}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Conexão</span>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'flex-end', marginTop: '2px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+                    Segura
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Simulated Barcode */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '12px',
-                  backgroundColor: '#ffffff',
-                  borderRadius: '10px',
-                  border: '1.5px dashed #cbd5e1'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    gap: '2px',
-                    height: '40px',
-                    alignItems: 'stretch'
-                  }}>
-                    {[1, 3, 1, 4, 2, 1, 3, 2, 4, 1, 2, 3, 1, 4, 2, 1, 3, 1, 2, 4, 1, 2, 3].map((w, idx) => (
-                      <div key={idx} style={{
-                        width: `${w}px`,
-                        backgroundColor: idx % 2 === 0 ? '#0f172a' : 'transparent'
-                      }} />
-                    ))}
-                  </div>
-                  <span style={{ fontSize: '10.5px', fontFamily: 'monospace', color: '#475569', letterSpacing: '2px', fontWeight: 'bold' }}>
-                    {bookingModal.code}
-                  </span>
-                </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              padding: '12px',
+              backgroundColor: 'rgba(59, 130, 246, 0.05)',
+              border: '1px solid rgba(59, 130, 246, 0.12)',
+              borderRadius: '10px',
+              textAlign: 'center',
+              fontSize: '11.5px',
+              fontWeight: '700',
+              color: 'var(--text-secondary)'
+            }}>
+              <span>🔗 Redirecionando automaticamente em <strong>{bookingModal.countdown}s</strong>...</span>
+            </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
-                  <a 
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bookingModal.targetName + ' ' + bookingModal.targetAddress)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-secondary"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      textDecoration: 'none',
-                      fontSize: '12px',
-                      height: '38px',
-                      padding: 0
-                    }}
-                  >
-                    🗺️ Ver Rota
-                  </a>
-                  <button
-                    onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
-                    className="btn btn-primary"
-                    style={{ fontSize: '12px', height: '38px', padding: 0 }}
-                  >
-                    Entendido
-                  </button>
-                </div>
-              </>
-            ) : (
-              // Delivery Mode
-              <>
-                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <div style={{
-                    width: '56px',
-                    height: '56px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '28px'
-                  }}>
-                    🚚
-                  </div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                    Pedido Confirmado!
-                  </h3>
-                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
-                    Seu insumo já está na esteira de envio express do iRec Delivery.
-                  </p>
-                </div>
-
-                <div style={{
-                  backgroundColor: 'var(--bg-primary)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px'
-                }}>
-                  <div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Insumo</span>
-                    <div style={{ fontSize: '13px', fontWeight: '750', color: 'var(--text-primary)' }}>{bookingModal.itemName}</div>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Destinatário e Endereço</span>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>👤 {bookingModal.targetName}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>📍 {bookingModal.targetAddress}</div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-                    <div>
-                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Previsão de Entrega</span>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)' }}>Em até 24 horas</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Rastreio</span>
-                      <div style={{ fontSize: '11.5px', fontFamily: 'monospace', fontWeight: '800', color: 'var(--text-primary)' }}>
-                        {bookingModal.code}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '12px',
-                  backgroundColor: 'rgba(14, 165, 233, 0.05)',
-                  border: '1px solid rgba(14, 165, 233, 0.15)',
-                  borderRadius: '10px'
-                }}>
-                  <div style={{ fontSize: '20px' }}>📦</div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Preparando envio</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Aguardando coleta da transportadora parceira.</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
-                  className="btn btn-primary"
-                  style={{ width: '100%', fontSize: '12px', marginTop: '4px', height: '38px', padding: 0 }}
-                >
-                  Confirmar e Fechar
-                </button>
-              </>
-            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
+              <button
+                onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
+                className="btn btn-secondary"
+                style={{ fontSize: '12.5px', height: '38px', padding: 0 }}
+              >
+                Cancelar
+              </button>
+              <a
+                href={bookingModal.affiliateLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
+                className="btn btn-primary"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  textDecoration: 'none', 
+                  fontSize: '12.5px', 
+                  height: '38px', 
+                  padding: 0 
+                }}
+              >
+                Ir para o Site Agora
+              </a>
+            </div>
           </div>
         </div>
       )}
@@ -1295,6 +1261,11 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
         @keyframes scaleIn {
           from { transform: scale(0.95); opacity: 0; }
           to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
         }
       `}</style>
     </div>
