@@ -344,20 +344,12 @@ export default function DoctorPartners({ doctorProfile }) {
 
       {/* MODAL 1: ADD PHARMACY GENERAL */}
       {showPharmacyModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(8px)',
-          display: 'flex', justifyContent: 'center', alignItems: 'center',
-          zIndex: 9999, padding: '20px'
-        }}>
-          <div className="glass-card" style={{
-            maxWidth: '480px', width: '100%', padding: '28px', borderRadius: '16px',
-            backgroundColor: 'var(--bg-secondary)', border: '1.5px solid var(--border-color)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)', color: 'var(--text-primary)',
-            display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.2s ease-out'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>➕ Vincular Farmácia Parceira</h3>
+        <div className="partners-modal-overlay">
+          <div className="partners-modal-container">
+            <div className="partners-modal-header">
+              <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                🏪 Vincular Farmácia Parceira
+              </h3>
               <button 
                 onClick={() => setShowPharmacyModal(false)}
                 style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--text-muted)' }}
@@ -366,42 +358,42 @@ export default function DoctorPartners({ doctorProfile }) {
               </button>
             </div>
 
-            <form onSubmit={handleAddPharmacy} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>Nome do Estabelecimento / Farmácia *</label>
-                <input 
-                  type="text" 
-                  className="form-control"
-                  placeholder="Ex: Farmácia Santo Antônio ou Drogasil Itapuranga"
-                  value={pharmacyName}
-                  onChange={(e) => setPharmacyName(e.target.value)}
-                  style={{ height: '40px' }}
-                  required
-                />
+            <form onSubmit={handleAddPharmacy}>
+              <div className="partners-modal-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="form-group">
+                  <label>Nome do Estabelecimento / Farmácia *</label>
+                  <input 
+                    type="text" 
+                    className="form-control"
+                    placeholder="Ex: Farmácia Santo Antônio ou Drogasil Itapuranga"
+                    value={pharmacyName}
+                    onChange={(e) => setPharmacyName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Seu Link Geral de Afiliado do Estabelecimento *</label>
+                  <input 
+                    type="url" 
+                    className="form-control"
+                    placeholder="Ex: https://afiliado.rededefarmacias.com/dr-murillo"
+                    value={pharmacyLink}
+                    onChange={(e) => setPharmacyLink(e.target.value)}
+                    required
+                  />
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.4, marginTop: '2px' }}>
+                    Insira o link de afiliado geral da loja. Ao prescrever qualquer curativo, esse parceiro aparecerá como atalho de compra direta.
+                  </span>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>Seu Link Geral de Afiliado do Estabelecimento *</label>
-                <input 
-                  type="url" 
-                  className="form-control"
-                  placeholder="Ex: https://afiliado.rededefarmacias.com/dr-murillo"
-                  value={pharmacyLink}
-                  onChange={(e) => setPharmacyLink(e.target.value)}
-                  style={{ height: '40px' }}
-                  required
-                />
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  Insira o link de afiliado geral da loja. Ao prescrever qualquer curativo, esse parceiro aparecerá como atalho de compra direta.
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+              <div className="partners-modal-footer">
                 <button 
                   type="button" 
                   className="btn btn-secondary" 
                   onClick={() => setShowPharmacyModal(false)}
-                  style={{ flex: 1, height: '38px' }}
+                  style={{ height: '36px' }}
                 >
                   Cancelar
                 </button>
@@ -409,7 +401,7 @@ export default function DoctorPartners({ doctorProfile }) {
                   type="submit" 
                   className="btn btn-primary"
                   disabled={submitting}
-                  style={{ flex: 1, height: '38px', fontWeight: '700' }}
+                  style={{ height: '36px', fontWeight: '700' }}
                 >
                   {submitting ? 'Vinculando...' : 'Vincular Farmácia'}
                 </button>
@@ -421,20 +413,12 @@ export default function DoctorPartners({ doctorProfile }) {
 
       {/* MODAL 2: ADD PRODUCT SPECIFIC */}
       {showProductModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(8px)',
-          display: 'flex', justifyContent: 'center', alignItems: 'center',
-          zIndex: 9999, padding: '20px'
-        }}>
-          <div className="glass-card" style={{
-            maxWidth: '520px', width: '100%', padding: '28px', borderRadius: '16px',
-            backgroundColor: 'var(--bg-secondary)', border: '1.5px solid var(--border-color)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)', color: 'var(--text-primary)',
-            display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.2s ease-out'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>➕ Adicionar Insumo Recomendado</h3>
+        <div className="partners-modal-overlay">
+          <div className="partners-modal-container">
+            <div className="partners-modal-header">
+              <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                📦 Adicionar Insumo Recomendado
+              </h3>
               <button 
                 onClick={() => setShowProductModal(false)}
                 style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--text-muted)' }}
@@ -443,77 +427,74 @@ export default function DoctorPartners({ doctorProfile }) {
               </button>
             </div>
 
-            <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)' }}>Nome do Insumo / Cobertura *</label>
-                <input 
-                  type="text" 
-                  className="form-control"
-                  placeholder="Ex: Alginato de Cálcio Curatec Placa 10x10"
-                  value={prodName}
-                  onChange={(e) => setProdName(e.target.value)}
-                  style={{ height: '38px' }}
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)' }}>Marca / Laboratório</label>
+            <form onSubmit={handleAddProduct}>
+              <div className="partners-modal-content" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="form-group">
+                  <label>Nome do Insumo / Cobertura *</label>
                   <input 
                     type="text" 
                     className="form-control"
-                    placeholder="Ex: Curatec"
-                    value={prodBrand}
-                    onChange={(e) => setProdBrand(e.target.value)}
-                    style={{ height: '38px' }}
+                    placeholder="Ex: Alginato de Cálcio Curatec Placa 10x10"
+                    value={prodName}
+                    onChange={(e) => setProdName(e.target.value)}
+                    required
                   />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)' }}>Preço Sugerido</label>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>Marca / Laboratório</label>
+                    <input 
+                      type="text" 
+                      className="form-control"
+                      placeholder="Ex: Curatec"
+                      value={prodBrand}
+                      onChange={(e) => setProdBrand(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Preço Sugerido</label>
+                    <input 
+                      type="text" 
+                      className="form-control"
+                      placeholder="Ex: R$ 42,00"
+                      value={prodPrice}
+                      onChange={(e) => setProdPrice(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Rede de Farmácias Indicada *</label>
                   <input 
                     type="text" 
                     className="form-control"
-                    placeholder="Ex: R$ 42,00"
-                    value={prodPrice}
-                    onChange={(e) => setProdPrice(e.target.value)}
-                    style={{ height: '38px' }}
+                    placeholder="Ex: Ultrafarma ou Drogasil Local"
+                    value={prodPharmacyName}
+                    onChange={(e) => setProdPharmacyName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Seu Link de Afiliado Particular do Insumo *</label>
+                  <input 
+                    type="url" 
+                    className="form-control"
+                    placeholder="Ex: https://afiliado.com/seu-codigo-do-produto"
+                    value={prodLink}
+                    onChange={(e) => setProdLink(e.target.value)}
+                    required
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)' }}>Rede de Farmácias Indicada *</label>
-                <input 
-                  type="text" 
-                  className="form-control"
-                  placeholder="Ex: Ultrafarma ou Drogasil Local"
-                  value={prodPharmacyName}
-                  onChange={(e) => setProdPharmacyName(e.target.value)}
-                  style={{ height: '38px' }}
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)' }}>Seu Link de Afiliado Particular do Insumo *</label>
-                <input 
-                  type="url" 
-                  className="form-control"
-                  placeholder="Ex: https://afiliado.com/seu-codigo-do-produto"
-                  value={prodLink}
-                  onChange={(e) => setProdLink(e.target.value)}
-                  style={{ height: '38px' }}
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+              <div className="partners-modal-footer">
                 <button 
                   type="button" 
                   className="btn btn-secondary" 
                   onClick={() => setShowProductModal(false)}
-                  style={{ flex: 1, height: '38px' }}
+                  style={{ height: '36px' }}
                 >
                   Cancelar
                 </button>
@@ -521,7 +502,7 @@ export default function DoctorPartners({ doctorProfile }) {
                   type="submit" 
                   className="btn btn-primary"
                   disabled={submitting}
-                  style={{ flex: 1, height: '38px', fontWeight: '700' }}
+                  style={{ height: '36px', fontWeight: '700' }}
                 >
                   {submitting ? 'Cadastrando...' : 'Cadastrar Produto'}
                 </button>
@@ -530,6 +511,87 @@ export default function DoctorPartners({ doctorProfile }) {
           </div>
         </div>
       )}
+
+      {/* Styled block matching user profile modal */}
+      <style>{`
+        .partners-modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(15, 23, 42, 0.45);
+          backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1100;
+          animation: backdropFadeIn 0.25s ease-out forwards;
+        }
+        .partners-modal-container {
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-lg);
+          width: 95%;
+          max-width: 520px;
+          display: flex;
+          flex-direction: column;
+          box-shadow: var(--shadow-lg);
+          overflow: hidden;
+          animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .partners-modal-header {
+          padding: 16px 24px;
+          border-bottom: 1px solid var(--border-color);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .partners-modal-content {
+          padding: 20px 24px;
+          overflow-y: auto;
+          max-height: 65vh;
+        }
+        .partners-modal-footer {
+          padding: 12px 24px;
+          border-top: 1px solid var(--border-color);
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          background: var(--bg-primary);
+        }
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+        .form-group label {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+        .form-control {
+          padding: 8px 12px;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border-color);
+          background: var(--bg-secondary);
+          color: var(--text-primary);
+          font-size: 13px;
+          transition: var(--transition-fast);
+        }
+        .form-control:focus {
+          border-color: var(--primary);
+          box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        @keyframes modalScaleUp {
+          from { opacity: 0; transform: scale(0.96) translateY(8px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes backdropFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
 
     </div>
   );
