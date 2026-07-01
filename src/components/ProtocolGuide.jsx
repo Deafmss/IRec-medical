@@ -483,6 +483,98 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
     });
   };
 
+  const renderCheckoutButtons = (item) => {
+    const docGeneralStores = dbRecommendedMaterials.filter(m => {
+      if (m.type !== 'doctor_general_partner') return false;
+      const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
+      return isAssigned;
+    });
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {!isClinician && docGeneralStores.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {docGeneralStores.map((store, idx) => (
+              <a 
+                key={idx}
+                href={store.affiliate_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  backgroundColor: 'rgba(var(--primary-rgb), 0.08)',
+                  color: 'var(--primary)',
+                  border: '1px solid rgba(var(--primary-rgb), 0.15)',
+                  textDecoration: 'none',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  height: '36px',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <span>🏪 Comprar na {store.name} (Indicação do Médico)</span>
+                <span style={{ fontSize: '9px', opacity: 0.8 }}>Indicado ↗</span>
+              </a>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => handleCheckout('pickup', item)}
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '46px', 
+              padding: '4px 6px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              textAlign: 'center'
+            }}
+          >
+            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              📍 Retirada Rápida
+            </span>
+            <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {localPharmacy.name}
+            </span>
+          </button>
+
+          <button 
+            className="btn btn-primary" 
+            onClick={() => handleCheckout('delivery', item)}
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '46px', 
+              padding: '4px 6px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              textAlign: 'center'
+            }}
+          >
+            <span style={{ fontSize: '10px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              🚚 Envio Expresso
+            </span>
+            <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Receba em 24h
+            </span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   if (isClinician && !clinicalProfile) {
     return (
       <div style={{
@@ -783,55 +875,7 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                               </span>
                             </div>
 
-                            {!isClinician && (
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                                <button 
-                                  className="btn btn-secondary" 
-                                  onClick={() => handleCheckout('pickup', item)}
-                                  style={{ 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    height: '48px', 
-                                    padding: '4px 6px',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    textAlign: 'center'
-                                  }}
-                                >
-                                  <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                    📍 Retirada Rápida
-                                  </span>
-                                  <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {localPharmacy.name}
-                                  </span>
-                                </button>
-
-                                <button 
-                                  className="btn btn-primary" 
-                                  onClick={() => handleCheckout('delivery', item)}
-                                  style={{ 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    height: '48px', 
-                                    padding: '4px 6px',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                    textAlign: 'center'
-                                  }}
-                                >
-                                  <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                    🚚 Envio Expresso
-                                  </span>
-                                  <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    Receba em 24h em {patientState}
-                                  </span>
-                                </button>
-                              </div>
-                            )}
+                            {!isClinician && renderCheckoutButtons(item)}
                           </div>
                         ))}
                       </div>
@@ -980,55 +1024,7 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                       </span>
                     </div>
 
-                    {!isClinician && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <button 
-                          className="btn btn-secondary" 
-                          onClick={() => handleCheckout('pickup', item)}
-                          style={{ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            height: '48px', 
-                            padding: '4px 6px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            textAlign: 'center'
-                          }}
-                        >
-                          <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            📍 Retirada Rápida
-                          </span>
-                          <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {localPharmacy.name}
-                          </span>
-                        </button>
-
-                        <button 
-                          className="btn btn-primary" 
-                          onClick={() => handleCheckout('delivery', item)}
-                          style={{ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            height: '48px', 
-                            padding: '4px 6px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            textAlign: 'center'
-                          }}
-                        >
-                          <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            🚚 Envio Expresso
-                          </span>
-                          <span style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px', display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            Receba em 24h em {patientState}
-                          </span>
-                        </button>
-                      </div>
-                    )}
+                    {!isClinician && renderCheckoutButtons(item)}
                   </div>
                 ))}
               </div>
