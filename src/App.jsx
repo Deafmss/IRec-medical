@@ -14,6 +14,7 @@ import SpecialistDirectory from './components/SpecialistDirectory';
 import AdminPartners from './components/AdminPartners';
 import DoctorPartners from './components/DoctorPartners';
 import AdminDashboard from './components/AdminDashboard';
+import DoctorDashboardAnalytics from './components/DoctorDashboardAnalytics';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -390,6 +391,8 @@ export default function App() {
         );
       case 'admin-dashboard':
         return <AdminDashboard />;
+      case 'doctor-analytics':
+        return <DoctorDashboardAnalytics currentUser={currentUser} />;
       case 'admin-partners':
         return <AdminPartners setActiveTab={setActiveTab} />;
       case 'doctor-partners':
@@ -526,6 +529,17 @@ export default function App() {
             </>
           ) : currentUser.role === 'doctor' ? (
             <>
+              <button 
+                className={`sidebar-item ${activeTab === 'doctor-analytics' ? 'active' : ''}`}
+                onClick={() => setActiveTab('doctor-analytics')}
+                title="Meu Painel"
+              >
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="sidebar-text">Meu Painel</span>
+              </button>
+
               <button 
                 className={`sidebar-item ${activeTab === 'doctor-dashboard' ? 'active' : ''}`}
                 onClick={() => setActiveTab('doctor-dashboard')}
@@ -871,6 +885,16 @@ export default function App() {
           </>
         ) : currentUser.role === 'doctor' ? (
           <>
+            <button 
+              className={`nav-item ${activeTab === 'doctor-analytics' ? 'active' : ''}`}
+              onClick={() => setActiveTab('doctor-analytics')}
+            >
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Meu Painel
+            </button>
+
             <button 
               className={`nav-item ${activeTab === 'doctor-dashboard' ? 'active' : ''}`}
               onClick={() => setActiveTab('doctor-dashboard')}

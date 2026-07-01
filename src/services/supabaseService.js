@@ -2330,3 +2330,59 @@ export const getAdminWoundEntries = async () => {
   }
 };
 
+export const getDoctorPatientsWoundEntries = async (doctorId) => {
+  if (!resolvedIdIsValid(doctorId)) return [];
+  if (!isSupabaseConfigured) {
+    const assignments = JSON.parse(localStorage.getItem('irec_local_assignments') || '[]');
+    const docPatientIds = assignments.filter(a => a.doctor_id === doctorId).map(a => a.patient_id);
+    const allWounds = JSON.parse(localStorage.getItem('irec_local_wound_entries') || '[]');
+    return allWounds.filter(w => docPatientIds.includes(w.patient_id || w.patientId));
+  }
+  try {
+    const { data: assignments, error: assError } = await supabase
+      .from('doctor_patient_assignment')
+      .eq('doctor_id', doctorId)
+      .select('patient_id');
+    
+    if (assError) throw assError;
+    const patientIds = assignments.map(a => a.patient_id);
+    if (patientIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('wound_entries')
+      .in('patient_id', patientIds)
+      .order('created_at', { ascending: true });
+    
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error fetching doctor patients wound entries:', err);
+    return [];
+  }
+};
+
+const resolvedIdIsValid = (id) => {
+  return id && id.toString().trim().length > 0;
+};
+
+export const getDoctorTelemedicineCalls = async (doctorId) => {
+  if (!resolvedIdIsValid(doctorId)) return [];
+  if (!isSupabaseConfigured) {
+    const allCalls = JSON.parse(localStorage.getItem('irec_local_calls') || '[]');
+    return allCalls.filter(c => c.caller_id === doctorId || c.receiver_id === doctorId);
+  }
+  try {
+    const { data, error } = await supabase
+      .from('telemedicine_calls')
+      .select('*')
+      .or(`caller_id.eq.${doctorId},receiver_id.eq.${doctorId}`)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error fetching doctor telemedicine calls:', err);
+    return [];
+  }
+};
+
