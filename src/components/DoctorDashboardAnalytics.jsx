@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAssignedPatients, getDoctorPatientsWoundEntries, getDoctorTelemedicineCalls, getRecommendedMaterials } from '../services/supabaseService';
+import DateRangePicker from './DateRangePicker';
 
 export default function DoctorDashboardAnalytics({ currentUser }) {
   const [loading, setLoading] = useState(true);
@@ -168,46 +169,15 @@ export default function DoctorDashboardAnalytics({ currentUser }) {
           </p>
         </div>
         
-        {/* Period & Calendar Selectors */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '750', color: 'var(--text-secondary)' }}>Filtro por Período:</span>
-            <select 
-              value={timePeriod}
-              onChange={(e) => setTimePeriod(e.target.value)}
-              style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '12.5px', fontWeight: '700', outline: 'none', cursor: 'pointer' }}
-            >
-              <option value="24h">Últimas 24 horas</option>
-              <option value="7d">Últimos 7 dias</option>
-              <option value="30d">Últimos 30 dias</option>
-              <option value="custom">Período Personalizado</option>
-              <option value="all">Todo o período</option>
-            </select>
-          </div>
-
-          {timePeriod === 'custom' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeIn 0.2s ease' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>De:</span>
-                <input 
-                  type="date" 
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
-                />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Até:</span>
-                <input 
-                  type="date" 
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Period Selector (Custom Popover) */}
+        <DateRangePicker 
+          timePeriod={timePeriod}
+          setTimePeriod={setTimePeriod}
+          startDate={startDate}
+          setStartDate={setStartDate}
+          endDate={endDate}
+          setEndDate={setEndDate}
+        />
       </header>
 
       {/* Main KPI Stats Cards */}
