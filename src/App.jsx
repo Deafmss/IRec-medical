@@ -13,6 +13,7 @@ import Telemedicine from './components/Telemedicine';
 import SpecialistDirectory from './components/SpecialistDirectory';
 import AdminPartners from './components/AdminPartners';
 import DoctorPartners from './components/DoctorPartners';
+import AdminDashboard from './components/AdminDashboard';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -383,6 +384,8 @@ export default function App() {
             setTelemedicineContactId={setTelemedicineContactId} 
           />
         );
+      case 'admin-dashboard':
+        return <AdminDashboard />;
       case 'admin-partners':
         return <AdminPartners setActiveTab={setActiveTab} />;
       case 'doctor-partners':
@@ -400,7 +403,10 @@ export default function App() {
           />
         );
       default:
-        return currentUser?.role === 'doctor' || isAdmin ? (
+        if (isAdmin) {
+          return <AdminDashboard />;
+        }
+        return currentUser?.role === 'doctor' ? (
           <DoctorDashboard 
             doctorProfile={currentUser} 
             setActiveTab={setActiveTab} 
@@ -501,7 +507,20 @@ export default function App() {
         </div>
 
         <nav className="sidebar-nav">
-          {currentUser.role === 'doctor' || isAdmin ? (
+          {isAdmin ? (
+            <>
+              <button 
+                className={`sidebar-item ${activeTab === 'admin-dashboard' ? 'active' : ''}`}
+                onClick={() => setActiveTab('admin-dashboard')}
+                title="Painel Admin"
+              >
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="sidebar-text">Painel Admin</span>
+              </button>
+            </>
+          ) : currentUser.role === 'doctor' ? (
             <>
               <button 
                 className={`sidebar-item ${activeTab === 'doctor-dashboard' ? 'active' : ''}`}
@@ -560,19 +579,6 @@ export default function App() {
                 </svg>
                 <span className="sidebar-text">Minhas Parcerias</span>
               </button>
-
-              {isAdmin && (
-                <button 
-                  className={`sidebar-item ${activeTab === 'admin-partners' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('admin-partners')}
-                  title="Parceiros iRec"
-                >
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72M6.75 18h3.75a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75H6.75a.75.75 0 0 0-.75.75v3.75c0 .414.336.75.75.75Z" />
-                  </svg>
-                  <span className="sidebar-text">Parceiros iRec</span>
-                </button>
-              )}
             </>
           ) : (
             <>
@@ -845,7 +851,19 @@ export default function App() {
          Visible only on mobile widths via CSS
       */}
       <nav className="bottom-nav no-print">
-        {currentUser.role === 'doctor' || isAdmin ? (
+        {isAdmin ? (
+          <>
+            <button 
+              className={`nav-item ${activeTab === 'admin-dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('admin-dashboard')}
+            >
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Admin
+            </button>
+          </>
+        ) : currentUser.role === 'doctor' ? (
           <>
             <button 
               className={`nav-item ${activeTab === 'doctor-dashboard' ? 'active' : ''}`}
@@ -897,18 +915,6 @@ export default function App() {
               </svg>
               Protocolos
             </button>
-
-            {isAdmin && (
-              <button 
-                className={`nav-item ${activeTab === 'admin-partners' ? 'active' : ''}`}
-                onClick={() => setActiveTab('admin-partners')}
-              >
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72M6.75 18h3.75a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75H6.75a.75.75 0 0 0-.75.75v3.75c0 .414.336.75.75.75Z" />
-                </svg>
-                Parceiros
-              </button>
-            )}
           </>
         ) : (
           <>

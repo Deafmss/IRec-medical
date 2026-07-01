@@ -2199,3 +2199,85 @@ export const deleteRecommendedMaterial = async (id) => {
   }
 };
 
+export const getAuditLogs = async () => {
+  if (!isSupabaseConfigured) {
+    return [];
+  }
+  try {
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error fetching audit logs:', err);
+    return [];
+  }
+};
+
+export const getAllProfiles = async () => {
+  if (!isSupabaseConfigured) {
+    const users = getLocalUsers();
+    return users.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      crm: u.crm || '',
+      specialty: u.specialty || ''
+    }));
+  }
+  try {
+    const { data, error } = await supabase
+      .from('clinical_profile')
+      .select('*');
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error fetching all profiles:', err);
+    return [];
+  }
+};
+
+export const getAdminStats = async () => {
+  if (!isSupabaseConfigured) {
+    const users = getLocalUsers();
+    const mats = JSON.parse(localStorage.getItem('irec_local_recommended_materials') || '[]');
+    const triages = JSON.parse(localStorage.getItem('irec_local_wound_entries') || '[]');
+    
+    return {
+      patients: users.filter(u => u.role === 'patient').length,
+      doctors: users.filter(u => u.role === 'doctor').length,
+      nurses: users.filter(u => u.role === 'nurse').length,
+      triages: triages.length,
+      partners: mats.filter(m => !m.patient_id && !m.doctor_id).length,
+      calls: 0
+    };
+  }
+
+  try {
+    const [patientsRes, doctorsRes, nursesRes, triagesRes, partnersRes, callsRes] = await Promise.all([
+      supabase.from('clinical_profile').select('id', { count: 'exact', head: true }).eq('role', 'patient'),
+      supabase.from('clinical_profile').select('id', { count: 'exact', head: true }).eq('role', 'doctor'),
+      supabase.from('clinical_profile').select('id', { count: 'exact', head: true }).eq('role', 'nurse'),
+      supabase.from('wound_entry').select('id', { count: 'exact', head: true }),
+      supabase.from('recommended_materials').select('id', { count: 'exact', head: true }).is('patient_id', null).is('doctor_id', null),
+      supabase.from('telemedicine_calls').select('id', { count: 'exact', head: true })
+    ]);
+
+    return {
+      patients: patientsRes.count || 0,
+      doctors: doctorsRes.count || 0,
+      nurses: nursesRes.count || 0,
+      triages: triagesRes.count || 0,
+      partners: partnersRes.count || 0,
+      calls: callsRes.count || 0
+    };
+  } catch (err) {
+    console.error('Error getting admin stats:', err);
+    return { patients: 0, doctors: 0, nurses: 0, triages: 0, partners: 0, calls: 0 };
+  }
+};
+
