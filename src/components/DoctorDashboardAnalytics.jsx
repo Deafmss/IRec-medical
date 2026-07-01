@@ -92,49 +92,27 @@ export default function DoctorDashboardAnalytics({ currentUser }) {
     ? Math.round((returnedPatientsCount / totalPatientsWithWounds) * 100) 
     : 0;
 
-  // 5. Success Metrics: Average Healing Progress (Area shrinkage percentage)
-  const calculateAverageHealingProgress = () => {
-    const patientGroups = {};
-    woundEntries.forEach(entry => {
-      const pId = entry.patient_id || entry.patientId;
-      if (!patientGroups[pId]) patientGroups[pId] = [];
-      patientGroups[pId].push(entry);
-    });
+  // 5. Success Metrics: Patient Clinical Improvement Index (percentage of patients whose latest evolution is 'Melhorou')
+  const getClinicalImprovementStats = () => {
+    const latestEntries = Object.values(latestWoundEntriesPerPatient);
+    const totalWithEvolutions = latestEntries.length;
+    if (totalWithEvolutions === 0) return { improvementRate: null, totalWithEvolutions: 0 };
 
-    let totalReductionPct = 0;
-    let eligiblePatientsCount = 0;
+    const improvedCount = latestEntries.filter(
+      (entry) => (entry.clinical_evolution || entry.clinicalEvolution) === 'Melhorou'
+    ).length;
 
-    Object.entries(patientGroups).forEach(([pId, entries]) => {
-      if (entries.length >= 2) {
-        // Sort entries by date ascending
-        const sorted = [...entries].sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
-        const first = sorted[0];
-        const last = sorted[sorted.length - 1];
-
-        const firstArea = parseFloat(first.ai_area_cm2 || first.aiAreaCm2);
-        const lastArea = parseFloat(last.ai_area_cm2 || last.aiAreaCm2);
-
-        if (!isNaN(firstArea) && !isNaN(lastArea) && firstArea > 0) {
-          const reduction = ((firstArea - lastArea) / firstArea) * 100;
-          totalReductionPct += reduction;
-          eligiblePatientsCount++;
-        }
-      }
-    });
-
-    return eligiblePatientsCount > 0 
-      ? Math.round(totalReductionPct / eligiblePatientsCount) 
-      : null;
+    return {
+      improvementRate: Math.round((improvedCount / totalWithEvolutions) * 100),
+      totalWithEvolutions
+    };
   };
 
-  const avgHealingProgress = calculateAverageHealingProgress();
+  const { improvementRate, totalWithEvolutions } = getClinicalImprovementStats();
 
-  // 6. Active infection alert signs in their patients' latest triages
-  const infectionAlertsCount = Object.values(latestWoundEntriesPerPatient).filter(
-    (entry) => {
-      const signs = entry.infection_signs || entry.infectionSigns;
-      return signs && signs !== 'Nenhum' && signs !== 'none' && signs !== '';
-    }
+  // 6. Clinical Worsening Alerts (count of active patients whose latest evolution is 'Piorou')
+  const clinicalWorseningAlertsCount = Object.values(latestWoundEntriesPerPatient).filter(
+    (entry) => (entry.clinical_evolution || entry.clinicalEvolution) === 'Piorou'
   ).length;
 
   // 7. Pathology breakdown for this doctor's patients
@@ -269,45 +247,45 @@ export default function DoctorDashboardAnalytics({ currentUser }) {
       {/* Advanced Clinical Insights Section */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '24px' }}>
         
-        {/* Card: Wound area shrinkage success rate */}
+        {/* Card: Patient Clinical Improvement Index */}
         <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
           <div>
             <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              📈 Índice Médio de Cicatrização
+              📈 Índice de Melhora Clínica
             </h4>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '16px' }}>
               <span style={{ fontSize: '42px', fontWeight: '850', color: 'var(--success-light)' }}>
-                {avgHealingProgress !== null ? `${avgHealingProgress}%` : '--'}
+                {improvementRate !== null ? `${improvementRate}%` : '--'}
               </span>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>redução de área da lesão</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>pacientes em evolução positiva</span>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: '1.4' }}>
-              Cálculo baseado na diferença percentual da área total mensurada por Inteligência Artificial entre a primeira e a última consulta dos pacientes em acompanhamento.
+              Cálculo baseado na proporção de pacientes sob acompanhamento cujo status evolutivo mais recente foi avaliado e registrado como "Melhorou".
             </p>
           </div>
           <div style={{ fontSize: '11.5px', color: 'var(--success-light)', fontWeight: '700', marginTop: '12px' }}>
-            🎯 Meta clínica esperada: &gt; 30% de redução
+            🎯 Meta clínica recomendada: &gt; 50% de evolução positiva
           </div>
         </div>
 
-        {/* Card: Active Alerts */}
-        <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: infectionAlertsCount > 0 ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-color)' }}>
+        {/* Card: Clinical Worsening Alerts */}
+        <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: clinicalWorseningAlertsCount > 0 ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-color)' }}>
           <div>
             <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              🚨 Alertas Críticos Ativos
+              🚨 Alertas de Piora Clínica
             </h4>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '16px' }}>
-              <span style={{ fontSize: '42px', fontWeight: '850', color: infectionAlertsCount > 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
-                {infectionAlertsCount}
+              <span style={{ fontSize: '42px', fontWeight: '850', color: clinicalWorseningAlertsCount > 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
+                {clinicalWorseningAlertsCount}
               </span>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>pacientes com sinais flogísticos</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>pacientes com piora de sintomas</span>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: '1.4' }}>
-              Sinalizações críticas de infecção ativa (calor local, rubor, odor fétido, exsudato purulento) identificadas nas triagens mais recentes dos seus pacientes.
+              Sinalizações críticas de pacientes cuja evolução clínica mais recente foi registrada como "Piorou", indicando necessidade imediata de revisão de conduta.
             </p>
           </div>
-          <div style={{ fontSize: '11.5px', color: infectionAlertsCount > 0 ? 'var(--danger)' : 'var(--success-light)', fontWeight: '750', marginTop: '12px' }}>
-            {infectionAlertsCount > 0 ? '⚠️ Recomenda-se realizar contato ou prescrição.' : '✅ Nenhum sinal de infecção pendente.'}
+          <div style={{ fontSize: '11.5px', color: clinicalWorseningAlertsCount > 0 ? 'var(--danger)' : 'var(--success-light)', fontWeight: '750', marginTop: '12px' }}>
+            {clinicalWorseningAlertsCount > 0 ? '⚠️ Atenção: Recomenda-se realizar teleconsulta ou contato.' : '✅ Excelente: Nenhum paciente em estado de regressão.'}
           </div>
         </div>
       </div>
