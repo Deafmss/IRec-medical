@@ -225,6 +225,60 @@ export default function AdminDashboard() {
 
   const woundDist = getWoundDistribution();
 
+  const getDynamicPathologiesStats = () => {
+    const patients = users.filter(u => u.role === 'patient');
+    const pathologyCounts = {};
+
+    patients.forEach(u => {
+      // 1. Check structured boolean fields
+      if (u.has_diabetes || u.hasDiabetes) {
+        pathologyCounts['Diabetes Mellitus'] = (pathologyCounts['Diabetes Mellitus'] || 0) + 1;
+      }
+      if (u.has_hypertension || u.hasHypertension) {
+        pathologyCounts['Hipertensão Arterial'] = (pathologyCounts['Hipertensão Arterial'] || 0) + 1;
+      }
+      if (u.has_venous_insufficiency || u.hasVenousInsufficiency) {
+        pathologyCounts['Insuficiência Venosa'] = (pathologyCounts['Insuficiência Venosa'] || 0) + 1;
+      }
+      if (u.has_peripheral_arterial_disease || u.hasPeripheralArterialDisease) {
+        pathologyCounts['Doença Arterial Periférica'] = (pathologyCounts['Doença Arterial Periférica'] || 0) + 1;
+      }
+      if (u.is_obese || u.isObese) {
+        pathologyCounts['Obesidade'] = (pathologyCounts['Obesidade'] || 0) + 1;
+      }
+      if (u.is_smoker || u.isSmoker) {
+        pathologyCounts['Tabagismo'] = (pathologyCounts['Tabagismo'] || 0) + 1;
+      }
+
+      // 2. Parse unstructured text fields
+      const otherCond = u.other_conditions || u.otherConditions;
+      if (otherCond && typeof otherCond === 'string' && otherCond.trim().length > 0) {
+        const items = otherCond.split(/[;,]/);
+        items.forEach(item => {
+          const cleanItem = item.trim().replace(/[.]/g, '');
+          if (cleanItem.length > 2) {
+            const formatted = cleanItem.charAt(0).toUpperCase() + cleanItem.slice(1).toLowerCase();
+            pathologyCounts[formatted] = (pathologyCounts[formatted] || 0) + 1;
+          }
+        });
+      }
+    });
+
+    const sortedPathologies = Object.entries(pathologyCounts)
+      .map(([name, count]) => {
+        const pct = patients.length > 0 ? Math.round((count / patients.length) * 100) : 0;
+        return { name, count, pct };
+      })
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      list: sortedPathologies,
+      totalPatients: patients.length
+    };
+  };
+
+  const pathologyStats = getDynamicPathologiesStats();
+
   // Audit Logs Statistics
   const getAuditActionStats = () => {
     const actionCounts = {};
@@ -381,111 +435,113 @@ export default function AdminDashboard() {
           {/* Advanced Charts Section */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
             
-            <div className="glass-card" style={{ padding: '24px', margin: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '18px' }}>
+            {/* Visual Chart 1: Dynamic Pathology and Comorbidity Mapping */}
+            <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
                 <h3 style={{ fontSize: '14.5px', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  📊 Distribuição das Lesões sob Acompanhamento
+                  🩺 Mapeamento Dinâmico de Patologias & Comorbidades
                 </h3>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
-                  Total Real: {woundDist.total} triagens
+                  Base: {pathologyStats.totalPatients} pacientes
                 </span>
               </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Pé Diabético</span>
-                    <span style={{ fontWeight: '800' }}>{woundDist.diabetic.pct}% ({woundDist.diabetic.count})</span>
-                  </div>
-                  <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
-                    <div style={{ width: `${woundDist.diabetic.pct}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px', backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)', backgroundSize: '1rem 1rem' }}></div>
-                  </div>
+              {pathologyStats.list.length === 0 ? (
+                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12.5px' }}>
+                  Nenhuma patologia identificada nos prontuários dos pacientes cadastrados.
                 </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Úlcera Venosa</span>
-                    <span style={{ fontWeight: '800' }}>{woundDist.venous.pct}% ({woundDist.venous.count})</span>
-                  </div>
-                  <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
-                    <div style={{ width: `${woundDist.venous.pct}%`, height: '100%', backgroundColor: 'var(--success-light)', borderRadius: '4px' }}></div>
-                  </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '300px', paddingRight: '4px' }}>
+                  {pathologyStats.list.map((item) => (
+                    <div key={item.name}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{item.name}</span>
+                        <span style={{ fontWeight: '800' }}>{item.pct}% ({item.count})</span>
+                      </div>
+                      <div style={{ height: '10px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${item.pct}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px' }}></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              )}
+            </div>
 
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Lesões por Pressão (LPP)</span>
-                    <span style={{ fontWeight: '800' }}>{woundDist.pressure.pct}% ({woundDist.pressure.count})</span>
-                  </div>
-                  <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
-                    <div style={{ width: `${woundDist.pressure.pct}%`, height: '100%', backgroundColor: 'var(--warning)', borderRadius: '4px' }}></div>
-                  </div>
+            {/* Visual Chart 2: Wound classification and Donut */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              
+              {/* Wound classification */}
+              <div className="glass-card" style={{ padding: '20px', margin: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '12px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '800', margin: 0 }}>📋 Classificação de Feridas sob Acompanhamento</h4>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>Total: {woundDist.total}</span>
                 </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Outras Patologias</span>
-                    <span style={{ fontWeight: '800' }}>{woundDist.others.pct}% ({woundDist.others.count})</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ fontSize: '11.5px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Pé Diabético:</span> <strong>{woundDist.diabetic.count} ({woundDist.diabetic.pct}%)</strong>
                   </div>
-                  <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
-                    <div style={{ width: `${woundDist.others.pct}%`, height: '100%', backgroundColor: 'var(--accent)', borderRadius: '4px' }}></div>
+                  <div style={{ fontSize: '11.5px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Úlcera Venosa:</span> <strong>{woundDist.venous.count} ({woundDist.venous.pct}%)</strong>
+                  </div>
+                  <div style={{ fontSize: '11.5px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>LPP:</span> <strong>{woundDist.pressure.count} ({woundDist.pressure.pct}%)</strong>
+                  </div>
+                  <div style={{ fontSize: '11.5px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Outras:</span> <strong>{woundDist.others.count} ({woundDist.others.pct}%)</strong>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Visual Chart 2: Native SVG Donut Chart representing active users distribution */}
-            <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ fontSize: '14.5px', fontWeight: '800', margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                🍩 Distribuição da Rede Clínica
-              </h3>
+              {/* User roles distribution donut */}
+              <div className="glass-card" style={{ padding: '20px', margin: 0, display: 'flex', flexDirection: 'column' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', margin: '0 0 12px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                  🍩 Distribuição da Rede Clínica
+                </h4>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, gap: '20px', padding: '10px 0' }}>
-                {/* SVG Donut */}
-                <svg width="120" height="120" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--border-color)" strokeWidth="3" />
-                  
-                  {/* Doctor segment (blue) */}
-                  <circle 
-                    cx="18" cy="18" r="15.915" fill="none" 
-                    stroke="var(--primary)" strokeWidth="3.2" 
-                    strokeDasharray={`${totalClinicalUsers.length > 0 ? (countDoctors / totalClinicalUsers.length) * 100 : 0} ${100 - (totalClinicalUsers.length > 0 ? (countDoctors / totalClinicalUsers.length) * 100 : 0)}`}
-                    strokeDashoffset="0" 
-                  />
-                  
-                  {/* Nurse segment (green) */}
-                  <circle 
-                    cx="18" cy="18" r="15.915" fill="none" 
-                    stroke="var(--success-light)" strokeWidth="3.2" 
-                    strokeDasharray={`${totalClinicalUsers.length > 0 ? (countNurses / totalClinicalUsers.length) * 100 : 0} ${100 - (totalClinicalUsers.length > 0 ? (countNurses / totalClinicalUsers.length) * 100 : 0)}`}
-                    strokeDashoffset={`-${totalClinicalUsers.length > 0 ? (countDoctors / totalClinicalUsers.length) * 100 : 0}`} 
-                  />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+                  {/* SVG Donut */}
+                  <svg width="80" height="80" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--border-color)" strokeWidth="3" />
+                    
+                    <circle 
+                      cx="18" cy="18" r="15.915" fill="none" 
+                      stroke="var(--primary)" strokeWidth="3.2" 
+                      strokeDasharray={`${totalClinicalUsers.length > 0 ? (countDoctors / totalClinicalUsers.length) * 100 : 0} ${100 - (totalClinicalUsers.length > 0 ? (countDoctors / totalClinicalUsers.length) * 100 : 0)}`}
+                      strokeDashoffset="0" 
+                    />
+                    
+                    <circle 
+                      cx="18" cy="18" r="15.915" fill="none" 
+                      stroke="var(--success-light)" strokeWidth="3.2" 
+                      strokeDasharray={`${totalClinicalUsers.length > 0 ? (countNurses / totalClinicalUsers.length) * 100 : 0} ${100 - (totalClinicalUsers.length > 0 ? (countNurses / totalClinicalUsers.length) * 100 : 0)}`}
+                      strokeDashoffset={`-${totalClinicalUsers.length > 0 ? (countDoctors / totalClinicalUsers.length) * 100 : 0}`} 
+                    />
 
-                  {/* Patient segment (gray/accent) */}
-                  <circle 
-                    cx="18" cy="18" r="15.915" fill="none" 
-                    stroke="var(--accent)" strokeWidth="3.2" 
-                    strokeDasharray={`${totalClinicalUsers.length > 0 ? (countPatients / totalClinicalUsers.length) * 100 : 0} ${100 - (totalClinicalUsers.length > 0 ? (countPatients / totalClinicalUsers.length) * 100 : 0)}`}
-                    strokeDashoffset={`-${totalClinicalUsers.length > 0 ? ((countDoctors + countNurses) / totalClinicalUsers.length) * 100 : 0}`} 
-                  />
-                </svg>
+                    <circle 
+                      cx="18" cy="18" r="15.915" fill="none" 
+                      stroke="var(--accent)" strokeWidth="3.2" 
+                      strokeDasharray={`${totalClinicalUsers.length > 0 ? (countPatients / totalClinicalUsers.length) * 100 : 0} ${100 - (totalClinicalUsers.length > 0 ? (countPatients / totalClinicalUsers.length) * 100 : 0)}`}
+                      strokeDashoffset={`-${totalClinicalUsers.length > 0 ? ((countDoctors + countNurses) / totalClinicalUsers.length) * 100 : 0}`} 
+                    />
+                  </svg>
 
-                {/* Legend list */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--primary)' }}></span>
-                    <span style={{ flex: 1, color: 'var(--text-secondary)' }}>Médicos:</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{countDoctors}</strong>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--success-light)' }}></span>
-                    <span style={{ flex: 1, color: 'var(--text-secondary)' }}>Enfermeiros:</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{countNurses}</strong>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--accent)' }}></span>
-                    <span style={{ flex: 1, color: 'var(--text-secondary)' }}>Pacientes:</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{countPatients}</strong>
+                  {/* Legend list */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary)' }}></span>
+                      <span style={{ flex: 1, color: 'var(--text-secondary)' }}>Médicos:</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{countDoctors}</strong>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success-light)' }}></span>
+                      <span style={{ flex: 1, color: 'var(--text-secondary)' }}>Enfermeiros:</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{countNurses}</strong>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent)' }}></span>
+                      <span style={{ flex: 1, color: 'var(--text-secondary)' }}>Pacientes:</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{countPatients}</strong>
+                    </div>
                   </div>
                 </div>
               </div>
