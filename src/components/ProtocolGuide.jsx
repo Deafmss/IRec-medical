@@ -538,15 +538,26 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
   };
 
   const renderCheckoutButtons = (item) => {
-    const { docSpecific, docGeneral, irecSpecific, hasAny } = getAvailablePartnersForMaterial(item.name);
+    const { docSpecific, docGeneral } = getAvailablePartnersForMaterial(item.name);
+    const hasDoctorPartners = docSpecific.length > 0 || docGeneral.length > 0;
 
-    if (!hasAny) {
+    if (!hasDoctorPartners) {
       return (
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>
-          ℹ️ {isClinician 
-            ? 'Adicione este item às suas parcerias no painel para habilitar links afiliados de compra para seus pacientes.' 
-            : 'Consulte o seu médico ou o administrador para obter indicações de compra deste produto.'
-          }
+        <div style={{ 
+          fontSize: '11px', 
+          color: 'var(--text-secondary)', 
+          fontStyle: 'italic', 
+          padding: '6px 10px',
+          backgroundColor: 'rgba(var(--primary-rgb), 0.04)',
+          border: '1.5px dashed var(--border-color)',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          marginTop: '2px'
+        }}>
+          <span>📍</span>
+          <span>Procure a farmácia credenciada mais próxima para aquisição deste produto.</span>
         </div>
       );
     }
@@ -599,32 +610,6 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
           >
             <span>🏪 Comprar no Parceiro do Dr(a). {getDoctorName(part.doctor_id)} ({part.name})</span>
             <span style={{ fontSize: '9px', opacity: 0.85 }}>Ir para o site ↗</span>
-          </button>
-        ))}
-
-        {/* Render iRec Official partners recommendations */}
-        {irecSpecific.map((part, pIdx) => (
-          <button
-            key={`irec-spec-${pIdx}`}
-            className="btn"
-            onClick={() => handlePartnerRedirectClick(item.name, part)}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              padding: '8px 12px', 
-              height: '38px', 
-              borderRadius: '6px', 
-              fontSize: '11.5px', 
-              fontWeight: '700',
-              backgroundColor: 'rgba(16, 185, 129, 0.08)',
-              color: 'var(--success-light)',
-              border: '1px solid rgba(16, 185, 129, 0.15)',
-              cursor: 'pointer'
-            }}
-          >
-            <span>🤝 Comprar no Parceiro iRec ({part.pharmacy_name || 'iRec Oficial'})</span>
-            <span style={{ fontSize: '9px', opacity: 0.85 }}>Comprar ↗</span>
           </button>
         ))}
       </div>
@@ -918,7 +903,7 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                       </h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {formatMaterialsForView(aiProtocol.materials, isClinician).map((item, idx) => (
-                          <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
+                          <div key={idx} className="glass-card" style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '4px', margin: 0 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div>
                                 <h4 style={{ fontSize: '13.5px', fontWeight: '700', margin: 0 }}>{item.name}</h4>
@@ -926,9 +911,6 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                                   {isClinician ? 'Indicação: ' : 'Marca sugerida: '}{item.brand}
                                 </p>
                               </div>
-                              <span style={{ fontSize: isClinician ? '11.5px' : '14px', fontWeight: isClinician ? '600' : '800', color: isClinician ? 'var(--primary)' : 'var(--text-primary)' }}>
-                                {item.price}
-                              </span>
                             </div>
 
                             {!isClinician && renderCheckoutButtons(item)}
@@ -1067,7 +1049,7 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {formatMaterialsForView(activeStatic.materials, isClinician).map((item, idx) => (
-                  <div key={idx} className="glass-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
+                  <div key={idx} className="glass-card" style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '4px', margin: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
                         <h4 style={{ fontSize: '13.5px', fontWeight: '700' }}>{item.name}</h4>
@@ -1075,9 +1057,6 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                           {isClinician ? 'Indicação: ' : 'Marca: '}{item.brand}
                         </p>
                       </div>
-                      <span style={{ fontSize: isClinician ? '11.5px' : '14px', fontWeight: isClinician ? '600' : '800', color: isClinician ? 'var(--primary)' : 'var(--text-primary)' }}>
-                        {item.price}
-                      </span>
                     </div>
 
                     {!isClinician && renderCheckoutButtons(item)}
