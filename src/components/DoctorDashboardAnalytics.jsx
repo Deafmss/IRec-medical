@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getAssignedPatients, getDoctorPatientsWoundEntries, getDoctorTelemedicineCalls } from '../services/supabaseService';
+import { getAssignedPatients, getDoctorPatientsWoundEntries, getDoctorTelemedicineCalls, getRecommendedMaterials } from '../services/supabaseService';
 
 export default function DoctorDashboardAnalytics({ currentUser }) {
   const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState([]);
   const [woundEntries, setWoundEntries] = useState([]);
   const [calls, setCalls] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [timePeriod, setTimePeriod] = useState('30d'); // '24h', '7d', '30d', 'all'
 
   useEffect(() => {
@@ -13,15 +14,17 @@ export default function DoctorDashboardAnalytics({ currentUser }) {
       if (!currentUser) return;
       setLoading(true);
       try {
-        const [patientsData, entriesData, callsData] = await Promise.all([
+        const [patientsData, entriesData, callsData, partnersData] = await Promise.all([
           getAssignedPatients(currentUser.id),
           getDoctorPatientsWoundEntries(currentUser.id),
-          getDoctorTelemedicineCalls(currentUser.id)
+          getDoctorTelemedicineCalls(currentUser.id),
+          getRecommendedMaterials(null, currentUser.id)
         ]);
 
         setPatients(patientsData);
         setWoundEntries(entriesData);
         setCalls(callsData);
+        setPartners(partnersData || []);
       } catch (err) {
         console.error('Error fetching doctor analytics:', err);
       } finally {
@@ -92,28 +95,11 @@ export default function DoctorDashboardAnalytics({ currentUser }) {
     ? Math.round((returnedPatientsCount / totalPatientsWithWounds) * 100) 
     : 0;
 
-  // 5. Success Metrics: Patient Clinical Improvement Index (percentage of patients whose latest evolution is 'Melhorou')
-  const getClinicalImprovementStats = () => {
-    const latestEntries = Object.values(latestWoundEntriesPerPatient);
-    const totalWithEvolutions = latestEntries.length;
-    if (totalWithEvolutions === 0) return { improvementRate: null, totalWithEvolutions: 0 };
-
-    const improvedCount = latestEntries.filter(
-      (entry) => (entry.clinical_evolution || entry.clinicalEvolution) === 'Melhorou'
-    ).length;
-
-    return {
-      improvementRate: Math.round((improvedCount / totalWithEvolutions) * 100),
-      totalWithEvolutions
-    };
-  };
-
-  const { improvementRate, totalWithEvolutions } = getClinicalImprovementStats();
-
-  // 6. Clinical Worsening Alerts (count of active patients whose latest evolution is 'Piorou')
-  const clinicalWorseningAlertsCount = Object.values(latestWoundEntriesPerPatient).filter(
-    (entry) => (entry.clinical_evolution || entry.clinicalEvolution) === 'Piorou'
-  ).length;
+  // 5. Monetzation Metrics: Personal Partnerships recommendations counts
+  const totalRecommendedProducts = partners.length;
+  const uniquePartnerBrands = new Set(
+    partners.map(p => p.brand || p.pharmacy || '').filter(Boolean)
+  ).size;
 
   // 7. Pathology breakdown for this doctor's patients
   const getDoctorPathologyStats = () => {
@@ -247,45 +233,45 @@ export default function DoctorDashboardAnalytics({ currentUser }) {
       {/* Advanced Clinical Insights Section */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '24px' }}>
         
-        {/* Card: Patient Clinical Improvement Index */}
-        <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+        {/* Card: Telehealth Productivity & Time */}
+        <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
           <div>
             <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              📈 Índice de Melhora Clínica
+              🕒 Eficiência em Telemedicina
             </h4>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '16px' }}>
-              <span style={{ fontSize: '42px', fontWeight: '850', color: 'var(--success-light)' }}>
-                {improvementRate !== null ? `${improvementRate}%` : '--'}
+              <span style={{ fontSize: '42px', fontWeight: '850', color: 'var(--primary)' }}>
+                {Math.round(totalCallDuration)}
               </span>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>pacientes em evolução positiva</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>minutos dedicados</span>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: '1.4' }}>
-              Cálculo baseado na proporção de pacientes sob acompanhamento cujo status evolutivo mais recente foi avaliado e registrado como "Melhorou".
+              Tempo acumulado total dedicado a teleconsultas ativas e finalizadas no período selecionado, com uma média de <strong>{avgCallDuration} minutos</strong> por chamada.
             </p>
           </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--success-light)', fontWeight: '700', marginTop: '12px' }}>
-            🎯 Meta clínica recomendada: &gt; 50% de evolução positiva
+          <div style={{ fontSize: '11.5px', color: 'var(--primary)', fontWeight: '700', marginTop: '12px' }}>
+            🎯 Taxa de conclusão de chamadas: {totalCalls > 0 ? Math.round((completedCalls / totalCalls) * 100) : 0}%
           </div>
         </div>
 
-        {/* Card: Clinical Worsening Alerts */}
-        <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: clinicalWorseningAlertsCount > 0 ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-color)' }}>
+        {/* Card: Clinical Partnerships Engagement */}
+        <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
           <div>
             <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              🚨 Alertas de Piora Clínica
+              💼 Recomendações e Parcerias
             </h4>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '16px' }}>
-              <span style={{ fontSize: '42px', fontWeight: '850', color: clinicalWorseningAlertsCount > 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
-                {clinicalWorseningAlertsCount}
+              <span style={{ fontSize: '42px', fontWeight: '850', color: 'var(--success-light)' }}>
+                {totalRecommendedProducts}
               </span>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>pacientes com piora de sintomas</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>produtos recomendados</span>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: '1.4' }}>
-              Sinalizações críticas de pacientes cuja evolução clínica mais recente foi registrada como "Piorou", indicando necessidade imediata de revisão de conduta.
+              Quantidade total de materiais, medicamentos e insumos de parceiros comerciais vinculados por você para aparecerem nos protocolos dos seus pacientes.
             </p>
           </div>
-          <div style={{ fontSize: '11.5px', color: clinicalWorseningAlertsCount > 0 ? 'var(--danger)' : 'var(--success-light)', fontWeight: '750', marginTop: '12px' }}>
-            {clinicalWorseningAlertsCount > 0 ? '⚠️ Atenção: Recomenda-se realizar teleconsulta ou contato.' : '✅ Excelente: Nenhum paciente em estado de regressão.'}
+          <div style={{ fontSize: '11.5px', color: 'var(--success-light)', fontWeight: '750', marginTop: '12px' }}>
+            🤝 Farmácias/Marcas ativas no seu catálogo: {uniquePartnerBrands}
           </div>
         </div>
       </div>
