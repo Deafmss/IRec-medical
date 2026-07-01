@@ -156,6 +156,15 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
   6. *Parceiros iRec:* Gerenciador de marcas e farmácias conveniadas à empresa iRec (com links afiliados globais e descontos).
   7. *Auditoria / Logs:* Registro de auditoria em tempo real para conformidade das ações médicas.
 
+- **Painel Clínico Individual do Médico (`DoctorDashboardAnalytics.jsx` & `App.jsx` & `supabaseService.js`):** Implementamos um painel analítico individual exclusivo para o médico logado. Esta seção é acessada através da nova aba "Meu Painel" no menu lateral (desktop) e inferior (mobile) do médico, garantindo que o profissional analise apenas os dados de sua própria carteira de pacientes de forma isolada:
+  1. *Atendimentos Realizados:* Exibe a contagem de teleconsultas realizadas no período selecionado (24h, 7d, 30d ou todo o período), o tempo clínico total on-line e a média de duração das chamadas.
+  2. *Pacientes sob Acompanhamento:* Totalizador de pacientes vinculados ativamente à carteira do médico.
+  3. *Casos Clínicos Finalizados:* Quantidade de pacientes que já alcançaram desfecho clínico (cicatrização completa, internação, reinternação, amputação ou óbito) a partir do último registro de triagem.
+  4. *Taxa de Retorno de Pacientes:* Porcentagem de pacientes que retornaram para realizar pelo menos uma triagem de evolução (2 ou mais fotos/evoluções enviadas).
+  5. *Média de Redução da Área da Lesão (Cicatrização Média):* Métrica avançada que calcula o percentual médio de retração do tamanho da ferida (cm²) medido pela inteligência artificial entre o primeiro e o último registro de evolução do paciente.
+  6. *Alertas Clínicos Críticos:* Total de pacientes sob acompanhamento que possuem sinais ativos de infecção (odor fétido, exsudato purulento, calor local ou rubor intenso) em sua triagem mais recente.
+  7. *Perfil de Comorbidades da Carteira:* Gráfico de barras com a incidência proporcional das patologias e fatores de risco (Diabetes, Hipertensão, Obesidade, etc.) de sua carteira de pacientes.
+
 ---
 
 ## Como Realizar o Teste no Cenário Real (Desktop vs. Mobile)
