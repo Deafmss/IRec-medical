@@ -2281,3 +2281,36 @@ export const getAdminStats = async () => {
   }
 };
 
+export const getAdminTelemedicineCalls = async () => {
+  if (!isSupabaseConfigured) {
+    return JSON.parse(localStorage.getItem('irec_local_calls') || '[]');
+  }
+  try {
+    const { data, error } = await supabase
+      .from('telemedicine_calls')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error fetching telemedicine calls:', err);
+    return [];
+  }
+};
+
+export const getAdminAssignments = async () => {
+  if (!isSupabaseConfigured) {
+    return JSON.parse(localStorage.getItem('irec_local_assignments') || '[]');
+  }
+  try {
+    const { data, error } = await supabase
+      .from('doctor_patient_assignment')
+      .select('*');
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error fetching assignments:', err);
+    return [];
+  }
+};
+
