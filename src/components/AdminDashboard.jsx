@@ -15,6 +15,8 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [timePeriod, setTimePeriod] = useState('30d'); // '24h', '7d', '30d', 'all'
+  const [pathologySearch, setPathologySearch] = useState('');
+  const [showAllPathologies, setShowAllPathologies] = useState(false);
 
   // Modals / forms state for iRec Partners
   const [showPartnerModal, setShowPartnerModal] = useState(false);
@@ -472,24 +474,94 @@ export default function AdminDashboard() {
                 </span>
               </div>
               
+              {/* Search Bar for scaling (100+ pathologies) */}
+              {pathologyStats.list.length > 0 && (
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    placeholder="🔍 Filtrar patologias/comorbidades..." 
+                    value={pathologySearch}
+                    onChange={(e) => setPathologySearch(e.target.value)}
+                    style={{ 
+                      width: '100%', 
+                      padding: '6px 12px 6px 30px', 
+                      fontSize: '12px', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: 'var(--bg-primary)',
+                      color: 'var(--text-primary)',
+                      outline: 'none'
+                    }} 
+                  />
+                  {pathologySearch && (
+                    <button 
+                      onClick={() => setPathologySearch('')}
+                      style={{ 
+                        position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', 
+                        background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px' 
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              )}
+
               {pathologyStats.list.length === 0 ? (
                 <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12.5px' }}>
                   Nenhuma patologia identificada nos prontuários dos pacientes cadastrados.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '300px', paddingRight: '4px' }}>
-                  {pathologyStats.list.map((item) => (
-                    <div key={item.name}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{item.name}</span>
-                        <span style={{ fontWeight: '800' }}>{item.pct}% ({item.count})</span>
-                      </div>
-                      <div style={{ height: '10px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ width: `${item.pct}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px' }}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '280px', paddingRight: '4px' }}>
+                    {(() => {
+                      const filtered = pathologyStats.list.filter(item => 
+                        item.name.toLowerCase().includes(pathologySearch.toLowerCase())
+                      );
+                      const displayLimit = 6;
+                      const listToRender = showAllPathologies ? filtered : filtered.slice(0, displayLimit);
+                      
+                      if (listToRender.length === 0) {
+                        return <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px' }}>Nenhuma patologia correspondente.</p>;
+                      }
+                      
+                      return listToRender.map((item) => (
+                        <div key={item.name}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                            <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{item.name}</span>
+                            <span style={{ fontWeight: '800' }}>{item.pct}% ({item.count})</span>
+                          </div>
+                          <div style={{ height: '10px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ width: `${item.pct}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px' }}></div>
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+
+                  {/* Expand button for scaling */}
+                  {(() => {
+                    const filtered = pathologyStats.list.filter(item => 
+                      item.name.toLowerCase().includes(pathologySearch.toLowerCase())
+                    );
+                    if (filtered.length > 6) {
+                      return (
+                        <button
+                          onClick={() => setShowAllPathologies(!showAllPathologies)}
+                          style={{
+                            border: 'none', backgroundColor: 'transparent', color: 'var(--primary)',
+                            fontSize: '11px', fontWeight: '800', cursor: 'pointer', textAlign: 'center',
+                            marginTop: '4px', padding: '4px 0', width: '100%', textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                          }}
+                        >
+                          {showAllPathologies ? '▲ Mostrar Menos' : `▼ Mostrar Todas (${filtered.length})`}
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
+                </>
               )}
             </div>
 
