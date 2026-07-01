@@ -17,6 +17,9 @@ export default function AdminDashboard() {
   const [timePeriod, setTimePeriod] = useState('30d'); // '24h', '7d', '30d', 'all'
   const [pathologySearch, setPathologySearch] = useState('');
   const [showAllPathologies, setShowAllPathologies] = useState(false);
+  const [selectedState, setSelectedState] = useState('all');
+  const [selectedCity, setSelectedCity] = useState('all');
+  const [pathologySortOrder, setPathologySortOrder] = useState('desc'); // 'desc', 'asc', 'alpha'
 
   // Modals / forms state for iRec Partners
   const [showPartnerModal, setShowPartnerModal] = useState(false);
@@ -227,8 +230,45 @@ export default function AdminDashboard() {
 
   const woundDist = getWoundDistribution();
 
-  const getDynamicPathologiesStats = () => {
+  // Extract unique states and cities for filter selectors
+  const getUniqueStatesAndCities = () => {
     const patients = users.filter(u => u.role === 'patient');
+    const statesSet = new Set();
+    const citiesSet = new Set();
+
+    patients.forEach(u => {
+      if (u.state) statesSet.add(u.state.trim().toUpperCase());
+      if (u.city) {
+        citiesSet.add(JSON.stringify({
+          name: u.city.trim(),
+          state: u.state ? u.state.trim().toUpperCase() : ''
+        }));
+      }
+    });
+
+    const parsedCities = Array.from(citiesSet).map(c => JSON.parse(c));
+
+    return {
+      statesList: Array.from(statesSet).sort(),
+      citiesList: parsedCities.sort((a, b) => a.name.localeCompare(b.name))
+    };
+  };
+
+  const { statesList, citiesList } = getUniqueStatesAndCities();
+
+  const getDynamicPathologiesStats = () => {
+    let patients = users.filter(u => u.role === 'patient');
+
+    // Filter by selected State
+    if (selectedState !== 'all') {
+      patients = patients.filter(u => u.state && u.state.trim().toUpperCase() === selectedState);
+    }
+
+    // Filter by selected City
+    if (selectedCity !== 'all') {
+      patients = patients.filter(u => u.city && u.city.trim().toLowerCase() === selectedCity.toLowerCase());
+    }
+
     const pathologyCounts = {};
 
     patients.forEach(u => {
@@ -287,15 +327,23 @@ export default function AdminDashboard() {
       }
     });
 
-    const sortedPathologies = Object.entries(pathologyCounts)
+    let mappedPathologies = Object.entries(pathologyCounts)
       .map(([name, count]) => {
         const pct = patients.length > 0 ? Math.round((count / patients.length) * 100) : 0;
         return { name, count, pct };
-      })
-      .sort((a, b) => b.count - a.count);
+      });
+
+    // Apply sorting
+    if (pathologySortOrder === 'desc') {
+      mappedPathologies.sort((a, b) => b.count - a.count);
+    } else if (pathologySortOrder === 'asc') {
+      mappedPathologies.sort((a, b) => a.count - b.count);
+    } else if (pathologySortOrder === 'alpha') {
+      mappedPathologies.sort((a, b) => a.name.localeCompare(b.name));
+    }
 
     return {
-      list: sortedPathologies,
+      list: mappedPathologies,
       totalPatients: patients.length
     };
   };
@@ -474,36 +522,80 @@ export default function AdminDashboard() {
                 </span>
               </div>
               
-              {/* Search Bar for scaling (100+ pathologies) */}
-              {pathologyStats.list.length > 0 && (
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="text" 
-                    placeholder="🔍 Filtrar patologias/comorbidades..." 
-                    value={pathologySearch}
-                    onChange={(e) => setPathologySearch(e.target.value)}
-                    style={{ 
-                      width: '100%', 
-                      padding: '6px 12px 6px 30px', 
-                      fontSize: '12px', 
-                      borderRadius: '6px', 
-                      border: '1px solid var(--border-color)',
-                      backgroundColor: 'var(--bg-primary)',
-                      color: 'var(--text-primary)',
-                      outline: 'none'
-                    }} 
-                  />
-                  {pathologySearch && (
-                    <button 
-                      onClick={() => setPathologySearch('')}
+              {/* Search Bar & Filters for scaling (100+ pathologies) */}
+              {pathologyStats.list.length >= 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="text" 
+                      placeholder="🔍 Filtrar patologias/comorbidades..." 
+                      value={pathologySearch}
+                      onChange={(e) => setPathologySearch(e.target.value)}
                       style={{ 
-                        position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', 
-                        background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px' 
+                        width: '100%', 
+                        padding: '6px 12px 6px 30px', 
+                        fontSize: '12px', 
+                        borderRadius: '6px', 
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'var(--bg-primary)',
+                        color: 'var(--text-primary)',
+                        outline: 'none'
+                      }} 
+                    />
+                    {pathologySearch && (
+                      <button 
+                        onClick={() => setPathologySearch('')}
+                        style={{ 
+                          position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', 
+                          background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px' 
+                        }}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1.2fr', gap: '8px' }}>
+                    {/* Estado Selector */}
+                    <select
+                      value={selectedState}
+                      onChange={(e) => {
+                        setSelectedState(e.target.value);
+                        setSelectedCity('all'); // Reset city on state change
                       }}
+                      style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}
                     >
-                      ✕
-                    </button>
-                  )}
+                      <option value="all">Estado: Todos</option>
+                      {statesList.map(st => (
+                        <option key={st} value={st}>{st}</option>
+                      ))}
+                    </select>
+
+                    {/* Cidade Selector */}
+                    <select
+                      value={selectedCity}
+                      onChange={(e) => setSelectedCity(e.target.value)}
+                      style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                    >
+                      <option value="all">Cidade: Todas</option>
+                      {citiesList
+                        .filter(c => selectedState === 'all' || c.state === selectedState)
+                        .map(c => (
+                          <option key={c.name} value={c.name}>{c.name}</option>
+                        ))}
+                    </select>
+
+                    {/* Ordenação Selector */}
+                    <select
+                      value={pathologySortOrder}
+                      onChange={(e) => setPathologySortOrder(e.target.value)}
+                      style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                    >
+                      <option value="desc">Mais Casos</option>
+                      <option value="asc">Menos Casos</option>
+                      <option value="alpha">Ordem: A-Z</option>
+                    </select>
+                  </div>
                 </div>
               )}
 
