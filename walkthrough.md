@@ -161,8 +161,8 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
   2. *Pacientes sob Acompanhamento:* Totalizador de pacientes vinculados ativamente à carteira do médico.
   3. *Casos Clínicos Finalizados:* Quantidade de pacientes que já alcançaram desfecho clínico (cicatrização completa, internação, reinternação, amputação ou óbito) a partir do último registro de triagem.
   4. *Taxa de Retorno de Pacientes:* Porcentagem de pacientes que retornaram para realizar pelo menos uma triagem de evolução (2 ou mais fotos/evoluções enviadas).
-  5. *Índice de Melhora Clínica:* Proporção percentual de pacientes sob acompanhamento cujo status evolutivo mais recente foi avaliado e registrado como "Melhorou".
-  6. *Alertas de Piora Clínica:* Contagem de pacientes sob responsabilidade do médico cuja evolução clínica mais recente foi registrada como "Piorou", indicando necessidade imediata de revisão de conduta.
+  5. *Eficiência em Telemedicina:* Minutos totais dedicados pelo médico a teleconsultas e taxa de conclusão de chamadas.
+  6. *Recomendações e Parcerias:* Total de marcas/farmácias ativas e produtos recomendados no catálogo pessoal de monetização afiliada do médico.
   7. *Perfil de Comorbidades da Carteira:* Gráfico de barras com a incidência proporcional das patologias e fatores de risco (Diabetes, Hipertensão, Obesidade, etc.) de sua carteira de pacientes.
 
 ---
