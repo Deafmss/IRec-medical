@@ -148,11 +148,13 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
   4. *Parceiros iRec:* Farmácias e insumos credenciados na plataforma com descontos de convênio e comissão para a plataforma.
   5. *Insumos Sugeridos pelo Protocolo de IA:* Baseline gerada automaticamente para os curativos.
 - **Painel e Navegação Exclusiva do Administrador (`AdminDashboard.jsx` & `App.jsx` & `supabaseService.js`):** Isolamos completamente a navegação administrativa da clínica. Quando logado como `admin@irec.com`, o menu lateral e inferior oculta as ferramentas médicas (pacientes, telemedicina, etc.) e passa a renderizar exclusivamente o **Painel Admin**, que oferece:
-  1. *Visão Geral & Métricas:* Resumo estatístico completo segmentado por período (24 horas, 7 dias, 30 dias, todo o período), contendo totalizadores de Pacientes, Médicos, Enfermeiros, Triagens e Chamadas Concluídas.
-  2. *Gráficos de Engajamento & Atendimentos:* Gráficos horizontais nativos em CSS de distribuição de feridas por patologia (Úlcera Diabética, Venosa, LPP, etc.), tempo médio de chamadas em minutos, atendimentos ativos em tempo real na plataforma, e logs operacionais.
-  3. *Usuários Cadastrados:* Diretório completo de usuários com barra de busca e contador banner detalhado segmentado por papel de atuação (Pacientes, Médicos, Enfermeiros) — com exclusão visual da conta de sistema `admin@irec.com`.
-  4. *Parceiros iRec:* Gerenciador de marcas e farmácias conveniadas à empresa iRec (com links afiliados globais e descontos).
-  5. *Auditoria / Logs:* Registro de auditoria em tempo real para conformidade das ações médicas.
+  1. *Desativação Total de Bloqueios de Perfil:* Removemos a tela de bloqueio de "Perfil Profissional Obrigatório" (CRM, Biografia, Especialidade, etc.) para o administrador em qualquer rota de boot (App.jsx e DoctorDashboard.jsx), garantindo que a conta administrativa acesse a ferramenta instantaneamente e sem restrições clinicas.
+  2. *Visão Geral & Métricas:* Resumo estatístico completo segmentado por período (24 horas, 7 dias, 30 dias, todo o período), contendo totalizadores de Pacientes, Médicos, Enfermeiros, Triagens e Chamadas Concluídas.
+  3. *Gráficos de Engajamento & Atendimentos:* Gráficos horizontais nativos em CSS de distribuição de feridas por patologia (Úlcera Diabética, Venosa, LPP, etc.), tempo médio de chamadas em minutos, atendimentos ativos em tempo real na plataforma, e logs operacionais. Inclui gráficos de rosca SVG para distribuição da rede clínica (Médicos, Enfermeiros, Pacientes).
+  4. *Relatório Detalhado por Profissional (Atendimentos por Profissional):* Tabela detalhada de acompanhamento listando cada médico e enfermeiro, sua especialidade, CRM, número exato de pacientes vinculados, total de teleconsultas realizadas no período e status de presença (Online/Offline) em tempo real.
+  5. *Usuários Cadastrados:* Diretório completo de usuários com barra de busca e contador banner detalhado segmentado por papel de atuação (Pacientes, Médicos, Enfermeiros) — com exclusão visual da conta de sistema `admin@irec.com`.
+  6. *Parceiros iRec:* Gerenciador de marcas e farmácias conveniadas à empresa iRec (com links afiliados globais e descontos).
+  7. *Auditoria / Logs:* Registro de auditoria em tempo real para conformidade das ações médicas.
 
 ---
 
