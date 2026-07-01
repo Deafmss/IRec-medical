@@ -118,10 +118,14 @@ export default function Login({ onLoginSuccess }) {
           }
           additionalData = { birthDate, gender };
         } else {
-          if (!crm || !specialty) {
-            throw new Error('Por favor, informe seu CRM/COREN e especialidade.');
+          const label = clinicianType === 'doctor' ? 'CRM' : 'COREN';
+          if (!crm) {
+            throw new Error(`Por favor, informe seu ${label}.`);
           }
-          additionalData = { crm, specialty, rqe };
+          if (selectedSpecialties.length === 0) {
+            throw new Error(`Por favor, adicione pelo menos uma especialidade para o ${clinicianType === 'doctor' ? 'Médico' : 'Enfermeiro'}.`);
+          }
+          additionalData = { crm, specialty, rqe: clinicianType === 'doctor' ? rqe : '' };
         }
 
         try {
@@ -222,13 +226,17 @@ export default function Login({ onLoginSuccess }) {
 
   const selectedSpecialties = specialty ? specialty.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-  const filteredOptions = ALL_SPECIALTIES.filter(s => 
+  const clinicianSpecialties = clinicianType === 'doctor'
+    ? ALL_SPECIALTIES.filter(s => !s.startsWith('Enfermagem') && s !== 'Estomaterapia')
+    : ALL_SPECIALTIES.filter(s => s.startsWith('Enfermagem') || s === 'Estomaterapia');
+
+  const filteredOptions = clinicianSpecialties.filter(s => 
     s.toLowerCase().includes(specSearch.toLowerCase()) && 
     !selectedSpecialties.includes(s)
   );
 
   const showCustomOption = specSearch.trim() && 
-    !ALL_SPECIALTIES.some(s => s.toLowerCase() === specSearch.trim().toLowerCase()) &&
+    !clinicianSpecialties.some(s => s.toLowerCase() === specSearch.trim().toLowerCase()) &&
     !selectedSpecialties.some(s => s.toLowerCase() === specSearch.trim().toLowerCase());
 
   const addSpecialty = (specName) => {
@@ -562,7 +570,12 @@ export default function Login({ onLoginSuccess }) {
                 <div className="login-role-selector">
                   <div 
                     className={`role-option ${role === 'patient' ? 'active' : ''}`}
-                    onClick={() => setRole('patient')}
+                    onClick={() => {
+                      setRole('patient');
+                      setSpecialty('');
+                      setCrm('');
+                      setRqe('');
+                    }}
                   >
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
@@ -574,7 +587,9 @@ export default function Login({ onLoginSuccess }) {
                     onClick={() => {
                       setRole('doctor');
                       setClinicianType('doctor');
-                      setSpecialty('Clínico Geral');
+                      setSpecialty('');
+                      setCrm('');
+                      setRqe('');
                     }}
                   >
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -587,7 +602,9 @@ export default function Login({ onLoginSuccess }) {
                     onClick={() => {
                       setRole('doctor');
                       setClinicianType('nurse');
-                      setSpecialty('Estomaterapia');
+                      setSpecialty('');
+                      setCrm('');
+                      setRqe('');
                     }}
                   >
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -599,11 +616,11 @@ export default function Login({ onLoginSuccess }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Nome Completo</label>
+                <label className="form-label">Nome Completo *</label>
                 <input 
                   type="text" 
                   className="form-input" 
-                  placeholder="Seu nome"
+                  placeholder="Seu nome completo"
                   value={name} 
                   onChange={(e) => setName(e.target.value)} 
                   required
@@ -614,7 +631,7 @@ export default function Login({ onLoginSuccess }) {
 
           {/* Standard fields */}
           <div className="form-group">
-            <label className="form-label">E-mail</label>
+            <label className="form-label">E-mail *</label>
             <input 
               type="email" 
               className="form-input" 
@@ -626,7 +643,7 @@ export default function Login({ onLoginSuccess }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Senha</label>
+            <label className="form-label">Senha *</label>
             <input 
               type="password" 
               className="form-input" 
@@ -641,7 +658,7 @@ export default function Login({ onLoginSuccess }) {
           {isRegistering && role === 'patient' && (
             <>
               <div className="form-group">
-                <label className="form-label">Data de Nascimento</label>
+                <label className="form-label">Data de Nascimento *</label>
                 <input 
                   type="date" 
                   className="form-input" 
@@ -651,7 +668,7 @@ export default function Login({ onLoginSuccess }) {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Gênero</label>
+                <label className="form-label">Gênero *</label>
                 <select 
                   className="form-select"
                   value={gender} 
@@ -671,7 +688,7 @@ export default function Login({ onLoginSuccess }) {
             <>
               <div className="form-group">
                 <label className="form-label">
-                  {clinicianType === 'doctor' ? 'CRM (Registro Profissional)' : 'COREN (Registro Profissional)'}
+                  {clinicianType === 'doctor' ? 'CRM * (Registro Profissional)' : 'COREN * (Registro Profissional)'}
                 </label>
                 <input 
                   type="text" 
@@ -683,7 +700,9 @@ export default function Login({ onLoginSuccess }) {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Especialidade(s) Clínica(s)</label>
+                <label className="form-label">
+                  {clinicianType === 'doctor' ? 'Especialidade(s) Médica(s) *' : 'Especialidade(s) de Enfermagem *'}
+                </label>
                 <div style={{ position: 'relative' }}>
                   <div style={{
                     display: 'flex',
