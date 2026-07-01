@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments } from '../services/supabaseService';
+import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments, getAdminWoundEntries } from '../services/supabaseService';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('metrics'); // 'metrics', 'users', 'partners', 'logs'
@@ -9,6 +9,7 @@ export default function AdminDashboard() {
   const [partners, setPartners] = useState([]);
   const [calls, setCalls] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [woundEntries, setWoundEntries] = useState([]);
   
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,13 +28,14 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, logsData, partnersData, callsData, assignmentsData] = await Promise.all([
+      const [statsData, usersData, logsData, partnersData, callsData, assignmentsData, woundEntriesData] = await Promise.all([
         getAdminStats(),
         getAllProfiles(),
         getAuditLogs(),
         getRecommendedMaterials(null, null), // Fetch global platform-wide partners
         getAdminTelemedicineCalls(),
-        getAdminAssignments()
+        getAdminAssignments(),
+        getAdminWoundEntries()
       ]);
       
       setStats(statsData);
@@ -42,6 +44,7 @@ export default function AdminDashboard() {
       setPartners(partnersData.filter(p => p.type === 'irec_partner'));
       setCalls(callsData);
       setAssignments(assignmentsData);
+      setWoundEntries(woundEntriesData);
     } catch (e) {
       console.error("Erro ao carregar dados do admin:", e);
     } finally {
@@ -127,15 +130,16 @@ export default function AdminDashboard() {
     } else if (timePeriod === '30d') {
       thresholdDate.setDate(now.getDate() - 30);
     } else {
-      return { callsFiltered: calls, logsFiltered: logs };
+      return { callsFiltered: calls, logsFiltered: logs, woundEntriesFiltered: woundEntries };
     }
 
     const callsFiltered = calls.filter(c => new Date(c.created_at || c.createdAt) >= thresholdDate);
     const logsFiltered = logs.filter(l => new Date(l.created_at) >= thresholdDate);
-    return { callsFiltered, logsFiltered };
+    const woundEntriesFiltered = woundEntries.filter(w => new Date(w.created_at) >= thresholdDate);
+    return { callsFiltered, logsFiltered, woundEntriesFiltered };
   };
 
-  const { callsFiltered, logsFiltered } = getFilteredDataByPeriod();
+  const { callsFiltered, logsFiltered, woundEntriesFiltered } = getFilteredDataByPeriod();
 
   // User counters
   const totalClinicalUsers = users.filter(u => u.email !== 'admin@irec.com');
@@ -192,6 +196,34 @@ export default function AdminDashboard() {
   };
 
   const workloads = getProfessionalWorkloads();
+
+  const getWoundDistribution = () => {
+    const totalCount = woundEntriesFiltered.length;
+    if (totalCount === 0) {
+      return {
+        diabetic: { count: 0, pct: 0 },
+        venous: { count: 0, pct: 0 },
+        pressure: { count: 0, pct: 0 },
+        others: { count: 0, pct: 0 },
+        total: 0
+      };
+    }
+
+    const diabeticCount = woundEntriesFiltered.filter(w => w.type === 'Pé Diabético').length;
+    const venousCount = woundEntriesFiltered.filter(w => w.type === 'Úlcera Venosa').length;
+    const pressureCount = woundEntriesFiltered.filter(w => w.type === 'Lesão por Pressão').length;
+    const othersCount = totalCount - (diabeticCount + venousCount + pressureCount);
+
+    return {
+      diabetic: { count: diabeticCount, pct: Math.round((diabeticCount / totalCount) * 100) },
+      venous: { count: venousCount, pct: Math.round((venousCount / totalCount) * 100) },
+      pressure: { count: pressureCount, pct: Math.round((pressureCount / totalCount) * 100) },
+      others: { count: othersCount, pct: Math.round((othersCount / totalCount) * 100) },
+      total: totalCount
+    };
+  };
+
+  const woundDist = getWoundDistribution();
 
   // Audit Logs Statistics
   const getAuditActionStats = () => {
@@ -349,50 +381,54 @@ export default function AdminDashboard() {
           {/* Advanced Charts Section */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
             
-            {/* Visual Chart 1: Triage Trends and Wound types (Horizontal Towers) */}
             <div className="glass-card" style={{ padding: '24px', margin: 0 }}>
-              <h3 style={{ fontSize: '14.5px', fontWeight: '800', margin: '0 0 18px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📊 Distribuição das Lesões sob Acompanhamento
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '18px' }}>
+                <h3 style={{ fontSize: '14.5px', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📊 Distribuição das Lesões sob Acompanhamento
+                </h3>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
+                  Total Real: {woundDist.total} triagens
+                </span>
+              </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Úlcera Diabética</span>
-                    <span style={{ fontWeight: '800' }}>38%</span>
+                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Pé Diabético</span>
+                    <span style={{ fontWeight: '800' }}>{woundDist.diabetic.pct}% ({woundDist.diabetic.count})</span>
                   </div>
                   <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
-                    <div style={{ width: '38%', height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px', backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)', backgroundSize: '1rem 1rem' }}></div>
+                    <div style={{ width: `${woundDist.diabetic.pct}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px', backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)', backgroundSize: '1rem 1rem' }}></div>
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Úlcera Venosa (Estase)</span>
-                    <span style={{ fontWeight: '800' }}>29%</span>
+                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Úlcera Venosa</span>
+                    <span style={{ fontWeight: '800' }}>{woundDist.venous.pct}% ({woundDist.venous.count})</span>
                   </div>
                   <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
-                    <div style={{ width: '29%', height: '100%', backgroundColor: 'var(--success-light)', borderRadius: '4px' }}></div>
+                    <div style={{ width: `${woundDist.venous.pct}%`, height: '100%', backgroundColor: 'var(--success-light)', borderRadius: '4px' }}></div>
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
                     <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Lesões por Pressão (LPP)</span>
-                    <span style={{ fontWeight: '800' }}>21%</span>
+                    <span style={{ fontWeight: '800' }}>{woundDist.pressure.pct}% ({woundDist.pressure.count})</span>
                   </div>
                   <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
-                    <div style={{ width: '21%', height: '100%', backgroundColor: 'var(--warning)', borderRadius: '4px' }}></div>
+                    <div style={{ width: `${woundDist.pressure.pct}%`, height: '100%', backgroundColor: 'var(--warning)', borderRadius: '4px' }}></div>
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
                     <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Outras Patologias</span>
-                    <span style={{ fontWeight: '800' }}>12%</span>
+                    <span style={{ fontWeight: '800' }}>{woundDist.others.pct}% ({woundDist.others.count})</span>
                   </div>
                   <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
-                    <div style={{ width: '12%', height: '100%', backgroundColor: 'var(--accent)', borderRadius: '4px' }}></div>
+                    <div style={{ width: `${woundDist.others.pct}%`, height: '100%', backgroundColor: 'var(--accent)', borderRadius: '4px' }}></div>
                   </div>
                 </div>
               </div>

@@ -2314,3 +2314,19 @@ export const getAdminAssignments = async () => {
   }
 };
 
+export const getAdminWoundEntries = async () => {
+  if (!isSupabaseConfigured) {
+    return JSON.parse(localStorage.getItem('irec_local_wound_entries') || '[]');
+  }
+  try {
+    const { data, error } = await supabase
+      .from('wound_entries')
+      .select('type, created_at');
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('Error fetching admin wound entries:', err);
+    return [];
+  }
+};
+
