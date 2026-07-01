@@ -1132,7 +1132,7 @@ export const getAllDoctors = async () => {
   };
 
   if (!isSupabaseConfigured) {
-    const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty));
+    const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty) && u.email !== 'admin@irec.com');
     return users.map(u => getLocalProfile(u.id)).filter(Boolean);
   }
 
@@ -1144,7 +1144,7 @@ export const getAllDoctors = async () => {
 
     if (error) throw error;
 
-    const filtered = data.filter(item => !isNurseSpecialty(item.specialty));
+    const filtered = data.filter(item => !isNurseSpecialty(item.specialty) && item.email !== 'admin@irec.com');
 
     return filtered.map(item => ({
       id: item.id,
@@ -1165,7 +1165,7 @@ export const getAllDoctors = async () => {
     }));
   } catch (err) {
     console.error('Erro ao buscar médicos do Supabase, caindo para local:', err);
-    const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty));
+    const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty) && u.email !== 'admin@irec.com');
     return users.map(u => getLocalProfile(u.id)).filter(Boolean);
   }
 };
@@ -1173,7 +1173,7 @@ export const getAllDoctors = async () => {
 // 1.2.2. Get all clinical professionals (doctors + nurses)
 export const getAllClinicians = async () => {
   if (!isSupabaseConfigured) {
-    const users = getLocalUsers().filter(u => u.role === 'doctor');
+    const users = getLocalUsers().filter(u => u.role === 'doctor' && u.email !== 'admin@irec.com');
     return users.map(u => getLocalProfile(u.id)).filter(Boolean);
   }
 
@@ -1185,7 +1185,9 @@ export const getAllClinicians = async () => {
 
     if (error) throw error;
 
-    return data.map(item => ({
+    const filtered = data.filter(item => item.email !== 'admin@irec.com');
+
+    return filtered.map(item => ({
       id: item.id,
       role: item.role,
       name: item.name,
@@ -1204,7 +1206,7 @@ export const getAllClinicians = async () => {
     }));
   } catch (err) {
     console.error('Erro ao buscar profissionais do Supabase, caindo para local:', err);
-    const users = getLocalUsers().filter(u => u.role === 'doctor');
+    const users = getLocalUsers().filter(u => u.role === 'doctor' && u.email !== 'admin@irec.com');
     return users.map(u => getLocalProfile(u.id)).filter(Boolean);
   }
 };
@@ -2048,7 +2050,7 @@ export const getAssignedDoctors = async (patientId) => {
     const docIds = assignments.map(a => a.doctor_id);
     return docIds.map(id => {
       const docProfile = getLocalProfile(id);
-      if (!docProfile) return null;
+      if (!docProfile || docProfile.email === 'admin@irec.com') return null;
       return {
         id: docProfile.id,
         name: docProfile.name,
@@ -2077,7 +2079,10 @@ export const getAssignedDoctors = async (patientId) => {
       .in('id', doctorIds);
 
     if (profError) throw profError;
-    return profiles.map(profile => ({
+    
+    const filteredProfiles = profiles.filter(profile => profile.email !== 'admin@irec.com');
+    
+    return filteredProfiles.map(profile => ({
       id: profile.id,
       name: profile.name,
       role: 'doctor',
