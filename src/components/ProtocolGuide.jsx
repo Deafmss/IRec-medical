@@ -535,6 +535,143 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
       const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
       return m.patient_id === null && isAssigned;
     });
+  };  const getStripeInfo = (name = '') => {
+    const lowerName = name.toLowerCase();
+
+    // Check for free items (MIPs/Insumos)
+    if (
+      lowerName.includes('sabonete') || 
+      lowerName.includes('syndet') || 
+      lowerName.includes('gaze') || 
+      lowerName.includes('atadura') || 
+      lowerName.includes('fita') || 
+      lowerName.includes('hidratante') || 
+      lowerName.includes('protetor') || 
+      lowerName.includes('óleo') ||
+      lowerName.includes('vaselina') ||
+      lowerName.includes('solução fisiológica') ||
+      lowerName.includes('soro')
+    ) {
+      return {
+        stripeColor: 'green',
+        stripeLabel: 'Venda Livre / MIP',
+        requiresPrescription: false,
+        alertText: 'Medicamento Isento de Prescrição (MIP).'
+      };
+    }
+
+    // Check for oral medications (requires prescription retention)
+    if (lowerName.includes('comprimido') || lowerName.includes('cápsula') || lowerName.includes('oral') || lowerName.includes('comprimidos')) {
+      return {
+        stripeColor: 'red-retention',
+        stripeLabel: 'Tarja Vermelha (Retenção)',
+        requiresPrescription: true,
+        alertText: 'Necessita de receita médica com retenção obrigatória.'
+      };
+    }
+
+    // Default to Tarja Vermelha for dermatological treatments
+    return {
+      stripeColor: 'red',
+      stripeLabel: 'Tarja Vermelha',
+      requiresPrescription: true,
+      alertText: 'Vendido somente sob prescrição médica.'
+    };
+  };
+
+  const renderMedicineStripe = (stripeInfo) => {
+    if (stripeInfo.stripeColor === 'green') {
+      return (
+        <div style={{
+          height: '16px',
+          width: '100%',
+          backgroundColor: '#16a34a',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '8.5px',
+          fontWeight: '900',
+          color: '#ffffff',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          boxShadow: 'inset 0 -2px 0 rgba(0,0,0,0.15)',
+          marginTop: '4px'
+        }}>
+          🌿 {stripeInfo.stripeLabel}
+        </div>
+      );
+    }
+
+    if (stripeInfo.stripeColor === 'red-retention') {
+      return (
+        <div style={{
+          height: '16px',
+          width: '100%',
+          backgroundColor: '#dc2626',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '8.5px',
+          fontWeight: '900',
+          color: '#ffffff',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          boxShadow: 'inset 0 -2px 0 rgba(0,0,0,0.2)',
+          position: 'relative',
+          overflow: 'hidden',
+          marginTop: '4px'
+        }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', backgroundColor: '#000000' }} />
+          🔴 {stripeInfo.stripeLabel}
+        </div>
+      );
+    }
+
+    return (
+      <div style={{
+        height: '16px',
+        width: '100%',
+        backgroundColor: '#dc2626',
+        borderRadius: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '8.5px',
+        fontWeight: '900',
+        color: '#ffffff',
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        boxShadow: 'inset 0 -2px 0 rgba(0,0,0,0.2)',
+        marginTop: '4px'
+      }}>
+        🔴 {stripeInfo.stripeLabel}
+      </div>
+    );
+  };
+
+  const renderPrescriptionAlert = (stripeInfo) => {
+    if (!stripeInfo.requiresPrescription) return null;
+
+    return (
+      <div style={{ 
+        fontSize: '10px', 
+        color: '#b45309', 
+        backgroundColor: '#fffbeb', 
+        border: '1px solid #fef3c7',
+        padding: '6px 10px',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        fontWeight: '600',
+        marginTop: '6px'
+      }}>
+        <span style={{ fontSize: '12px' }}>📄</span>
+        <span>{stripeInfo.alertText}</span>
+      </div>
+    );
   };
 
   const renderCheckoutButtons = (item) => {
@@ -951,73 +1088,79 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                         {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : 'Insumos Sugeridos pelo Protocolo de IA'}
                       </h3>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
-                        {formatMaterialsForView(aiProtocol.materials, isClinician).map((item, idx) => (
-                          <div key={idx} className="glass-card animate-fade-in" style={{ 
-                            padding: '16px', 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            gap: '12px', 
-                            margin: 0,
-                            backgroundColor: 'var(--bg-secondary)',
-                            borderRadius: '16px',
-                            border: '1.5px solid var(--border-color)',
-                            boxShadow: 'var(--shadow-sm)',
-                            height: '100%',
-                            justifyContent: 'space-between'
-                          }}>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                              <div style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                color: 'var(--primary)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '18px',
-                                fontWeight: '800',
-                                flexShrink: 0
-                              }}>
-                                📦
-                              </div>
-
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                                <h4 style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', margin: 0 }}>
-                                  {item.name}
-                                </h4>
-                                <span style={{ 
-                                  fontSize: '9.5px', 
-                                  color: 'var(--text-muted)', 
-                                  fontWeight: '700', 
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.02em'
-                                }}>
-                                  {isClinician ? 'Terapêutica Sugerida' : 'Insumo Sugerido'}
-                                </span>
-                              </div>
-                            </div>
-
-                            <p style={{ 
-                              fontSize: '12.5px', 
-                              color: 'var(--text-secondary)', 
-                              lineHeight: '1.5', 
+                        {formatMaterialsForView(aiProtocol.materials, isClinician).map((item, idx) => {
+                          const stripeInfo = getStripeInfo(item.name);
+                          return (
+                            <div key={idx} className="glass-card animate-fade-in" style={{ 
+                              padding: '16px', 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              gap: '12px', 
                               margin: 0,
-                              flexGrow: 1
+                              backgroundColor: 'var(--bg-secondary)',
+                              borderRadius: '16px',
+                              border: '1.5px solid var(--border-color)',
+                              boxShadow: 'var(--shadow-sm)',
+                              height: '100%',
+                              justifyContent: 'space-between'
                             }}>
-                              {isClinician ? 'Indicação: ' : 'Marca sugerida: '}{item.brand}
-                            </p>
+                              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                                <div style={{
+                                  width: '40px',
+                                  height: '40px',
+                                  borderRadius: '50%',
+                                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                  color: 'var(--primary)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '18px',
+                                  fontWeight: '800',
+                                  flexShrink: 0
+                                }}>
+                                  📦
+                                </div>
 
-                            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-                              {!isClinician && renderCheckoutButtons(item)}
-                              {isClinician && (
-                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                  ✓ Indicado no Protocolo Clínico
-                                </span>
-                              )}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                                  <h4 style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', margin: 0 }}>
+                                    {item.name}
+                                  </h4>
+                                  <span style={{ 
+                                    fontSize: '9.5px', 
+                                    color: 'var(--text-muted)', 
+                                    fontWeight: '700', 
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.02em'
+                                  }}>
+                                    {isClinician ? 'Terapêutica Sugerida' : 'Insumo Sugerido'}
+                                  </span>
+                                  {renderMedicineStripe(stripeInfo)}
+                                </div>
+                              </div>
+
+                              <p style={{ 
+                                fontSize: '12.5px', 
+                                color: 'var(--text-secondary)', 
+                                lineHeight: '1.5', 
+                                margin: 0,
+                                flexGrow: 1
+                              }}>
+                                {isClinician ? 'Indicação: ' : 'Marca sugerida: '}{item.brand}
+                              </p>
+
+                              {renderPrescriptionAlert(stripeInfo)}
+
+                              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                                {!isClinician && renderCheckoutButtons(item)}
+                                {isClinician && (
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                    ✓ Indicado no Protocolo Clínico
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1199,73 +1342,79 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                 {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : `Insumos Recomendados para ${activeStatic.title}`}
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
-                {formatMaterialsForView(activeStatic.materials, isClinician).map((item, idx) => (
-                  <div key={idx} className="glass-card animate-fade-in" style={{ 
-                    padding: '16px', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '12px', 
-                    margin: 0,
-                    backgroundColor: 'var(--bg-secondary)',
-                    borderRadius: '16px',
-                    border: '1.5px solid var(--border-color)',
-                    boxShadow: 'var(--shadow-sm)',
-                    height: '100%',
-                    justifyContent: 'space-between'
-                  }}>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        color: 'var(--primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '18px',
-                        fontWeight: '800',
-                        flexShrink: 0
-                      }}>
-                        📦
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                        <h4 style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', margin: 0 }}>
-                          {item.name}
-                        </h4>
-                        <span style={{ 
-                          fontSize: '9.5px', 
-                          color: 'var(--text-muted)', 
-                          fontWeight: '700', 
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.02em'
-                        }}>
-                          {isClinician ? 'Terapêutica Sugerida' : 'Insumo Sugerido'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <p style={{ 
-                      fontSize: '12.5px', 
-                      color: 'var(--text-secondary)', 
-                      lineHeight: '1.5', 
+                {formatMaterialsForView(activeStatic.materials, isClinician).map((item, idx) => {
+                  const stripeInfo = getStripeInfo(item.name);
+                  return (
+                    <div key={idx} className="glass-card animate-fade-in" style={{ 
+                      padding: '16px', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '12px', 
                       margin: 0,
-                      flexGrow: 1
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderRadius: '16px',
+                      border: '1.5px solid var(--border-color)',
+                      boxShadow: 'var(--shadow-sm)',
+                      height: '100%',
+                      justifyContent: 'space-between'
                     }}>
-                      {isClinician ? 'Indicação: ' : 'Marca: '}{item.brand}
-                    </p>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          color: 'var(--primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '18px',
+                          fontWeight: '800',
+                          flexShrink: 0
+                        }}>
+                          📦
+                        </div>
 
-                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-                      {!isClinician && renderCheckoutButtons(item)}
-                      {isClinician && (
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                          ✓ Indicado no Protocolo Clínico
-                        </span>
-                      )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                          <h4 style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', margin: 0 }}>
+                            {item.name}
+                          </h4>
+                          <span style={{ 
+                            fontSize: '9.5px', 
+                            color: 'var(--text-muted)', 
+                            fontWeight: '700', 
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.02em'
+                          }}>
+                            {isClinician ? 'Terapêutica Sugerida' : 'Insumo Sugerido'}
+                          </span>
+                          {renderMedicineStripe(stripeInfo)}
+                        </div>
+                      </div>
+
+                      <p style={{ 
+                        fontSize: '12.5px', 
+                        color: 'var(--text-secondary)', 
+                        lineHeight: '1.5', 
+                        margin: 0,
+                        flexGrow: 1
+                      }}>
+                        {isClinician ? 'Indicação: ' : 'Marca: '}{item.brand}
+                      </p>
+
+                      {renderPrescriptionAlert(stripeInfo)}
+
+                      <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                        {!isClinician && renderCheckoutButtons(item)}
+                        {isClinician && (
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            ✓ Indicado no Protocolo Clínico
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
