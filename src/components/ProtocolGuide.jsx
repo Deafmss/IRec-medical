@@ -777,31 +777,80 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
               {/* Steps List */}
               <div>
                 <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>
-                  {isClinician ? 'Condutas e Diretrizes Clínicas de Manejo' : 'Instruções de Curativo e Autocuidado Passo a Passo'}
+                  {isClinician ? 'Condutas e Diretrizes Clínicas de Manejo' : 'Guia Instruções de Autocuidados'}
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
                   {aiProtocol.steps && aiProtocol.steps.map((step, idx) => (
-                    <div key={idx} className="glass-card animate-fade-in" style={{ padding: '14px 16px', margin: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                        <span style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          width: '22px', 
-                          height: '22px', 
-                          borderRadius: '50%', 
-                          backgroundColor: 'var(--primary-glow)', 
-                          color: 'var(--primary)', 
-                          fontSize: '11px', 
-                          fontWeight: '800' 
+                    <div key={idx} className="glass-card animate-fade-in" style={{ 
+                      padding: '16px', 
+                      margin: 0, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '12px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderRadius: '16px',
+                      border: '1.5px solid var(--border-color)',
+                      boxShadow: 'var(--shadow-sm)',
+                      transition: 'all 0.2s ease',
+                      height: '100%',
+                      justifyContent: 'space-between'
+                    }}>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--primary-glow)',
+                          color: 'var(--primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '16px',
+                          fontWeight: '800',
+                          flexShrink: 0
                         }}>
                           {idx + 1}
-                        </span>
-                        <h4 style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)' }}>{step.title}</h4>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                          <h4 style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', margin: 0 }}>
+                            {step.title}
+                          </h4>
+                          <span style={{ 
+                            fontSize: '9.5px', 
+                            color: 'var(--text-muted)', 
+                            fontWeight: '700', 
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.02em'
+                          }}>
+                            Passo {idx + 1} • {isClinician ? 'Conduta' : 'Instrução'}
+                          </span>
+                        </div>
                       </div>
-                      <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', paddingLeft: '32px', margin: 0, lineHeight: '1.4' }}>
+
+                      <p style={{ 
+                        fontSize: '12.5px', 
+                        color: 'var(--text-secondary)', 
+                        lineHeight: '1.5', 
+                        margin: 0,
+                        flexGrow: 1
+                      }}>
                         {step.desc}
                       </p>
+
+                      <div style={{ 
+                        borderTop: '1px solid var(--border-color)', 
+                        paddingTop: '8px', 
+                        marginTop: '4px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '11px',
+                        color: 'var(--text-muted)'
+                      }}>
+                        <span>✓ Recomendação Ativa</span>
+                        <span style={{ fontWeight: '700', color: 'var(--primary)' }}>Passo a Passo →</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -901,19 +950,72 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                       <h3 style={{ fontSize: '14px', fontWeight: '750', marginBottom: '8px' }}>
                         {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : 'Insumos Sugeridos pelo Protocolo de IA'}
                       </h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
                         {formatMaterialsForView(aiProtocol.materials, isClinician).map((item, idx) => (
-                          <div key={idx} className="glass-card" style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '4px', margin: 0 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <div>
-                                <h4 style={{ fontSize: '13.5px', fontWeight: '700', margin: 0 }}>{item.name}</h4>
-                                <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                                  {isClinician ? 'Indicação: ' : 'Marca sugerida: '}{item.brand}
-                                </p>
+                          <div key={idx} className="glass-card animate-fade-in" style={{ 
+                            padding: '16px', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '12px', 
+                            margin: 0,
+                            backgroundColor: 'var(--bg-secondary)',
+                            borderRadius: '16px',
+                            border: '1.5px solid var(--border-color)',
+                            boxShadow: 'var(--shadow-sm)',
+                            height: '100%',
+                            justifyContent: 'space-between'
+                          }}>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                              <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                color: 'var(--primary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '18px',
+                                fontWeight: '800',
+                                flexShrink: 0
+                              }}>
+                                📦
+                              </div>
+
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                                <h4 style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', margin: 0 }}>
+                                  {item.name}
+                                </h4>
+                                <span style={{ 
+                                  fontSize: '9.5px', 
+                                  color: 'var(--text-muted)', 
+                                  fontWeight: '700', 
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.02em'
+                                }}>
+                                  {isClinician ? 'Terapêutica Sugerida' : 'Insumo Sugerido'}
+                                </span>
                               </div>
                             </div>
 
-                            {!isClinician && renderCheckoutButtons(item)}
+                            <p style={{ 
+                              fontSize: '12.5px', 
+                              color: 'var(--text-secondary)', 
+                              lineHeight: '1.5', 
+                              margin: 0,
+                              flexGrow: 1
+                            }}>
+                              {isClinician ? 'Indicação: ' : 'Marca sugerida: '}{item.brand}
+                            </p>
+
+                            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                              {!isClinician && renderCheckoutButtons(item)}
+                              {isClinician && (
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                  ✓ Indicado no Protocolo Clínico
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1011,31 +1113,80 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
           {/* Steps List */}
           <div>
             <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>
-              {isClinician ? 'Condutas e Diretrizes Clínicas de Manejo' : 'Instruções de Curativo Passo a Passo'}
+              {isClinician ? 'Condutas e Diretrizes Clínicas de Manejo' : 'Guia Instruções de Autocuidados'}
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
               {activeStatic.steps.map((step, idx) => (
-                <div key={idx} className="glass-card" style={{ padding: '14px 16px', margin: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                    <span style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      width: '22px', 
-                      height: '22px', 
-                      borderRadius: '50%', 
-                      backgroundColor: 'var(--primary-glow)', 
-                      color: 'var(--primary)', 
-                      fontSize: '11px', 
-                      fontWeight: '800' 
+                <div key={idx} className="glass-card animate-fade-in" style={{ 
+                  padding: '16px', 
+                  margin: 0, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '12px',
+                  backgroundColor: 'var(--bg-secondary)',
+                  borderRadius: '16px',
+                  border: '1.5px solid var(--border-color)',
+                  boxShadow: 'var(--shadow-sm)',
+                  transition: 'all 0.2s ease',
+                  height: '100%',
+                  justifyContent: 'space-between'
+                }}>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--primary-glow)',
+                      color: 'var(--primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '16px',
+                      fontWeight: '800',
+                      flexShrink: 0
                     }}>
                       {idx + 1}
-                    </span>
-                    <h4 style={{ fontSize: '13.5px', fontWeight: '700' }}>{step.title}</h4>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                      <h4 style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', margin: 0 }}>
+                        {step.title}
+                      </h4>
+                      <span style={{ 
+                        fontSize: '9.5px', 
+                        color: 'var(--text-muted)', 
+                        fontWeight: '700', 
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.02em'
+                      }}>
+                        Passo {idx + 1} • {isClinician ? 'Conduta' : 'Instrução'}
+                      </span>
+                    </div>
                   </div>
-                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', paddingLeft: '32px', margin: 0, lineHeight: '1.4' }}>
+
+                  <p style={{ 
+                    fontSize: '12.5px', 
+                    color: 'var(--text-secondary)', 
+                    lineHeight: '1.5', 
+                    margin: 0,
+                    flexGrow: 1
+                  }}>
                     {step.desc}
                   </p>
+
+                  <div style={{ 
+                    borderTop: '1px solid var(--border-color)', 
+                    paddingTop: '8px', 
+                    marginTop: '4px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '11px',
+                    color: 'var(--text-muted)'
+                  }}>
+                    <span>✓ Recomendação Ativa</span>
+                    <span style={{ fontWeight: '700', color: 'var(--primary)' }}>Passo a Passo →</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1047,19 +1198,72 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
               <h3 style={{ fontSize: '14.5px', fontWeight: '750', marginBottom: '10px' }}>
                 {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : `Insumos Recomendados para ${activeStatic.title}`}
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
                 {formatMaterialsForView(activeStatic.materials, isClinician).map((item, idx) => (
-                  <div key={idx} className="glass-card" style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '4px', margin: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <h4 style={{ fontSize: '13.5px', fontWeight: '700' }}>{item.name}</h4>
-                        <p style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                          {isClinician ? 'Indicação: ' : 'Marca: '}{item.brand}
-                        </p>
+                  <div key={idx} className="glass-card animate-fade-in" style={{ 
+                    padding: '16px', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '12px', 
+                    margin: 0,
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderRadius: '16px',
+                    border: '1.5px solid var(--border-color)',
+                    boxShadow: 'var(--shadow-sm)',
+                    height: '100%',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        fontWeight: '800',
+                        flexShrink: 0
+                      }}>
+                        📦
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                        <h4 style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', margin: 0 }}>
+                          {item.name}
+                        </h4>
+                        <span style={{ 
+                          fontSize: '9.5px', 
+                          color: 'var(--text-muted)', 
+                          fontWeight: '700', 
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.02em'
+                        }}>
+                          {isClinician ? 'Terapêutica Sugerida' : 'Insumo Sugerido'}
+                        </span>
                       </div>
                     </div>
 
-                    {!isClinician && renderCheckoutButtons(item)}
+                    <p style={{ 
+                      fontSize: '12.5px', 
+                      color: 'var(--text-secondary)', 
+                      lineHeight: '1.5', 
+                      margin: 0,
+                      flexGrow: 1
+                    }}>
+                      {isClinician ? 'Indicação: ' : 'Marca: '}{item.brand}
+                    </p>
+
+                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                      {!isClinician && renderCheckoutButtons(item)}
+                      {isClinician && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          ✓ Indicado no Protocolo Clínico
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
