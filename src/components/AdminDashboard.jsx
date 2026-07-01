@@ -253,11 +253,32 @@ export default function AdminDashboard() {
       // 2. Parse unstructured text fields
       const otherCond = u.other_conditions || u.otherConditions;
       if (otherCond && typeof otherCond === 'string' && otherCond.trim().length > 0) {
-        const items = otherCond.split(/[;,]/);
+        // Tokenize by commas or semicolons, but only if they are outside parentheses
+        const items = [];
+        let currentItem = '';
+        let parenDepth = 0;
+        
+        for (let i = 0; i < otherCond.length; i++) {
+          const char = otherCond[i];
+          if (char === '(') parenDepth++;
+          if (char === ')') parenDepth--;
+          
+          if ((char === ',' || char === ';') && parenDepth === 0) {
+            items.push(currentItem);
+            currentItem = '';
+          } else {
+            currentItem += char;
+          }
+        }
+        if (currentItem) {
+          items.push(currentItem);
+        }
+
         items.forEach(item => {
           const cleanItem = item.trim().replace(/[.]/g, '');
           if (cleanItem.length > 2) {
-            const formatted = cleanItem.charAt(0).toUpperCase() + cleanItem.slice(1).toLowerCase();
+            // Capitalize the first letter, leaving the rest intact to preserve internal casing/parentheses
+            const formatted = cleanItem.charAt(0).toUpperCase() + cleanItem.slice(1);
             pathologyCounts[formatted] = (pathologyCounts[formatted] || 0) + 1;
           }
         });
