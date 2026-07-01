@@ -104,9 +104,9 @@ export default function AdminDashboard() {
     }
   };
 
-  // Exclude system admin from display directory
+  // Exclude system admin from directories
   const filteredUsers = users.filter(u => {
-    if (u.email === 'admin@irec.com') return false; // Exclude admin
+    if (u.email === 'admin@irec.com') return false;
     
     const matchesSearch = u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,36 +115,93 @@ export default function AdminDashboard() {
     return matchesSearch && matchesRole;
   });
 
-  // Calculate detailed dashboard metrics
+  // Period filtering logic
+  const getFilteredDataByPeriod = () => {
+    const now = new Date();
+    let thresholdDate = new Date();
+    
+    if (timePeriod === '24h') {
+      thresholdDate.setHours(now.getHours() - 24);
+    } else if (timePeriod === '7d') {
+      thresholdDate.setDate(now.getDate() - 7);
+    } else if (timePeriod === '30d') {
+      thresholdDate.setDate(now.getDate() - 30);
+    } else {
+      return { callsFiltered: calls, logsFiltered: logs };
+    }
+
+    const callsFiltered = calls.filter(c => new Date(c.created_at || c.createdAt) >= thresholdDate);
+    const logsFiltered = logs.filter(l => new Date(l.created_at) >= thresholdDate);
+    return { callsFiltered, logsFiltered };
+  };
+
+  const { callsFiltered, logsFiltered } = getFilteredDataByPeriod();
+
+  // User counters
   const totalClinicalUsers = users.filter(u => u.email !== 'admin@irec.com');
   const countPatients = totalClinicalUsers.filter(u => u.role === 'patient').length;
   const countDoctors = totalClinicalUsers.filter(u => u.role === 'doctor').length;
   const countNurses = totalClinicalUsers.filter(u => u.role === 'nurse').length;
 
-  const activeCalls = calls.filter(c => c.status === 'active' || c.status === 'ringing');
-  const completedCalls = calls.filter(c => c.status === 'completed');
-  
-  // Calculate average duration
+  // Active / Online Users (last_seen within 15 minutes)
+  const getActiveUsersStats = () => {
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const onlineUsers = totalClinicalUsers.filter(u => {
+      if (!u.last_seen && !u.lastSeen) return false;
+      const lastSeenDate = new Date(u.last_seen || u.lastSeen);
+      return lastSeenDate >= fifteenMinsAgo;
+    });
+
+    return {
+      onlineCount: onlineUsers.length,
+      offlineCount: totalClinicalUsers.length - onlineUsers.length,
+      onlinePatients: onlineUsers.filter(u => u.role === 'patient').length,
+      onlineDoctors: onlineUsers.filter(u => u.role === 'doctor').length,
+      onlineNurses: onlineUsers.filter(u => u.role === 'nurse').length,
+    };
+  };
+
+  const activeUserStats = getActiveUsersStats();
+
+  // Telemedicine details
+  const activeCalls = callsFiltered.filter(c => c.status === 'active' || c.status === 'ringing');
+  const completedCalls = callsFiltered.filter(c => c.status === 'completed');
   const totalDuration = completedCalls.reduce((acc, c) => acc + (c.duration_seconds || c.duration || 0), 0);
   const avgDurationMinutes = completedCalls.length > 0 ? ((totalDuration / completedCalls.length) / 60).toFixed(1) : '0';
 
-  // Group telemedicine stats by professional (caller/receiver checking)
-  const getOngoingCallsByRole = () => {
-    let doctorCalls = 0;
-    let nurseCalls = 0;
-
-    activeCalls.forEach(call => {
-      // Find caller role
-      const caller = users.find(u => u.id === call.caller_id);
-      if (caller) {
-        if (caller.role === 'doctor') doctorCalls++;
-        if (caller.role === 'nurse') nurseCalls++;
-      }
-    });
-
-    return { doctorCalls, nurseCalls };
+  // Professional workloads breakdown
+  const getProfessionalWorkloads = () => {
+    const clinicians = totalClinicalUsers.filter(u => u.role === 'doctor' || u.role === 'nurse');
+    
+    return clinicians.map(cli => {
+      const activeAssignments = assignments.filter(a => a.doctor_id === cli.id).length;
+      const totalCalls = callsFiltered.filter(c => c.caller_id === cli.id || c.receiver_id === cli.id).length;
+      const isOnline = activeUserStats.onlineCount > 0 && totalClinicalUsers.find(u => u.id === cli.id && (new Date(u.last_seen || u.lastSeen) >= new Date(Date.now() - 15 * 60 * 1000)));
+      
+      return {
+        id: cli.id,
+        name: cli.name,
+        role: cli.role,
+        specialty: cli.specialty || 'Clínico',
+        crm: cli.crm || 'N/A',
+        assignmentsCount: activeAssignments,
+        callsCount: totalCalls,
+        status: isOnline ? 'online' : 'offline'
+      };
+    }).sort((a, b) => b.assignmentsCount - a.assignmentsCount);
   };
-  const { doctorCalls, nurseCalls } = getOngoingCallsByRole();
+
+  const workloads = getProfessionalWorkloads();
+
+  // Audit Logs Statistics
+  const getAuditActionStats = () => {
+    const actionCounts = {};
+    logsFiltered.forEach(log => {
+      actionCounts[log.action] = (actionCounts[log.action] || 0) + 1;
+    });
+    return Object.entries(actionCounts).map(([action, val]) => ({ action, count: val })).sort((a, b) => b.count - a.count);
+  };
+  const auditActionStats = getAuditActionStats();
 
   const getRoleLabel = (role) => {
     switch (role) {
@@ -153,10 +210,6 @@ export default function AdminDashboard() {
       case 'patient': return { text: 'Paciente', bg: 'rgba(107, 114, 128, 0.1)', color: 'var(--text-secondary)' };
       default: return { text: role, bg: 'rgba(0,0,0,0.05)', color: 'black' };
     }
-  };
-
-  const formatLogAction = (action) => {
-    return action.replace(/_/g, ' ');
   };
 
   return (
@@ -169,13 +222,13 @@ export default function AdminDashboard() {
             🛡️ Dashboard Administrativo iRec
           </h2>
           <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Central de controle operacional. Métricas integradas, monitoramento de atendimento e diretório.
+            Visão Geral e métricas clínicas detalhadas do iRec para gerenciamento de conformidade e faturamento.
           </p>
         </div>
 
         {/* Time period filter */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>FILTRO DE PERÍODO:</span>
+          <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)' }}>PERÍODO:</span>
           <select
             value={timePeriod}
             onChange={(e) => setTimePeriod(e.target.value)}
@@ -248,162 +301,214 @@ export default function AdminDashboard() {
           <div style={{ fontSize: '14px' }}>Carregando dados...</div>
         </div>
       ) : activeTab === 'metrics' ? (
-        /* TAB 1: METRICS */
+        /* TAB 1: ADVANCED METRICS */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Detailed stats grids */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-            <div className="glass-card" style={{ padding: '20px', margin: 0, position: 'relative', overflow: 'hidden' }}>
+          {/* Top row summaries with trend badges */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+            <div className="glass-card" style={{ padding: '24px', margin: 0, position: 'relative', overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>MÉDICOS ATIVOS</span>
-                <span style={{ fontSize: '18px' }}>🩺</span>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>ATIVIDADE DA REDE (ONLINE)</span>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success-light)', boxShadow: '0 0 8px var(--success-light)' }}></span>
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>{countDoctors}</div>
-              <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '700', marginTop: '6px' }}>
-                {doctorCalls} em atendimento agora
+              <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>
+                {activeUserStats.onlineCount} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 'normal' }}> / {totalClinicalUsers.length} usuários</span>
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '8px' }}>
+                Médicos: {activeUserStats.onlineDoctors} | Enfermeiros: {activeUserStats.onlineNurses} | Pacientes: {activeUserStats.onlinePatients}
               </div>
             </div>
 
-            <div className="glass-card" style={{ padding: '20px', margin: 0, position: 'relative', overflow: 'hidden' }}>
+            <div className="glass-card" style={{ padding: '24px', margin: 0, position: 'relative', overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>ENFERMEIROS ATIVOS</span>
-                <span style={{ fontSize: '18px' }}>🏥</span>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>ATENDIMENTOS ATIVOS</span>
+                <span style={{ fontSize: '18px' }}>📞</span>
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>{countNurses}</div>
-              <div style={{ fontSize: '11px', color: 'var(--success-light)', fontWeight: '700', marginTop: '6px' }}>
-                {nurseCalls} em atendimento agora
+              <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>
+                {activeCalls.length} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 'normal' }}>em andamento</span>
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '700', marginTop: '8px' }}>
+                Total de teleconsultas realizadas: {completedCalls.length}
               </div>
             </div>
 
-            <div className="glass-card" style={{ padding: '20px', margin: 0, position: 'relative', overflow: 'hidden' }}>
+            <div className="glass-card" style={{ padding: '24px', margin: 0, position: 'relative', overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PACIENTES ACOMPANHADOS</span>
-                <span style={{ fontSize: '18px' }}>👥</span>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>TEMPO MÉDIO DE ATENDIMENTO</span>
+                <span style={{ fontSize: '18px' }}>⏱️</span>
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>{countPatients}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '6px' }}>
-                Total integrado no banco
+              <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>
+                {avgDurationMinutes} <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 'normal' }}>minutos</span>
               </div>
-            </div>
-
-            <div className="glass-card" style={{ padding: '20px', margin: 0, position: 'relative', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>TRIAGENS CADASTRADAS</span>
-                <span style={{ fontSize: '18px' }}>📸</span>
-              </div>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>{stats.triages}</div>
-              <div style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: '700', marginTop: '6px' }}>
-                +14% de crescimento
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '8px' }}>
+                Cálculo com base em sessões finalizadas
               </div>
             </div>
           </div>
 
-          {/* Graphics & Advanced Reports */}
+          {/* Advanced Charts Section */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
             
-            {/* Visual consultation trends & times */}
+            {/* Visual Chart 1: Triage Trends and Wound types (Horizontal Towers) */}
             <div className="glass-card" style={{ padding: '24px', margin: 0 }}>
-              <h3 style={{ fontSize: '14.5px', fontWeight: '800', margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📈 Volume de Triagens Clínicas por Categoria
+              <h3 style={{ fontSize: '14.5px', fontWeight: '800', margin: '0 0 18px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                📊 Distribuição das Lesões sob Acompanhamento
               </h3>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: '600' }}>Úlcera Diabética</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>38% das triagens</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Úlcera Diabética</span>
+                    <span style={{ fontWeight: '800' }}>38%</span>
                   </div>
-                  <div style={{ height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: '38%', height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px' }}></div>
+                  <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
+                    <div style={{ width: '38%', height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px', backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)', backgroundSize: '1rem 1rem' }}></div>
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: '600' }}>Úlcera Venosa / Estase</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>29% das triagens</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Úlcera Venosa (Estase)</span>
+                    <span style={{ fontWeight: '800' }}>29%</span>
                   </div>
-                  <div style={{ height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
                     <div style={{ width: '29%', height: '100%', backgroundColor: 'var(--success-light)', borderRadius: '4px' }}></div>
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: '600' }}>Lesão por Pressão (LPP)</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>21% das triagens</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Lesões por Pressão (LPP)</span>
+                    <span style={{ fontWeight: '800' }}>21%</span>
                   </div>
-                  <div style={{ height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
                     <div style={{ width: '21%', height: '100%', backgroundColor: 'var(--warning)', borderRadius: '4px' }}></div>
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: '600' }}>Outras Dermatoses / Queimaduras</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>12% das triagens</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Outras Patologias</span>
+                    <span style={{ fontWeight: '800' }}>12%</span>
                   </div>
-                  <div style={{ height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', backgroundColor: 'var(--border-color)', borderRadius: '6px', overflow: 'hidden', padding: '1.5px' }}>
                     <div style={{ width: '12%', height: '100%', backgroundColor: 'var(--accent)', borderRadius: '4px' }}></div>
                   </div>
                 </div>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>TEMPO MÉDIO DE CHAMADA</div>
-                  <div style={{ fontSize: '20px', fontWeight: '850', color: 'var(--text-primary)', marginTop: '4px' }}>
-                    {avgDurationMinutes} min
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>CHAMADAS CONCLUÍDAS</div>
-                  <div style={{ fontSize: '20px', fontWeight: '850', color: 'var(--text-primary)', marginTop: '4px' }}>
-                    {completedCalls.length} atendimentos
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Active operations list */}
-            <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column', justifyContext: 'space-between' }}>
+            {/* Visual Chart 2: Native SVG Donut Chart representing active users distribution */}
+            <div className="glass-card" style={{ padding: '24px', margin: 0, display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '14.5px', fontWeight: '800', margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                🚨 Status dos Atendimentos em Tempo Real
+                🍩 Distribuição da Rede Clínica
               </h3>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--success-light)', boxShadow: '0 0 8px var(--success-light)' }}></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13px', fontWeight: '700' }}>{activeCalls.length} Chamadas Conectadas</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Teleconsultas em vídeo ativas na rede</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, gap: '20px', padding: '10px 0' }}>
+                {/* SVG Donut */}
+                <svg width="120" height="120" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--border-color)" strokeWidth="3" />
+                  
+                  {/* Doctor segment (blue) */}
+                  <circle 
+                    cx="18" cy="18" r="15.915" fill="none" 
+                    stroke="var(--primary)" strokeWidth="3.2" 
+                    strokeDasharray={`${totalClinicalUsers.length > 0 ? (countDoctors / totalClinicalUsers.length) * 100 : 0} ${100 - (totalClinicalUsers.length > 0 ? (countDoctors / totalClinicalUsers.length) * 100 : 0)}`}
+                    strokeDashoffset="0" 
+                  />
+                  
+                  {/* Nurse segment (green) */}
+                  <circle 
+                    cx="18" cy="18" r="15.915" fill="none" 
+                    stroke="var(--success-light)" strokeWidth="3.2" 
+                    strokeDasharray={`${totalClinicalUsers.length > 0 ? (countNurses / totalClinicalUsers.length) * 100 : 0} ${100 - (totalClinicalUsers.length > 0 ? (countNurses / totalClinicalUsers.length) * 100 : 0)}`}
+                    strokeDashoffset={`-${totalClinicalUsers.length > 0 ? (countDoctors / totalClinicalUsers.length) * 100 : 0}`} 
+                  />
+
+                  {/* Patient segment (gray/accent) */}
+                  <circle 
+                    cx="18" cy="18" r="15.915" fill="none" 
+                    stroke="var(--accent)" strokeWidth="3.2" 
+                    strokeDasharray={`${totalClinicalUsers.length > 0 ? (countPatients / totalClinicalUsers.length) * 100 : 0} ${100 - (totalClinicalUsers.length > 0 ? (countPatients / totalClinicalUsers.length) * 100 : 0)}`}
+                    strokeDashoffset={`-${totalClinicalUsers.length > 0 ? ((countDoctors + countNurses) / totalClinicalUsers.length) * 100 : 0}`} 
+                  />
+                </svg>
+
+                {/* Legend list */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--primary)' }}></span>
+                    <span style={{ flex: 1, color: 'var(--text-secondary)' }}>Médicos:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{countDoctors}</strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--success-light)' }}></span>
+                    <span style={{ flex: 1, color: 'var(--text-secondary)' }}>Enfermeiros:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{countNurses}</strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--accent)' }}></span>
+                    <span style={{ flex: 1, color: 'var(--text-secondary)' }}>Pacientes:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{countPatients}</strong>
                   </div>
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--primary)', boxShadow: '0 0 8px var(--primary)' }}></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13px', fontWeight: '700' }}>{assignments.length} Pacientes Vinculados</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Vínculo ativo de acompanhamento médico/enfermeiro</div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--text-muted)' }}></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13px', fontWeight: '700' }}>Auditoria em Conformidade</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Assinaturas digitais e logs validados pela ICP-Brasil</div>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginTop: '20px', padding: '12px 14px', borderRadius: '8px', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '18px' }}>🚀</span>
-                <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                  Todos os servidores estão operacionais. Latência média de sincronização Supabase: <strong>42ms</strong>.
-                </span>
               </div>
             </div>
+          </div>
+
+          {/* Table: Professional Workloads and Consultation Logs */}
+          <div className="glass-card" style={{ padding: '24px', margin: 0 }}>
+            <h3 style={{ fontSize: '14.5px', fontWeight: '800', margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              📊 Relatório de Atendimentos por Profissional de Saúde
+            </h3>
+
+            {workloads.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', padding: '20px' }}>
+                Nenhum profissional de saúde cadastrado no sistema para gerar estatísticas.
+              </p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1.5px solid var(--border-color)', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
+                      <th style={{ padding: '10px 8px' }}>NOME DO PROFISSIONAL</th>
+                      <th style={{ padding: '10px 8px' }}>PAPEL</th>
+                      <th style={{ padding: '10px 8px' }}>ESPECIALIDADE / CRM</th>
+                      <th style={{ padding: '10px 8px', textAlign: 'center' }}>PACIENTES VINCULADOS</th>
+                      <th style={{ padding: '10px 8px', textAlign: 'center' }}>TELECONSULTAS</th>
+                      <th style={{ padding: '10px 8px', textAlign: 'center' }}>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workloads.map((item) => (
+                      <tr key={item.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s', hover: { background: 'var(--bg-primary)' } }}>
+                        <td style={{ padding: '12px 8px', fontWeight: '700', color: 'var(--text-primary)' }}>{item.name}</td>
+                        <td style={{ padding: '12px 8px' }}>
+                          <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 6px', borderRadius: '4px', backgroundColor: item.role === 'doctor' ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)', color: item.role === 'doctor' ? 'var(--primary)' : 'var(--success-light)' }}>
+                            {item.role === 'doctor' ? 'MÉDICO' : 'ENFERMEIRO'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>
+                          {item.specialty} • {item.crm}
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '800' }}>
+                          {item.assignmentsCount}
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '800' }}>
+                          {item.callsCount}
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                          <span style={{
+                            display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%',
+                            backgroundColor: item.status === 'online' ? 'var(--success-light)' : 'var(--text-muted)'
+                          }} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       ) : activeTab === 'users' ? (
@@ -540,36 +645,64 @@ export default function AdminDashboard() {
         </div>
       ) : (
         /* TAB 4: COMPLIANCE AUDIT LOGS */
-        <div className="glass-card" style={{ padding: '24px', margin: 0 }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '750', margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-            Logs de Auditoria do Sistema (Últimos 100 Registros)
-          </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {logs.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Nenhum log de auditoria registrado no banco de dados.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '500px', overflowY: 'auto', paddingRight: '4px' }}>
-              {logs.map((log) => (
-                <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '12px', background: 'var(--bg-primary)' }}>
-                  <div>
-                    <span style={{ fontWeight: '800', color: 'var(--primary)', marginRight: '8px' }}>
-                      [{formatLogAction(log.action)}]
-                    </span>
-                    <span style={{ color: 'var(--text-secondary)' }}>
-                      ID do Usuário: {log.user_id}
-                    </span>
-                    <span style={{ margin: '0 8px', color: 'var(--text-muted)' }}>•</span>
-                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                      {log.details ? JSON.stringify(log.details) : 'Nenhum detalhe'}
+          {/* Action ranking chart */}
+          <div className="glass-card" style={{ padding: '24px', margin: 0 }}>
+            <h3 style={{ fontSize: '14.5px', fontWeight: '850', margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              📊 Ranking de Atividades Frequentes no Sistema
+            </h3>
+            
+            {auditActionStats.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Nenhuma ação registrada neste período.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {auditActionStats.map(({ action, count }) => (
+                  <div key={action}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: '750' }}>{formatLogAction(action)}</span>
+                      <span>{count} ocorrências</span>
+                    </div>
+                    <div style={{ height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}>
+                      <div style={{ width: `${(count / logsFiltered.length) * 100}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px' }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="glass-card" style={{ padding: '24px', margin: 0 }}>
+            <h3 style={{ fontSize: '14.5px', fontWeight: '750', margin: '0 0 16px 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              Logs de Auditoria do Sistema (Últimos 100 Registros)
+            </h3>
+            
+            {logsFiltered.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>Nenhum log de auditoria registrado no banco de dados.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '500px', overflowY: 'auto', paddingRight: '4px' }}>
+                {logsFiltered.map((log) => (
+                  <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '12px', background: 'var(--bg-primary)' }}>
+                    <div>
+                      <span style={{ fontWeight: '800', color: 'var(--primary)', marginRight: '8px' }}>
+                        [{formatLogAction(log.action)}]
+                      </span>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        ID do Usuário: {log.user_id}
+                      </span>
+                      <span style={{ margin: '0 8px', color: 'var(--text-muted)' }}>•</span>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                        {log.details ? JSON.stringify(log.details) : 'Nenhum detalhe'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {new Date(log.created_at).toLocaleString('pt-BR')}
                     </span>
                   </div>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {new Date(log.created_at).toLocaleString('pt-BR')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

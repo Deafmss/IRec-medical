@@ -679,7 +679,9 @@ export default function DoctorDashboard({
     doctorProfile?.consultationFee !== null && doctorProfile?.consultationFee !== undefined &&
     doctorProfile?.avatarUrl && doctorProfile.avatarUrl.trim().length > 0;
 
-  if (!isProfileComplete) {
+  const isAdmin = doctorProfile?.email === 'admin@irec.com';
+
+  if (!isProfileComplete && !isAdmin) {
     return (
       <div style={{
         maxWidth: '560px',

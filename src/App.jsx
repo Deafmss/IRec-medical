@@ -165,7 +165,9 @@ export default function App() {
       
       if (userProfile) {
         setCurrentUser(userProfile);
-        if (userProfile.role === 'doctor' || userProfile.email === 'admin@irec.com') {
+        if (userProfile.email === 'admin@irec.com') {
+          setActiveTab('admin-dashboard');
+        } else if (userProfile.role === 'doctor') {
           setActiveTab('doctor-dashboard');
         } else {
           setActiveTab('dashboard');
@@ -309,7 +311,9 @@ export default function App() {
 
   const handleLoginSuccess = (profile) => {
     setCurrentUser(profile);
-    if (profile.role === 'doctor' || profile.email === 'admin@irec.com') {
+    if (profile.email === 'admin@irec.com') {
+      setActiveTab('admin-dashboard');
+    } else if (profile.role === 'doctor') {
       setActiveTab('doctor-dashboard');
     } else {
       setActiveTab('dashboard');
