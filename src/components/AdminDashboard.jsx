@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments, getAdminWoundEntries } from '../services/supabaseService';
+import AdminReports from './AdminReports';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('metrics'); // 'metrics', 'users', 'partners', 'logs'
@@ -420,6 +421,18 @@ export default function AdminDashboard() {
           📊 Visão Geral & Métricas
         </button>
         <button
+          onClick={() => setActiveTab('reports')}
+          style={{
+            padding: '12px 4px', fontSize: '14.5px', fontWeight: '700',
+            color: activeTab === 'reports' ? 'var(--primary)' : 'var(--text-muted)',
+            border: 'none', backgroundColor: 'transparent',
+            borderBottom: activeTab === 'reports' ? '3px solid var(--primary)' : '3px solid transparent',
+            cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '-2px'
+          }}
+        >
+          📊 Relatórios Consolidados
+        </button>
+        <button
           onClick={() => setActiveTab('users')}
           style={{
             padding: '12px 4px', fontSize: '14.5px', fontWeight: '700',
@@ -793,6 +806,15 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+      ) : activeTab === 'reports' ? (
+        <AdminReports 
+          users={users}
+          callsFiltered={callsFiltered}
+          logsFiltered={logsFiltered}
+          woundEntriesFiltered={woundEntriesFiltered}
+          partners={partners}
+          assignments={assignments}
+        />
       ) : activeTab === 'users' ? (
         /* TAB 2: USER DIRECTORY */
         <div>
