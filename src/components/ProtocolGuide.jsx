@@ -660,39 +660,38 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
         </div>
       </div>
 
-
-        // AI Dynamic Protocol view
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {loading ? (
-            // Loading skeleton state
-            <div className="glass-card" style={{ padding: '36px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-              <div style={{ 
-                width: '32px', height: '32px', 
-                border: '3px solid var(--border-color)', 
-                borderTopColor: 'var(--primary)', 
-                borderRadius: '50%', 
-                animation: 'spin 1s linear infinite' 
-              }} />
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>Gerando Seu Guia de Cuidados Personalizado...</h4>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '380px', margin: '4px auto 0' }}>
-                  Cruzando dados do seu histórico evolutivo, tipo de lesão e suas comorbidades com os Manuais Clínicos oficiais de Curativos.
-                </p>
-              </div>
+      {/* AI Dynamic Protocol view */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {loading ? (
+          // Loading skeleton state
+          <div className="glass-card" style={{ padding: '36px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <div style={{ 
+              width: '32px', height: '32px', 
+              border: '3px solid var(--border-color)', 
+              borderTopColor: 'var(--primary)', 
+              borderRadius: '50%', 
+              animation: 'spin 1s linear infinite' 
+            }} />
+            <div>
+              <h4 style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>Gerando Seu Guia de Cuidados Personalizado...</h4>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '380px', margin: '4px auto 0' }}>
+                Cruzando dados do seu histórico evolutivo, tipo de lesão e suas comorbidades com os Manuais Clínicos oficiais de Curativos.
+              </p>
             </div>
-          ) : aiProtocol ? (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
-              {/* AI Protocol Header */}
-              <div className="glass-card" style={{ borderLeft: '4px solid var(--primary)', margin: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
-                  <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>
-                    ✨ {aiProtocol.title}
-                  </h3>
-                  <span className="badge badge-success" style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Apoio à Decisão (IA)
-                  </span>
-                </div>
+          </div>
+        ) : aiProtocol ? (
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            {/* AI Protocol Header */}
+            <div className="glass-card" style={{ borderLeft: '4px solid var(--primary)', margin: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>
+                  ✨ {aiProtocol.title}
+                </h3>
+                <span className="badge badge-success" style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Apoio à Decisão Clínica
+                </span>
+              </div>
                 <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: '1.4', margin: '8px 0 0 0' }}>
                   {aiProtocol.description}
                 </p>
@@ -872,7 +871,7 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                   {aiProtocol.materials && aiProtocol.materials.length > 0 && (
                     <div>
                       <h3 style={{ fontSize: '14px', fontWeight: '750', marginBottom: '8px' }}>
-                        {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : 'Insumos Sugeridos pelo Protocolo de IA'}
+                        {isClinician ? 'Terapêuticas e Coberturas Sugeridas (Apoio à Prescrição)' : 'Insumos Sugeridos pelo Protocolo Clínico'}
                       </h3>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
                         {formatMaterialsForView(aiProtocol.materials, isClinician).map((item, idx) => {
