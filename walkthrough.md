@@ -148,13 +148,16 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
   4. *Parceiros iRec:* Farmácias e insumos credenciados na plataforma com descontos de convênio e comissão para a plataforma.
   5. *Insumos Sugeridos pelo Protocolo de IA:* Baseline gerada automaticamente para os curativos.
 - **Painel e Navegação Exclusiva do Administrador (`AdminDashboard.jsx` & `App.jsx` & `supabaseService.js`):** Isolamos completamente a navegação administrativa da clínica. Quando logado como `admin@irec.com`, o menu lateral e inferior oculta as ferramentas médicas (pacientes, telemedicina, etc.) e passa a renderizar exclusivamente o **Painel Admin**, que oferece:
-  1. *Desativação Total de Bloqueios de Perfil:* Removemos a tela de bloqueio de "Perfil Profissional Obrigatório" (CRM, Biografia, Especialidade, etc.) para o administrador em qualquer rota de boot (App.jsx e DoctorDashboard.jsx), garantindo que a conta administrativa acesse a ferramenta instantaneamente e sem restrições clinicas.
-  2. *Visão Geral & Métricas:* Resumo estatístico completo segmentado por período (24 horas, 7 dias, 30 dias, todo o período), contendo totalizadores de Pacientes, Médicos, Enfermeiros, Triagens e Chamadas Concluídas.
-  3. *Gráficos de Engajamento & Atendimentos:* Mapeamento dinâmico de patologias e comorbidades da rede de pacientes (varre de forma automatizada campos booleanos e textos de "outras condições" identificando e calculando a distribuição real de Diabetes Mellitus, Hipertensão, Obesidade, Tabagismo, Cardiopatias, etc.), classificação técnica das feridas sob acompanhamento, tempo médio de chamadas e atendimentos ativos. Inclui gráficos de rosca SVG para distribuição da rede clínica (Médicos, Enfermeiros, Pacientes).
-  4. *Relatório Detalhado por Profissional (Atendimentos por Profissional):* Tabela detalhada de acompanhamento listando cada médico e enfermeiro, sua especialidade, CRM, número exato de pacientes vinculados, total de teleconsultas realizadas no período e status de presença (Online/Offline) em tempo real.
-  5. *Usuários Cadastrados:* Diretório completo de usuários com barra de busca e contador banner detalhado segmentado por papel de atuação (Pacientes, Médicos, Enfermeiros) — com exclusão visual da conta de sistema `admin@irec.com`.
-  6. *Parceiros iRec:* Gerenciador de marcas e farmácias conveniadas à empresa iRec (com links afiliados globais e descontos).
-  7. *Auditoria / Logs:* Registro de auditoria em tempo real para conformidade das ações médicas.
+  1. *Desativação Total de Bloqueios de Perfil:* O administrador acessa a ferramenta instantaneamente e sem restrições clínicas.
+  2. *Visão Geral & Métricas:* Resumo estatístico completo com totalizadores de Pacientes, Médicos, Enfermeiros, Triagens e Chamadas Concluídas.
+  3. *Relatórios Consolidados (`AdminReports.jsx`):* Nova aba com 12 relatórios analíticos de alta utilidade divididos em:
+     * **Clínicos & Região:** Perfil epidemiológico detalhado por Município/UF, Taxa de Retorno de Pacientes (Fidelização) e Altas Clínicas/Desfechos por período.
+     * **Telemedicina & Fila:** Tempo médio de espera na fila, Picos de Demanda (atendimentos por hora do dia), NPS das teleconsultas (Score de Satisfação) e Taxa de Absenteísmo (No-Show).
+     * **Comercial & Afiliados:** Cliques em links afiliados, insumos e marcas mais recomendadas na plataforma e Extrato de Repasses de comissão por profissional médico.
+     * **Segurança & LGPD:** Auditoria clínica detalhada de visualização de prontuários (Conformidade com LGPD) e volume de prescrições e laudos emitidos digitalmente.
+  4. *Usuários Cadastrados:* Diretório completo de usuários com barra de busca e contador por papel (Pacientes, Médicos, Enfermeiros).
+  5. *Parceiros iRec:* Gerenciador de marcas e farmácias conveniadas com links afiliados globais e descontos.
+  6. *Auditoria / Logs:* Registro de auditoria de conformidade de ações do sistema.
 
 - **Painel Clínico Individual do Médico (`DoctorDashboardAnalytics.jsx` & `App.jsx` & `supabaseService.js`):** Implementamos um painel analítico individual exclusivo para o médico logado. Esta seção é acessada através da nova aba "Meu Painel" no menu lateral (desktop) e inferior (mobile) do médico, garantindo que o profissional analise apenas os dados de sua própria carteira de pacientes de forma isolada:
   1. *Atendimentos Realizados:* Exibe a contagem de teleconsultas realizadas no período selecionado (24h, 7d, 30d ou todo o período), o tempo clínico total on-line e a média de duração das chamadas.
