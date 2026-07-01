@@ -161,8 +161,8 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
   2. *Pacientes sob Acompanhamento:* Totalizador de pacientes vinculados ativamente à carteira do médico.
   3. *Casos Clínicos Finalizados:* Quantidade de pacientes que já alcançaram desfecho clínico (cicatrização completa, internação, reinternação, amputação ou óbito) a partir do último registro de triagem.
   4. *Taxa de Retorno de Pacientes:* Porcentagem de pacientes que retornaram para realizar pelo menos uma triagem de evolução (2 ou mais fotos/evoluções enviadas).
-  5. *Média de Redução da Área da Lesão (Cicatrização Média):* Métrica avançada que calcula o percentual médio de retração do tamanho da ferida (cm²) medido pela inteligência artificial entre o primeiro e o último registro de evolução do paciente.
-  6. *Alertas Clínicos Críticos:* Total de pacientes sob acompanhamento que possuem sinais ativos de infecção (odor fétido, exsudato purulento, calor local ou rubor intenso) em sua triagem mais recente.
+  5. *Índice de Melhora Clínica:* Proporção percentual de pacientes sob acompanhamento cujo status evolutivo mais recente foi avaliado e registrado como "Melhorou".
+  6. *Alertas de Piora Clínica:* Contagem de pacientes sob responsabilidade do médico cuja evolução clínica mais recente foi registrada como "Piorou", indicando necessidade imediata de revisão de conduta.
   7. *Perfil de Comorbidades da Carteira:* Gráfico de barras com a incidência proporcional das patologias e fatores de risco (Diabetes, Hipertensão, Obesidade, etc.) de sua carteira de pacientes.
 
 ---
