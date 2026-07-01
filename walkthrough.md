@@ -147,6 +147,11 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
   3. **Opção Geral de Compra:** Caso o médico tenha cadastrado apenas farmácias parceiras globais (sem cadastrar insumos individuais), essas farmácias aparecem automaticamente como uma das opções de compra premiadas em **qualquer** insumo recomendado nos protocolos do paciente (ao lado de retirada rápida e entrega expressa).
   4. *Parceiros iRec:* Farmácias e insumos credenciados na plataforma com descontos de convênio e comissão para a plataforma.
   5. *Insumos Sugeridos pelo Protocolo de IA:* Baseline gerada automaticamente para os curativos.
+- **Painel e Navegação Exclusiva do Administrador (`AdminDashboard.jsx` & `App.jsx` & `supabaseService.js`):** Isolamos completamente a navegação administrativa da clínica. Quando logado como `admin@irec.com`, o menu lateral e inferior oculta as ferramentas médicas (pacientes, telemedicina, etc.) e passa a renderizar exclusivamente o **Painel Admin**, que oferece:
+  1. *Visão Geral & Métricas:* Resumo estatístico segmentado (Total de Pacientes, Médicos, Enfermeiros, Triagens, Chamadas e Parcerias).
+  2. *Usuários Cadastrados:* Diretório completo de usuários com busca em tempo real e filtro por papel de atuação.
+  3. *Parceiros iRec:* Gerenciador integrado de redes parceiras da plataforma com link afiliado global do iRec.
+  4. *Auditoria / Logs:* Registro de auditoria do sistema em tempo real, documentando as ações clínicas dos profissionais para conformidade e segurança.
 
 ---
 
