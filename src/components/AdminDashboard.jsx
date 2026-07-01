@@ -298,6 +298,11 @@ export default function AdminDashboard() {
     }
   };
 
+  const formatLogAction = (action) => {
+    if (!action) return 'AÇÃO DESCONHECIDA';
+    return action.toString().replace(/_/g, ' ');
+  };
+
   return (
     <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'var(--font-primary)', animation: 'fadeIn 0.3s ease' }}>
       
