@@ -169,7 +169,7 @@ export default function App() {
         if (userProfile.email === 'admin@irec.com') {
           setActiveTab('admin-dashboard');
         } else if (userProfile.role === 'doctor') {
-          setActiveTab('doctor-dashboard');
+          setActiveTab('doctor-analytics');
         } else {
           setActiveTab('dashboard');
         }
