@@ -138,12 +138,15 @@ Este documento detalha o desenvolvimento, a implementação e as integrações e
 - **Criação da Tabela `recommended_materials`:** Migramos e criamos a tabela no banco de dados para associar recomendações com links de afiliados, farmácias indicadas e preços.
 - **Painel Administrativo (`AdminPartners.jsx`):** Criamos uma interface acessível **exclusivamente** à conta de administrador global (`admin@irec.com`) para cadastrar farmácias físicas/online parceiras com links de afiliados que dão desconto ao paciente e comissão percentual para a plataforma iRec ("Parceiros iRec"). Qualquer outro usuário ou médico clínico comum não possui acesso ou visibilidade deste painel.
 - **Área do Médico (Prescrição Particular) (`DoctorDashboard.jsx`):** Inserimos a aba **`Receitar Insumos`** no dossiê de pacientes do painel médico para prescrever insumos e marcas específicas com links afiliados de comissão direcionados para um paciente específico.
-- **Catálogo Geral do Médico (Minhas Parcerias) (`DoctorPartners.jsx`):** Desenvolvemos a nova tela **`Minhas Parcerias`** (🏪) no menu lateral do médico. Nela, o profissional de saúde pode cadastrar globalmente suas marcas e farmácias afiliadas parceiras sem precisar vincular a um paciente específico.
-- **Interface do Paciente Dinâmica (`ProtocolGuide.jsx`):** O paciente visualiza no seu protocolo de curativos os insumos recomendados pelo médico, unindo:
+- **Catálogo Geral do Médico (Minhas Parcerias) (`DoctorPartners.jsx`):** Redesenhamos completamente a tela **`Minhas Parcerias`** (🏪) utilizando a identidade visual do iRec (estatísticas, abas estilizadas e abertura de popups modais de cadastro). Separamos as opções em:
+  1. *Farmácias Parceiras Gerais:* Redes de farmácias com link geral de comissão do médico.
+  2. *Insumos & Produtos Específicos:* Coberturas e produtos específicos recomendados.
+- **Interface do Paciente Dinâmica (`ProtocolGuide.jsx`):** O paciente visualiza nos seus protocolos de curativos os insumos recomendados pelo médico, unindo:
   1. Recomendações particulares cadastradas pelo médico especificamente para este paciente.
   2. Recomendações do catálogo global do médico que o acompanha (se o médico indicou marcas parceiras globais, qualquer paciente sob sua responsabilidade as visualizará automaticamente em seus protocolos).
-  3. *Parceiros iRec:* Farmácias e insumos credenciados na plataforma com descontos de convênio e comissão para a plataforma.
-  4. *Insumos Sugeridos pelo Protocolo de IA:* Baseline gerada automaticamente para os curativos.
+  3. **Opção Geral de Compra:** Caso o médico tenha cadastrado apenas farmácias parceiras globais (sem cadastrar insumos individuais), essas farmácias aparecem automaticamente como uma das opções de compra premiadas em **qualquer** insumo recomendado nos protocolos do paciente (ao lado de retirada rápida e entrega expressa).
+  4. *Parceiros iRec:* Farmácias e insumos credenciados na plataforma com descontos de convênio e comissão para a plataforma.
+  5. *Insumos Sugeridos pelo Protocolo de IA:* Baseline gerada automaticamente para os curativos.
 
 ---
 
