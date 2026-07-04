@@ -171,7 +171,6 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState('');
   const [result, setResult] = useState(null);
-  const [demoScenario, setDemoScenario] = useState('venosa');
 
   // Novos campos estruturados para o Dataset Clínico (BLOCOS 3 e 6)
   const [woundType, setWoundType] = useState('Úlcera Venosa');
@@ -263,47 +262,26 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
     });
   };
 
-  const handleWebcamSimulate = (e) => {
-    e.stopPropagation();
-    setIsAnalyzing(true);
-    setAnalysisStep('Iniciando Câmera...');
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      const mockUrl = 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&auto=format&fit=crop&q=60';
-      const mockFileObj = {
-        file: { name: 'Foto_Webcam_Capturada.jpg', type: 'image/jpeg' },
-        url: mockUrl
-      };
-      setAttachments(prev => {
-        const updated = [...prev, mockFileObj];
-        setImage(mockUrl);
-        setPhotoFile(null);
-        return updated;
-      });
-      alert("Câmera do Dispositivo Simulada:\n\nImagem capturada com sucesso com foco e iluminação calibrados pelo iRec!");
-    }, 1200);
-  };
 
-  const handleSimulateAnalysis = async () => {
-    if (!image) {
-      alert("Por favor, selecione ou simule o envio de uma foto da ferida primeiro.");
+
+  const handleStartAnalysis = async () => {
+    if (attachments.length === 0) {
+      alert("Por favor, selecione ou anexe pelo menos um arquivo da queixa primeiro.");
       return;
     }
 
     setIsAnalyzing(true);
-    setAnalysisStep('Analisando ferida com Inteligência Artificial...');
+    setAnalysisStep('Analisando queixa com Inteligência Artificial...');
 
-    // Compilar todas as respostas do formulário clínico estruturado para enviar ao Gemini
-    const fullSymptoms = `Tipo da Ferida: ${woundType}. Local Anatômico: ${anatomicalLocation}. Data de Aparecimento: ${appearanceDate}. Estágio: ${lesionStage}. Temperatura Local: ${localTemperature}. Sinais de Infecção: ${infectionSigns}. Cobertura Utilizada: ${appliedDressing}. Quantidade: ${dressingQuantity}. Frequência de Troca: ${dressingFrequency}. Procedimentos: ${performedProcedures}. Evolução Clínica: ${clinicalEvolution}. Sintomas adicionais: ${symptomsText}`;
+    const fullSymptoms = `Tipo/Queixa da Pele: ${woundType}. Local Anatômico: ${anatomicalLocation}. Data de Aparecimento: ${appearanceDate}. Estágio: ${lesionStage}. Temperatura Local: ${localTemperature}. Sinais de Infecção: ${infectionSigns}. Cobertura Utilizada: ${appliedDressing}. Quantidade: ${dressingQuantity}. Frequência de Troca: ${dressingFrequency}. Procedimentos: ${performedProcedures}. Evolução Clínica: ${clinicalEvolution}. Sintomas adicionais: ${symptomsText}`;
 
-    // 1. Try real Gemini API analysis
+    // Try real Gemini API analysis
     const realResult = await analyzeWoundWithAI(photoFile, clinicalProfile, fullSymptoms);
     if (realResult) {
       setIsAnalyzing(false);
       setAnalysisStep('');
       setResult(realResult);
       
-      // Auto-fill state values from AI response
       if (realResult.type) setWoundType(realResult.type);
       if (realResult.lesionStage) setLesionStage(realResult.lesionStage);
       if (realResult.clinicalEvolution) setClinicalEvolution(realResult.clinicalEvolution);
@@ -312,133 +290,11 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
       return;
     }
 
-    // 2. Fallback to mock scenarios if API key is not configured
-    setAnalysisStep('Gemini (Simulado)');
-    
-    setTimeout(() => {
-      setAnalysisStep('Med-PaLM (Simulado)');
-      
-      setTimeout(() => {
-        setIsAnalyzing(false);
-        setAnalysisStep('');
-        
-        let mockResult;
-
-        if (demoScenario === 'venosa') {
-          mockResult = {
-            date: new Date().toLocaleDateString('pt-BR'),
-            type: 'Úlcera Venosa Estável',
-            lesionStage: 'Estágio II',
-            severity: 'Leve (Grau I/II)',
-            exudate: exudate.toUpperCase(),
-            painLevel: pain,
-            hasOdor: odor ? 'SIM' : 'NÃO',
-            complicationRisk: 'Baixo',
-            isRedirect: false,
-            geminiSummary: `Paciente com queixa de dor nível ${pain} e exsudato ${exudate}.`,
-            medPalmDiagnosis: `Lesão com 80% de tecido de granulação saudável e 20% de esfacelo na borda superior.`,
-            treatmentPlan: [
-              'Limpar o leito com soro fisiológico morno sob pressão leve.',
-              'Aplicar Hidrogel amorfo nas áreas de esfacelo.',
-              'Proteger a perilesão com creme barreira Cavilon.'
-            ],
-            aiAreaCm2: 12.5,
-            aiLengthCm: 5.0,
-            aiWidthCm: 2.5,
-            aiTissueAnalysis: { necrose: 0, fibrina: 20, granulacao: 80, epitelizacao: 0 },
-            aiRecommendation: 'Limpar com soro fisiológico e aplicar Hidrogel com alginato para absorção média.',
-            clinicalEvolution: 'Estável'
-          };
-        } else if (demoScenario === 'queimadura') {
-          mockResult = {
-            date: new Date().toLocaleDateString('pt-BR'),
-            type: 'Suspeita de Queimadura de 3º Grau',
-            lesionStage: 'Estágio IV',
-            severity: 'GRAVE (CRÍTICO)',
-            exudate: 'ALTO',
-            painLevel: pain,
-            hasOdor: odor ? 'SIM' : 'NÃO',
-            complicationRisk: 'Muito Alto',
-            isRedirect: true,
-            specialist: 'Centro de Tratamento de Queimados (CTQ) / Cirurgião Plástico',
-            reason: 'Perda total da espessura da pele com exposição de tecido subcutâneo.',
-            geminiSummary: `Queimadura profunda.`,
-            medPalmDiagnosis: 'Dano térmico profundo. Exige desbridamento cirúrgico e hidratação sistêmica.',
-            treatmentPlan: [
-              'Cobrir frouxamente com uma gaze estéril úmida.',
-              'Encaminhar-se imediatamente para o pronto-socorro.'
-            ],
-            aiAreaCm2: 25.0,
-            aiLengthCm: 8.0,
-            aiWidthCm: 4.5,
-            aiTissueAnalysis: { necrose: 40, fibrina: 0, granulacao: 0, epitelizacao: 0 },
-            aiRecommendation: 'Encaminhamento urgente. Não aplicar pomadas caseiras.',
-            clinicalEvolution: 'Piorou'
-          };
-        } else if (demoScenario === 'diabetico_infectado') {
-          mockResult = {
-            date: new Date().toLocaleDateString('pt-BR'),
-            type: 'Úlcera de Pé Diabético Infectada',
-            lesionStage: 'Estágio III',
-            severity: 'ALTO RISCO (WAGNER GRAU III)',
-            exudate: 'ALTO (PURULENTO)',
-            painLevel: pain,
-            hasOdor: 'SIM',
-            complicationRisk: 'Altíssimo',
-            isRedirect: true,
-            specialist: 'Cirurgião Vascular / Ambulatório de Pé Diabético',
-            reason: `Pé diabético ativo com dor de nível ${pain} e sinais flogísticos locais (calor, rubor e pus).`,
-            geminiSummary: `Pé diabético infectado.`,
-            medPalmDiagnosis: 'Úlcera plantar infectada. Celulite associada. Risco crítico de osteomielite.',
-            treatmentPlan: [
-              'Lavar apenas com soro fisiológico morno, sem esfregar.',
-              'Procurar imediatamente o pronto-atendimento.'
-            ],
-            aiAreaCm2: 8.5,
-            aiLengthCm: 3.2,
-            aiWidthCm: 2.8,
-            aiTissueAnalysis: { necrose: 20, fibrina: 30, granulacao: 40, epitelizacao: 10 },
-            aiRecommendation: 'Encaminhamento urgente para desbridamento e antibioticoterapia.',
-            clinicalEvolution: 'Piorou'
-          };
-        } else {
-          mockResult = {
-            date: new Date().toLocaleDateString('pt-BR'),
-            type: 'Laceração Superficial Limpa',
-            lesionStage: 'Estágio I',
-            severity: 'Leve (Grau I)',
-            exudate: 'NULO',
-            painLevel: pain,
-            hasOdor: 'NÃO',
-            complicationRisk: 'Mínimo',
-            isRedirect: false,
-            geminiSummary: 'Corte linear superficial.',
-            medPalmDiagnosis: 'Lesão epidérmica simples com bordas bem coaptadas.',
-            treatmentPlan: [
-              'Lavar o local com água limpa e sabão neutro.',
-              'Aplicar curativo adesivo respirável.'
-            ],
-            aiAreaCm2: 2.0,
-            aiLengthCm: 2.0,
-            aiWidthCm: 0.5,
-            aiTissueAnalysis: { necrose: 0, fibrina: 0, granulacao: 0, epitelizacao: 100 },
-            aiRecommendation: 'Limpeza simples e curativo protetor.',
-            clinicalEvolution: 'Melhorou'
-          };
-        }
-        
-        setResult(mockResult);
-        
-        // Auto-fill state values from simulated response
-        if (mockResult.type) setWoundType(mockResult.type);
-        if (mockResult.lesionStage) setLesionStage(mockResult.lesionStage);
-        if (mockResult.clinicalEvolution) setClinicalEvolution(mockResult.clinicalEvolution);
-        
-        setSelectedHotspot(null);
-      }, 2500);
-    }, 2000);
+    // Real API Error/Offline fallback instead of fake simulation
+    setIsAnalyzing(false);
+    setAnalysisStep('');
+    alert("O serviço de análise clínica por Inteligência Artificial (Gemini) está offline ou não foi configurado. Por favor, verifique a chave de API nas configurações do sistema.");
   };
-
 
   const handleSaveAndFinish = async () => {
     if (result) {
@@ -564,37 +420,7 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
                 <span style={{ fontSize: '10px', fontWeight: '700', marginTop: '4px' }}>Adicionar</span>
               </div>
 
-              {/* Webcam Simulation Button */}
-              <div 
-                onClick={handleWebcamSimulate}
-                style={{
-                  width: '90px',
-                  height: '90px',
-                  borderRadius: '12px',
-                  border: '2px dashed var(--border-color)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  backgroundColor: 'var(--bg-secondary)',
-                  color: 'var(--text-secondary)',
-                  transition: 'all 0.2s ease',
-                  textAlign: 'center',
-                  padding: '4px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--primary)';
-                  e.currentTarget.style.backgroundColor = 'var(--primary-glow)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
-                }}
-              >
-                <span style={{ fontSize: '18px' }}>📷</span>
-                <span style={{ fontSize: '9px', fontWeight: '700', marginTop: '4px', lineHeight: '1.2' }}>Simular Câmera</span>
-              </div>
+
 
               {/* Render Selected Attachments */}
               {attachments.map((fileObj, idx) => {
@@ -960,29 +786,9 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
 
             </div>
           )}
-
-          {/* Test fallback selector if Gemini not configured (minimized style) */}
-          {!isGeminiConfigured && (
-            <div className="glass-card" style={{ backgroundColor: 'var(--primary-glow)', borderColor: 'var(--primary-light)', margin: 0, padding: '10px' }}>
-              <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                Simulador Offline Ativo (Selecione o caso de teste)
-              </label>
-              <select 
-                value={demoScenario} 
-                onChange={(e) => setDemoScenario(e.target.value)}
-                style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px', fontWeight: '600' }}
-              >
-                <option value="venosa">Simular Caso 1: Úlcera Venosa (Baixo Risco)</option>
-                <option value="corte">Simular Caso 2: Corte Superficial Limpo (Baixo Risco)</option>
-                <option value="queimadura">Simular Caso 3: Queimadura 3º Grau (CRÍTICO)</option>
-                <option value="diabetico_infectado">Simular Caso 4: Pé Diabético com Infecção (CRÍTICO)</option>
-              </select>
-            </div>
-          )}
-
           <button 
             className="btn btn-primary" 
-            onClick={handleSimulateAnalysis}
+            onClick={handleStartAnalysis}
             style={{ width: '100%', height: '50px', fontSize: '14.5px' }}
           >
             Iniciar Análise Clínica com IA

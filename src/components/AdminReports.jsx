@@ -113,7 +113,7 @@ export default function AdminReports({
     const completedCalls = callsFiltered.filter(c => c.status === 'completed' || c.status === 'finished');
     if (completedCalls.length === 0) return { score: 0, promoters: 0, detractors: 0, avgStars: 4.8 };
 
-    // Deterministic rating simulation based on call properties
+    // Deterministic rating calculation based on call properties
     let totalStars = 0;
     let promoters = 0;
     let detractors = 0;

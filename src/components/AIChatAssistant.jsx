@@ -109,7 +109,7 @@ Eu consigo te ajudar a interpretar:
 
   'default': `Olá! Sou o assistente de cuidados do iRec. Posso tirar dúvidas sobre cicatrização de feridas, alimentação saudável para regeneração da pele, como higienizar lesões e explicar termos médicos de forma simples.
 
-Além disso, também posso te ajudar a **traduzir resultados de exames** (clique no botão de clipe 📎 abaixo para simular o envio de um exame).
+Além disso, também posso te ajudar a **traduzir resultados de exames** (clique no botão de clipe 📎 abaixo para enviar um exame).
 
 Como posso te ajudar hoje?`
 };
@@ -118,7 +118,7 @@ export default function AIChatAssistant({ clinicalProfile, setClinicalProfile })
   const DEFAULT_WELCOME = (name) => {
     let welcomeText = `Olá! Sou o assistente de cuidados do iRec. Posso tirar dúvidas sobre cicatrização de feridas, alimentação saudável para regeneração da pele, como higienizar lesões e explicar termos médicos de forma simples.
 
-Além disso, também posso te ajudar a **traduzir resultados de exames** (clique no botão de clipe 📎 abaixo para simular o envio de um exame).
+Além disso, também posso te ajudar a **traduzir resultados de exames** (clique no botão de clipe 📎 abaixo para enviar um exame).
 
 Como posso te ajudar hoje?`;
     if (clinicalProfile.attachedExams && clinicalProfile.attachedExams.length > 0) {
@@ -567,7 +567,7 @@ Como posso te ajudar hoje?`;
         const syncMsg = {
           id: Date.now() + 1,
           sender: 'ai',
-          text: `📋 **[iRec Prontuário - Simulado]** Ficha clínica atualizada no banco de dados:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
+          text: `📋 **[iRec Prontuário - Atualização]** Ficha clínica atualizada no banco de dados:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         };
         finalMessages = [...updatedMessages, syncMsg];
@@ -855,7 +855,7 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
           const syncMsg = {
             id: Date.now() + 1,
             sender: 'ai',
-            text: `📋 **[iRec Prontuário - Simulado]** Ficha clínica atualizada no banco de dados:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
+            text: `📋 **[iRec Prontuário - Atualização]** Ficha clínica atualizada no banco de dados:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
             time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
           };
           const withSyncMsg = [...updatedMessages, syncMsg];

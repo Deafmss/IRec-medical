@@ -3006,7 +3006,7 @@ export default function DoctorDashboard({
                 autoFocus
               />
               <span style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center', marginTop: '2px' }}>
-                Dica: O PIN padrão do certificado digital simulado é <strong>1234</strong>
+                Dica: O PIN padrão do certificado digital é <strong>1234</strong>
               </span>
             </div>
 

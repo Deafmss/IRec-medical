@@ -3,7 +3,7 @@ import { getLocalHealthcareResources, getRecommendedMaterials, getAssignedDoctor
 import { generatePersonalizedProtocol, isGeminiConfigured } from '../services/geminiService';
 
 // Client-side rule-based fallback generator in case Gemini fails or is offline
-function generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician = false) {
+function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician = false) {
   const woundType = latestWoundEntry?.type || (clinicalProfile.hasDiabetes ? 'Pé Diabético' : clinicalProfile.hasVenousInsufficiency ? 'Úlcera Venosa' : 'Lesão Cutânea');
   
   if (isClinician) {
@@ -265,7 +265,7 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
         console.log("Generating personalized clinical protocol via Gemini...");
         const result = await generatePersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
         
-        const finalProtocol = result || generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
+        const finalProtocol = result || generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
         setAiProtocol(finalProtocol);
         
         // Cache the result along with the profile properties
@@ -288,8 +288,8 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
         localStorage.setItem(cacheKey, JSON.stringify(cacheData));
       } catch (err) {
         console.error("Failed to generate protocol:", err);
-        const simulated = generateSimulatedPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
-        setAiProtocol(simulated);
+        const defaultProtocol = generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
+        setAiProtocol(defaultProtocol);
       } finally {
         setLoading(false);
       }
