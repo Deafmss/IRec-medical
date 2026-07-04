@@ -1163,8 +1163,8 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     return (
       <div style={{
         position: 'fixed',
-        bottom: '24px',
-        right: '24px',
+        bottom: isMobile ? '88px' : '24px',
+        right: isMobile ? '16px' : '24px',
         zIndex: 99999,
         fontFamily: 'var(--font-primary)'
       }}>

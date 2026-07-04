@@ -23,6 +23,7 @@ export default function App() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showMobileMoreMenu, setShowMobileMoreMenu] = useState(false);
   const [activeCallSession, setActiveCallSession] = useState(null);
   const [telemedicineContactId, setTelemedicineContactId] = useState(null);
   const [unreadChatMessagesCount, setUnreadChatMessagesCount] = useState(0);
@@ -888,6 +889,82 @@ export default function App() {
         />
       </main>
 
+      {/* Mobile More Menu slide-up drawer */}
+      {showMobileMoreMenu && currentUser && currentUser.role === 'patient' && (
+        <div style={{
+          position: 'fixed',
+          bottom: '80px',
+          left: '12px',
+          right: '12px',
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1.5px solid var(--border-color)',
+          borderRadius: '16px',
+          padding: '16px',
+          boxShadow: 'var(--shadow-lg)',
+          zIndex: 9999,
+          backdropFilter: 'blur(20px)',
+          animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Serviços iRec</span>
+            <button 
+              onClick={() => setShowMobileMoreMenu(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '18px', cursor: 'pointer', padding: 0 }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', textAlign: 'center' }}>
+            
+            {/* Assistente IA */}
+            <div 
+              onClick={() => { setActiveTab('chat'); setShowMobileMoreMenu(false); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', borderRadius: '12px', backgroundColor: activeTab === 'chat' ? 'var(--primary-glow)' : 'var(--bg-primary)', border: activeTab === 'chat' ? '1.5px solid var(--primary-light)' : '1px solid var(--border-color)', cursor: 'pointer' }}
+            >
+              <span style={{ fontSize: '20px' }}>💬</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: activeTab === 'chat' ? 'var(--primary)' : 'var(--text-primary)' }}>Suporte IA</span>
+            </div>
+
+            {/* Médicos */}
+            <div 
+              onClick={() => { setActiveTab('doctors_directory'); setShowMobileMoreMenu(false); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', borderRadius: '12px', backgroundColor: activeTab === 'doctors_directory' ? 'var(--primary-glow)' : 'var(--bg-primary)', border: activeTab === 'doctors_directory' ? '1.5px solid var(--primary-light)' : '1px solid var(--border-color)', cursor: 'pointer' }}
+            >
+              <span style={{ fontSize: '20px' }}>👨‍⚕️</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: activeTab === 'doctors_directory' ? 'var(--primary)' : 'var(--text-primary)' }}>Médicos</span>
+            </div>
+
+            {/* Enfermeiros */}
+            <div 
+              onClick={() => { setActiveTab('nurses'); setShowMobileMoreMenu(false); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', borderRadius: '12px', backgroundColor: activeTab === 'nurses' ? 'var(--primary-glow)' : 'var(--bg-primary)', border: activeTab === 'nurses' ? '1.5px solid var(--primary-light)' : '1px solid var(--border-color)', cursor: 'pointer' }}
+            >
+              <span style={{ fontSize: '20px' }}>🩺</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: activeTab === 'nurses' ? 'var(--primary)' : 'var(--text-primary)' }}>Enfermagem</span>
+            </div>
+
+            {/* Histórico */}
+            <div 
+              onClick={() => { setActiveTab('history'); setShowMobileMoreMenu(false); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', borderRadius: '12px', backgroundColor: activeTab === 'history' ? 'var(--primary-glow)' : 'var(--bg-primary)', border: activeTab === 'history' ? '1.5px solid var(--primary-light)' : '1px solid var(--border-color)', cursor: 'pointer' }}
+            >
+              <span style={{ fontSize: '20px' }}>📅</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: activeTab === 'history' ? 'var(--primary)' : 'var(--text-primary)' }}>Histórico</span>
+            </div>
+
+            {/* Documentos */}
+            <div 
+              onClick={() => { setActiveTab('documents'); setShowMobileMoreMenu(false); }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', borderRadius: '12px', backgroundColor: activeTab === 'documents' ? 'var(--primary-glow)' : 'var(--bg-primary)', border: activeTab === 'documents' ? '1.5px solid var(--primary-light)' : '1px solid var(--border-color)', cursor: 'pointer' }}
+            >
+              <span style={{ fontSize: '20px' }}>📄</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: activeTab === 'documents' ? 'var(--primary)' : 'var(--text-primary)' }}>Documentos</span>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* 
          4. MOBILE NAVIGATION (Bottom Bar)
          Visible only on mobile widths via CSS
@@ -972,7 +1049,7 @@ export default function App() {
           <>
             <button 
               className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => { setActiveTab('dashboard'); setShowMobileMoreMenu(false); }}
             >
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -982,7 +1059,7 @@ export default function App() {
 
             <button 
               className={`nav-item ${activeTab === 'upload' ? 'active' : ''}`}
-              onClick={() => setActiveTab('upload')}
+              onClick={() => { setActiveTab('upload'); setShowMobileMoreMenu(false); }}
             >
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
@@ -992,28 +1069,8 @@ export default function App() {
             </button>
 
             <button 
-              className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`}
-              onClick={() => setActiveTab('chat')}
-            >
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.028z" />
-              </svg>
-              Suporte
-            </button>
-
-            <button 
-              className={`nav-item ${activeTab === 'doctors_directory' ? 'active' : ''}`}
-              onClick={() => setActiveTab('doctors_directory')}
-            >
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-              </svg>
-              Médicos
-            </button>
-
-            <button 
               className={`nav-item ${activeTab === 'telemedicine' ? 'active' : ''}`}
-              onClick={() => setActiveTab('telemedicine')}
+              onClick={() => { setActiveTab('telemedicine'); setShowMobileMoreMenu(false); }}
               style={{ position: 'relative' }}
             >
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1043,33 +1100,13 @@ export default function App() {
             </button>
 
             <button 
-              className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
-              onClick={() => setActiveTab('history')}
+              className={`nav-item ${showMobileMoreMenu ? 'active' : ''}`}
+              onClick={() => setShowMobileMoreMenu(prev => !prev)}
             >
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6v7.5c0 .414.336.75.75.75h15a.75.75 0 0 0 .75-.75V6m-16.5 0v7.5m16.5-7.5v7.5M3.75 6h16.5M3.75 13.5h16.5M7.5 10.5h9m-9 3H12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
-              Histórico
-            </button>
-
-            <button 
-              className={`nav-item ${activeTab === 'documents' ? 'active' : ''}`}
-              onClick={() => setActiveTab('documents')}
-            >
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-              </svg>
-              Documentos
-            </button>
-
-            <button 
-              className={`nav-item ${activeTab === 'nurses' ? 'active' : ''}`}
-              onClick={() => setActiveTab('nurses')}
-            >
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.089 20c-3.14 0-6.02-1.268-8.125-3.327a4.125 4.125 0 0 1 6.9-4.127 12.306 12.306 0 0 0 5.122 1.306c.71 0 1.38-.086 2.022-.249M15 19.128V19m-4.5-9.128a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM18.75 9a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-              </svg>
-              Enfermeiros
+              Mais
             </button>
           </>
         )}
@@ -1182,6 +1219,10 @@ export default function App() {
             @keyframes ripple {
               0% { transform: scale(1); opacity: 0.8; }
               100% { transform: scale(1.8); opacity: 0; }
+            }
+            @keyframes slideUp {
+              from { transform: translateY(15px); opacity: 0; }
+              to { transform: translateY(0); opacity: 1; }
             }
           `}</style>
         </div>
