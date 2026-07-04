@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Dashboard from './components/Dashboard';
 import UploadWound from './components/UploadWound';
 import WoundHistory from './components/WoundHistory';
@@ -31,6 +31,12 @@ export default function App() {
 
   const isAdmin = currentUser && currentUser.email === 'admin@irec.com';
 
+  // Create a ref to store activeCallSession to prevent recreating the BroadcastChannel and interval on every session change
+  const activeCallSessionRef = useRef(activeCallSession);
+  useEffect(() => {
+    activeCallSessionRef.current = activeCallSession;
+  }, [activeCallSession]);
+
   // Global incoming call listener (polling + BroadcastChannel)
   useEffect(() => {
     if (!currentUser) return;
@@ -44,7 +50,8 @@ export default function App() {
     };
 
     const handleCallStatusUpdate = (callId, status) => {
-      if (activeCallSession && activeCallSession.id.toString() === callId.toString()) {
+      const activeSess = activeCallSessionRef.current;
+      if (activeSess && activeSess.id.toString() === callId.toString()) {
         if (status === 'ended' || status === 'rejected') {
           setActiveCallSession(null);
         } else if (status === 'accepted') {
@@ -66,12 +73,13 @@ export default function App() {
 
     // Polling for cross-device incoming calls
     const interval = setInterval(async () => {
-      if (activeCallSession) {
-        const statusCheck = await checkCallStatus(activeCallSession.id);
+      const activeSess = activeCallSessionRef.current;
+      if (activeSess) {
+        const statusCheck = await checkCallStatus(activeSess.id);
         if (statusCheck) {
           if (statusCheck.status === 'ended' || statusCheck.status === 'rejected') {
             setActiveCallSession(null);
-          } else if (statusCheck.status !== activeCallSession.status) {
+          } else if (statusCheck.status !== activeSess.status) {
             setActiveCallSession(statusCheck);
           }
         }
@@ -87,7 +95,7 @@ export default function App() {
       clearInterval(interval);
       if (chatChannel) chatChannel.close();
     };
-  }, [currentUser, activeCallSession]);
+  }, [currentUser]);
   
   // Theme state: defaults to light theme (initialized lazily from local cache)
   const [theme, setTheme] = useState(() => {

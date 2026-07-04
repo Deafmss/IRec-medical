@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { updateClinicalProfile, uploadAvatar } from '../services/supabaseService';
 
 const ALL_SPECIALTIES = [
