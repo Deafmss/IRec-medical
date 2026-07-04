@@ -188,34 +188,98 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
   const [clinicalOutcome, setClinicalOutcome] = useState('Tratamento em andamento');
   const [showClinicalDetails, setShowClinicalDetails] = useState(false);
   
-  const fileInputRef = useRef(null);
+  const attachmentsInputRef = useRef(null);
+  const [attachments, setAttachments] = useState([]);
+  const [patientComplaintType, setPatientComplaintType] = useState('vermelhidao');
+
+  // Auto-sync simple lay complaints to technical fields behind the scenes
+  useEffect(() => {
+    switch (patientComplaintType) {
+      case 'vermelhidao':
+        setWoundType('Outras (Vermelhidão/Eritema)');
+        setLesionStage('Estágio I');
+        break;
+      case 'superficial':
+        setWoundType('Ferida Superficial');
+        setLesionStage('Estágio II');
+        break;
+      case 'frieira':
+        setWoundType('Frieira/Micose/Coceira');
+        setLesionStage('Estágio I');
+        break;
+      case 'profunda':
+        setWoundType('Ferida Profunda/Corte');
+        setLesionStage('Estágio III');
+        break;
+      case 'queimadura':
+        setWoundType('Queimadura');
+        setLesionStage('Estágio II');
+        break;
+      default:
+        setWoundType('Outras');
+        setLesionStage('Estágio I');
+    }
+  }, [patientComplaintType]);
 
   // Visual Map Interactive State
   const [selectedHotspot, setSelectedHotspot] = useState(null);
 
-  const handlePhotoSelect = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+
+
+  const handleAttachmentsChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    const newAttachments = files.map(file => ({
+      file,
+      url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+    }));
+
+    setAttachments(prev => {
+      const updated = [...prev, ...newAttachments];
+      // Automatically keep the first image file as the primary photoFile for AI analysis
+      const firstImage = updated.find(att => att.file.type.startsWith('image/'));
+      if (firstImage) {
+        setImage(firstImage.url);
+        setPhotoFile(firstImage.file);
+      } else {
+        setImage(null);
+        setPhotoFile(null);
+      }
+      return updated;
+    });
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setPhotoFile(file);
-      setImage(URL.createObjectURL(file));
-    }
+  const handleRemoveAttachment = (indexToRemove) => {
+    setAttachments(prev => {
+      const updated = prev.filter((_, idx) => idx !== indexToRemove);
+      const firstImage = updated.find(att => att.file.type.startsWith('image/'));
+      if (firstImage) {
+        setImage(firstImage.url);
+        setPhotoFile(firstImage.file);
+      } else {
+        setImage(null);
+        setPhotoFile(null);
+      }
+      return updated;
+    });
   };
 
   const handleWebcamSimulate = (e) => {
-    e.stopPropagation(); // Prevent triggering file upload
+    e.stopPropagation();
     setIsAnalyzing(true);
     setAnalysisStep('Iniciando Câmera...');
     setTimeout(() => {
       setIsAnalyzing(false);
-      // Set a mock image path for webcam simulation
-      setImage('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&auto=format&fit=crop&q=60');
-      setPhotoFile(null); // No local file, will use the fallback URL
+      const mockUrl = 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&auto=format&fit=crop&q=60';
+      const mockFileObj = {
+        file: { name: 'Foto_Webcam_Capturada.jpg', type: 'image/jpeg' },
+        url: mockUrl
+      };
+      setAttachments(prev => {
+        const updated = [...prev, mockFileObj];
+        setImage(mockUrl);
+        setPhotoFile(null);
+        return updated;
+      });
       alert("Câmera do Dispositivo Simulada:\n\nImagem capturada com sucesso com foco e iluminação calibrados pelo iRec!");
     }, 1200);
   };
@@ -423,6 +487,8 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
       setExudate('moderado');
       setOdor(false);
       setSymptomsText('');
+      setAttachments([]);
+      setPatientComplaintType('vermelhidao');
       
       // Reset new states
       setWoundType('Úlcera Venosa');
@@ -445,83 +511,176 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
 
   return (
     <div className="animate-fade-in" style={{ width: '100%' }}>
-      <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', fontWeight: '700', marginBottom: '18px' }}>Nova Avaliação de Lesão</h2>
+      <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', fontWeight: '700', marginBottom: '18px' }}>Nova Avaliação de Pele & Sintomas</h2>
       
       {!isAnalyzing && !result && (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           
-          {/* Card 1: Captura Fotográfica (No topo agora, principal para o paciente) */}
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept="image/*" 
-            style={{ display: 'none' }} 
-          />
+          {/* Card 1: Fotos, Vídeos e Exames do Caso (Uploader Multimodal Avançado) */}
+          <div className="glass-card" style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '700', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '2px' }}>
+              Anexar Arquivos (Imagens, Vídeos ou Exames)
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '-8px' }}>
+              Adicione fotos da lesão/pele, vídeos mostrando a queixa ou PDFs de exames e receitas.
+            </p>
 
-          <div 
-            onClick={handlePhotoSelect}
-            className="glass-card" 
-            style={{ 
-              border: '2px dashed var(--border-color)', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              padding: '30px 16px', 
-              cursor: 'pointer',
-              background: image ? 'rgba(14, 165, 233, 0.02)' : 'var(--glass-bg)',
-              borderColor: image ? 'var(--primary)' : 'var(--border-color)',
-              textAlign: 'center',
-              margin: 0
-            }}
-          >
-            {image ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ width: '120px', height: '120px', borderRadius: '16px', overflow: 'hidden', border: '3px solid var(--primary)', marginBottom: '10px', boxShadow: 'var(--shadow-md)', position: 'relative' }}>
-                  <img 
-                    src={image} 
-                    alt="Pré-visualização da ferida" 
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'cover'
-                    }} 
-                  />
-                  {result && (
-                    <WoundTissueOverlay entry={{ aiTissueAnalysis: result.aiTissueAnalysis }} />
-                  )}
-                </div>
-                <h4 style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '14px' }}>Foto da Ferida Carregada</h4>
-                <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Clique para tirar outra foto ou alterar o arquivo.</p>
+            <input 
+              type="file" 
+              ref={attachmentsInputRef} 
+              onChange={handleAttachmentsChange} 
+              multiple 
+              style={{ display: 'none' }} 
+            />
+
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Add Button */}
+              <div 
+                onClick={() => attachmentsInputRef.current?.click()}
+                style={{
+                  width: '90px',
+                  height: '90px',
+                  borderRadius: '12px',
+                  border: '2px dashed var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--primary)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.backgroundColor = 'var(--primary-glow)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                }}
+              >
+                <span style={{ fontSize: '20px', fontWeight: 'bold' }}>+</span>
+                <span style={{ fontSize: '10px', fontWeight: '700', marginTop: '4px' }}>Adicionar</span>
               </div>
-            ) : (
-              <div style={{ width: '100%' }}>
-                <div style={{ display: 'inline-flex', padding: '12px', borderRadius: '50%', backgroundColor: 'rgba(14, 165, 233, 0.08)', color: 'var(--primary)', marginBottom: '8px' }}>
-                  <svg style={{ width: '28px', height: '28px', fill: 'none', stroke: 'currentColor', strokeWidth: '2' }} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                  </svg>
-                </div>
-                <h4 style={{ fontWeight: '700', fontSize: '14.5px' }}>Fotografar ou Carregar Foto da Ferida</h4>
-                <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-                  Posicione a lesão de perto em local bem iluminado
-                </p>
-                <button 
-                  onClick={handleWebcamSimulate}
-                  className="btn btn-secondary" 
-                  style={{ display: 'inline-flex', alignSelf: 'center', padding: '6px 12px', fontSize: '11.5px' }}
-                >
-                  Ativar Câmera do Dispositivo
-                </button>
+
+              {/* Webcam Simulation Button */}
+              <div 
+                onClick={handleWebcamSimulate}
+                style={{
+                  width: '90px',
+                  height: '90px',
+                  borderRadius: '12px',
+                  border: '2px dashed var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--text-secondary)',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'center',
+                  padding: '4px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.backgroundColor = 'var(--primary-glow)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                }}
+              >
+                <span style={{ fontSize: '18px' }}>📷</span>
+                <span style={{ fontSize: '9px', fontWeight: '700', marginTop: '4px', lineHeight: '1.2' }}>Simular Câmera</span>
               </div>
-            )}
+
+              {/* Render Selected Attachments */}
+              {attachments.map((fileObj, idx) => {
+                const isImage = fileObj.file.type?.startsWith('image/');
+                const isVideo = fileObj.file.type?.startsWith('video/');
+                return (
+                  <div key={idx} style={{ position: 'relative', width: '90px', height: '90px', borderRadius: '12px', overflow: 'hidden', border: '1.5px solid var(--border-color)' }}>
+                    {isImage ? (
+                      <img src={fileObj.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="anexo" />
+                    ) : isVideo ? (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', color: '#10b981' }}>
+                        <span style={{ fontSize: '18px' }}>🎥</span>
+                        <span style={{ fontSize: '9px', fontWeight: '700', marginTop: '4px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '80px', textAlign: 'center' }}>Vídeo</span>
+                      </div>
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', color: '#0ea5e9' }}>
+                        <span style={{ fontSize: '18px' }}>📄</span>
+                        <span style={{ fontSize: '9px', fontWeight: '700', marginTop: '4px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '80px', textAlign: 'center' }}>{fileObj.file.name}</span>
+                      </div>
+                    )}
+                    
+                    {/* Delete button */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAttachment(idx)}
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.95)',
+                        border: 'none',
+                        color: '#ffffff',
+                        borderRadius: '50%',
+                        width: '16px',
+                        height: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '9px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Card 2: Sintomas Básicos (Simples para o Paciente) */}
           <div className="glass-card" style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '2px' }}>
-              Como você está se sentindo?
+              Descreva sua Queixa ou Sintoma
             </h3>
+            
+            {/* Simple Lay Complaint Type Selector */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: '6px' }}>
+                O que descreve melhor o que você está sentindo/vendo na pele?
+              </label>
+              <select 
+                value={patientComplaintType} 
+                onChange={(e) => setPatientComplaintType(e.target.value)}
+                style={{ 
+                  width: '100%', 
+                  padding: '10px 12px', 
+                  borderRadius: '8px', 
+                  border: '1px solid var(--border-color)', 
+                  backgroundColor: 'var(--bg-secondary)', 
+                  color: '#ffffff',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="vermelhidao">🔴 Apenas vermelhidão ou inchaço (sem ferida aberta)</option>
+                <option value="superficial">🩹 Ferida superficial, descascado ou ranhura na pele</option>
+                <option value="frieira">🦠 Frieira, coceira ou descamação entre os dedos</option>
+                <option value="profunda">🕳️ Corte profundo ou ferida aberta com profundidade</option>
+                <option value="queimadura">⚡ Queimadura ou bolhas na pele</option>
+                <option value="outro">❓ Outro sintoma ou alteração de pele geral</option>
+              </select>
+            </div>
             
             {/* Pain Scale Selector */}
             <div>
@@ -549,7 +708,7 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
                   onChange={(e) => setOdor(e.target.checked)}
                   style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
                 />
-                <strong>A ferida apresenta cheiro/odor forte?</strong>
+                <strong>Apresenta cheiro/odor forte local?</strong>
               </label>
             </div>
 
