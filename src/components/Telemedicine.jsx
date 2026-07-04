@@ -15,8 +15,11 @@ import {
   getAllNurses,
   getAllDoctors,
   getAllClinicians,
-  getAllReceivedMessages
+  getAllReceivedMessages,
+  sendTranscriptChunk,
+  updateClinicalProfile
 } from '../services/supabaseService';
+import { analyzeTelemedicineTranscript } from '../services/geminiService';
 
 const getDoctorPremiumDetails = (doc) => {
   if (!doc) return null;
@@ -176,6 +179,15 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const [expressMessageText, setExpressMessageText] = useState('');
   const [expressAttachedFile, setExpressAttachedFile] = useState(null);
   const [expressAttachedFileType, setExpressAttachedFileType] = useState(null);
+
+  // Transcription & AI Triage States
+  const [transcripts, setTranscripts] = useState([]);
+  const [safetyAlerts, setSafetyAlerts] = useState([]);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [aiReport, setAiReport] = useState(null);
+  const [activeTabReports, setActiveTabReports] = useState('summary'); // 'summary', 'symptoms', 'prescription'
+  const recognitionRef = useRef(null);
   const expressMessagesEndRef = useRef(null);
 
   // Audio elements for ringtones
@@ -438,6 +450,45 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
             }
           }
         }
+      },
+      (senderRole, text) => {
+        if (callState === 'active') {
+          const newChunk = {
+            role: senderRole,
+            text,
+            timestamp: new Date()
+          };
+          setTranscripts(prev => [...prev, newChunk]);
+
+          if (currentUser.role === 'doctor' && senderRole === 'patient') {
+            const lowerText = text.toLowerCase();
+            const redFlags = [
+              { term: 'febre', alertText: 'Paciente mencionou febre. Monitore temperatura e sinais de infecção.' },
+              { term: 'preto', alertText: 'Mencionou ferida "preta". Risco de necrose ou isquemia.' },
+              { term: 'escuro', alertText: 'Mencionou ferida "escura". Risco de necrose ou isquemia.' },
+              { term: 'escura', alertText: 'Mencionou ferida "escura". Risco de necrose ou isquemia.' },
+              { term: 'pus', alertText: 'Mencionou presença de pus ou secreção purulenta.' },
+              { term: 'secreção amarela', alertText: 'Mencionou secreção amarelada/verde. Possível sinal de infecção.' },
+              { term: 'dor insuportável', alertText: 'Paciente queixa-se de dor extrema ou insuportável.' },
+              { term: 'dor forte', alertText: 'Paciente relatou dor forte na região.' },
+              { term: 'dor no peito', alertText: 'Mencionou dor no peito. Risco cardíaco associado.' },
+              { term: 'infecção', alertText: 'Paciente mencionou o termo "infecção". Verifique sinais flogísticos.' }
+            ];
+
+            redFlags.forEach(flag => {
+              if (lowerText.includes(flag.term)) {
+                setSafetyAlerts(prev => {
+                  if (prev.some(a => a.text === flag.alertText)) return prev;
+                  return [...prev, {
+                    id: Date.now() + Math.random(),
+                    text: flag.alertText,
+                    type: 'warning'
+                  }];
+                });
+              }
+            });
+          }
+        }
       }
     );
 
@@ -520,6 +571,84 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       stopECGAnimation();
     }
   }, [callState]);
+
+  // Manage SpeechRecognition lifecycle based on callState
+  useEffect(() => {
+    if (callState !== 'active') {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {}
+        recognitionRef.current = null;
+      }
+      return;
+    }
+
+    setTranscripts([]);
+    setSafetyAlerts([]);
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn('SpeechRecognition API não suportada neste navegador.');
+      return;
+    }
+
+    const rec = new SpeechRecognition();
+    rec.continuous = true;
+    rec.interimResults = false;
+    rec.lang = 'pt-BR';
+
+    rec.onresult = (event) => {
+      const resultIndex = event.resultIndex;
+      const transcriptText = event.results[resultIndex][0].transcript.trim();
+      
+      if (!transcriptText) return;
+
+      const senderRole = currentUser.role === 'doctor' ? 'doctor' : 'patient';
+      
+      // Add local chunk to local state
+      const newChunk = {
+        role: senderRole,
+        text: transcriptText,
+        timestamp: new Date()
+      };
+      setTranscripts(prev => [...prev, newChunk]);
+
+      // Broadcast chunk to peer
+      sendTranscriptChunk(senderRole, transcriptText);
+    };
+
+    rec.onerror = (event) => {
+      console.warn('Speech recognition error:', event.error);
+    };
+
+    rec.onend = () => {
+      // Auto-restart if call is still active
+      if (callState === 'active' && recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch (e) {
+          // Prevent spamming logs on manual stops
+        }
+      }
+    };
+
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+    } catch (e) {
+      console.warn('Error starting speech recognition:', e);
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {}
+        recognitionRef.current = null;
+      }
+    };
+  }, [callState, currentUser]);
 
   // Scroll chat to bottom
   const scrollToBottom = () => {
@@ -908,13 +1037,115 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
   const endCall = async () => {
     if (!activeCall) return;
-    await updateCallStatus(activeCall.id, 'ended', callDuration);
+    
+    // Stop local media streams immediately
     endMediaStream();
+    
+    // Update call status in database
+    await updateCallStatus(activeCall.id, 'ended', callDuration);
+
+    if (currentUser.role === 'doctor' && transcripts.length > 0) {
+      setShowSummaryModal(true);
+      setIsGeneratingSummary(true);
+      
+      try {
+        const patientProfile = selectedContact;
+        const transcriptText = transcripts.map(t => `${t.role === 'doctor' ? 'Médico' : 'Paciente'}: ${t.text}`).join('\n');
+        
+        const report = await analyzeTelemedicineTranscript(transcriptText, patientProfile || {});
+        setAiReport(report);
+      } catch (err) {
+        console.error("Erro ao analisar transcrição ao encerrar chamada:", err);
+      } finally {
+        setIsGeneratingSummary(false);
+      }
+    } else {
+      // Direct transition to idle for patients or if no speech was captured
+      setCallState('idle');
+      setActiveCall(null);
+      setCallDuration(0);
+      if (setActiveCallSession) {
+        setActiveCallSession(null);
+      }
+    }
+  };
+
+  const discardClinicalSummary = () => {
+    setShowSummaryModal(false);
+    setAiReport(null);
     setCallState('idle');
     setActiveCall(null);
     setCallDuration(0);
     if (setActiveCallSession) {
       setActiveCallSession(null);
+    }
+  };
+
+  const saveClinicalSummary = async () => {
+    try {
+      if (!selectedContact || !aiReport) return;
+
+      let updatedMedications = selectedContact.medications || '';
+      let updatedConditions = selectedContact.otherConditions || '';
+      
+      // 1. Accumulate selected prescriptions
+      const selectedPrescriptions = aiReport.suggestedPrescriptions
+        ?.filter((_, idx) => document.getElementById(`presc-${idx}`)?.checked)
+        .map(p => `${p.name} (${p.dosage})`) || [];
+        
+      if (selectedPrescriptions.length > 0) {
+        const newPrescriptionStr = selectedPrescriptions.join(', ');
+        updatedMedications = updatedMedications 
+          ? `${updatedMedications}, ${newPrescriptionStr}` 
+          : newPrescriptionStr;
+      }
+
+      // 2. Accumulate selected symptoms
+      const selectedSymptoms = aiReport.symptoms
+        ?.filter((_, idx) => document.getElementById(`symp-${idx}`)?.checked)
+        .map(s => `${s.name} (${s.intensity})`) || [];
+
+      if (selectedSymptoms.length > 0) {
+        const newSymptomsStr = `Sintomas em ${new Date().toLocaleDateString('pt-BR')}: ${selectedSymptoms.join(', ')}`;
+        updatedConditions = updatedConditions 
+          ? `${updatedConditions}\n${newSymptomsStr}` 
+          : newSymptomsStr;
+      }
+
+      // 3. Update clinical profile in database
+      const updatedProfile = {
+        ...selectedContact,
+        medications: updatedMedications,
+        otherConditions: updatedConditions
+      };
+      
+      await updateClinicalProfile(selectedContact.id, updatedProfile);
+
+      // 4. Send official evolution note to chat messages
+      const evolutionText = document.getElementById('ai-evolution-text')?.value || aiReport.clinicalEvolution;
+      const formattedChatMsg = `📋 **Evolução de Telemedicina (Resumo IA)**\n\n**Resumo**: ${aiReport.executiveSummary}\n\n**Evolução Clínica**: ${evolutionText}\n\n**Risco Estimado**: ${aiReport.riskLevel}`;
+      
+      const sent = await sendChatMessage(currentUser.id, selectedContact.id, formattedChatMsg, null, null);
+      if (sent) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === sent.id)) return prev;
+          return [...prev, sent];
+        });
+      }
+      
+      alert('Resumo gravado com sucesso no prontuário e enviado ao histórico!');
+    } catch (e) {
+      console.error('Erro ao salvar resumo da consulta:', e);
+      alert('Erro ao gravar prontuário. A consulta foi encerrada.');
+    } finally {
+      setShowSummaryModal(false);
+      setAiReport(null);
+      setCallState('idle');
+      setActiveCall(null);
+      setCallDuration(0);
+      if (setActiveCallSession) {
+        setActiveCallSession(null);
+      }
     }
   };
 
@@ -2675,6 +2906,88 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               )}
             </div>
 
+            {/* Doctor's Transcription & Alerts Side Panel */}
+            {currentUser.role === 'doctor' && (
+              <div style={{
+                width: isMobile ? '100%' : '320px',
+                height: isMobile ? '30%' : '100%',
+                borderLeft: isMobile ? 'none' : '1px solid #1e293b',
+                borderTop: isMobile ? '1px solid #1e293b' : 'none',
+                backgroundColor: '#0f172a',
+                display: 'flex',
+                flexDirection: 'column',
+                color: '#ffffff',
+                zIndex: 15
+              }}>
+                {/* Header */}
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>📝</span>
+                    <span style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Copiloto IA & Transcrição</span>
+                  </div>
+                  <span style={{ fontSize: '10px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }}></span>
+                    Ativo
+                  </span>
+                </div>
+
+                {/* Discrete Safety Alerts */}
+                {safetyAlerts.length > 0 && (
+                  <div style={{ padding: '12px', borderBottom: '1px solid #1e293b', backgroundColor: 'rgba(245, 158, 11, 0.1)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '700' }}>
+                      <span>⚠️</span>
+                      <span>ALERTAS CLÍNICOS DISCRETOS</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {safetyAlerts.map(alert => (
+                        <div key={alert.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '6px 8px', backgroundColor: '#1e293b', borderLeft: '3px solid #f59e0b', borderRadius: '4px' }}>
+                          <span style={{ fontSize: '10px', lineHeight: '1.4', color: '#e2e8f0' }}>{alert.text}</span>
+                          <button 
+                            onClick={() => setSafetyAlerts(prev => prev.filter(a => a.id !== alert.id))}
+                            style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '10px', cursor: 'pointer', padding: '0 0 0 6px', fontWeight: 'bold' }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Transcripts scroll container */}
+                <div style={{ flex: 1, padding: '14px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {transcripts.length === 0 ? (
+                    <div style={{ margin: 'auto', textAlign: 'center', color: '#64748b', fontSize: '11px', padding: '20px' }}>
+                      Reconhecimento de fala iniciado. Transcrevendo diálogo em tempo real...
+                    </div>
+                  ) : (
+                    transcripts.map((t, idx) => {
+                      const isDoctor = t.role === 'doctor';
+                      return (
+                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignSelf: isDoctor ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                          <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', color: isDoctor ? 'var(--primary)' : '#10b981', marginBottom: '2px', textAlign: isDoctor ? 'right' : 'left' }}>
+                            {isDoctor ? 'Médico (Você)' : 'Paciente'}
+                          </span>
+                          <div style={{ 
+                            padding: '8px 12px', 
+                            borderRadius: isDoctor ? '12px 12px 2px 12px' : '12px 12px 12px 2px', 
+                            backgroundColor: isDoctor ? 'rgba(14, 165, 233, 0.12)' : 'rgba(16, 185, 129, 0.1)', 
+                            border: isDoctor ? '1px solid rgba(14, 165, 233, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)', 
+                            color: '#f8fafc', 
+                            fontSize: '11px', 
+                            lineHeight: '1.4',
+                            wordBreak: 'break-word'
+                          }}>
+                            {t.text}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* No clinical monitor - keeping only secure video stream */}
           </div>
 
@@ -2817,6 +3130,294 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               100% { opacity: 0.2; }
             }
           `}</style>
+        </div>
+      )}
+
+      {/* Post-Call AI Summary & Triage Modal for Doctors */}
+      {showSummaryModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(9, 13, 22, 0.85)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          zIndex: 9999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          fontFamily: 'var(--font-primary)'
+        }}>
+          <div style={{
+            maxWidth: '620px',
+            width: '100%',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1.5px solid var(--border-color)',
+            borderRadius: '20px',
+            boxShadow: 'var(--shadow-xl)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '90vh'
+          }}>
+            {isGeneratingSummary ? (
+              <div style={{ padding: '50px 30px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <div style={{
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '50%',
+                  border: '3px solid rgba(14, 165, 233, 0.1)',
+                  borderTopColor: 'var(--primary)',
+                  animation: 'spin 1s linear infinite'
+                }} />
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '800', fontFamily: 'var(--font-display)', color: '#ffffff' }}>
+                    Processando Áudio da Consulta
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5', maxWidth: '400px' }}>
+                    A Inteligência Artificial do iRec está analisando a transcrição estruturada para triar sintomas e elaborar sugestões clínicas...
+                  </p>
+                </div>
+              </div>
+            ) : aiReport ? (
+              <>
+                {/* Header */}
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                      Co-piloto Clínico iRec
+                    </span>
+                    <span style={{ 
+                      fontSize: '10px', 
+                      fontWeight: '800', 
+                      padding: '3px 8px', 
+                      borderRadius: '50px', 
+                      backgroundColor: aiReport.riskLevel === 'Leve' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                      color: aiReport.riskLevel === 'Leve' ? '#10b981' : '#f59e0b',
+                      border: aiReport.riskLevel === 'Leve' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)'
+                    }}>
+                      {aiReport.riskLevel}
+                    </span>
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', fontFamily: 'var(--font-display)', color: '#ffffff' }}>
+                    Evolução Clínica & Triagem: {selectedContact ? selectedContact.name : 'Paciente'}
+                  </h3>
+                </div>
+
+                {/* Navigation Tabs */}
+                <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', padding: '0 16px' }}>
+                  <button 
+                    onClick={() => setActiveTabReports('summary')}
+                    style={{
+                      flex: 1,
+                      padding: '12px 6px',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: activeTabReports === 'summary' ? '2.5px solid var(--primary)' : '2.5px solid transparent',
+                      color: activeTabReports === 'summary' ? '#ffffff' : 'var(--text-muted)',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Resumo e Evolução
+                  </button>
+                  <button 
+                    onClick={() => setActiveTabReports('symptoms')}
+                    style={{
+                      flex: 1,
+                      padding: '12px 6px',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: activeTabReports === 'symptoms' ? '2.5px solid var(--primary)' : '2.5px solid transparent',
+                      color: activeTabReports === 'symptoms' ? '#ffffff' : 'var(--text-muted)',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Sintomas ({aiReport.symptoms?.length || 0})
+                  </button>
+                  <button 
+                    onClick={() => setActiveTabReports('prescription')}
+                    style={{
+                      flex: 1,
+                      padding: '12px 6px',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: activeTabReports === 'prescription' ? '2.5px solid var(--primary)' : '2.5px solid transparent',
+                      color: activeTabReports === 'prescription' ? '#ffffff' : 'var(--text-muted)',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Prescrição ({aiReport.suggestedPrescriptions?.length || 0})
+                  </button>
+                </div>
+
+                {/* Tab content */}
+                <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {activeTabReports === 'summary' && (
+                    <>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                          Resumo Sintético da Consulta
+                        </span>
+                        <div style={{ padding: '12px 14px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', fontSize: '12px', color: '#e2e8f0', lineHeight: '1.5' }}>
+                          {aiReport.executiveSummary}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                          Evolução Médica Formal (SOAP / Editável)
+                        </span>
+                        <textarea 
+                          id="ai-evolution-text"
+                          defaultValue={aiReport.clinicalEvolution}
+                          style={{
+                            width: '100%',
+                            height: '140px',
+                            padding: '12px 14px',
+                            borderRadius: '12px',
+                            backgroundColor: 'var(--bg-primary)',
+                            border: '1px solid var(--border-color)',
+                            color: '#ffffff',
+                            fontSize: '12px',
+                            lineHeight: '1.5',
+                            resize: 'none',
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {activeTabReports === 'symptoms' && (
+                    <>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '-8px' }}>
+                        Selecione os sintomas para adicionar à ficha do paciente:
+                      </span>
+                      {(!aiReport.symptoms || aiReport.symptoms.length === 0) ? (
+                        <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                          Nenhum sintoma específico detectado na consulta.
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {aiReport.symptoms.map((symp, idx) => (
+                            <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'background-color 0.2s' }}>
+                              <input 
+                                type="checkbox" 
+                                id={`symp-${idx}`} 
+                                defaultChecked={true} 
+                                style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }} 
+                              />
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#ffffff' }}>{symp.name}</span>
+                                <span style={{ fontSize: '10px', color: symp.isWorsening ? '#ef4444' : 'var(--text-muted)', marginTop: '2px' }}>
+                                  Gravidade: {symp.intensity} {symp.isWorsening && '• (Relato de Piora)'}
+                                </span>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {activeTabReports === 'prescription' && (
+                    <>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '-8px' }}>
+                        Selecione os insumos e condutas para sugerir ao paciente:
+                      </span>
+                      {(!aiReport.suggestedPrescriptions || aiReport.suggestedPrescriptions.length === 0) ? (
+                        <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                          Nenhuma indicação de insumo ou medicamento detectada.
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {aiReport.suggestedPrescriptions.map((presc, idx) => (
+                            <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
+                              <input 
+                                type="checkbox" 
+                                id={`presc-${idx}`} 
+                                defaultChecked={true} 
+                                style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }} 
+                              />
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontSize: '12px', fontWeight: '700', color: '#ffffff' }}>{presc.name}</span>
+                                  <span style={{ fontSize: '9px', fontWeight: '800', padding: '2px 6px', borderRadius: '4px', backgroundColor: presc.category === 'Medicamento' ? 'rgba(147,51,234,0.15)' : 'rgba(14,165,233,0.15)', color: presc.category === 'Medicamento' ? '#c084fc' : '#38bdf8' }}>
+                                    {presc.category}
+                                  </span>
+                                </div>
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px' }}>
+                                  Instruções: {presc.dosage}
+                                </span>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Footer Buttons */}
+                <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--bg-primary)' }}>
+                  <button 
+                    onClick={discardClinicalSummary}
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: '50px',
+                      backgroundColor: 'transparent',
+                      border: '1.5px solid var(--border-color)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Descartar Resumo
+                  </button>
+                  <button 
+                    onClick={saveClinicalSummary}
+                    style={{
+                      padding: '10px 22px',
+                      borderRadius: '50px',
+                      backgroundColor: '#10b981',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Confirmar e Gravar Prontuário
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444' }}>
+                Erro de processamento da IA. A gravação do diálogo está indisponível.
+                <div style={{ marginTop: '20px' }}>
+                  <button onClick={discardClinicalSummary} style={{ padding: '8px 16px', borderRadius: '50px', backgroundColor: 'var(--primary)', color: '#ffffff', border: 'none', cursor: 'pointer' }}>
+                    Voltar ao Início
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

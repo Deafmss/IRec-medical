@@ -502,4 +502,87 @@ Retorne o texto formatado estritamente como um documento SOAP em português (PT-
   }
 };
 
+// 6. Telemedicine Transcript Analysis & Clinical Triage
+export const analyzeTelemedicineTranscript = async (transcriptText, clinicalProfile = {}) => {
+  if (!isGeminiConfigured) {
+    return {
+      executiveSummary: "Consulta por telemedicina realizada com sucesso. Paciente relata dor controlada e melhora gradual, mas com secreção leve. Orientado a manter limpeza diária.",
+      symptoms: [
+        { name: "Dor", intensity: "Leve", isWorsening: false },
+        { name: "Secreção", intensity: "Leve", isWorsening: false }
+      ],
+      suggestedPrescriptions: [
+        { name: "Soro Fisiológico 0.9%", dosage: "Limpeza diária", category: "Insumo" },
+        { name: "Hidrogel Amorfo", dosage: "Aplicar fina camada no leito da ferida", category: "Medicamento" }
+      ],
+      clinicalEvolution: "Evolução clínica favorável com tecido de granulação ativo. Presença de esfacelo moderado, sem febre ou sinais inflamatórios extensos.",
+      riskLevel: "Risco Moderado"
+    };
+  }
+
+  try {
+    const systemPrompt = `Você é um assistente médico de alto nível especializado em wound care (tratamento de feridas cutâneas) e telemedicina.
+Sua tarefa é analisar a transcrição de áudio de uma consulta realizada entre um Médico e um Paciente e correlacionar com a ficha clínica do paciente para gerar um prontuário clínico estruturado.
+
+Ficha Clínica do Paciente:
+- Nome: ${clinicalProfile.name || 'Paciente'}
+- Diabetes: ${clinicalProfile.hasDiabetes ? 'Sim' : 'Não'}
+- Hipertensão: ${clinicalProfile.hasHypertension ? 'Sim' : 'Não'}
+- Insuficiência Venosa: ${clinicalProfile.hasVenousInsufficiency ? 'Sim' : 'Não'}
+- Doença Arterial Periférica: ${clinicalProfile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
+
+Transcrição da Consulta:
+"""
+${transcriptText}
+"""
+
+Instruções Clínicas:
+1. Resuma a queixa do paciente e o parecer do médico em um Resumo Executivo conciso.
+2. Identifique os sintomas discutidos (ex: dor, secreção, prurido, febre) e informe a intensidade/gravidade (Leve/Moderada/Severa).
+3. Extraia sugestões de medicamentos ou insumos/curativos recomendados pelo médico ao longo do diálogo.
+4. Redija um texto de Evolução Clínica formal para ser anexado ao prontuário médico.
+5. Classifique o nível de risco da lesão (Leve, Risco Moderado, Alto Risco, Crítico).
+
+Sua resposta deve ser estritamente um objeto JSON puro, sem blocos de código \`\`\`json ou textos adicionais, correspondente a este formato exato:
+{
+  "executiveSummary": "Resumo conciso de 2 ou 3 frases sobre a consulta.",
+  "symptoms": [
+    { "name": "Nome do Sintoma", "intensity": "Leve/Moderada/Severa", "isWorsening": true }
+  ],
+  "suggestedPrescriptions": [
+    { "name": "Nome da Cobertura, Pomada ou Remédio", "dosage": "Instrução de uso/Frequência", "category": "Insumo/Medicamento" }
+  ],
+  "clinicalEvolution": "Texto formal e descritivo de evolução clínica detalhado.",
+  "riskLevel": "Leve/Risco Moderado/Alto Risco/Crítico"
+}`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: systemPrompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    if (!response.ok) throw new Error(`Falha de comunicação com o Gemini: ${response.statusText}`);
+    const result = await response.json();
+    const jsonText = result.candidates[0].content.parts[0].text;
+    return JSON.parse(jsonText);
+  } catch (err) {
+    console.error('Erro na análise da transcrição pelo Gemini:', err);
+    return {
+      executiveSummary: "Erro ao processar análise automática. Transcrição salva para leitura manual.",
+      symptoms: [],
+      suggestedPrescriptions: [],
+      clinicalEvolution: "Erro de processamento da IA. Transcrição bruta: " + transcriptText.substring(0, 200),
+      riskLevel: "Risco Moderado"
+    };
+  }
+};
+
 

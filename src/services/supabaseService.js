@@ -2004,7 +2004,7 @@ export const checkCallStatus = async (callId) => {
   }
 };
 
-export const subscribeToSignalingEvents = (onMessageReceived, onIncomingCall, onCallStatusUpdate) => {
+export const subscribeToSignalingEvents = (onMessageReceived, onIncomingCall, onCallStatusUpdate, onTranscriptChunkReceived) => {
   if (!chatChannel) return () => {};
 
   const listener = (event) => {
@@ -2015,6 +2015,8 @@ export const subscribeToSignalingEvents = (onMessageReceived, onIncomingCall, on
       onIncomingCall(data.call);
     } else if (data.type === 'CALL_STATUS_UPDATE' && onCallStatusUpdate) {
       onCallStatusUpdate(data.callId, data.status, data.duration);
+    } else if (data.type === 'TRANSCRIPT_CHUNK' && onTranscriptChunkReceived) {
+      onTranscriptChunkReceived(data.senderRole, data.text);
     }
   };
 
@@ -2022,6 +2024,16 @@ export const subscribeToSignalingEvents = (onMessageReceived, onIncomingCall, on
   return () => {
     chatChannel.removeEventListener('message', listener);
   };
+};
+
+export const sendTranscriptChunk = (senderRole, text) => {
+  if (chatChannel) {
+    chatChannel.postMessage({
+      type: 'TRANSCRIPT_CHUNK',
+      senderRole,
+      text
+    });
+  }
 };
 
 // Update last seen timestamp for user presence
