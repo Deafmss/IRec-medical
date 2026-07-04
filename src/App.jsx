@@ -89,14 +89,28 @@ export default function App() {
     };
   }, [currentUser, activeCallSession]);
   
-  // Theme state: defaults to light theme
-  const [theme, setTheme] = useState('light');
+  // Theme state: defaults to light theme (initialized lazily from local cache)
+  const [theme, setTheme] = useState(() => {
+    const cached = localStorage.getItem('irec_active_user');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.id) {
+          return localStorage.getItem(`irec-theme-${parsed.id}`) || 'light';
+        }
+      } catch (e) {}
+    }
+    return localStorage.getItem('irec-theme-guest') || 'light';
+  });
 
-  // Load user-specific theme when currentUser changes
+  // Load user-specific theme when currentUser changes asynchronously
   useEffect(() => {
     const themeKey = currentUser ? `irec-theme-${currentUser.id}` : 'irec-theme-guest';
     const savedTheme = localStorage.getItem(themeKey) || 'light';
-    setTheme(prev => prev !== savedTheme ? savedTheme : prev);
+    const t = setTimeout(() => {
+      setTheme(prev => prev !== savedTheme ? savedTheme : prev);
+    }, 0);
+    return () => clearTimeout(t);
   }, [currentUser]);
 
   // Update browser document title with unread count

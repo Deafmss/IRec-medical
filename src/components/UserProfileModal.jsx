@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { updateClinicalProfile, uploadAvatar } from '../services/supabaseService';
 
 const ALL_SPECIALTIES = [
@@ -159,18 +159,6 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
   const h = parseFloat(formData.height);
   const bmi = (w && h) ? (w / (h * h)) : null;
 
-  useEffect(() => {
-    if (bmi) {
-      const shouldBeObese = bmi >= 30;
-      if (formData.isObese !== shouldBeObese) {
-        setFormData(prev => ({
-          ...prev,
-          isObese: shouldBeObese
-        }));
-      }
-    }
-  }, [bmi, formData.isObese]);
-
   const getBmiCategory = (value) => {
     if (!value) return null;
     if (value < 18.5) return { text: 'Abaixo do peso (Desnutrição)', color: 'var(--danger)', bg: 'var(--danger-glow)' };
@@ -270,7 +258,7 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
         hasVenousInsufficiency: formData.hasVenousInsufficiency,
         hasPeripheralArterialDisease: formData.hasPeripheralArterialDisease,
         isSmoker: formData.isSmoker,
-        isObese: formData.isObese,
+        isObese: (bmi !== null) ? (bmi >= 30) : (formData.isObese || false),
         hasAmputationHistory: formData.hasAmputationHistory,
         otherConditions: formData.otherConditions,
         medications: formData.medications,

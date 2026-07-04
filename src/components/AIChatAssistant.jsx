@@ -183,6 +183,15 @@ Como posso te ajudar hoje?`;
       }
     }
     
+    let activeTimer = true;
+
+    const applyThreads = (threadsList, activeId) => {
+      if (activeTimer) {
+        setThreads(threadsList);
+        setActiveThreadId(activeId);
+      }
+    };
+
     if (savedThreads) {
       try {
         const parsed = JSON.parse(savedThreads);
@@ -215,16 +224,20 @@ Como posso te ajudar hoje?`;
             };
           });
 
-          setThreads(cleanThreads);
-          
           const activeExists = cleanThreads.some(t => t.id === savedActiveId);
           const finalActiveId = activeExists ? savedActiveId : cleanThreads[0].id;
-          setActiveThreadId(finalActiveId);
           
-          // Save the repaired clean structure back to localStorage
-          localStorage.setItem(threadKey, JSON.stringify(cleanThreads));
-          localStorage.setItem(activeKey, finalActiveId);
-          return;
+          const timeoutId = setTimeout(() => {
+            applyThreads(cleanThreads, finalActiveId);
+            // Save the repaired clean structure back to localStorage
+            localStorage.setItem(threadKey, JSON.stringify(cleanThreads));
+            localStorage.setItem(activeKey, finalActiveId);
+          }, 0);
+
+          return () => {
+            activeTimer = false;
+            clearTimeout(timeoutId);
+          };
         }
       } catch (e) {
         console.error("Erro ao carregar e reparar conversas salvas:", e);
@@ -245,8 +258,15 @@ Como posso te ajudar hoje?`;
       ],
       updatedAt: Date.now()
     };
-    setThreads([defaultThread]);
-    setActiveThreadId('thread-default');
+
+    const timeoutId = setTimeout(() => {
+      applyThreads([defaultThread], 'thread-default');
+    }, 0);
+
+    return () => {
+      activeTimer = false;
+      clearTimeout(timeoutId);
+    };
   }, [userId]);
 
   const [showHistoryMobile, setShowHistoryMobile] = useState(false);
