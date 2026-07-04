@@ -131,7 +131,7 @@ Nota de Segurança: Seja extremamente conservador com pacientes diabéticos, obe
 };
 
 // 2. Chat Conversation
-export const chatWithAI = async (message, chatHistory, clinicalProfile) => {
+export const chatWithAI = async (message, chatHistory, clinicalProfile, attachedFile = null) => {
   if (!isGeminiConfigured) {
     return null; // Fallback to simulated replies
   }
@@ -199,9 +199,17 @@ Dê respostas concisas, acolhedoras e em parágrafos fáceis de ler no campo 're
       parts: [{ text: systemPrompt }]
     });
 
+    const latestUserPart = { text: message || "Analise o arquivo anexo." };
+    const userParts = [latestUserPart];
+    
+    if (attachedFile) {
+      const filePart = await fileToGenerativePart(attachedFile);
+      userParts.push(filePart);
+    }
+
     formattedHistory.push({
       role: 'user',
-      parts: [{ text: message }]
+      parts: userParts
     });
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {

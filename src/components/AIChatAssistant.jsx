@@ -275,6 +275,8 @@ Como posso te ajudar hoje?`;
   const [showUploadMenu, setShowUploadMenu] = useState(false);
   const messagesEndRef = useRef(null);
   const isSubmittingRef = useRef(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
 
@@ -668,26 +670,63 @@ Como posso te ajudar hoje?`;
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert("O arquivo excede o limite máximo de 15MB.");
+      return;
+    }
+
+    setSelectedFile(file);
+    e.target.value = "";
+  };
+
   const handleSendMessage = async (textToSend) => {
-    if (!textToSend.trim() || isSubmittingRef.current) return;
+    const hasText = !!textToSend.trim();
+    const hasFile = !!selectedFile;
+    if ((!hasText && !hasFile) || isSubmittingRef.current) return;
+    
     isSubmittingRef.current = true;
     const targetThreadId = activeThreadId;
+
+    let msgText = textToSend;
+    let localPreview = null;
+    let fileObj = null;
+    
+    if (selectedFile) {
+      fileObj = selectedFile;
+      const icon = selectedFile.type.startsWith('image/') ? '🖼️' : '📄';
+      const fileLabel = `${icon} ${selectedFile.name}`;
+      msgText = textToSend.trim() ? `${textToSend}\n\n${fileLabel}` : fileLabel;
+      if (selectedFile.type.startsWith('image/')) {
+        try {
+          localPreview = URL.createObjectURL(selectedFile);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      setSelectedFile(null);
+    }
 
     const userMsg = {
       id: Date.now(),
       sender: 'user',
-      text: textToSend,
+      text: msgText,
+      filePreview: localPreview,
+      fileName: fileObj ? fileObj.name : null,
+      fileType: fileObj ? fileObj.type : null,
       time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     };
     
-    // Update thread messages and dynamically update title on first message
     const currentActiveThread = threads.find(t => t.id === targetThreadId) || threads[0];
     const updatedMessages = [...currentActiveThread.messages, userMsg];
     let newTitle = currentActiveThread.title;
     
-    // If it was named "Nova Conversa" or has only the welcome message, change the title to user first query
     if (currentActiveThread.messages.length === 1 || currentActiveThread.title.startsWith('Nova Conversa')) {
-      newTitle = textToSend.substring(0, 24) + (textToSend.length > 24 ? '...' : '');
+      const titleSource = textToSend.trim() ? textToSend : (fileObj ? fileObj.name : 'Arquivo Anexado');
+      newTitle = titleSource.substring(0, 24) + (titleSource.length > 24 ? '...' : '');
     }
 
     const updatedThreads = threads.map(t => 
@@ -699,18 +738,16 @@ Como posso te ajudar hoje?`;
     setInputText('');
     setIsTyping(true);
 
-    // Save user message to database audit log for compliance
     createAuditLog('AI_CHAT_USER_MESSAGE', targetThreadId, {
-      message: textToSend,
+      message: msgText,
       threadTitle: newTitle
     });
 
     // 1. Try real Gemini API response first
-    const realResponse = await chatWithAI(textToSend, updatedMessages, clinicalProfile);
+    const realResponse = await chatWithAI(textToSend, updatedMessages, clinicalProfile, fileObj);
     if (realResponse && typeof realResponse === 'object') {
       setIsTyping(false);
       
-      // Apply the database updates and state sync
       const updatesList = await applyProfileUpdates(realResponse.profileUpdates);
       let finalMessages = updatedMessages;
       if (updatesList && updatesList.length > 0) {
@@ -737,163 +774,101 @@ Como posso te ajudar hoje?`;
       const cleanInput = textToSend.toLowerCase().trim();
       const mockUpdates = {};
       
-      // Analyze and capture comorbidity changes locally for simulator
-      if (cleanInput.includes('diabet') || cleanInput.includes('açúcar') || cleanInput.includes('glicem')) {
-        if (!clinicalProfile.hasDiabetes) {
-          mockUpdates.hasDiabetes = true;
-        }
-      }
-      if (cleanInput.includes('pressão alta') || cleanInput.includes('hiperten') || cleanInput.includes('losartana') || cleanInput.includes('captopril')) {
-        if (!clinicalProfile.hasHypertension) {
-          mockUpdates.hasHypertension = true;
-        }
-      }
-      if (cleanInput.includes('fumo') || cleanInput.includes('cigarro') || cleanInput.includes('fumante')) {
-        if (!clinicalProfile.isSmoker) {
-          mockUpdates.isSmoker = true;
-        }
-      }
-      if (cleanInput.includes('obeso') || cleanInput.includes('obesidade') || cleanInput.includes('acima do peso')) {
-        if (!clinicalProfile.isObese) {
-          mockUpdates.isObese = true;
-        }
-      }
-
-      // Capture active medication mock
-      if (cleanInput.includes('tomo') || cleanInput.includes('uso') || cleanInput.includes('remedio') || cleanInput.includes('medicamento')) {
-        const words = cleanInput.split(' ');
-        const tomoIndex = words.findIndex(w => w === 'tomo' || w === 'uso');
-        if (tomoIndex !== -1 && tomoIndex + 1 < words.length) {
-          const medCandidate = words.slice(tomoIndex + 1, tomoIndex + 3).join(' ');
-          if (medCandidate.length > 3) {
-            mockUpdates.medications = medCandidate;
+      if (fileObj) {
+        response = `Recebi seu arquivo "${fileObj.name}". Sou um assistente de IA em cicatrização e saúde geral. Para laudos complexos de exames, por favor aguarde a análise do seu médico no prontuário.`;
+      } else {
+        if (cleanInput.includes('diabet') || cleanInput.includes('açúcar') || cleanInput.includes('glicem')) {
+          if (!clinicalProfile.hasDiabetes) {
+            mockUpdates.hasDiabetes = true;
           }
         }
-      }
-
-      // Capture allergy mock
-      if (cleanInput.includes('alergia') || cleanInput.includes('alergico') || cleanInput.includes('alérgica')) {
-        if (cleanInput.includes('dipirona')) {
-          mockUpdates.allergies = 'Dipirona';
-        } else if (cleanInput.includes('paracetamol')) {
-          mockUpdates.allergies = 'Paracetamol';
-        } else {
-          mockUpdates.allergies = 'Alergias relatadas no chat';
+        if (cleanInput.includes('pressão alta') || cleanInput.includes('hiperten') || cleanInput.includes('losartana') || cleanInput.includes('captopril')) {
+          if (!clinicalProfile.hasHypertension) {
+            mockUpdates.hasHypertension = true;
+          }
         }
-      }
-
-      // Apply updates and fetch updated status list
-      const updatesList = await applyProfileUpdates(mockUpdates);
-
-      // Match QA response
-      const matchedKey = Object.keys(AI_RESPONSES).find(key => 
-        cleanInput.includes(key.toLowerCase()) || key.toLowerCase().includes(cleanInput)
-      );
-
-      if (matchedKey && matchedKey !== 'default') {
-        response = AI_RESPONSES[matchedKey];
-      } else if (cleanInput.includes('exame') || cleanInput.includes('laudo') || cleanInput.includes('resultado')) {
-        response = `Para me enviar um exame, clique no botão de clipe 📎 ao lado do campo de mensagem. 
-
-Você poderá selecionar um exame de simulação (como Hemograma, Doppler Vascular ou Glicemia) para ver em detalhes como eu posso traduzir a linguagem médica em recomendações simples para sua cicatrização.`;
-      } else if (cleanInput.includes('diabet') || cleanInput.includes('açúcar') || cleanInput.includes('glicem')) {
-        response = `Olá! Percebi que você perguntou sobre diabetes ou glicemia. No seu perfil clínico consta que você é **${(mockUpdates.hasDiabetes || clinicalProfile.hasDiabetes) ? 'Diabético(a)' : 'não cadastrado como Diabético(a)'}**. 
-
-Para pacientes com diabetes, o controle da glicose é o fator número 1 para evitar infecções e acelerar feridas (especialmente nos pés). Recomendo inspecionar os pés diariamente com um espelho, nunca andar descalço e utilizar sabão neutro para lavar a região. Qualquer mancha escura ou secreção amarelada deve ser avaliada de imediato.`;
-      } else if (cleanInput.includes('curativo') || cleanInput.includes('hidrogel') || cleanInput.includes('alginato')) {
-        response = `Sobre insumos e coberturas:
-- O **Hidrogel** é ideal para lesões secas ou com tecidos amarelados (esfacelos), pois promove a umidade e a auto-limpeza sem dor.
-- O **Alginato de Cálcio** é excelente para lesões abertas que secretam muito líquido (exsudato alto), pois ele vira um gel protetor ao sugar a secreção.
-- Placas de **Hidrocolóide** devem ser usadas preferencialmente em feridas limpas e secas, ou para prevenção de lesões por pressão (LPP).
-
-Gostaria de ver o guia de aplicação de algum desses materiais na aba "Guias de Tratamento"?`;
-      } else if (cleanInput.includes('dor de cabeca') || cleanInput.includes('dor de cabeça') || cleanInput.includes('cefaleia')) {
-        const hasDipyroneAllergy = clinicalProfile.allergies?.toLowerCase().includes('dipirona') || mockUpdates.allergies === 'Dipirona';
-        if (hasDipyroneAllergy) {
-          response = `Como você tem **alergia a Dipirona** registrada no seu prontuário, a recomendação segura de autocuidado para dor de cabeça leve é o uso de **Paracetamol** (500mg a 750mg), associado a repouso em local silencioso e hidratação. 
-          
-          Se a dor persistir, for muito forte ("a pior da vida") ou vier acompanhada de náuseas e sensibilidade à luz intensa, procure atendimento médico presencial!`;
-        } else {
-          response = `Para dores de cabeça leves, as opções comuns de autocuidado incluem **Dipirona** (500mg a 1g) ou **Paracetamol** (500mg a 750mg), além de repouso e hidratação.
-          
-          *Aviso de segurança:* Certifique-se de que não tem alergia a esses medicamentos. Se a dor for muito intensa ou não melhorar, evite a automedicação contínua e consulte um médico!`;
+        if (cleanInput.includes('fumo') || cleanInput.includes('cigarro') || cleanInput.includes('fumante')) {
+          if (!clinicalProfile.isSmoker) {
+            mockUpdates.isSmoker = true;
+          }
         }
-      } else {
-        response = `Entendi a sua dúvida sobre "${textToSend}". Como seu assistente de cuidados gerais:
+        if (cleanInput.includes('obeso') || cleanInput.includes('obesidade') || cleanInput.includes('acima do peso')) {
+          if (!clinicalProfile.isObese) {
+            mockUpdates.isObese = true;
+          }
+        }
+
+        if (cleanInput.includes('tomo') || cleanInput.includes('uso') || cleanInput.includes('remedio') || cleanInput.includes('medicamento')) {
+          const words = cleanInput.split(' ');
+          const tomoIndex = words.findIndex(w => w === 'tomo' || w === 'uso');
+          if (tomoIndex !== -1 && tomoIndex + 1 < words.length) {
+            const medCandidate = words.slice(tomoIndex + 1, tomoIndex + 3).join(' ');
+            if (medCandidate.length > 3) {
+              mockUpdates.medications = medCandidate;
+            }
+          }
+        }
+
+        if (cleanInput.includes('alergia') || cleanInput.includes('alergico') || cleanInput.includes('alérgica')) {
+          if (cleanInput.includes('dipirona')) {
+            mockUpdates.allergies = 'Dipirona';
+          } else if (cleanInput.includes('paracetamol')) {
+            mockUpdates.allergies = 'Paracetamol';
+          } else {
+            mockUpdates.allergies = 'Alergias relatadas no chat';
+          }
+        }
+
+        const updatesList = await applyProfileUpdates(mockUpdates);
+
+        const matchedKey = Object.keys(AI_RESPONSES).find(key => 
+          cleanInput.includes(key.toLowerCase()) || key.toLowerCase().includes(cleanInput)
+        );
+
+        if (matchedKey && matchedKey !== 'default') {
+          response = AI_RESPONSES[matchedKey];
+        } else if (cleanInput.includes('exame') || cleanInput.includes('laudo') || cleanInput.includes('resultado')) {
+          response = `Para me enviar um exame ou arquivo, clique no botão de clipe 📎 abaixo e selecione o documento ou imagem do seu dispositivo.`;
+        } else if (cleanInput.includes('diabet') || cleanInput.includes('açúcar') || cleanInput.includes('glicem')) {
+          response = `Olá! Percebi que você perguntou sobre diabetes ou glicemia. No seu perfil clínico consta que você é **${(mockUpdates.hasDiabetes || clinicalProfile.hasDiabetes) ? 'Diabético(a)' : 'não cadastrado como Diabético(a)'}**. 
+
+Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver o guia de aplicação de curativos na aba correspondente?`;
+        } else if (cleanInput.includes('curativo') || cleanInput.includes('hidrogel') || cleanInput.includes('alginato')) {
+          response = `Sobre insumos e coberturas:
+- O **Hidrogel** promove desbridamento autolítico e hidratação.
+- O **Alginato de Cálcio** absorve alto volume de exsudato.`;
+        } else if (cleanInput.includes('dor de cabeca') || cleanInput.includes('dor de cabeça') || cleanInput.includes('cefaleia')) {
+          const hasDipyroneAllergy = clinicalProfile.allergies?.toLowerCase().includes('dipirona') || mockUpdates.allergies === 'Dipirona';
+          if (hasDipyroneAllergy) {
+            response = `Como você tem **alergia a Dipirona** no prontuário, utilize **Paracetamol** como alternativa segura de autocuidado.`;
+          } else {
+            response = `Opções comuns de autocuidado para cefaleia leve incluem **Dipirona** ou **Paracetamol**.`;
+          }
+        } else {
+          response = `Entendi a sua dúvida sobre "${textToSend}". Como seu assistente de cuidados gerais:
 1. Para sintomas leves (resfriados, dores leves), repouse, hidrate-se e evite esforços físicos.
 2. Em caso de feridas, faça a higienização com soro fisiológico morno sob jato leve.
-3. Se surgirem sinais de alerta (febre alta, dor intensa, secreção amarelada abundante com mau cheiro), procure um médico imediatamente.
+3. Se surgirem sinais de alerta (febre alta, dor intensa, secreção abundante), procure um médico.`;
+        }
 
-Sua ficha clínica está atualizada no painel para que o médico acompanhe seu caso de forma precisa. Gostaria de tirar mais alguma dúvida?`;
+        if (updatesList && updatesList.length > 0) {
+          const syncMsg = {
+            id: Date.now() + 1,
+            sender: 'ai',
+            text: `📋 **[iRec Prontuário - Simulado]** Ficha clínica atualizada no banco de dados:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
+            time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          };
+          const withSyncMsg = [...updatedMessages, syncMsg];
+          saveThreads(threads.map(t => t.id === targetThreadId ? { ...t, messages: withSyncMsg } : t));
+        }
       }
 
-      setIsTyping(false);
-      
-      let finalMessages = updatedMessages;
-      if (updatesList && updatesList.length > 0) {
-        const syncMsg = {
-          id: Date.now() + 1,
-          sender: 'ai',
-          text: `📋 **[iRec Prontuário - Simulado]** Ficha clínica atualizada no banco de dados:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
-          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        };
-        finalMessages = [...updatedMessages, syncMsg];
-        saveThreads(threads.map(t => t.id === targetThreadId ? { ...t, messages: finalMessages } : t));
-      }
-
-      streamResponse(response, finalMessages, targetThreadId);
+      streamResponse(response, updatedMessages, targetThreadId);
       isSubmittingRef.current = false;
     }, 1000);
   };
 
-  const handleSimulateExamUpload = async (examKey, fileName) => {
-    setShowUploadMenu(false);
-    const targetThreadId = activeThreadId;
-    
-    // Add user message indicating file attachment
-    const userMsg = {
-      id: Date.now(),
-      sender: 'user',
-      text: `📄 Documento Anexado: ${fileName}`,
-      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    };
-    
-    const currentActiveThread = threads.find(t => t.id === targetThreadId) || threads[0];
-    const updatedMessages = [...currentActiveThread.messages, userMsg];
-    
-    let newTitle = currentActiveThread.title;
-    if (currentActiveThread.messages.length === 1 || currentActiveThread.title.startsWith('Nova Conversa')) {
-      newTitle = `Exame: ${fileName.split('_')[1] || fileName}`;
-    }
 
-    const updatedThreads = threads.map(t => 
-      t.id === targetThreadId 
-        ? { ...t, title: newTitle, messages: updatedMessages, updatedAt: Date.now() } 
-        : t
-    );
-    saveThreads(updatedThreads);
-    setIsTyping(true);
-
-    // Let's call createAuditLog for user upload message!
-    createAuditLog('AI_CHAT_USER_MESSAGE', targetThreadId, {
-      message: userMsg.text,
-      threadTitle: newTitle
-    });
-
-    try {
-      const updatedProfile = await uploadExamFileAndTriage(examKey, null, fileName, clinicalProfile);
-      if (setClinicalProfile) {
-        setClinicalProfile(updatedProfile);
-      }
-    } catch (err) {
-      console.error('Falha ao subir exame para Supabase:', err);
-    }
-
-    setTimeout(() => {
-      setIsTyping(false);
-      streamResponse(EXAM_RESPONSES[examKey], updatedMessages, targetThreadId);
-    }, 1200);
-  };
 
   return (
     <div className="chat-layout-container">
@@ -1212,95 +1187,57 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
           </div>
         )}
 
-        {/* Mock Upload Menu popover above the input bar */}
-        {showUploadMenu && (
+        {/* Real File Attachment Preview popover above the input bar */}
+        {selectedFile && (
           <div style={{
             position: 'absolute',
-            bottom: '64px',
-            left: '0px',
+            bottom: '76px',
+            left: '20px',
             backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
+            border: '1.5px solid var(--primary)',
             borderRadius: '12px',
-            boxShadow: 'var(--shadow-lg)',
-            padding: '8px',
+            boxShadow: 'var(--shadow-md)',
+            padding: '10px 16px',
             zIndex: '1100',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            minWidth: '280px',
+            alignItems: 'center',
+            gap: '12px',
             animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
           }}>
-            <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', padding: '6px 8px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', marginBottom: '4px' }}>
-              Simular Envio de Exame
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '16px' }}>
+                {selectedFile.type.startsWith('image/') ? '🖼️' : '📄'}
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: '750', color: '#ffffff' }}>
+                  {selectedFile.name}
+                </span>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                </span>
+              </div>
+            </div>
             <button 
               type="button" 
-              onClick={() => handleSimulateExamUpload('hemograma', 'Exame_Hemograma_Completo.pdf')}
+              onClick={() => setSelectedFile(null)}
               style={{
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: 'none',
+                color: '#ef4444',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '11px',
+                padding: '4px 8px',
+                borderRadius: '6px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '10px 12px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '12.5px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                color: 'var(--text-primary)',
-                transition: 'var(--transition-fast)',
-                width: '100%'
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
               }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-glow)'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.25)'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'}
             >
-              🩸 Hemograma Completo (Infecção)
-            </button>
-            <button 
-              type="button" 
-              onClick={() => handleSimulateExamUpload('doppler', 'Doppler_Vascular_Membros.pdf')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 12px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '12.5px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                color: 'var(--text-primary)',
-                transition: 'var(--transition-fast)',
-                width: '100%'
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-glow)'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-            >
-              🦵 Doppler Vascular (Circulação)
-            </button>
-            <button 
-              type="button" 
-              onClick={() => handleSimulateExamUpload('glicose', 'Glicose_HbA1c_Ficha.pdf')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 12px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '12.5px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                color: 'var(--text-primary)',
-                transition: 'var(--transition-fast)',
-                width: '100%'
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-glow)'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-            >
-              🍬 Glicemia e Glicada (Diabetes)
+              ✕ Remover
             </button>
           </div>
         )}
@@ -1323,10 +1260,19 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
             minWidth: 0
           }}
         >
+          {/* Hidden native file input element */}
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            style={{ display: 'none' }} 
+            accept="image/*,application/pdf,.doc,.docx,.txt"
+          />
+
           {/* Attachment paperclip button */}
           <button 
             type="button"
-            onClick={() => setShowUploadMenu(prev => !prev)}
+            onClick={() => fileInputRef.current?.click()}
             style={{
               width: '46px',
               height: '46px',
@@ -1336,15 +1282,15 @@ Sua ficha clínica está atualizada no painel para que o médico acompanhe seu c
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              backgroundColor: showUploadMenu ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+              backgroundColor: selectedFile ? 'var(--primary-glow)' : 'var(--bg-secondary)',
               border: '1px solid var(--border-color)',
-              borderColor: showUploadMenu ? 'var(--primary)' : 'var(--border-color)',
-              color: showUploadMenu ? 'var(--primary)' : 'var(--text-secondary)',
+              borderColor: selectedFile ? 'var(--primary)' : 'var(--border-color)',
+              color: selectedFile ? 'var(--primary)' : 'var(--text-secondary)',
               cursor: 'pointer',
               boxShadow: 'var(--shadow-sm)',
               transition: 'var(--transition-fast)'
             }}
-            title="Anexar e interpretar exame clínico"
+            title="Anexar arquivo de exame, imagem ou documento"
           >
             <svg style={{ width: '20px', height: '20px', fill: 'none', stroke: 'currentColor', strokeWidth: '2.2' }} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32a1.5 1.5 0 01-2.12-2.121L16.208 6" />
