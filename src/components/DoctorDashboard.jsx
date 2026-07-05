@@ -16,6 +16,25 @@ import {
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
 
+const COMMON_CID10 = [
+  { code: 'L98.4', description: 'Úlcera crônica da pele, não classificada em outra parte' },
+  { code: 'E11.5', description: 'Diabetes mellitus tipo 2 com complicações circulatórias periféricas (Pé Diabético)' },
+  { code: 'E11.9', description: 'Diabetes mellitus tipo 2 sem complicações' },
+  { code: 'I10', description: 'Hipertensão essencial (primária)' },
+  { code: 'I83.0', description: 'Varizes dos membros inferiores com úlcera (Úlcera Venosa)' },
+  { code: 'I70.2', description: 'Aterosclerose das artérias das extremidades (Doença Arterial Periférica)' },
+  { code: 'A46', description: 'Erisipela' },
+  { code: 'J06.9', description: 'Infecção aguda das vias aéreas superiores, não especificada' },
+  { code: 'J18.9', description: 'Pneumonia não especificada' },
+  { code: 'K30', description: 'Dispepsia' },
+  { code: 'M54.5', description: 'Dor lombar baixa' },
+  { code: 'N39.0', description: 'Infecção do trato urinário, de localização não especificada' },
+  { code: 'R50.9', description: 'Febre não especificada' },
+  { code: 'G44.2', description: 'Cefaleia do tipo tensional' },
+  { code: 'R07.4', description: 'Dor torácica, não especificada' },
+  { code: 'R11', description: 'Náusea e vômito' }
+];
+
 
 
 export default function DoctorDashboard({ 
@@ -64,6 +83,7 @@ export default function DoctorDashboard({
   const [atestadoDays, setAtestadoDays] = useState('3');
   const [atestadoReason, setAtestadoReason] = useState('necessita de afastamento das atividades laborais por motivos de tratamento de lesão de pele');
   const [atestadoCid, setAtestadoCid] = useState('');
+  const [showCidSuggestions, setShowCidSuggestions] = useState(false);
   const [atestadoType, setAtestadoType] = useState('Afastamento');
   const [activePrintDoc, setActivePrintDoc] = useState(null);
   const [savingDoc, setSavingDoc] = useState(false);
@@ -2536,15 +2556,69 @@ export default function DoctorDashboard({
                           />
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
                           <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>CID-10 (Opcional)</label>
                           <input 
                             type="text"
-                            placeholder="Ex: L98.4"
+                            placeholder="Ex: L98.4 ou Diabetes"
                             value={atestadoCid}
-                            onChange={(e) => setAtestadoCid(e.target.value)}
+                            onChange={(e) => {
+                              setAtestadoCid(e.target.value);
+                              setShowCidSuggestions(true);
+                            }}
+                            onFocus={() => setShowCidSuggestions(true)}
+                            onBlur={() => {
+                              // Delay to allow clicking on suggestion
+                              setTimeout(() => setShowCidSuggestions(false), 200);
+                            }}
                             style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '13px' }}
                           />
+                          {showCidSuggestions && atestadoCid.trim().length > 0 && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              backgroundColor: 'var(--bg-secondary)',
+                              border: '1.5px solid var(--border-color)',
+                              borderRadius: '8px',
+                              boxShadow: 'var(--box-shadow-premium)',
+                              zIndex: 1000,
+                              maxHeight: '180px',
+                              overflowY: 'auto',
+                              marginTop: '4px'
+                            }}>
+                              {COMMON_CID10
+                                .filter(item => 
+                                  item.code.toLowerCase().includes(atestadoCid.toLowerCase()) || 
+                                  item.description.toLowerCase().includes(atestadoCid.toLowerCase())
+                                )
+                                .map((item, idx) => (
+                                  <div 
+                                    key={idx}
+                                    onMouseDown={() => {
+                                      setAtestadoCid(item.code);
+                                      setAtestadoReason(`Paciente diagnosticado com ${item.description} (${item.code}), necessitando de cuidados clínicos adequados e acompanhamento regular.`);
+                                      setShowCidSuggestions(false);
+                                    }}
+                                    style={{
+                                      padding: '8px 12px',
+                                      cursor: 'pointer',
+                                      fontSize: '11.5px',
+                                      borderBottom: idx < COMMON_CID10.length - 1 ? '1px solid var(--border-color)' : 'none',
+                                      color: 'var(--text-primary)',
+                                      textAlign: 'left'
+                                    }}
+                                    className="cid-suggestion-item"
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--border-color)'}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                  >
+                                    <strong>{item.code}</strong> - {item.description}
+                                  </div>
+                                ))
+                              }
+                            </div>
+                          )}
                         </div>
                       </div>
 

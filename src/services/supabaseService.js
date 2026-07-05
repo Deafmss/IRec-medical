@@ -770,7 +770,7 @@ export const getWoundEntries = async (patientId = null) => {
   try {
     const { data, error } = await supabase
       .from('wound_entries')
-      .select('*')
+      .select('*, wound_entry_attachments(*)')
       .eq('patient_id', resolvedId)
       .order('id', { ascending: true });
 
@@ -801,7 +801,13 @@ export const getWoundEntries = async (patientId = null) => {
       aiTissueAnalysis: item.ai_tissue_analysis || {},
       aiRecommendation: item.ai_recommendation || '',
       clinicalOutcome: item.clinical_outcome || 'Tratamento em andamento',
-      doctorNotes: item.doctor_notes || ''
+      doctorNotes: item.doctor_notes || '',
+      attachments: item.wound_entry_attachments ? item.wound_entry_attachments.map(att => ({
+        id: att.id,
+        fileUrl: att.file_url,
+        fileName: att.file_name,
+        fileType: att.file_type
+      })) : []
     }));
   } catch (err) {
     console.error('Erro ao buscar histórico do Supabase:', err);
@@ -810,7 +816,7 @@ export const getWoundEntries = async (patientId = null) => {
 };
 
 // 4. Add a new wound entry, including uploading the visual file
-export const addWoundEntry = async (arg1, arg2, arg3 = null) => {
+export const addWoundEntry = async (arg1, arg2, arg3 = null, arg4 = []) => {
   let entry, photoFile, patientId;
 
   if (typeof arg1 === 'string' || (arg1 && arg1.length && typeof arg1 === 'string' && arg1.includes('-'))) {
@@ -832,6 +838,25 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null) => {
   let photoUrl = entry.photo; // fallback
 
   if (!isSupabaseConfigured) {
+    let base64Attachments = [];
+    if (arg4 && arg4.length > 0) {
+      for (const att of arg4) {
+        const file = att.file;
+        if (file) {
+          try {
+            const b64 = await fileToBase64(file);
+            base64Attachments.push({
+              file_name: file.name,
+              file_type: file.type.startsWith('image/') ? 'image' : (file.type.startsWith('video/') ? 'video' : 'document'),
+              file_url: b64
+            });
+          } catch (e) {
+            console.warn("Falha no b64 local do anexo:", e);
+          }
+        }
+      }
+    }
+
     if (photoFile) {
       try {
         photoUrl = await fileToBase64(photoFile);
@@ -839,7 +864,7 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null) => {
         console.warn('Falha no encoding base64 local:', e);
       }
     }
-    const newEntry = { ...entry, patientId, id: Date.now(), photo: photoUrl };
+    const newEntry = { ...entry, patientId, id: Date.now(), photo: photoUrl, attachments: base64Attachments };
     const localEntries = getLocalEntries(patientId);
     saveLocalEntries(patientId, [...localEntries, newEntry]);
     return newEntry;
@@ -901,10 +926,56 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null) => {
 
     if (error) throw error;
 
+    // Upload additional attachments if present
+    const uploadedAttachments = [];
+    if (arg4 && arg4.length > 0) {
+      for (const att of arg4) {
+        const file = att.file;
+        if (!file) continue;
+        
+        try {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}_att_${Math.random().toString(36).substr(2, 5)}.${fileExt}`;
+          const filePath = `${fileName}`;
+          
+          const { error: uploadErr } = await supabase.storage
+            .from('irec-attachments')
+            .upload(filePath, file);
+            
+          if (uploadErr) throw uploadErr;
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('irec-attachments')
+            .getPublicUrl(filePath);
+            
+          let fileType = 'document';
+          if (file.type.startsWith('image/')) fileType = 'image';
+          else if (file.type.startsWith('video/')) fileType = 'video';
+          
+          await supabase
+            .from('wound_entry_attachments')
+            .insert({
+              entry_id: data.id,
+              file_url: publicUrl,
+              file_name: file.name,
+              file_type: fileType
+            });
+            
+          uploadedAttachments.push({
+            fileUrl: publicUrl,
+            fileName: file.name,
+            fileType: fileType
+          });
+        } catch (attErr) {
+          console.error("Falha ao fazer upload de anexo:", attErr);
+        }
+      }
+    }
+
     // Log audit log
     createAuditLog('ADD_WOUND_ENTRY', patientId, { entry_id: data.id, entry_type: entry.type });
 
-    return { ...entry, id: data.id, patientId, photo: photoUrl };
+    return { ...entry, id: data.id, patientId, photo: photoUrl, attachments: uploadedAttachments };
   } catch (err) {
     console.error('Erro ao salvar entrada no Supabase, caindo para local:', err);
     if (photoFile) {
@@ -2401,5 +2472,46 @@ export const getDoctorTelemedicineCalls = async (doctorId) => {
     console.error('Error fetching doctor telemedicine calls:', err);
     return [];
   }
+};
+
+export const sendWebRTCSignalingEvent = async (callId, senderId, type, payload) => {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from('telemedicine_signaling')
+      .insert({
+        call_id: callId,
+        sender_id: senderId,
+        type,
+        payload
+      });
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.error("Erro ao enviar sinalizacao WebRTC:", e);
+    return false;
+  }
+};
+
+export const subscribeToWebRTCSignaling = (callId, onSignal) => {
+  if (!isSupabaseConfigured || !supabase) return () => {};
+  const channel = supabase
+    .channel(`webrtc-signaling-${callId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'telemedicine_signaling',
+        filter: `call_id=eq.${callId}`
+      },
+      (payload) => {
+        onSignal(payload.new);
+      }
+    )
+    .subscribe();
+  return () => {
+    channel.unsubscribe();
+  };
 };
 

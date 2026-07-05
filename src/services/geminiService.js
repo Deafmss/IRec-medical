@@ -1,3 +1,4 @@
+import { supabase, isSupabaseConfigured as isSupabaseActive } from '../supabaseClient';
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 // Convert file to Base64 structure for Gemini Multimodal API
@@ -27,8 +28,24 @@ if (!isGeminiConfigured) {
   );
 }
 
-// 1. Multimodal Wound Analysis
 export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsText) => {
+  if (isSupabaseActive && supabase) {
+    try {
+      console.log("Chamando triagem via Supabase Edge Function...");
+      let filePart = null;
+      if (photoFile) {
+        filePart = await fileToGenerativePart(photoFile);
+      }
+      const { data, error } = await supabase.functions.invoke('gemini-analysis', {
+        body: { clinicalProfile, symptomsText, filePart }
+      });
+      if (error) throw error;
+      if (data) return data;
+    } catch (e) {
+      console.warn("Falha ao invocar Edge Function, caindo para chamada cliente direta:", e);
+    }
+  }
+
   if (!isGeminiConfigured) {
     return null; // Let the caller handle the fallback
   }
@@ -42,8 +59,8 @@ export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsTex
       parts.push(imagePart);
     }
 
-    const systemPrompt = `Você é um motor de triagem e análise médica especialista em feridas cutâneas (wound care) de alta precisão, alinhado com as diretrizes clínicas de anatomia, fisiologia e reparação tecidual.
-Analise a imagem da lesão e os sintomas/dados informados.
+    const systemPrompt = `Você é um motor de triagem e análise clínica médica de alta precisão, responsável por dar suporte de apoio à decisão clínica e triagem geral de sintomas para qualquer especialidade da medicina.
+Analise a queixa, os sintomas informados e a imagem/documento anexado (que pode ser uma lesão cutânea, uma mancha, um exame médico, receita ou queixa visível).
 Considere obrigatoriamente a Ficha Clínica do paciente:
 - Nome: ${clinicalProfile.name}
 - Data de Nascimento: ${clinicalProfile.birthDate || 'Não informada'}
@@ -60,49 +77,41 @@ Considere obrigatoriamente a Ficha Clínica do paciente:
 - Medicamentos Ativos: ${clinicalProfile.medications || 'Nenhum'}
 - Alergias Conhecidas: ${clinicalProfile.allergies || 'Nenhuma'}
 
-DIRETRIZES CLÍNICAS DE TRATAMENTO & COBERTURA:
-1. Necrose (Tecido Preto Morto): Indicar desbridamento autolítico ou químico (Hidrogel amorfo, Papaína ou Colagenase).
-2. Fibrina / Esfacelo (Tecido Amarelo Inviável): Indicar Hidrogel com Alginato (se exsudato leve) ou Alginato de Cálcio puro (se exsudato moderado/alto) para promover desbridamento e gerenciar exsudação.
-3. Tecido de Granulação (Vermelho Saudável): Manter umidade ideal e proteger o leito. Indicar Placas de Hidrocolóide, Espumas de Poliuretano, ou curativo com AGE (Ácidos Graxos Essenciais / Dersani).
-4. Epitelização (Pele Nova Rosa): Proteger a pele recém-formada com Hidrocolóide Extra Fino ou AGE.
-5. Infecção Ativa (Pus, Eritema extensivo, Calor, Odor Fétido): Indicar coberturas com prata nanocristalina (Alginato com Prata, Espuma com Prata) ou Carvão Ativado com Prata para controle de odor bacteriano, alertando para urgência médica se houver febre ou celulite.
-6. Úlceras Venosas: Recomendar terapia de compressão elástica ou inelástica (Bota de Unna) associada ao curativo do leito, se não houver contraindicação arterial.
+DIRETRIZES GERAIS DE TRIAGEM E RECOMENDAÇÃO:
+1. Caso a queixa ou imagem envolva uma ferida/lesão cutânea ativa, analise a composição de tecidos (necrose, fibrina, granulação e epitelização) e sugira as condutas e coberturas adequadas (ex: hidrogel, alginato de cálcio, hidrocoloide ou carvão ativado com prata).
+2. Caso a queixa seja de natureza geral (ex: febre, dor no peito, falta de ar, manchas, exames laboratoriais, tosse, tontura), avalie a gravidade clínica do quadro, as comorbidades do paciente e a interação com seus medicamentos ativos e alergias.
+3. Classifique o risco geral como Leve, Moderado, Alto Risco ou Crítico.
+4. Identifique Sinais de Alerta (Red Flags) que exijam encaminhamento urgente para o pronto-socorro.
 
-ALERTAS DE DIAGNÓSTICO DIFERENCIAL (Lesões Crônicas Atípicas):
-Fique atento a lesões de evolução atípica ou crônicas persistentes (>4 semanas) sem resposta aos tratamentos convencionais. Identifique potenciais suspeitas de:
-- Hanseníase (se houver queixa de perda de sensibilidade térmica/dolorosa na pele ao redor ou pé insensível).
-- Leishmaniose Cutânea, Cromomicose, Esporotricose, Paracoccidioidomicose, Micobacterioses atípicas ou Pioderma Gangrenoso (se houver bordas violáceas, hipertróficas, úlceras vegetantes ou lesões satélites).
-Nesses casos, adicione um alerta claro na recomendação ('aiRecommendation') sugerindo avaliação dermatológica especializada, biópsia e cultura tecidual.
-
-Sua tarefa é analisar os riscos, estimar dimensões e composição tecidual e retornar ESTRITAMENTE um objeto JSON puro, sem formatação markdown envolta (sem blocos de código \`\`\`json ou textos adicionais), correspondente a este formato exato:
+Sua tarefa é analisar os sintomas, estimar dados clínicos pertinentes ao tipo de queixa e retornar ESTRITAMENTE um objeto JSON puro, sem formatação markdown envolta (sem blocos de código \`\`\`json ou textos adicionais), correspondente a este formato exato:
 {
-  "type": "Tipo da Ferida (Ex: Úlcera Venosa, Pé Diabético, Lesão por Pressão, Úlcera Arterial, Ferida Cirúrgica, Ferida Traumática, Outras)",
-  "lesionStage": "Estágio/Grau da Lesão (Ex: Estágio I, Estágio II, Estágio III, Estágio IV, Não Classificável)",
-  "severity": "Classificação da gravidade (Ex: Risco Moderado, Leve, Alto Risco, Crítico)",
-  "isRedirect": false, -- true se houver sinais de perigo clínico (Red Flags) exigindo pronto-socorro immediate: febre >38C, pus abundante, necrose úmida/seca generalizada com odor fétido, sangramento excessivo, ou pé diabético com sinais ativos de celulite/infecção.
-  "specialist": "Especialidade a procurar caso isRedirect seja true (Ex: Cirurgião Vascular, Ambulatório de Pé Diabético, Pronto-Socorro), senão string vazia",
-  "reason": "Explicação clínica curta do motivo do encaminhamento de urgência se isRedirect for true, senão string vazia",
+  "type": "Tipo da Queixa ou Especialidade Principal (Ex: Clínico Geral, Dermatologia, Cardiologia, Pneumologia, Pé Diabético, Úlcera Venosa, Outros)",
+  "lesionStage": "Nível de Gravidade/Estágio (Ex: Leve, Moderado, Avançado, Estágio I, Estágio II, Não Classificável)",
+  "severity": "Classificação da gravidade (Ex: Leve, Risco Moderado, Alto Risco, Crítico)",
+  "isRedirect": false, -- true se houver sinais de perigo clínico (Red Flags) que exijam atendimento médico imediato (ex: dor torácica opressiva, febre alta persistente, dispneia intensa, infecção sistêmica ativa ou pé insensível infeccionado).
+  "specialist": "Especialidade recomendada caso isRedirect seja true (Ex: Pronto-Socorro, Cardiologista, Cirurgião Vascular, Dermatologista), senão string vazia",
+  "reason": "Explicação clínica curta do motivo do encaminhamento se isRedirect for true, senão string vazia",
   "geminiSummary": "Resumo clínico das queixas e sintomas relatados pelo paciente",
-  "medPalmDiagnosis": "Diagnóstico e parecer clínico detalhado validando o estado tecidual da ferida e correlacionando-o com o perfil de comorbidades do paciente.",
+  "medPalmDiagnosis": "Parecer clínico detalhado contextualizando os sintomas relatados com o perfil de comorbidades e histórico do paciente.",
   "treatmentPlan": [
-    "Instrução 1 de cuidado (Ex: Limpar o leito com soro fisiológico morno sob pressão leve por irrigação)",
+    "Instrução 1 de cuidado/conduta recomendada",
     "Instrução 2...",
     "Instrução 3..."
   ],
-  "aiAreaCm2": 12.5, -- Estimativa numérica aproximada da área da lesão em cm² (número puro)
-  "aiLengthCm": 5.0, -- Estimativa numérica do comprimento vertical em cm (número puro)
-  "aiWidthCm": 2.5, -- Estimativa numérica da largura horizontal em cm (número puro)
+  "aiAreaCm2": null, -- Estimativa numérica aproximada da área em cm² (somente se for lesão cutânea, senão null)
+  "aiLengthCm": null, -- Comprimento em cm (somente se for lesão cutânea, senão null)
+  "aiWidthCm": null, -- Largura em cm (somente se for lesão cutânea, senão null)
   "aiTissueAnalysis": {
-    "necrose": 10, -- Percentual estimado de necrose (0-100)
-    "fibrina": 20, -- Percentual estimado de fibrina/esfacelo (0-100)
-    "granulacao": 60, -- Percentual estimado de tecido de granulação vermelho saudável (0-100)
-    "epitelizacao": 10 -- Percentual estimado de tecido de epitelização/pele nova (0-100)
+    "necrose": 0, -- % de necrose se houver lesão (0-100, senão 0)
+    "fibrina": 0, -- % de fibrina se houver lesão (0-100, senão 0)
+    "granulacao": 0, -- % de granulação se houver lesão (0-100, senão 0)
+    "epitelizacao": 0 -- % de epitelização se houver lesão (0-100, senão 0)
   },
-  "aiRecommendation": "Sugestão detalhada de conduta clínica e indicação de coberturas (Ex: Placa de Hidrocolóide, Alginato de Cálcio para controle de exsudato) baseada na análise tecidual e comorbidades.",
-  "clinicalEvolution": "Estável" -- Escolha entre: "Melhorou", "Estável", "Piorou" (Analise comparativa de acordo com os sintomas)
+  "aiRecommendation": "Recomendação clínica detalhada e indicação de condutas de enfermagem ou suporte médico baseado nos sintomas informados.",
+  "clinicalEvolution": "Estável" -- Comparativo do estado geral ("Melhorou", "Estável" ou "Piorou")
 }
 
-Nota de Segurança: Seja extremamente conservador com pacientes diabéticos, obesos ou com doença arterial periférica. Se houver suspeita de infecção plantar ou isquemia de membro, marque isRedirect como true.`;
+Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou infecção sistêmica, marque isRedirect como true. Seja sempre conservador com pacientes diabéticos, obesos ou com doença arterial periférica. Se houver suspeita de infecção plantar ou isquemia de membro, marque isRedirect como true.`;
 
     parts.push({ text: systemPrompt });
     parts.push({ text: `Dados adicionais digitados pelo paciente/sintomas: "${symptomsText || 'Sem queixas adicionais descritas.'}". Analise e retorne apenas o JSON.` });

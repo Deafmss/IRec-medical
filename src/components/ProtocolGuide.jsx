@@ -66,7 +66,8 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
       steps,
       materials,
       scientificBacking,
-      specialistRecommendation
+      specialistRecommendation,
+      isLocalFallback: true
     };
   }
 
@@ -154,7 +155,8 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
     steps,
     materials,
     scientificBacking,
-    specialistRecommendation
+    specialistRecommendation,
+    isLocalFallback: true
   };
 }
 
@@ -695,6 +697,33 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                 <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: '1.4', margin: '8px 0 0 0' }}>
                   {aiProtocol.description}
                 </p>
+                
+                {/* Transparency Disclaimer Box */}
+                <div style={{
+                  marginTop: '12px',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  backgroundColor: aiProtocol.isLocalFallback ? 'rgba(245, 158, 11, 0.05)' : 'rgba(16, 185, 129, 0.05)',
+                  border: aiProtocol.isLocalFallback ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)',
+                  fontSize: '11px',
+                  color: aiProtocol.isLocalFallback ? '#f59e0b' : '#10b981',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: '600'
+                }}>
+                  {aiProtocol.isLocalFallback ? (
+                    <>
+                      <span>⚠️</span>
+                      <span><strong>Diretriz Clínica Integrada (Offline):</strong> Gerado localmente via regras embarcadas do iRec baseadas nos consensos do Ministério da Saúde/COFEN, pois a IA em nuvem está desconectada.</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>✨</span>
+                      <span><strong>Guia Processado por IA:</strong> Elaborado e otimizado dinamicamente pelo Copiloto de Inteligência Artificial do iRec (Gemini 2.5).</span>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Steps List */}

@@ -51,6 +51,23 @@ const getDoctorPremiumDetails = (doc) => {
     }
   ];
 
+  const isDemoDoctor = doc.email && 
+    (doc.email.includes('example.com') || doc.email.includes('demo.com') || doc.email.includes('mock')) && 
+    !doc.name?.toLowerCase().includes('teste') && 
+    !doc.name?.toLowerCase().includes('test');
+
+  if (!isDemoDoctor) {
+    return {
+      ...doc,
+      specialty: doc.specialty || 'Clínico Geral',
+      bio: doc.bio || 'Profissional de saúde cadastrado no iRec.',
+      education: doc.education || `Registro Profissional: ${doc.crm || doc.coren || 'Não informado'}`,
+      price: doc.price || null,
+      stats: { rating: 'Novo', patients: '0', successRate: '-' },
+      reviews: []
+    };
+  }
+
   let specProfile = specialties.find(s => doc.specialty && doc.specialty.toLowerCase().includes(s.specialty.toLowerCase()));
   if (!specProfile) {
     specProfile = specialties[idHash % specialties.length];
@@ -61,7 +78,7 @@ const getDoctorPremiumDetails = (doc) => {
     specialty: doc.specialty || specProfile.specialty,
     bio: specProfile.bio,
     education: specProfile.education,
-    price: specProfile.price,
+    price: specProfile.price || null,
     stats: specProfile.stats,
     reviews: specProfile.reviews
   };
@@ -368,7 +385,7 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
                     <p style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', margin: '4px 0 0 0' }}>{doc.stats.patients}</p>
                   </div>
                   <div style={{ padding: '10px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                    <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0 }}>Taxa Cicatrização</p>
+                    <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0 }}>Taxa de Sucesso</p>
                     <p style={{ fontSize: '14px', fontWeight: '800', color: '#10b981', margin: '4px 0 0 0' }}>{doc.stats.successRate}</p>
                   </div>
                 </div>
@@ -414,14 +431,20 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
                 <div>
                   <h5 style={{ fontSize: '11px', fontWeight: '750', margin: '0 0 10px 0', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>Depoimentos de Pacientes</h5>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {doc.reviews.map((rev, index) => (
-                      <div key={index} style={{ padding: '12px', backgroundColor: 'var(--bg-primary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                        <p style={{ fontSize: '11px', fontWeight: '700', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>👤 Paciente {rev.patient}</p>
-                        <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic', lineHeight: '1.4' }}>
-                          "{rev.text}"
-                        </p>
+                    {doc.reviews.length > 0 ? (
+                      doc.reviews.map((rev, index) => (
+                        <div key={index} style={{ padding: '12px', backgroundColor: 'var(--bg-primary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <p style={{ fontSize: '11px', fontWeight: '700', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>👤 Paciente {rev.patient}</p>
+                          <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic', lineHeight: '1.4' }}>
+                            "{rev.text}"
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12.5px', border: '1px dashed var(--border-color)', borderRadius: '12px', fontStyle: 'italic' }}>
+                        Este profissional ainda não possui depoimentos ou avaliações cadastradas.
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>

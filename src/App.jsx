@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Dashboard from './components/Dashboard';
-import UploadWound from './components/UploadWound';
-import WoundHistory from './components/WoundHistory';
+import ClinicalTriage from './components/ClinicalTriage';
+import ClinicalHistory from './components/ClinicalHistory';
 import NursesNetwork from './components/NursesNetwork';
 import ProtocolGuide from './components/ProtocolGuide';
 import AIChatAssistant from './components/AIChatAssistant';
@@ -72,28 +72,86 @@ export default function App() {
       });
     }
 
-    // Polling for cross-device incoming calls
-    const interval = setInterval(async () => {
-      const activeSess = activeCallSessionRef.current;
-      if (activeSess) {
-        const statusCheck = await checkCallStatus(activeSess.id);
-        if (statusCheck) {
-          if (statusCheck.status === 'ended' || statusCheck.status === 'rejected') {
-            setActiveCallSession(null);
-          } else if (statusCheck.status !== activeSess.status) {
-            setActiveCallSession(statusCheck);
+    let realtimeChannel = null;
+
+    if (isSupabaseConfigured && supabase) {
+      console.log("Inicializando inscricoes em tempo real para telemedicina...");
+      realtimeChannel = supabase
+        .channel(`incoming-calls-${currentUser.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'telemedicine_calls'
+          },
+          (payload) => {
+            if (payload.new && payload.new.receiver_id === currentUser.id && payload.new.status === 'ringing') {
+              console.log('Nova chamada em tempo real recebida:', payload.new);
+              setActiveCallSession({
+                id: payload.new.id,
+                callerId: payload.new.caller_id,
+                receiverId: payload.new.receiver_id,
+                status: payload.new.status,
+                createdAt: payload.new.created_at
+              });
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'telemedicine_calls'
+          },
+          (payload) => {
+            const activeSess = activeCallSessionRef.current;
+            if (activeSess && payload.new && payload.new.id === activeSess.id) {
+              console.log('Status da chamada atualizado em tempo real:', payload.new.status);
+              if (payload.new.status === 'ended' || payload.new.status === 'rejected') {
+                setActiveCallSession(null);
+              } else {
+                setActiveCallSession({
+                  id: payload.new.id,
+                  callerId: payload.new.caller_id,
+                  receiverId: payload.new.receiver_id,
+                  status: payload.new.status,
+                  createdAt: payload.new.created_at
+                });
+              }
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    // Polling for cross-device incoming calls (somente em modo offline local)
+    let interval = null;
+    if (!isSupabaseConfigured) {
+      interval = setInterval(async () => {
+        const activeSess = activeCallSessionRef.current;
+        if (activeSess) {
+          const statusCheck = await checkCallStatus(activeSess.id);
+          if (statusCheck) {
+            if (statusCheck.status === 'ended' || statusCheck.status === 'rejected') {
+              setActiveCallSession(null);
+            } else if (statusCheck.status !== activeSess.status) {
+              setActiveCallSession(statusCheck);
+            }
+          }
+        } else {
+          const incoming = await checkIncomingCalls(currentUser.id);
+          if (incoming) {
+            setActiveCallSession(incoming);
           }
         }
-      } else {
-        const incoming = await checkIncomingCalls(currentUser.id);
-        if (incoming) {
-          setActiveCallSession(incoming);
-        }
-      }
-    }, 2500);
+      }, 2500);
+    }
 
     return () => {
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
+      if (realtimeChannel) realtimeChannel.unsubscribe();
       if (chatChannel) chatChannel.close();
     };
   }, [currentUser]);
@@ -349,7 +407,7 @@ export default function App() {
     setCurrentUser(null);
   };
 
-  const addWoundEntryLocal = (newEntry) => {
+  const addClinicalEntryLocal = (newEntry) => {
     setEntries((prev) => [...prev, newEntry]);
   };
 
@@ -381,9 +439,9 @@ export default function App() {
         );
       case 'upload':
         return (
-          <UploadWound 
+          <ClinicalTriage 
             setActiveTab={setActiveTab} 
-            addWoundEntry={addWoundEntryLocal} 
+            addClinicalEntry={addClinicalEntryLocal} 
             clinicalProfile={clinicalProfile} 
           />
         );
@@ -402,7 +460,7 @@ export default function App() {
       case 'documents':
         return <PatientDocuments clinicalProfile={clinicalProfile} />;
       case 'history':
-        return <WoundHistory entries={entries} clinicalProfile={clinicalProfile} />;
+        return <ClinicalHistory entries={entries} clinicalProfile={clinicalProfile} />;
       case 'nurses':
         return (
           <NursesNetwork 
@@ -877,6 +935,25 @@ export default function App() {
          Responsively sized padding and width
       */}
       <main className={`main-content ${isChatActive ? 'chat-tab-active' : ''}`}>
+        {!isSupabaseConfigured && (
+          <div style={{
+            padding: '10px 16px',
+            backgroundColor: 'rgba(245, 158, 11, 0.08)',
+            borderBottom: '1px solid rgba(245, 158, 11, 0.2)',
+            fontSize: '11px',
+            color: '#f59e0b',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontFamily: 'var(--font-primary)',
+            fontWeight: '600',
+            width: '100%',
+            boxSizing: 'border-box'
+          }} className="no-print">
+            <span>⚠️</span>
+            <span><strong>Modo de Demonstração Offline:</strong> Este sistema está operando localmente no navegador (LocalStorage). Alterações em fichas clínicas e consultas não serão gravadas no servidor de produção.</span>
+          </div>
+        )}
         {activeTab !== 'telemedicine' && renderContent()}
         <Telemedicine 
           currentUser={currentUser} 
@@ -1065,7 +1142,7 @@ export default function App() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
               </svg>
-              Foto
+              Triagem
             </button>
 
             <button 

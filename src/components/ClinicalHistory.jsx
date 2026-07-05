@@ -124,7 +124,7 @@ function WoundTissueOverlay({ entry }) {
   );
 }
 
-export default function WoundHistory({ entries, clinicalProfile }) {
+export default function ClinicalHistory({ entries, clinicalProfile }) {
   const maxPain = 10;
   
   const getEntryProgress = (entry) => {
@@ -511,6 +511,46 @@ export default function WoundHistory({ entries, clinicalProfile }) {
                     <div style={{ flex: '1.2 1 240px', fontSize: '11px', borderLeft: '3px solid var(--accent)', paddingLeft: '10px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>Recomendação de Cobertura / Conduta:</div>
                       <div style={{ lineHeight: '1.4', fontStyle: 'italic' }}>{entry.aiRecommendation}</div>
+                    </div>
+                  )}
+
+                  {/* Entry Attachments */}
+                  {entry.attachments && entry.attachments.length > 0 && (
+                    <div style={{ flex: '1 1 100%', fontSize: '11px', marginTop: '12px', borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
+                      <div style={{ fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>Arquivos e Exames Anexados:</div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {entry.attachments.map((att, attIdx) => {
+                          const isImg = att.fileType === 'image' || att.file_type === 'image';
+                          const isVid = att.fileType === 'video' || att.file_type === 'video';
+                          const url = att.fileUrl || att.file_url;
+                          const name = att.fileName || att.file_name;
+                          return (
+                            <a 
+                              key={attIdx} 
+                              href={url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '6px', 
+                                padding: '6px 10px', 
+                                borderRadius: '6px', 
+                                backgroundColor: 'var(--bg-primary)', 
+                                border: '1px solid var(--border-color)', 
+                                color: 'var(--text-secondary)',
+                                textDecoration: 'none',
+                                fontSize: '10.5px',
+                                transition: 'all 0.2s'
+                              }}
+                              className="attachment-pill"
+                            >
+                              <span>{isImg ? '🖼️' : (isVid ? '🎥' : '📄')}</span>
+                              <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                            </a>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>

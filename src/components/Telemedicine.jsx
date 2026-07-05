@@ -16,6 +16,8 @@ import {
   getAllDoctors,
   getAllClinicians,
   getAllReceivedMessages,
+  sendWebRTCSignalingEvent,
+  subscribeToWebRTCSignaling,
   sendTranscriptChunk,
   updateClinicalProfile
 } from '../services/supabaseService';
@@ -67,6 +69,23 @@ const getDoctorPremiumDetails = (doc) => {
     }
   ];
 
+  const isDemoDoctor = doc.email && 
+    (doc.email.includes('example.com') || doc.email.includes('demo.com') || doc.email.includes('mock')) && 
+    !doc.name?.toLowerCase().includes('teste') && 
+    !doc.name?.toLowerCase().includes('test');
+
+  if (!isDemoDoctor) {
+    return {
+      ...doc,
+      specialty: doc.specialty || 'Clínico Geral',
+      bio: doc.bio || 'Profissional de saúde cadastrado no iRec.',
+      education: doc.education || `Registro Profissional: ${doc.crm || doc.coren || 'Não informado'}`,
+      price: doc.price || null,
+      stats: { rating: 'Novo', patients: '0', successRate: '-' },
+      reviews: []
+    };
+  }
+
   let specProfile = specialties.find(s => doc.specialty && doc.specialty.toLowerCase().includes(s.specialty.toLowerCase()));
   if (!specProfile) {
     specProfile = specialties[idHash % specialties.length];
@@ -77,6 +96,7 @@ const getDoctorPremiumDetails = (doc) => {
     specialty: doc.specialty || specProfile.specialty,
     bio: specProfile.bio,
     education: specProfile.education,
+    price: specProfile.price || null,
     stats: specProfile.stats,
     reviews: specProfile.reviews
   };
@@ -169,7 +189,13 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
   // Media streams
   const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
   const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const peerConnectionRef = useRef(null);
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  
   const messagesEndRef = useRef(null);
   const ecgCanvasRef = useRef(null);
   const ecgAnimationRef = useRef(null);
@@ -560,6 +586,15 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     return () => clearInterval(timer);
   }, [callState]);
 
+  // Hook WebRTC P2P
+  useEffect(() => {
+    if (callState === 'active' && activeCall) {
+      const isCaller = activeCall.callerId === currentUser.id;
+      console.log(`Inicializando WebRTC P2P. Sou iniciador? ${isCaller}`);
+      initializeWebRTC(activeCall.id, isCaller);
+    }
+  }, [callState, activeCall]);
+
   // Request camera and microphone when video call starts
   useEffect(() => {
     if (callState === 'active') {
@@ -787,6 +822,95 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     return () => clearInterval(vitalsInterval);
   };
 
+  // WebRTC P2P Connection and Signaling
+  const initializeWebRTC = async (callId, isCaller) => {
+    try {
+      console.log("Iniciando conexao WebRTC P2P para chamada:", callId);
+      
+      // Get local stream
+      let stream = localStream;
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, facingMode: 'user' },
+          audio: true
+        });
+        setLocalStream(stream);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+      }
+
+      // STUN configuration
+      const configuration = {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19002' },
+          { urls: 'stun:stun1.l.google.com:19002' }
+        ]
+      };
+      
+      const pc = new RTCPeerConnection(configuration);
+      peerConnectionRef.current = pc;
+
+      // Add tracks
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+      });
+
+      // Handle remote track
+      pc.ontrack = (event) => {
+        console.log("Track remota recebida com sucesso!");
+        if (event.streams && event.streams[0]) {
+          setRemoteStream(event.streams[0]);
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = event.streams[0];
+          }
+        }
+      };
+
+      // Handle ICE candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          sendWebRTCSignalingEvent(callId, currentUser.id, 'candidate', event.candidate.toJSON());
+        }
+      };
+
+      // Subscribe to WebRTC events
+      const unsubscribeSignaling = subscribeToWebRTCSignaling(callId, async (signal) => {
+        if (signal.sender_id === currentUser.id) return;
+        
+        try {
+          if (signal.type === 'offer') {
+            console.log("Recebida oferta SDP remota...");
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await sendWebRTCSignalingEvent(callId, currentUser.id, 'answer', answer);
+          } else if (signal.type === 'answer') {
+            console.log("Recebida resposta SDP remota...");
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+          } else if (signal.type === 'candidate') {
+            console.log("Recebido candidato ICE remoto...");
+            await pc.addIceCandidate(new RTCIceCandidate(signal.payload));
+          }
+        } catch (err) {
+          console.warn("Erro ao processar sinal WebRTC:", err);
+        }
+      });
+
+      pc.unsubscribeSignaling = unsubscribeSignaling;
+
+      // Send offer if caller
+      if (isCaller) {
+        console.log("Criando oferta WebRTC como Iniciador...");
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await sendWebRTCSignalingEvent(callId, currentUser.id, 'offer', offer);
+      }
+    } catch (e) {
+      console.error("Erro ao inicializar WebRTC:", e);
+    }
+  };
+
   // Webcam streamer
   const startMediaStream = async () => {
     try {
@@ -810,6 +934,20 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     }
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
+    }
+    
+    // Clean up WebRTC peer connection
+    if (peerConnectionRef.current) {
+      const pc = peerConnectionRef.current;
+      if (pc.unsubscribeSignaling) {
+        pc.unsubscribeSignaling();
+      }
+      pc.close();
+      peerConnectionRef.current = null;
+    }
+    setRemoteStream(null);
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
     }
   };
 
@@ -2480,7 +2618,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               Recusar
             </button>
             <button 
-              onClick={acceptCall}
+              onClick={() => setShowConsentModal(true)}
               style={{
                 backgroundColor: '#10b981',
                 color: '#ffffff',
@@ -2561,43 +2699,62 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 </div>
               ) : (
                 <div style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    textAlign: 'center',
-                    zIndex: 1
-                  }}>
+                  {remoteStream ? (
+                    <video 
+                      ref={remoteVideoRef}
+                      autoPlay
+                      playsInline
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        zIndex: 0
+                      }}
+                    />
+                  ) : (
                     <div style={{
-                      width: '100px',
-                      height: '100px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      border: '2px solid rgba(255,255,255,0.2)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '32px',
-                      fontWeight: 'bold',
-                      color: '#ffffff',
-                      margin: '0 auto 16px auto'
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      textAlign: 'center',
+                      zIndex: 1
                     }}>
-                      {initials}
+                      <div style={{
+                        width: '100px',
+                        height: '100px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        border: '2px solid rgba(255,255,255,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '32px',
+                        fontWeight: 'bold',
+                        color: '#ffffff',
+                        margin: '0 auto 16px auto'
+                      }}>
+                        {initials}
+                      </div>
+                      <p style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '15px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                        Conexão Remota Segura com {selectedContact ? selectedContact.name : 'Clínico'}
+                      </p>
+                      <p style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px' }}>
+                        Aguardando transmissão de vídeo...
+                      </p>
                     </div>
-                    <p style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '15px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                      Conexão Remota Segura com {selectedContact ? selectedContact.name : 'Clínico'}
-                    </p>
-                    <p style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px' }}>
-                      Transmissão encriptada de ponta a ponta (AES-256)
-                    </p>
-                  </div>
+                  )}
                   
                   <div style={{
                     position: 'absolute',
                     width: '100%',
                     height: '100%',
-                    background: 'radial-gradient(circle, rgba(16,185,129,0.05) 0%, rgba(9,13,22,0.9) 80%)'
+                    background: 'radial-gradient(circle, rgba(16,185,129,0.05) 0%, rgba(9,13,22,0.9) 80%)',
+                    zIndex: remoteStream ? 1 : 0,
+                    pointerEvents: 'none'
                   }} />
                 </div>
               )}
@@ -3417,6 +3574,101 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Teleconsultation Legal Consent Modal */}
+      {showConsentModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'var(--font-primary)',
+          color: '#ffffff',
+          padding: '20px'
+        }}>
+          <div className="glass-card" style={{
+            maxWidth: '500px',
+            width: '100%',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1.5px solid var(--border-color)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: 'var(--box-shadow-premium)'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 12px 0', color: 'var(--primary)' }}>
+              Termo de Consentimento de Teleconsulta
+            </h3>
+            
+            <div style={{ 
+              maxHeight: '200px', 
+              overflowY: 'auto', 
+              fontSize: '11px', 
+              lineHeight: '1.5', 
+              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--bg-primary)',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+              marginBottom: '16px',
+              textAlign: 'left'
+            }}>
+              <p style={{ margin: '0 0 8px 0' }}><strong>1. Natureza do Atendimento:</strong> A teleconsulta é uma modalidade de atendimento a distância realizada por meio de tecnologias seguras de áudio e vídeo, adequada para triagem, acompanhamento e orientação clínica.</p>
+              <p style={{ margin: '0 0 8px 0' }}><strong>2. Privacidade e LGPD:</strong> Em conformidade com a Lei Geral de Proteção de Dados (Lei 13.709/2018), suas informações clínicas, imagens de sintomas e transcrições geradas são confidenciais e armazenadas com segurança no prontuário do iRec.</p>
+              <p style={{ margin: '0 0 8px 0' }}><strong>3. Gravação e Transcrição:</strong> A consulta de vídeo/áudio pode gerar uma transcrição textual em tempo real via IA para o preenchimento automático do histórico e suporte de decisão diagnóstica do clínico. Esses registros farão parte do seu prontuário clínico.</p>
+              <p style={{ margin: '0 0 0 0' }}><strong>4. Autonomia do Paciente:</strong> Você tem o direito de negar ou retirar o consentimento a qualquer momento, interrompendo a transmissão, sem prejuízo ao seu direito de atendimento presencial.</p>
+            </div>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '11.5px', cursor: 'pointer', marginBottom: '20px', textAlign: 'left', color: 'var(--text-primary)' }}>
+              <input 
+                type="checkbox" 
+                checked={consentGiven} 
+                onChange={(e) => setConsentGiven(e.target.checked)} 
+                style={{ marginTop: '2px', cursor: 'pointer' }}
+              />
+              <span>Declaro que li, compreendi e concordo com os termos de privacidade, consentimento clínico e processamento de dados do iRec.</span>
+            </label>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                onClick={() => {
+                  setShowConsentModal(false);
+                  setConsentGiven(false);
+                  rejectCall();
+                }}
+                className="btn btn-secondary"
+                style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px' }}
+              >
+                Recusar
+              </button>
+              <button 
+                onClick={() => {
+                  setShowConsentModal(false);
+                  acceptCall();
+                }}
+                disabled={!consentGiven}
+                className="btn btn-primary"
+                style={{ 
+                  fontSize: '12px', 
+                  padding: '8px 16px', 
+                  borderRadius: '8px',
+                  backgroundColor: consentGiven ? 'var(--primary)' : 'var(--border-color)',
+                  color: '#ffffff',
+                  cursor: consentGiven ? 'pointer' : 'not-allowed',
+                  border: 'none'
+                }}
+              >
+                Concordar e Atender
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -161,7 +161,7 @@ const GLOSSARY_DB = {
   }
 };
 
-export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfile }) {
+export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinicalProfile }) {
   const [image, setImage] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [pain, setPain] = useState(3);
@@ -329,8 +329,8 @@ export default function UploadWound({ setActiveTab, addWoundEntry, clinicalProfi
       };
 
       try {
-        const savedEntry = await addWoundEntryService(newEntryData, photoFile);
-        addWoundEntry(savedEntry);
+        const savedEntry = await addWoundEntryService(newEntryData, photoFile, null, attachments);
+        addClinicalEntry(savedEntry);
       } catch (err) {
         console.error('Falha ao salvar no Supabase:', err);
       }

@@ -550,7 +550,6 @@ Como posso te ajudar hoje?`;
       const matchedKey = Object.keys(AI_RESPONSES).find(key => 
         cleanInput.includes(key.toLowerCase()) || key.toLowerCase().includes(cleanInput)
       );
-
       if (matchedKey && matchedKey !== 'default') {
         response = AI_RESPONSES[matchedKey];
       } else {
@@ -560,6 +559,7 @@ Como posso te ajudar hoje?`;
 3. Em caso de gravidade, procure pronto-socorro imediatamente.`;
       }
 
+      response = `⚠️ **[Modo de Assistência Offline]** O serviço de Inteligência Artificial avançado está offline. Esta é uma resposta de orientação básica automática:\n\n${response}`;
       setIsTyping(false);
       
       let finalMessages = updatedMessages;
@@ -863,6 +863,7 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
         }
       }
 
+      response = `⚠️ **[Modo de Assistência Offline]** O serviço de Inteligência Artificial avançado está offline. Esta é uma resposta de orientação básica automática:\n\n${response}`;
       streamResponse(response, updatedMessages, targetThreadId);
       isSubmittingRef.current = false;
     }, 1000);
