@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInUser, signUpUser } from '../services/supabaseService';
+import { signInUser, signUpUser, uploadProfessionalCredential } from '../services/supabaseService';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 const ALL_SPECIALTIES = [
@@ -89,6 +89,8 @@ export default function Login({ onLoginSuccess }) {
   
   // Doctor fields
   const [crm, setCrm] = useState('');
+  const [crmState, setCrmState] = useState('SP');
+  const [documentFile, setDocumentFile] = useState(null);
   const [specialty, setSpecialty] = useState('');
   const [rqe, setRqe] = useState('');
   const [specSearch, setSpecSearch] = useState('');
@@ -125,7 +127,19 @@ export default function Login({ onLoginSuccess }) {
           if (selectedSpecialties.length === 0) {
             throw new Error(`Por favor, adicione pelo menos uma especialidade para o ${clinicianType === 'doctor' ? 'Médico' : 'Enfermeiro'}.`);
           }
-          additionalData = { crm, specialty, rqe: clinicianType === 'doctor' ? rqe : '' };
+          if (!documentFile) {
+            throw new Error(`Por favor, faça o upload do comprovante de seu ${label} (imagem ou PDF da carteirinha profissional ou diploma).`);
+          }
+
+          setSuccessMsg('Enviando documento de credencial...');
+          const documentUrl = await uploadProfessionalCredential(documentFile);
+
+          additionalData = { 
+            crm: `${crm.toUpperCase()}-${crmState}`, 
+            specialty, 
+            rqe: clinicianType === 'doctor' ? rqe : '',
+            professionalDocumentUrl: documentUrl
+          };
         }
 
         try {
@@ -141,6 +155,8 @@ export default function Login({ onLoginSuccess }) {
             setPassword('');
             setName('');
             setCrm('');
+            setDocumentFile(null);
+            setCrmState('SP');
             setSpecialty('');
             setRqe('');
             setBirthDate('');
@@ -690,14 +706,44 @@ export default function Login({ onLoginSuccess }) {
                 <label className="form-label">
                   {clinicianType === 'doctor' ? 'CRM * (Registro Profissional)' : 'COREN * (Registro Profissional)'}
                 </label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    style={{ flex: 3 }}
+                    placeholder={clinicianType === 'doctor' ? "Ex: 123456" : "Ex: 78900"}
+                    value={crm} 
+                    onChange={(e) => setCrm(e.target.value)} 
+                    required
+                  />
+                  <select
+                    className="form-select"
+                    style={{ flex: 1, minWidth: '80px' }}
+                    value={crmState}
+                    onChange={(e) => setCrmState(e.target.value)}
+                    required
+                  >
+                    {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
+                      <option key={uf} value={uf}>{uf}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  Comprovante de Credencial * (Imagem da Carteira do Conselho ou Diploma)
+                </label>
                 <input 
-                  type="text" 
+                  type="file" 
                   className="form-input" 
-                  placeholder={clinicianType === 'doctor' ? "Ex: CRM-SP 123456" : "Ex: COREN-RJ 78900"}
-                  value={crm} 
-                  onChange={(e) => setCrm(e.target.value)} 
+                  accept="image/*,application/pdf"
+                  onChange={(e) => setDocumentFile(e.target.files[0])}
                   required
                 />
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  Necessário para a validação cadastral regulamentar.
+                </span>
               </div>
               <div className="form-group">
                 <label className="form-label">

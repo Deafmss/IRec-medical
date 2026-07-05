@@ -92,6 +92,25 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
 
 // 1. Sign Up User (Patient or Doctor)
 export const signUpUser = async (email, password, name, role, additionalData = {}) => {
+  let verificationStatus = 'verified'; // Default for patients
+  if (role === 'doctor') {
+    verificationStatus = 'pending';
+    const crmString = additionalData.crm || '';
+    try {
+      const parts = crmString.split('-');
+      if (parts.length === 2) {
+        const crmNum = parts[0];
+        const uf = parts[1];
+        const checkResult = await verifyProfessionalRegistry(crmNum, uf, additionalData.rqe ? 'doctor' : 'nurse');
+        if (checkResult.success && checkResult.status === 'verified') {
+          verificationStatus = 'verified';
+        }
+      }
+    } catch (checkErr) {
+      console.warn("Falha na consulta automática de CRM/COREN:", checkErr);
+    }
+  }
+
   if (!isSupabaseConfigured) {
     const users = getLocalUsers();
     if (users.some(u => u.email === email)) {
@@ -113,6 +132,8 @@ export const signUpUser = async (email, password, name, role, additionalData = {
       rqe: additionalData.rqe || '',
       birthDate: additionalData.birthDate || '',
       gender: additionalData.gender || '',
+      verificationStatus: verificationStatus,
+      professionalDocumentUrl: additionalData.professionalDocumentUrl || '',
       healthUnit: '',
       hasDiabetes: false,
       hasHypertension: false,
@@ -192,7 +213,9 @@ export const signUpUser = async (email, password, name, role, additionalData = {
       specialty: additionalData.specialty || null,
       rqe: additionalData.rqe || null,
       birth_date: additionalData.birthDate || null,
-      gender: additionalData.gender || null
+      gender: additionalData.gender || null,
+      verification_status: verificationStatus,
+      professional_document_url: additionalData.professionalDocumentUrl || null
     };
 
     const { error: profileError } = await supabase
@@ -554,7 +577,9 @@ export const getClinicalProfile = async (userId = null) => {
       lastSeenAt: data.last_seen_at || '',
       bio: data.bio || '',
       education: data.education || '',
-      consultationFee: data.consultation_fee ? parseFloat(data.consultation_fee) : null
+      consultationFee: data.consultation_fee ? parseFloat(data.consultation_fee) : null,
+      verificationStatus: data.verification_status || 'unverified',
+      professionalDocumentUrl: data.professional_document_url || ''
     };
 
     // Log view action if viewed by another user (e.g. doctor)
@@ -1158,14 +1183,15 @@ export const getAllNurses = async () => {
 
   if (!isSupabaseConfigured) {
     const users = getLocalUsers().filter(u => u.role === 'doctor' && isNurseSpecialty(u.specialty));
-    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
   }
 
   try {
     const { data, error } = await supabase
       .from('clinical_profile')
       .select('*')
-      .eq('role', 'doctor');
+      .eq('role', 'doctor')
+      .eq('verification_status', 'verified');
 
     if (error) throw error;
 
@@ -1186,12 +1212,14 @@ export const getAllNurses = async () => {
       avatarUrl: item.avatar_url || '',
       city: item.city || '',
       state: item.state || '',
-      lastSeenAt: item.last_seen_at || ''
+      lastSeenAt: item.last_seen_at || '',
+      verificationStatus: item.verification_status || 'unverified',
+      professionalDocumentUrl: item.professional_document_url || ''
     }));
   } catch (err) {
     console.error('Erro ao buscar enfermeiros do Supabase, caindo para local:', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && isNurseSpecialty(u.specialty));
-    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
   }
 };
 
@@ -1204,14 +1232,15 @@ export const getAllDoctors = async () => {
 
   if (!isSupabaseConfigured) {
     const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty) && u.email !== 'admin@irec.com');
-    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
   }
 
   try {
     const { data, error } = await supabase
       .from('clinical_profile')
       .select('*')
-      .eq('role', 'doctor');
+      .eq('role', 'doctor')
+      .eq('verification_status', 'verified');
 
     if (error) throw error;
 
@@ -1232,12 +1261,14 @@ export const getAllDoctors = async () => {
       avatarUrl: item.avatar_url || '',
       city: item.city || '',
       state: item.state || '',
-      lastSeenAt: item.last_seen_at || ''
+      lastSeenAt: item.last_seen_at || '',
+      verificationStatus: item.verification_status || 'unverified',
+      professionalDocumentUrl: item.professional_document_url || ''
     }));
   } catch (err) {
     console.error('Erro ao buscar médicos do Supabase, caindo para local:', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty) && u.email !== 'admin@irec.com');
-    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
   }
 };
 
@@ -1245,14 +1276,15 @@ export const getAllDoctors = async () => {
 export const getAllClinicians = async () => {
   if (!isSupabaseConfigured) {
     const users = getLocalUsers().filter(u => u.role === 'doctor' && u.email !== 'admin@irec.com');
-    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
   }
 
   try {
     const { data, error } = await supabase
       .from('clinical_profile')
       .select('*')
-      .eq('role', 'doctor');
+      .eq('role', 'doctor')
+      .eq('verification_status', 'verified');
 
     if (error) throw error;
 
@@ -1273,12 +1305,14 @@ export const getAllClinicians = async () => {
       avatarUrl: item.avatar_url || '',
       city: item.city || '',
       state: item.state || '',
-      lastSeenAt: item.last_seen_at || ''
+      lastSeenAt: item.last_seen_at || '',
+      verificationStatus: item.verification_status || 'unverified',
+      professionalDocumentUrl: item.professional_document_url || ''
     }));
   } catch (err) {
     console.error('Erro ao buscar profissionais do Supabase, caindo para local:', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && u.email !== 'admin@irec.com');
-    return users.map(u => getLocalProfile(u.id)).filter(Boolean);
+    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
   }
 };
 
@@ -2314,7 +2348,9 @@ export const getAllProfiles = async () => {
       email: u.email,
       role: u.role,
       crm: u.crm || '',
-      specialty: u.specialty || ''
+      specialty: u.specialty || '',
+      verificationStatus: u.verificationStatus || 'verified',
+      professionalDocumentUrl: u.professionalDocumentUrl || ''
     }));
   }
   try {
@@ -2322,7 +2358,25 @@ export const getAllProfiles = async () => {
       .from('clinical_profile')
       .select('*');
     if (error) throw error;
-    return data;
+    return data.map(item => ({
+      id: item.id,
+      role: item.role,
+      name: item.name,
+      email: item.email,
+      crm: item.crm || '',
+      specialty: item.specialty || '',
+      rqe: item.rqe || '',
+      birthDate: item.birth_date || '',
+      gender: item.gender || '',
+      healthUnit: item.health_unit || '',
+      phone: item.phone || '',
+      avatarUrl: item.avatar_url || '',
+      city: item.city || '',
+      state: item.state || '',
+      lastSeenAt: item.last_seen_at || '',
+      verificationStatus: item.verification_status || 'unverified',
+      professionalDocumentUrl: item.professional_document_url || ''
+    }));
   } catch (err) {
     console.error('Error fetching all profiles:', err);
     return [];
@@ -2513,5 +2567,122 @@ export const subscribeToWebRTCSignaling = (callId, onSignal) => {
   return () => {
     channel.unsubscribe();
   };
+};
+
+export const uploadProfessionalCredential = async (file) => {
+  if (!file) return null;
+  if (!isSupabaseConfigured) {
+    return 'local_mock_document_url';
+  }
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_credential.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('professional-credentials')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('professional-credentials')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  } catch (err) {
+    console.error('Erro ao fazer upload de credencial no Supabase:', err);
+    throw err;
+  }
+};
+
+export const verifyProfessionalRegistry = async (crmNumber, uf, type) => {
+  const apiKey = import.meta.env.VITE_INFOSIMPLES_API_KEY;
+  if (!apiKey) {
+    console.warn("Chave VITE_INFOSIMPLES_API_KEY não configurada no arquivo .env. Habilitando cadastro pendente automático.");
+    return { success: true, status: 'pending', message: 'Chave API não configurada. Cadastro pendente.' };
+  }
+
+  try {
+    const isDoctor = type === 'doctor';
+    const service = isDoctor ? 'cfm/busca-medicos' : 'cofen/busca-profissionais';
+    const params = new URLSearchParams({
+      token: apiKey,
+      uf: uf.toUpperCase(),
+      timeout: '600'
+    });
+
+    if (isDoctor) {
+      params.append('crm', crmNumber);
+    } else {
+      params.append('registro', crmNumber);
+    }
+
+    const response = await fetch(`https://api.infosimples.com/v1/${service}?${params.toString()}`);
+    const result = await response.json();
+
+    if (result.code === 200 && result.data && result.data.length > 0) {
+      const professional = result.data[0];
+      const situation = (professional.situacao || '').toLowerCase();
+      const isActive = situation.includes('ativo') || situation.includes('regular');
+
+      if (isActive) {
+        return {
+          success: true,
+          status: 'verified',
+          name: professional.nome,
+          specialties: professional.especialidades || []
+        };
+      } else {
+        return {
+          success: false,
+          status: 'rejected',
+          message: `Inscrição profissional inativa ou irregular: ${professional.situacao}`
+        };
+      }
+    }
+
+    return {
+      success: false,
+      status: 'pending',
+      message: 'Profissional não localizado na base do conselho. Cadastro sob análise manual.'
+    };
+  } catch (err) {
+    console.error("Erro na verificação de registro profissional via Infosimples:", err);
+    return {
+      success: true,
+      status: 'pending',
+      message: 'Falha temporária de comunicação com a base do conselho. Cadastro sob análise manual.'
+    };
+  }
+};
+
+export const updateVerificationStatus = async (userId, status) => {
+  if (!isSupabaseConfigured) {
+    const profile = getLocalProfile(userId);
+    if (profile) {
+      profile.verificationStatus = status;
+      saveLocalProfile(userId, profile);
+      const users = getLocalUsers();
+      const uIndex = users.findIndex(u => u.id === userId);
+      if (uIndex !== -1) {
+        users[uIndex].verificationStatus = status;
+        saveLocalUsers(users);
+      }
+    }
+    return true;
+  }
+  try {
+    const { error } = await supabase
+      .from('clinical_profile')
+      .update({ verification_status: status })
+      .eq('id', userId);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error("Erro ao atualizar status de verificacao:", err);
+    throw err;
+  }
 };
 

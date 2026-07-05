@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments, getAdminWoundEntries } from '../services/supabaseService';
+import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments, getAdminWoundEntries, updateVerificationStatus } from '../services/supabaseService';
 import AdminReports from './AdminReports';
 import DateRangePicker from './DateRangePicker';
 
@@ -115,6 +115,8 @@ export default function AdminDashboard() {
       alert('Erro ao excluir parceria.');
     }
   };
+
+  const pendingClinicians = users.filter(u => u.role === 'doctor' && u.verificationStatus === 'pending');
 
   // Exclude system admin from directories
   const filteredUsers = users.filter(u => {
@@ -503,6 +505,35 @@ export default function AdminDashboard() {
           }}
         >
           📋 Auditoria / Logs
+        </button>
+        <button
+          onClick={() => setActiveTab('verifications')}
+          style={{
+            padding: '12px 4px', fontSize: '14.5px', fontWeight: '700',
+            color: activeTab === 'verifications' ? 'var(--primary)' : 'var(--text-muted)',
+            border: 'none', backgroundColor: 'transparent',
+            borderBottom: activeTab === 'verifications' ? '3px solid var(--primary)' : '3px solid transparent',
+            cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '-2px',
+            position: 'relative'
+          }}
+        >
+          🛡️ Homologações
+          {pendingClinicians.length > 0 && (
+            <span style={{
+              position: 'absolute',
+              top: '4px',
+              right: '-14px',
+              backgroundColor: 'var(--danger)',
+              color: '#ffffff',
+              fontSize: '9.5px',
+              fontWeight: '800',
+              padding: '2px 5px',
+              borderRadius: '50%',
+              lineHeight: 1
+            }}>
+              {pendingClinicians.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -983,7 +1014,7 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'logs' ? (
         /* TAB 4: COMPLIANCE AUDIT LOGS */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
@@ -1044,7 +1075,143 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
-      )}
+      ) : activeTab === 'verifications' ? (
+        /* TAB 5: CLINICIAN VERIFICATIONS */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="glass-card" style={{ padding: '24px', margin: 0 }}>
+            <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 6px 0' }}>
+                🛡️ Homologação de Registros Profissionais
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                Analise e valide as credenciais enviadas por médicos e enfermeiros para liberar o acesso ao ecossistema iRec.
+              </p>
+            </div>
+
+            {pendingClinicians.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '28px', display: 'block', marginBottom: '10px' }}>✅</span>
+                <p style={{ fontSize: '13px', margin: 0, fontWeight: '700' }}>Nenhuma solicitação de homologação pendente</p>
+                <p style={{ fontSize: '12px', margin: '4px 0 0 0', color: 'var(--text-muted)' }}>Todos os profissionais de saúde cadastrados estão verificados ou processados.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {pendingClinicians.map((pc) => (
+                  <div 
+                    key={pc.id} 
+                    style={{ 
+                      padding: '20px', 
+                      borderRadius: '12px', 
+                      border: '1px solid var(--border-color)', 
+                      backgroundColor: 'var(--bg-primary)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                      <div>
+                        <h4 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 4px 0' }}>{pc.name}</h4>
+                        <span style={{ 
+                          fontSize: '10px', 
+                          fontWeight: '800', 
+                          padding: '3px 8px', 
+                          borderRadius: '12px', 
+                          backgroundColor: 'rgba(var(--primary-rgb), 0.1)', 
+                          color: 'var(--primary)',
+                          marginRight: '8px'
+                        }}>
+                          {pc.specialty ? pc.specialty.split(',')[0] : 'Profissional de Saúde'}
+                        </span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          Registro: <strong>{pc.crm}</strong>
+                        </span>
+                      </div>
+                      
+                      {pc.professionalDocumentUrl ? (
+                        <a 
+                          href={pc.professionalDocumentUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="btn"
+                          style={{
+                            padding: '6px 14px',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            backgroundColor: 'rgba(var(--primary-rgb), 0.08)',
+                            color: 'var(--primary)',
+                            border: '1px solid rgba(var(--primary-rgb), 0.2)'
+                          }}
+                        >
+                          📄 Ver Documento de Comprovação
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: 'var(--danger)', fontWeight: '700' }}>
+                          ⚠️ Nenhum documento anexado
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '12px', 
+                      borderTop: '1px solid var(--border-color)', 
+                      paddingTop: '16px',
+                      justifyContent: 'flex-end'
+                    }}>
+                      <button
+                        onClick={async () => {
+                          if (window.confirm(`Deseja recusar o cadastro de ${pc.name}?`)) {
+                            try {
+                              await updateVerificationStatus(pc.id, 'rejected');
+                              await loadData();
+                              alert('Cadastro recusado com sucesso.');
+                            } catch (err) {
+                              alert('Erro ao recusar cadastro.');
+                            }
+                          }
+                        }}
+                        className="btn"
+                        style={{
+                          padding: '8px 16px',
+                          fontSize: '12px',
+                          fontWeight: '750',
+                          backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                          color: 'var(--danger)',
+                          border: '1px solid rgba(239, 68, 68, 0.15)'
+                        }}
+                      >
+                        ❌ Recusar Cadastro
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (window.confirm(`Deseja aprovar e homologar o registro de ${pc.name}?`)) {
+                            try {
+                              await updateVerificationStatus(pc.id, 'verified');
+                              await loadData();
+                              alert('Profissional homologado com sucesso! Acesso liberado.');
+                            } catch (err) {
+                              alert('Erro ao homologar profissional.');
+                            }
+                          }
+                        }}
+                        className="btn btn-primary"
+                        style={{
+                          padding: '8px 20px',
+                          fontSize: '12px',
+                          fontWeight: '750'
+                        }}
+                      >
+                        ✅ Homologar Profissional
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {/* POPUP MODAL: ADD PARTNER */}
       {showPartnerModal && (

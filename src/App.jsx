@@ -551,6 +551,76 @@ export default function App() {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
+  const isClinician = currentUser.role === 'doctor' && currentUser.email !== 'admin@irec.com';
+  const isVerifiedClinician = isClinician && currentUser.verificationStatus === 'verified';
+
+  if (isClinician && !isVerifiedClinician) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+        fontFamily: 'var(--font-primary)',
+        padding: '24px',
+        boxSizing: 'border-box'
+      }}>
+        <div className="glass-card" style={{
+          maxWidth: '480px',
+          width: '100%',
+          padding: '40px 32px',
+          textAlign: 'center',
+          border: '1px solid var(--border-color)',
+          borderRadius: '16px',
+          boxShadow: 'var(--shadow-lg)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '24px'
+        }}>
+          {currentUser.verificationStatus === 'rejected' ? (
+            <>
+              <div style={{ fontSize: '48px', color: 'var(--danger)' }}>❌</div>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Cadastro Recusado</h2>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
+                Olá, Dr(a). <strong>{currentUser.name}</strong>. Infelizmente, os documentos de credenciamento ou os dados profissionais (CRM/COREN) fornecidos não puderam ser verificados de forma satisfatória.
+              </p>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
+                Por favor, entre em contato com nosso suporte técnico pelo e-mail <strong>suporte@irec.com.br</strong> para solicitar a revisão e regularizar suas credenciais.
+              </p>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: '48px', color: '#f59e0b' }}>🕒</div>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Cadastro em Análise</h2>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
+                Olá, Dr(a). <strong>{currentUser.name}</strong>. Para garantir a segurança dos pacientes, o acesso à área clínica de médicos e enfermeiros exige a validação do registro profissional (CRM/COREN).
+              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
+                Nossa equipe de auditoria regulamentar está analisando os dados enviados. Esse processo geralmente é concluído em até 24 horas. Você receberá um e-mail assim que seu acesso for liberado.
+              </p>
+              {currentUser.professionalDocumentUrl && (
+                <div style={{ fontSize: '12.5px', wordBreak: 'break-all' }}>
+                  📄 <a href={currentUser.professionalDocumentUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: '600' }}>Ver documento enviado</a>
+                </div>
+              )}
+            </>
+          )}
+
+          <button 
+            onClick={handleLogout}
+            className="btn btn-secondary"
+            style={{ width: '100%', padding: '12px', borderRadius: '10px', fontWeight: '750', fontSize: '13px', border: '1px solid var(--border-color)', marginTop: '8px' }}
+          >
+            Sair da Conta
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const isChatActive = activeTab === 'chat' || activeTab === 'telemedicine';
 
   return (

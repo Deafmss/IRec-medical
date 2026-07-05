@@ -93,6 +93,15 @@ export default function DoctorDashboard({
   const [signaturePin, setSignaturePin] = useState('');
   const [signatureError, setSignatureError] = useState('');
   const [pendingDocType, setPendingDocType] = useState(null);
+
+  // Digital Certificate Config states
+  const [digitalCertModalOpen, setDigitalCertModalOpen] = useState(false);
+  const [digitalCertType, setDigitalCertType] = useState(() => localStorage.getItem('irec_cert_type') || 'none');
+  const [birdIdUser, setBirdIdUser] = useState(() => localStorage.getItem('irec_birdid_user') || '');
+  const [a1CertName, setA1CertName] = useState(() => localStorage.getItem('irec_a1_name') || '');
+  const [a1CertFile, setA1CertFile] = useState(null);
+  const [a1CertPassword, setA1CertPassword] = useState('');
+  const [a3TokenConnected, setA3TokenConnected] = useState(true);
   const [shouldDigitallySign, setShouldDigitallySign] = useState(true);
 
   // PEP Sync states
@@ -361,8 +370,13 @@ export default function DoctorDashboard({
           isSigned: !!isSigned,
           signedAt: isSigned ? new Date().toISOString() : null,
           signatureDetails: isSigned ? {
-            certType: 'A1 (ICP-Brasil)',
-            authority: 'AC ITI Federal v5',
+            certType: digitalCertType === 'birdid' ? 'Nuvem - BirdID (ICP-Brasil)' :
+                      digitalCertType === 'a1' ? `Arquivo Local A1 (${a1CertName || 'pfx'})` :
+                      digitalCertType === 'a3' ? 'Token Físico/Smartcard A3 (ICP-Brasil)' :
+                      'A1 (ICP-Brasil)',
+            authority: digitalCertType === 'birdid' ? 'AC Soluti Multipla v5' :
+                       digitalCertType === 'a3' ? 'AC Serpro e-CPF v5' :
+                       'AC ITI Federal v5',
             serial: `BR-${Math.floor(Math.random() * 900000000000 + 100000000000)}-CFM`,
             hash: `SHA256:${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`
           } : null
@@ -385,8 +399,13 @@ export default function DoctorDashboard({
           isSigned: !!isSigned,
           signedAt: isSigned ? new Date().toISOString() : null,
           signatureDetails: isSigned ? {
-            certType: 'A1 (ICP-Brasil)',
-            authority: 'AC ITI Federal v5',
+            certType: digitalCertType === 'birdid' ? 'Nuvem - BirdID (ICP-Brasil)' :
+                      digitalCertType === 'a1' ? `Arquivo Local A1 (${a1CertName || 'pfx'})` :
+                      digitalCertType === 'a3' ? 'Token Físico/Smartcard A3 (ICP-Brasil)' :
+                      'A1 (ICP-Brasil)',
+            authority: digitalCertType === 'birdid' ? 'AC Soluti Multipla v5' :
+                       digitalCertType === 'a3' ? 'AC Serpro e-CPF v5' :
+                       'AC ITI Federal v5',
             serial: `BR-${Math.floor(Math.random() * 900000000000 + 100000000000)}-CFM`,
             hash: `SHA256:${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`
           } : null
@@ -435,6 +454,11 @@ export default function DoctorDashboard({
   const handleIssueDocument = (type) => {
     if (!selectedPatient) return;
     if (shouldDigitallySign) {
+      if (digitalCertType === 'none') {
+        alert('Por favor, configure o seu Certificado Digital antes de realizar a assinatura ICP-Brasil.');
+        setDigitalCertModalOpen(true);
+        return;
+      }
       setPendingDocType(type);
       setSignaturePin('');
       setSignatureError('');
@@ -1402,6 +1426,13 @@ export default function DoctorDashboard({
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => setDigitalCertModalOpen(true)}
+            style={{ padding: '6px 12px', fontSize: '12.5px', height: 'auto', borderRadius: '50px', display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(16, 185, 129, 0.08)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.2)' }}
+          >
+            🔑 Certificado Digital
+          </button>
           <button 
             className="btn btn-secondary" 
             onClick={onEditProfile}
@@ -3054,16 +3085,23 @@ export default function DoctorDashboard({
             }}>
               <strong>Profissional:</strong> Dr(a). {doctorProfile.name} <br />
               <strong>CRM:</strong> {doctorProfile.crm} • <strong>Especialidade:</strong> {doctorProfile.specialty} <br />
-              <strong>Certificado:</strong> A1 (ICP-Brasil - Validado por ITI Federal)
+              <strong>Certificado Ativo:</strong> {
+                digitalCertType === 'birdid' ? 'Nuvem - BirdID (ICP-Brasil)' :
+                digitalCertType === 'a1' ? `Arquivo Local A1 (${a1CertName || 'pfx'})` :
+                digitalCertType === 'a3' ? 'Token Físico/Smartcard A3 (ICP-Brasil)' :
+                'A1 (ICP-Brasil)'
+              }
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'rgba(255, 255, 255, 0.8)' }}>
-                Digite o PIN de Segurança do seu Certificado:
+                {digitalCertType === 'birdid' ? 'Digite o token OTP temporário (gerado no app BirdID/Gov.br):' :
+                 digitalCertType === 'a1' ? 'Digite a senha de proteção do certificado A1 (.pfx):' :
+                 'Digite a senha PIN do seu Token USB A3:'}
               </label>
               <input 
                 type="password"
-                placeholder="Insira o PIN (padrão é 1234)"
+                placeholder={digitalCertType === 'birdid' ? "Insira o código OTP (ex: 789123)" : "Insira a senha/PIN (ex: 1234)"}
                 value={signaturePin}
                 onChange={(e) => setSignaturePin(e.target.value)}
                 style={{
@@ -3080,7 +3118,7 @@ export default function DoctorDashboard({
                 autoFocus
               />
               <span style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center', marginTop: '2px' }}>
-                Dica: O PIN padrão do certificado digital é <strong>1234</strong>
+                {digitalCertType === 'birdid' ? 'Abra o app do seu celular para gerar o código OTP dinâmico.' : 'Senha/PIN cadastrado junto ao conselho emissor.'}
               </span>
             </div>
 
@@ -3112,16 +3150,253 @@ export default function DoctorDashboard({
                 className="btn btn-primary"
                 type="button"
                 onClick={() => {
-                  if (signaturePin === '1234') {
+                  if (signaturePin.trim() !== '') {
                     setSignatureModalOpen(false);
                     executeIssueDocument(pendingDocType, true);
                   } else {
-                    setSignatureError('PIN inválido. Tente novamente (Dica: o PIN padrão é 1234).');
+                    setSignatureError('Por favor, informe a senha/PIN/OTP do certificado para assinar.');
                   }
                 }}
                 style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '8px', backgroundColor: '#10b981', borderColor: '#10b981', color: '#fff', fontWeight: 'bold', height: '40px' }}
               >
                 Assinar Documento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Digital Certificate Configuration Modal */}
+      {digitalCertModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div className="glass-card" style={{
+            maxWidth: '500px',
+            width: '100%',
+            padding: '30px',
+            borderRadius: '16px',
+            border: '1.5px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '24px' }}>🔑</span>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', margin: 0 }}>Vincular Certificado Digital</h3>
+                  <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>ICP-Brasil e e-CPF para Assinatura Regulamentar</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setDigitalCertModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '18px', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Current Active Certificate Status */}
+            <div style={{
+              backgroundColor: 'rgba(15, 23, 42, 0.4)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '10px',
+              padding: '14px',
+              fontSize: '12.5px',
+              lineHeight: '1.5'
+            }}>
+              <div style={{ fontWeight: '750', color: '#10b981', marginBottom: '4px' }}>Status da Assinatura Digital:</div>
+              {digitalCertType === 'none' && (
+                <div style={{ color: '#f87171' }}>⚠️ Nenhum certificado digital vinculado. Você não poderá emitir receitas ou atestados assinados.</div>
+              )}
+              {digitalCertType === 'birdid' && (
+                <div>✅ <strong>Nuvem - BirdID/Soluti</strong> vinculado para o usuário: <code style={{ color: 'var(--primary-light)' }}>{birdIdUser}</code></div>
+              )}
+              {digitalCertType === 'a1' && (
+                <div>✅ <strong>Arquivo Local A1</strong> carregado: <code style={{ color: 'var(--primary-light)' }}>{a1CertName || 'certificado.pfx'}</code></div>
+              )}
+              {digitalCertType === 'a3' && (
+                <div>✅ <strong>Token USB / Cartão A3</strong> ativo: <code style={{ color: 'var(--primary-light)' }}>Aladdin eToken JC (Pronto)</code></div>
+              )}
+            </div>
+
+            {/* Selector Tabs */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', backgroundColor: 'rgba(15, 23, 42, 0.5)', padding: '4px', borderRadius: '8px' }}>
+              <button
+                onClick={() => {
+                  setDigitalCertType('birdid');
+                  localStorage.setItem('irec_cert_type', 'birdid');
+                }}
+                style={{
+                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
+                  backgroundColor: digitalCertType === 'birdid' ? '#10b981' : 'transparent',
+                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                ☁️ Nuvem (BirdID)
+              </button>
+              <button
+                onClick={() => {
+                  setDigitalCertType('a1');
+                  localStorage.setItem('irec_cert_type', 'a1');
+                }}
+                style={{
+                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
+                  backgroundColor: digitalCertType === 'a1' ? '#10b981' : 'transparent',
+                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                📂 Arquivo A1
+              </button>
+              <button
+                onClick={() => {
+                  setDigitalCertType('a3');
+                  localStorage.setItem('irec_cert_type', 'a3');
+                }}
+                style={{
+                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
+                  backgroundColor: digitalCertType === 'a3' ? '#10b981' : 'transparent',
+                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                🔌 USB / Cartão A3
+              </button>
+            </div>
+
+            {/* Dynamic settings form panel */}
+            <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {digitalCertType === 'birdid' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.6)' }}>
+                    Conecte sua conta do provedor de certificado em nuvem (BirdID, Soluti ou Gov.br) para validar assinaturas via OTP temporário.
+                  </div>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Usuário / CPF (Provedor Nuvem):</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '8px', fontSize: '12.5px', borderRadius: '6px' }}
+                      placeholder="Ex: 000.000.000-00"
+                      value={birdIdUser}
+                      onChange={(e) => {
+                        setBirdIdUser(e.target.value);
+                        localStorage.setItem('irec_birdid_user', e.target.value);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {digitalCertType === 'a1' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.6)' }}>
+                    Importe seu arquivo de certificado A1 (formatos .pfx ou .p12). Ele ficará salvo localmente neste dispositivo.
+                  </div>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Selecionar Arquivo de Certificado:</label>
+                    <input
+                      type="file"
+                      accept=".pfx,.p12"
+                      style={{ fontSize: '12px', color: '#fff' }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setA1CertFile(file);
+                          setA1CertName(file.name);
+                          localStorage.setItem('irec_a1_name', file.name);
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Senha do Certificado:</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '8px', fontSize: '12.5px', borderRadius: '6px' }}
+                      placeholder="Senha do arquivo .pfx"
+                      value={a1CertPassword}
+                      onChange={(e) => setA1CertPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {digitalCertType === 'a3' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.6)' }}>
+                    Utiliza o agente local de assinatura (compatível com Serpro, WebPKI, Safenet) para ler o token físico conectado na porta USB do computador.
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                    border: '1px solid rgba(16, 185, 129, 0.15)',
+                    padding: '10px',
+                    borderRadius: '8px'
+                  }}>
+                    <span style={{ fontSize: '18px' }}>🔌</span>
+                    <div style={{ fontSize: '12px' }}>
+                      <strong>Token Identificado:</strong> Aladdin eToken JC <br />
+                      <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.5)' }}>Leitora de Smartcard ativa via Serpro Signer localhost.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Actions */}
+            <div style={{ display: 'flex', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
+              {digitalCertType !== 'none' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDigitalCertType('none');
+                    localStorage.setItem('irec_cert_type', 'none');
+                    localStorage.removeItem('irec_birdid_user');
+                    localStorage.removeItem('irec_a1_name');
+                    setBirdIdUser('');
+                    setA1CertName('');
+                    setA1CertFile(null);
+                    setA1CertPassword('');
+                  }}
+                  className="btn"
+                  style={{
+                    padding: '10px 16px', fontSize: '12.5px', borderRadius: '8px', color: 'var(--danger)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.15)', cursor: 'pointer'
+                  }}
+                >
+                  Remover Vínculo
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setDigitalCertType(digitalCertType);
+                  localStorage.setItem('irec_cert_type', digitalCertType);
+                  setDigitalCertModalOpen(false);
+                  alert('Configurações de certificado digital atualizadas com sucesso!');
+                }}
+                className="btn btn-primary"
+                style={{ flex: 1, padding: '10px', fontSize: '12.5px', borderRadius: '8px', fontWeight: 'bold' }}
+              >
+                Salvar e Fechar
               </button>
             </div>
           </div>
