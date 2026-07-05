@@ -3,8 +3,8 @@ import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, a
 import AdminReports from './AdminReports';
 import DateRangePicker from './DateRangePicker';
 
-export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('metrics'); // 'metrics', 'users', 'partners', 'logs'
+export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab, onVerificationProcessed }) {
+  const activeTab = propActiveTab === 'dashboard' ? 'metrics' : propActiveTab;
   const [stats, setStats] = useState({ patients: 0, doctors: 0, nurses: 0, triages: 0, partners: 0, calls: 0 });
   const [users, setUsers] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -444,98 +444,7 @@ export default function AdminDashboard() {
         />
       </header>
 
-      {/* Main Tab Navigation */}
-      <div style={{ display: 'flex', gap: '24px', borderBottom: '1.5px solid var(--border-color)', marginBottom: '24px', paddingBottom: '2px' }}>
-        <button
-          onClick={() => setActiveTab('metrics')}
-          style={{
-            padding: '12px 4px', fontSize: '14.5px', fontWeight: '700',
-            color: activeTab === 'metrics' ? 'var(--primary)' : 'var(--text-muted)',
-            border: 'none', backgroundColor: 'transparent',
-            borderBottom: activeTab === 'metrics' ? '3px solid var(--primary)' : '3px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '-2px'
-          }}
-        >
-          📊 Visão Geral & Métricas
-        </button>
-        <button
-          onClick={() => setActiveTab('reports')}
-          style={{
-            padding: '12px 4px', fontSize: '14.5px', fontWeight: '700',
-            color: activeTab === 'reports' ? 'var(--primary)' : 'var(--text-muted)',
-            border: 'none', backgroundColor: 'transparent',
-            borderBottom: activeTab === 'reports' ? '3px solid var(--primary)' : '3px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '-2px'
-          }}
-        >
-          📊 Relatórios Consolidados
-        </button>
-        <button
-          onClick={() => setActiveTab('users')}
-          style={{
-            padding: '12px 4px', fontSize: '14.5px', fontWeight: '700',
-            color: activeTab === 'users' ? 'var(--primary)' : 'var(--text-muted)',
-            border: 'none', backgroundColor: 'transparent',
-            borderBottom: activeTab === 'users' ? '3px solid var(--primary)' : '3px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '-2px'
-          }}
-        >
-          👥 Usuários Cadastrados
-        </button>
-        <button
-          onClick={() => setActiveTab('partners')}
-          style={{
-            padding: '12px 4px', fontSize: '14.5px', fontWeight: '700',
-            color: activeTab === 'partners' ? 'var(--primary)' : 'var(--text-muted)',
-            border: 'none', backgroundColor: 'transparent',
-            borderBottom: activeTab === 'partners' ? '3px solid var(--primary)' : '3px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '-2px'
-          }}
-        >
-          🤝 Parceiros iRec
-        </button>
-        <button
-          onClick={() => setActiveTab('logs')}
-          style={{
-            padding: '12px 4px', fontSize: '14.5px', fontWeight: '700',
-            color: activeTab === 'logs' ? 'var(--primary)' : 'var(--text-muted)',
-            border: 'none', backgroundColor: 'transparent',
-            borderBottom: activeTab === 'logs' ? '3px solid var(--primary)' : '3px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '-2px'
-          }}
-        >
-          📋 Auditoria / Logs
-        </button>
-        <button
-          onClick={() => setActiveTab('verifications')}
-          style={{
-            padding: '12px 4px', fontSize: '14.5px', fontWeight: '700',
-            color: activeTab === 'verifications' ? 'var(--primary)' : 'var(--text-muted)',
-            border: 'none', backgroundColor: 'transparent',
-            borderBottom: activeTab === 'verifications' ? '3px solid var(--primary)' : '3px solid transparent',
-            cursor: 'pointer', transition: 'all 0.2s ease', marginBottom: '-2px',
-            position: 'relative'
-          }}
-        >
-          🛡️ Homologações
-          {pendingClinicians.length > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: '4px',
-              right: '-14px',
-              backgroundColor: 'var(--danger)',
-              color: '#ffffff',
-              fontSize: '9.5px',
-              fontWeight: '800',
-              padding: '2px 5px',
-              borderRadius: '50%',
-              lineHeight: 1
-            }}>
-              {pendingClinicians.length}
-            </span>
-          )}
-        </button>
-      </div>
+
 
       {/* Tab Contents */}
       {loading ? (
@@ -1165,6 +1074,7 @@ export default function AdminDashboard() {
                             try {
                               await updateVerificationStatus(pc.id, 'rejected');
                               await loadData();
+                              if (onVerificationProcessed) onVerificationProcessed();
                               alert('Cadastro recusado com sucesso.');
                             } catch (err) {
                               alert('Erro ao recusar cadastro.');
@@ -1189,6 +1099,7 @@ export default function AdminDashboard() {
                             try {
                               await updateVerificationStatus(pc.id, 'verified');
                               await loadData();
+                              if (onVerificationProcessed) onVerificationProcessed();
                               alert('Profissional homologado com sucesso! Acesso liberado.');
                             } catch (err) {
                               alert('Erro ao homologar profissional.');
