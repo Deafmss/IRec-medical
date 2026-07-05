@@ -127,18 +127,12 @@ export default function Login({ onLoginSuccess }) {
           if (selectedSpecialties.length === 0) {
             throw new Error(`Por favor, adicione pelo menos uma especialidade para o ${clinicianType === 'doctor' ? 'Médico' : 'Enfermeiro'}.`);
           }
-          if (!documentFile) {
-            throw new Error(`Por favor, faça o upload do comprovante de seu ${label} (imagem ou PDF da carteirinha profissional ou diploma).`);
-          }
-
-          setSuccessMsg('Enviando documento de credencial...');
-          const documentUrl = await uploadProfessionalCredential(documentFile);
 
           additionalData = { 
             crm: `${crm.toUpperCase()}-${crmState}`, 
             specialty, 
             rqe: clinicianType === 'doctor' ? rqe : '',
-            professionalDocumentUrl: documentUrl
+            professionalDocumentUrl: ''
           };
         }
 
@@ -730,21 +724,7 @@ export default function Login({ onLoginSuccess }) {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">
-                  Comprovante de Credencial * (Imagem da Carteira do Conselho ou Diploma)
-                </label>
-                <input 
-                  type="file" 
-                  className="form-input" 
-                  accept="image/*,application/pdf"
-                  onChange={(e) => setDocumentFile(e.target.files[0])}
-                  required
-                />
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                  Necessário para a validação cadastral regulamentar.
-                </span>
-              </div>
+
               <div className="form-group">
                 <label className="form-label">
                   {clinicianType === 'doctor' ? 'Especialidade(s) Médica(s) *' : 'Especialidade(s) de Enfermagem *'}

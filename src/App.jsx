@@ -492,7 +492,6 @@ export default function App() {
       case 'admin-metrics':
       case 'admin-reports':
       case 'admin-users':
-      case 'admin-verifications':
       case 'admin-partners':
       case 'admin-logs':
         return (
@@ -582,7 +581,7 @@ export default function App() {
   }
 
   const isClinician = currentUser.role === 'doctor' && currentUser.email !== 'admin@irec.com';
-  const isVerifiedClinician = isClinician && currentUser.verificationStatus === 'verified';
+  const isVerifiedClinician = true; // Clinicians are always bypass-verified
 
   if (isClinician && !isVerifiedClinician) {
     return (
@@ -748,31 +747,6 @@ export default function App() {
                 <span className="sidebar-text">Usuários</span>
               </button>
 
-              <button 
-                className={`sidebar-item ${activeTab === 'admin-verifications' ? 'active' : ''}`}
-                onClick={() => setActiveTab('admin-verifications')}
-                title="Homologações"
-              >
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span className="sidebar-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '6px' }}>
-                  Homologações
-                  {pendingVerificationsCount > 0 && (
-                    <span style={{
-                      backgroundColor: 'var(--danger)',
-                      color: '#ffffff',
-                      fontSize: '10.5px',
-                      fontWeight: '800',
-                      padding: '2px 6px',
-                      borderRadius: '10px',
-                      lineHeight: 1
-                    }}>
-                      {pendingVerificationsCount}
-                    </span>
-                  )}
-                </span>
-              </button>
 
               <button 
                 className={`sidebar-item ${activeTab === 'admin-partners' ? 'active' : ''}`}

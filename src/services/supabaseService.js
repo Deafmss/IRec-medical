@@ -92,24 +92,7 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
 
 // 1. Sign Up User (Patient or Doctor)
 export const signUpUser = async (email, password, name, role, additionalData = {}) => {
-  let verificationStatus = 'verified'; // Default for patients
-  if (role === 'doctor') {
-    verificationStatus = 'pending';
-    const crmString = additionalData.crm || '';
-    try {
-      const parts = crmString.split('-');
-      if (parts.length === 2) {
-        const crmNum = parts[0];
-        const uf = parts[1];
-        const checkResult = await verifyProfessionalRegistry(crmNum, uf, additionalData.rqe ? 'doctor' : 'nurse');
-        if (checkResult.success && checkResult.status === 'verified') {
-          verificationStatus = 'verified';
-        }
-      }
-    } catch (checkErr) {
-      console.warn("Falha na consulta automática de CRM/COREN:", checkErr);
-    }
-  }
+  let verificationStatus = 'verified'; // All users are verified automatically by default
 
   if (!isSupabaseConfigured) {
     const users = getLocalUsers();
