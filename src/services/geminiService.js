@@ -3,7 +3,23 @@ const GEMINI_KEYS = [
   import.meta.env.VITE_GEMINI_API_KEY,
   import.meta.env.VITE_GEMINI_API_KEY_2,
   import.meta.env.VITE_GEMINI_API_KEY_3,
-  import.meta.env.VITE_GEMINI_API_KEY_4
+  import.meta.env.VITE_GEMINI_API_KEY_4,
+  import.meta.env.VITE_GEMINI_API_KEY_5,
+  import.meta.env.VITE_GEMINI_API_KEY_6,
+  import.meta.env.VITE_GEMINI_API_KEY_7,
+  import.meta.env.VITE_GEMINI_API_KEY_8,
+  import.meta.env.VITE_GEMINI_API_KEY_9,
+  import.meta.env.VITE_GEMINI_API_KEY_10,
+  import.meta.env.VITE_GEMINI_API_KEY_11,
+  import.meta.env.VITE_GEMINI_API_KEY_12,
+  import.meta.env.VITE_GEMINI_API_KEY_13,
+  import.meta.env.VITE_GEMINI_API_KEY_14,
+  import.meta.env.VITE_GEMINI_API_KEY_15,
+  import.meta.env.VITE_GEMINI_API_KEY_16,
+  import.meta.env.VITE_GEMINI_API_KEY_17,
+  import.meta.env.VITE_GEMINI_API_KEY_18,
+  import.meta.env.VITE_GEMINI_API_KEY_19,
+  import.meta.env.VITE_GEMINI_API_KEY_20
 ].filter(Boolean);
 
 let currentKeyIndex = 0;
