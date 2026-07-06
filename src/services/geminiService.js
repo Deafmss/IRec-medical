@@ -1,5 +1,21 @@
 import { supabase, isSupabaseConfigured as isSupabaseActive } from '../supabaseClient';
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GEMINI_KEYS = [
+  import.meta.env.VITE_GEMINI_API_KEY,
+  import.meta.env.VITE_GEMINI_API_KEY_2,
+  import.meta.env.VITE_GEMINI_API_KEY_3,
+  import.meta.env.VITE_GEMINI_API_KEY_4
+].filter(Boolean);
+
+let currentKeyIndex = 0;
+
+export const isGeminiConfigured = GEMINI_KEYS.length > 0 && GEMINI_KEYS[0] !== 'sua_chave_do_gemini_aqui';
+
+if (!isGeminiConfigured) {
+  console.warn(
+    '⚠️ [iRec] Chave VITE_GEMINI_API_KEY não configurada no arquivo .env.\n' +
+    'A Inteligência Artificial de triagem e conversação rodará em MODO SIMULADO local.'
+  );
+}
 
 // Convert file to Base64 structure for Gemini Multimodal API
 const fileToGenerativePart = async (file) => {
@@ -19,14 +35,48 @@ const fileToGenerativePart = async (file) => {
   });
 };
 
-export const isGeminiConfigured = !!(GEMINI_API_KEY && GEMINI_API_KEY !== 'sua_chave_do_gemini_aqui');
+// Helper to fetch from Gemini API with automatic key rotation on 429 Too Many Requests
+const fetchGeminiWithRotation = async (modelAndAction, bodyData) => {
+  const maxRetries = GEMINI_KEYS.length;
+  let attempts = 0;
 
-if (!isGeminiConfigured) {
-  console.warn(
-    '⚠️ [iRec] Chave VITE_GEMINI_API_KEY não configurada no arquivo .env.\n' +
-    'A Inteligência Artificial de triagem e conversação rodará em MODO SIMULADO local.'
-  );
-}
+  while (attempts < maxRetries) {
+    const apiKey = GEMINI_KEYS[currentKeyIndex];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelAndAction}?key=${apiKey}`;
+    
+    try {
+      console.log(`[Gemini API] Requesting with key index ${currentKeyIndex}...`);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bodyData)
+      });
+
+      if (response.status === 429) {
+        console.warn(`[Gemini API] Key index ${currentKeyIndex} hit rate limit (429). Rotating key...`);
+        currentKeyIndex = (currentKeyIndex + 1) % GEMINI_KEYS.length;
+        attempts++;
+        continue; // Retry with next key
+      }
+
+      if (!response.ok) {
+        throw new Error(`Falha no Gemini API: ${response.statusText}`);
+      }
+
+      return response;
+    } catch (err) {
+      if (attempts === maxRetries - 1) {
+        throw err;
+      }
+      console.error(`[Gemini API] Request failed with key index ${currentKeyIndex}. Rotating...`, err);
+      currentKeyIndex = (currentKeyIndex + 1) % GEMINI_KEYS.length;
+      attempts++;
+    }
+  }
+  throw new Error("Todas as chaves de API do Gemini excederam o limite.");
+};
 
 export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsText) => {
   const profile = clinicalProfile || {};
@@ -118,20 +168,13 @@ Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou inf
     parts.push({ text: systemPrompt });
     parts.push({ text: `Dados adicionais digitados pelo paciente/sintomas: "${symptomsText || 'Sem queixas adicionais descritas.'}". Analise e retorne apenas o JSON.` });
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
+    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+      contents: [{ parts }],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
     });
 
-    if (!response.ok) throw new Error(`Falha de comunicação com o Gemini: ${response.statusText}`);
     const result = await response.json();
     const jsonText = result.candidates[0].content.parts[0].text;
     return JSON.parse(jsonText.trim());
@@ -224,20 +267,13 @@ Dê respostas no campo 'reply' usando linguagem extremamente simples, direta e l
       parts: userParts
     });
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: formattedHistory,
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
+    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+      contents: formattedHistory,
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
     });
 
-    if (!response.ok) throw new Error(`Falha no chat do Gemini: ${response.statusText}`);
     const result = await response.json();
     const jsonText = result.candidates[0].content.parts[0].text;
     return JSON.parse(jsonText.trim());
@@ -431,20 +467,13 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código ma
   "specialistRecommendation": "Orientações sobre quando buscar avaliação com especialista (Ex: Cirurgião Vascular, Estomaterapeuta, Endocrinologista para controle glicêmico)"
 }`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: systemPrompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
+    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+      contents: [{ parts: [{ text: systemPrompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
     });
 
-    if (!response.ok) throw new Error(`Falha no protocolo do Gemini: ${response.statusText}`);
     const result = await response.json();
     const jsonText = result.candidates[0].content.parts[0].text;
     return JSON.parse(jsonText.trim());
@@ -501,20 +530,13 @@ INSTRUÇÕES DE FORMATAÇÃO DO SOAP:
 
 Retorne o texto formatado estritamente como um documento SOAP em português (PT-BR), legível, organizado e profissional. Use cabeçalhos claros com negrito (ex: **S - Subjetivo:**, **O - Objetivo:**, etc.) e bullets. Seja preciso e evite inventar dados que não estejam implícitos no texto ditado ou no histórico do paciente.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          { role: 'user', parts: [{ text: systemPrompt }] },
-          { role: 'user', parts: [{ text: `Texto ditado pelo profissional: "${noteText}"` }] }
-        ]
-      })
+    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+      contents: [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'user', parts: [{ text: `Texto ditado pelo profissional: "${noteText}"` }] }
+      ]
     });
 
-    if (!response.ok) throw new Error(`Falha no SOAP do Gemini: ${response.statusText}`);
     const result = await response.json();
     return result.candidates[0].content.parts[0].text.trim();
   } catch (err) {
@@ -578,20 +600,13 @@ Sua resposta deve ser estritamente um objeto JSON puro, sem blocos de código \`
   "riskLevel": "Leve/Risco Moderado/Alto Risco/Crítico"
 }`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: systemPrompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
+    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+      contents: [{ parts: [{ text: systemPrompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
     });
 
-    if (!response.ok) throw new Error(`Falha de comunicação com o Gemini: ${response.statusText}`);
     const result = await response.json();
     const jsonText = result.candidates[0].content.parts[0].text;
     return JSON.parse(jsonText);
