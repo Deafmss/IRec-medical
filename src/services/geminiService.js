@@ -83,6 +83,7 @@ DIRETRIZES GERAIS DE TRIAGEM E RECOMENDAÇÃO:
 2. Caso a queixa seja de natureza geral (ex: febre, dor no peito, falta de ar, manchas, exames laboratoriais, tosse, tontura), avalie a gravidade clínica do quadro, as comorbidades do paciente e a interação com seus medicamentos ativos e alergias.
 3. Classifique o risco geral como Leve, Moderado, Alto Risco ou Crítico.
 4. Identifique Sinais de Alerta (Red Flags) que exijam encaminhamento urgente para o pronto-socorro.
+5. Importante: Como os campos de texto serão lidos diretamente por pacientes leigos, todas as explicações (geminiSummary, medPalmDiagnosis e treatmentPlan) devem usar linguagem extremamente simples, acolhedora e direta. Evite jargões técnicos complicados (como 'desbridamento', 'exsudato', 'isquemia', 'eritema') ou, se precisar citá-los, explique o que significam de forma simples (ex: 'esfacelo (aquela camada amarela na ferida)', 'necrose (casca preta seca)', 'exsudato (secreção/líquido da ferida)').
 
 Sua tarefa é analisar os sintomas, estimar dados clínicos pertinentes ao tipo de queixa e retornar ESTRITAMENTE um objeto JSON puro, sem formatação markdown envolta (sem blocos de código \`\`\`json ou textos adicionais), correspondente a este formato exato:
 {
@@ -91,11 +92,11 @@ Sua tarefa é analisar os sintomas, estimar dados clínicos pertinentes ao tipo 
   "severity": "Classificação da gravidade (Ex: Leve, Risco Moderado, Alto Risco, Crítico)",
   "isRedirect": false, -- true se houver sinais de perigo clínico (Red Flags) que exijam atendimento médico imediato (ex: dor torácica opressiva, febre alta persistente, dispneia intensa, infecção sistêmica ativa ou pé insensível infeccionado).
   "specialist": "Especialidade recomendada caso isRedirect seja true (Ex: Pronto-Socorro, Cardiologista, Cirurgião Vascular, Dermatologista), senão string vazia",
-  "reason": "Explicação clínica curta do motivo do encaminhamento se isRedirect for true, senão string vazia",
-  "geminiSummary": "Resumo clínico das queixas e sintomas relatados pelo paciente",
-  "medPalmDiagnosis": "Parecer clínico detalhado contextualizando os sintomas relatados com o perfil de comorbidades e histórico do paciente.",
+  "reason": "Explicação curta e simples do motivo do encaminhamento se isRedirect for true, senão string vazia",
+  "geminiSummary": "Resumo em linguagem muito simples da queixa e sintomas relatados pelo paciente",
+  "medPalmDiagnosis": "Explicação acolhedora e simples de como os sintomas se relacionam com o histórico e as comorbidades do paciente.",
   "treatmentPlan": [
-    "Instrução 1 de cuidado/conduta recomendada",
+    "Instrução 1 de cuidado recomendada em linguagem simples (ex: 'Lave o local delicadamente com soro morno' em vez de 'Irrigar com solução salina isotônica')",
     "Instrução 2...",
     "Instrução 3..."
   ],
@@ -203,7 +204,7 @@ Ficha clínica atual para referência:
 - Medicações: ${profile.medications || 'Nenhuma'}
 - Alergias: ${profile.allergies || 'Nenhuma'}
 
-Dê respostas concisas, acolhedoras e em parágrafos fáceis de ler no campo 'reply'.`;
+Dê respostas no campo 'reply' usando linguagem extremamente simples, direta e livre de jargões técnicos para pacientes leigos. Use tópicos (bullet points) para listar os cuidados ("O que fazer" e "O que evitar"). Evite termos médicos difíceis; se precisar usá-los, explique de forma simples (ex: 'vermelhidão na pele' em vez de 'eritema', 'secreção/líquido' em vez de 'exsudado'). Seja sempre muito acolhedor e prático nas orientações.`;
 
     formattedHistory.unshift({
       role: 'user',
@@ -402,8 +403,8 @@ DIRETRIZES DE TRATAMENTO E RESPALDO MÉDICO:
 - **Diabetes/Pé Diabético**: Alerte rigorosamente para o controle glicêmico, alívio de pressão (offloading), e inspecionar diariamente o pé inteiro.
 - **Insuficiência Venosa / Úlcera Venosa**: Se não houver doença arterial associada, recomende terapia compressiva (Bota de Unna ou bandagens).
 - **Lesão por Pressão (LPP)**: Recomende controle de umidade, mudança de decúbito de 2h/2h e colchão pneumático.
-- **Dor**: Adicione cuidados gentis na limpeza se a dor for moderada/alta.
-${isClinician ? '- **Foco Clínico**: Como este guia é direcionado a PROFISSIONAIS (médicos e enfermeiros), evite termos amadores de autocuidado doméstico básico. Redija as etapas em formato de condutas de enfermagem/médica (ex: monitoramento de bordas, exsudação, critérios de desbridamento instrumental, etc.).' : ''}
+- Dor: Adicione cuidados gentis na limpeza se a dor for moderada/alta.
+${isClinician ? '- **Foco Clínico**: Como este guia é direcionado a PROFISSIONAIS (médicos e enfermeiros), evite termos amadores de autocuidado doméstico básico. Redija as etapas em formato de condutas de enfermagem/médica (ex: monitoramento de bordas, exsudação, critérios de desbridamento instrumental, etc.).' : '- **Foco Paciente Leigo**: Como este guia é direcionado a um PACIENTE LEIGO, você DEVE usar uma linguagem extremamente simples, amigável, clara e livre de jargões técnicos. Não use palavras difíceis como "desbridamento", "leito da lesão", "exsudato", "fricção", "epitelização", "isquemia", etc. Substitua-as por termos do dia a dia (ex: "como limpar o ferimento", "secreção", "pele nova", "casca preta", "não esfregue com gaze", "mantenha a ferida úmida para cicatrizar").'}
 
 Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código markdown ou texto extra, no seguinte formato exato:
 {

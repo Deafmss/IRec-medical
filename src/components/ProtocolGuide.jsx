@@ -83,12 +83,12 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
     ].filter(Boolean).join(' + ') || 'Cuidados Gerais'
   }`;
 
-  const description = `Este guia de curativo e autocuidado foi gerado dinamicamente para ${profile.name || 'Paciente'} cruzando a lesão ativa (${woundType}) com seu histórico de comorbidades. Instruções baseadas nos Manuais de Condutas do Ministério da Saúde e Diretrizes de Enfermagem (COFEN).`;
+  const description = `Este guia de cuidados foi preparado para ajudar ${profile.name || 'você'} a cuidar da sua ferida (${woundType}) no dia a dia, levando em conta suas condições de saúde. Siga as instruções com atenção.`;
 
   const steps = [
     { 
-      title: 'Limpeza e Higienização do Leito', 
-      desc: 'Irrigar suavemente a lesão com soro fisiológico 0.9% morno em jato leve. Evitar fricção excessiva com gaze para proteger o tecido de granulação recém-formado e reduzir a dor.' 
+      title: '1. Como Limpar o Ferimento', 
+      desc: 'Lave a ferida delicadamente usando soro fisiológico 0.9% morno (se puder, aqueça levemente o frasco em banho-maria). Deixe o soro escorrer suavemente sobre a lesão. Nunca esfregue a ferida com gaze ou pano para não machucar a pele nova que está nascendo e não causar dor.' 
     }
   ];
 
@@ -97,43 +97,43 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
 
   if (necrose > 0) {
     steps.push({
-      title: 'Desbridamento de Tecido Necrótico (Preto)',
-      desc: 'Aplicar Hidrogel Amorfo com Alginato no leito da lesão para promover o desbridamento autolítico seguro da necrose. Proteger as bordas com Creme Barreira.'
+      title: '2. Como Cuidar da Parte Preta (Casca Seca)',
+      desc: 'Use um curativo em gel (como o Hidrogel). Ele ajuda a amolecer e remover essa casca preta de forma natural e sem dor. Aplique uma camada fina do gel apenas em cima da parte preta e proteja a pele saudável ao redor usando um creme protetor (creme barreira).'
     });
   } else if (fibrina > 0) {
     steps.push({
-      title: 'Remoção de Esfacelos (Tecido Amarelo)',
-      desc: 'Aplicar curativo de Alginato de Cálcio se houver exsudato moderado ou alto. O alginato se transforma em gel ao absorver a secreção, ajudando a limpar o leito.'
+      title: '2. Como Cuidar da Parte Amarela (Secreção Seca)',
+      desc: 'Se a ferida estiver soltando líquido e tiver partes amarelas, use uma placa de Alginato de Cálcio. Esse curativo absorve o excesso de líquido e se transforma em uma gelatina macia, facilitando a limpeza e a remoção da sujeira.'
     });
   } else {
     steps.push({
-      title: 'Proteção e Estímulo da Granulação (Vermelho)',
-      desc: 'Aplicar Óleo AGE (Ácidos Graxos Essenciais / Dersani) ou cobertura de Espuma de Poliuretano para manter a umidade ideal e acelerar a epitelização.'
+      title: '2. Como Ajudar a Pele Nova a Fechar (Parte Vermelha)',
+      desc: 'Aplique óleo cicatrizante (óleo AGE, como Dersani) ou use um curativo de espuma. Isso mantém a ferida na umidade ideal para que a pele nova cresça e feche o machucado mais rápido.'
     });
   }
 
-  if (clinicalProfile.hasDiabetes) {
+  if (profile.hasDiabetes) {
     steps.push({
-      title: 'Inspeção Diária Rigorosa (Pé Diabético)',
-      desc: 'Inspecionar a sola do pé e espaços interdigitais com o auxílio de um espelho. Secar meticulosamente os dedos após o banho para evitar frieiras.'
+      title: '3. Exame dos Pés Todos os Dias (Pé Diabético)',
+      desc: 'Olhe a sola dos seus pés e entre os dedos todos os dias (use um espelho para ajudar). Lave bem e seque muito bem com uma toalha macia, principalmente entre os dedos, para evitar frieiras ou rachaduras.'
     });
     steps.push({
-      title: 'Alívio Total de Carga (Offloading)',
-      desc: 'Evitar apoiar o peso do corpo sobre o ferimento. Usar calçados de descarga, palmilhas especiais ou muletas conforme orientação médica.'
-    });
-  }
-
-  if (clinicalProfile.hasVenousInsufficiency) {
-    steps.push({
-      title: 'Terapia Compressiva e Elevação',
-      desc: 'Calçar a meia elástica de compressão pela manhã (sob indicação médica) e realizar repouso com as pernas elevadas acima da linha do coração por 30 minutos, 3x ao dia.'
+      title: '4. Evite Pisar com o Pé Machucado',
+      desc: 'Não apoie o peso do corpo sobre o pé que está com a ferida. Use muletas, cadeiras ou sapatos especiais recomendados pelo seu médico para evitar que a ferida piore.'
     });
   }
 
-  if (clinicalProfile.hasHypertension) {
+  if (profile.hasVenousInsufficiency) {
     steps.push({
-      title: 'Controle de Pressão e Dieta Saudável',
-      desc: 'Registrar a pressão arterial diariamente. Seguir dieta hipossódica restrita em sódio para evitar o inchaço nos membros inferiores.'
+      title: '3. Cuidado com o Inchaço e Uso de Meias',
+      desc: 'Se o seu médico indicou, use meias elásticas ou enfaixamento de compressão. Quando puder, deite-se e coloque as pernas para cima apoiadas em almofadas (acima da linha do coração) por 30 minutos, 3 vezes ao dia, para ajudar o sangue a circular.'
+    });
+  }
+
+  if (profile.hasHypertension) {
+    steps.push({
+      title: '3. Controle o Sal e Meça a Pressão',
+      desc: 'Meça sua pressão arterial todo dia. Evite comer sal, alimentos industrializados ou salgados. O excesso de sal faz o corpo acumular líquido e inchar as pernas, o que atrasa a cicatrização da ferida.'
     });
   }
 
