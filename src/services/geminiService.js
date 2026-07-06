@@ -29,6 +29,7 @@ if (!isGeminiConfigured) {
 }
 
 export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsText) => {
+  const profile = clinicalProfile || {};
   if (isSupabaseActive && supabase) {
     try {
       console.log("Chamando triagem via Supabase Edge Function...");
@@ -37,7 +38,7 @@ export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsTex
         filePart = await fileToGenerativePart(photoFile);
       }
       const { data, error } = await supabase.functions.invoke('gemini-analysis', {
-        body: { clinicalProfile, symptomsText, filePart }
+        body: { clinicalProfile: profile, symptomsText, filePart }
       });
       if (error) throw error;
       if (data) return data;
@@ -62,20 +63,20 @@ export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsTex
     const systemPrompt = `Você é um motor de triagem e análise clínica médica de alta precisão, responsável por dar suporte de apoio à decisão clínica e triagem geral de sintomas para qualquer especialidade da medicina.
 Analise a queixa, os sintomas informados e a imagem/documento anexado (que pode ser uma lesão cutânea, uma mancha, um exame médico, receita ou queixa visível).
 Considere obrigatoriamente a Ficha Clínica do paciente:
-- Nome: ${clinicalProfile.name}
-- Data de Nascimento: ${clinicalProfile.birthDate || 'Não informada'}
-- Sexo: ${clinicalProfile.gender || 'Não informado'}
-- Unidade de Saúde: ${clinicalProfile.healthUnit || 'Não informada'}
-- Diabetes: ${clinicalProfile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão Arterial: ${clinicalProfile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${clinicalProfile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${clinicalProfile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-- Tabagismo: ${clinicalProfile.isSmoker ? 'Sim (Fumante)' : 'Não'}
-- Obesidade: ${clinicalProfile.isObese ? 'Sim' : 'Não'}
-- Histórico de Amputação: ${clinicalProfile.hasAmputationHistory ? 'Sim' : 'Não'}
-- Outras Condições: ${clinicalProfile.otherConditions || 'Nenhuma'}
-- Medicamentos Ativos: ${clinicalProfile.medications || 'Nenhum'}
-- Alergias Conhecidas: ${clinicalProfile.allergies || 'Nenhuma'}
+- Nome: ${profile.name || 'Paciente'}
+- Data de Nascimento: ${profile.birthDate || 'Não informada'}
+- Sexo: ${profile.gender || 'Não informado'}
+- Unidade de Saúde: ${profile.healthUnit || 'Não informada'}
+- Diabetes: ${profile.hasDiabetes ? 'Sim' : 'Não'}
+- Hipertensão Arterial: ${profile.hasHypertension ? 'Sim' : 'Não'}
+- Insuficiência Venosa: ${profile.hasVenousInsufficiency ? 'Sim' : 'Não'}
+- Doença Arterial Periférica: ${profile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
+- Tabagismo: ${profile.isSmoker ? 'Sim (Fumante)' : 'Não'}
+- Obesidade: ${profile.isObese ? 'Sim' : 'Não'}
+- Histórico de Amputação: ${profile.hasAmputationHistory ? 'Sim' : 'Não'}
+- Outras Condições: ${profile.otherConditions || 'Nenhuma'}
+- Medicamentos Ativos: ${profile.medications || 'Nenhum'}
+- Alergias Conhecidas: ${profile.allergies || 'Nenhuma'}
 
 DIRETRIZES GERAIS DE TRIAGEM E RECOMENDAÇÃO:
 1. Caso a queixa ou imagem envolva uma ferida/lesão cutânea ativa, analise a composição de tecidos (necrose, fibrina, granulação e epitelização) e sugira as condutas e coberturas adequadas (ex: hidrogel, alginato de cálcio, hidrocoloide ou carvão ativado com prata).
@@ -141,6 +142,7 @@ Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou inf
 
 // 2. Chat Conversation
 export const chatWithAI = async (message, chatHistory, clinicalProfile, attachedFile = null) => {
+  const profile = clinicalProfile || {};
   if (!isGeminiConfigured) {
     return null; // Fallback to simulated replies
   }
@@ -186,20 +188,20 @@ Você deve responder ESTRITAMENTE em formato JSON correspondente a este modelo e
 Antes de sugerir qualquer conduta, cruze com a Ficha Clínica do paciente abaixo.
 
 Ficha clínica atual para referência:
-- Nome: ${clinicalProfile.name}
-- Data de Nascimento: ${clinicalProfile.birthDate || 'Não informada'}
-- Sexo: ${clinicalProfile.gender || 'Não informado'}
-- Unidade de Saúde: ${clinicalProfile.healthUnit || 'Não informada'}
-- Diabetes: ${clinicalProfile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão Arterial: ${clinicalProfile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${clinicalProfile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${clinicalProfile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-- Tabagismo: ${clinicalProfile.isSmoker ? 'Sim (Fumante)' : 'Não'}
-- Obesidade: ${clinicalProfile.isObese ? 'Sim' : 'Não'}
-- Histórico de Amputação: ${clinicalProfile.hasAmputationHistory ? 'Sim' : 'Não'}
-- Outras Condições: ${clinicalProfile.otherConditions || 'Nenhuma'}
-- Medicações: ${clinicalProfile.medications || 'Nenhuma'}
-- Alergias: ${clinicalProfile.allergies || 'Nenhuma'}
+- Nome: ${profile.name || 'Paciente'}
+- Data de Nascimento: ${profile.birthDate || 'Não informada'}
+- Sexo: ${profile.gender || 'Não informado'}
+- Unidade de Saúde: ${profile.healthUnit || 'Não informada'}
+- Diabetes: ${profile.hasDiabetes ? 'Sim' : 'Não'}
+- Hipertensão Arterial: ${profile.hasHypertension ? 'Sim' : 'Não'}
+- Insuficiência Venosa: ${profile.hasVenousInsufficiency ? 'Sim' : 'Não'}
+- Doença Arterial Periférica: ${profile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
+- Tabagismo: ${profile.isSmoker ? 'Sim (Fumante)' : 'Não'}
+- Obesidade: ${profile.isObese ? 'Sim' : 'Não'}
+- Histórico de Amputação: ${profile.hasAmputationHistory ? 'Sim' : 'Não'}
+- Outras Condições: ${profile.otherConditions || 'Nenhuma'}
+- Medicações: ${profile.medications || 'Nenhuma'}
+- Alergias: ${profile.allergies || 'Nenhuma'}
 
 Dê respostas concisas, acolhedoras e em parágrafos fáceis de ler no campo 'reply'.`;
 
@@ -357,19 +359,20 @@ Sua resposta deve ser estritamente em formato JSON correspondente a este modelo 
 
 // 4. Generate Personalized Clinical Protocol backed by official medical documentation
 export const generatePersonalizedProtocol = async (clinicalProfile, latestWoundEntry, isClinician = false) => {
+  const profile = clinicalProfile || {};
   if (!isGeminiConfigured) {
     return null; // Fallback to simulated/static protocols
   }
 
   try {
     const comorbidadesText = [
-      clinicalProfile.hasDiabetes ? 'Diabetes Mellitus' : null,
-      clinicalProfile.hasHypertension ? 'Hipertensão Arterial' : null,
-      clinicalProfile.hasVenousInsufficiency ? 'Insuficiência Venosa' : null,
-      clinicalProfile.hasPeripheralArterialDisease ? 'Doença Arterial Periférica' : null,
-      clinicalProfile.isSmoker ? 'Tabagismo' : null,
-      clinicalProfile.isObese ? 'Obesidade' : null,
-      clinicalProfile.hasAmputationHistory ? 'Histórico de Amputação' : null,
+      profile.hasDiabetes ? 'Diabetes Mellitus' : null,
+      profile.hasHypertension ? 'Hipertensão Arterial' : null,
+      profile.hasVenousInsufficiency ? 'Insuficiência Venosa' : null,
+      profile.hasPeripheralArterialDisease ? 'Doença Arterial Periférica' : null,
+      profile.isSmoker ? 'Tabagismo' : null,
+      profile.isObese ? 'Obesidade' : null,
+      profile.hasAmputationHistory ? 'Histórico de Amputação' : null,
     ].filter(Boolean).join(', ') || 'Nenhuma comorbidade grave';
 
     const triageText = latestWoundEntry ? `
@@ -384,11 +387,11 @@ export const generatePersonalizedProtocol = async (clinicalProfile, latestWoundE
 Sua missão é gerar um **Guia de Protocolos Clínicos Personalizado** ${isClinician ? 'para ser consumido por um profissional de saúde (Médico ou Enfermeiro) sob a forma de apoio à decisão clínica' : 'para um paciente sob a forma de guia de autocuidado doméstico'} baseado na ficha clínica de comorbidades, alergias, idade e no estado atual de suas lesões cutâneas.
 
 PERFIL DO PACIENTE:
-- Nome: ${clinicalProfile.name}
+- Nome: ${profile.name || 'Paciente'}
 - Comorbidades: ${comorbidadesText}
-- Outras Condições: ${clinicalProfile.otherConditions || 'Nenhuma'}
-- Alergias Conhecidas: ${clinicalProfile.allergies || 'Nenhuma'}
-- Medicamentos Ativos: ${clinicalProfile.medications || 'Nenhum'}
+- Outras Condições: ${profile.otherConditions || 'Nenhuma'}
+- Alergias Conhecidas: ${profile.allergies || 'Nenhuma'}
+- Medicamentos Ativos: ${profile.medications || 'Nenhum'}
 
 DADOS DA LESÃO (ÚLTIMA TRIAGEM):
 ${triageText}
@@ -404,7 +407,7 @@ ${isClinician ? '- **Foco Clínico**: Como este guia é direcionado a PROFISSION
 
 Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código markdown ou texto extra, no seguinte formato exato:
 {
-  "title": "${isClinician ? 'Condutas Clínicas de Apoio à Decisão para: ' + clinicalProfile.name : 'Nome do Protocolo Customizado (Ex: Protocolo de Úlcera Venosa e Hipertensão)'}",
+  "title": "${isClinician ? 'Condutas Clínicas de Apoio à Decisão para: ' + (profile.name || 'Paciente') : 'Nome do Protocolo Customizado (Ex: Protocolo de Úlcera Venosa e Hipertensão)'}",
   "description": "Explicação clínica personalizada relacionando a lesão às comorbidades do paciente e os cuidados sistêmicos (ex: controle da glicose, repouso com pernas elevadas, etc.)",
   "steps": [
     {
@@ -521,6 +524,7 @@ Retorne o texto formatado estritamente como um documento SOAP em português (PT-
 
 // 6. Telemedicine Transcript Analysis & Clinical Triage
 export const analyzeTelemedicineTranscript = async (transcriptText, clinicalProfile = {}) => {
+  const profile = clinicalProfile || {};
   if (!isGeminiConfigured) {
     return {
       executiveSummary: "Consulta por telemedicina realizada com sucesso. Paciente relata dor controlada e melhora gradual, mas com secreção leve. Orientado a manter limpeza diária.",
@@ -542,11 +546,11 @@ export const analyzeTelemedicineTranscript = async (transcriptText, clinicalProf
 Sua tarefa é analisar a transcrição de áudio de uma consulta realizada entre um Médico e um Paciente e correlacionar com a ficha clínica do paciente para gerar um prontuário clínico estruturado.
 
 Ficha Clínica do Paciente:
-- Nome: ${clinicalProfile.name || 'Paciente'}
-- Diabetes: ${clinicalProfile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão: ${clinicalProfile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${clinicalProfile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${clinicalProfile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
+- Nome: ${profile.name || 'Paciente'}
+- Diabetes: ${profile.hasDiabetes ? 'Sim' : 'Não'}
+- Hipertensão: ${profile.hasHypertension ? 'Sim' : 'Não'}
+- Insuficiência Venosa: ${profile.hasVenousInsufficiency ? 'Sim' : 'Não'}
+- Doença Arterial Periférica: ${profile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
 
 Transcrição da Consulta:
 """

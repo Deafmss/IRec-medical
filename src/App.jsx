@@ -431,6 +431,10 @@ export default function App() {
 
   // Render active screen
   const renderContent = () => {
+    const isClinician = currentUser?.role === 'doctor' || currentUser?.role === 'nurse';
+    const targetProfile = isClinician ? selectedPatientForDoctor : clinicalProfile;
+    const targetEntries = isClinician ? selectedPatientEntriesForDoctor : entries;
+
     switch (activeTab) {
       case 'doctor-dashboard':
         return (
@@ -460,7 +464,7 @@ export default function App() {
           <ClinicalTriage 
             setActiveTab={setActiveTab} 
             addClinicalEntry={addClinicalEntryLocal} 
-            clinicalProfile={clinicalProfile} 
+            clinicalProfile={targetProfile} 
           />
         );
       case 'chat':
@@ -508,9 +512,6 @@ export default function App() {
       case 'doctor-partners':
         return <DoctorPartners doctorProfile={currentUser} />;
       case 'protocols':
-        const isClinician = currentUser?.role === 'doctor';
-        const targetProfile = isClinician ? selectedPatientForDoctor : clinicalProfile;
-        const targetEntries = isClinician ? selectedPatientEntriesForDoctor : entries;
         return (
           <ProtocolGuide 
             currentUser={currentUser}

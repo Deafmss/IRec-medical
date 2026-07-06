@@ -4,11 +4,12 @@ import { generatePersonalizedProtocol, isGeminiConfigured } from '../services/ge
 
 // Client-side rule-based fallback generator in case Gemini fails or is offline
 function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician = false) {
-  const woundType = latestWoundEntry?.type || (clinicalProfile.hasDiabetes ? 'Pé Diabético' : clinicalProfile.hasVenousInsufficiency ? 'Úlcera Venosa' : 'Lesão Cutânea');
+  const profile = clinicalProfile || {};
+  const woundType = latestWoundEntry?.type || (profile.hasDiabetes ? 'Pé Diabético' : profile.hasVenousInsufficiency ? 'Úlcera Venosa' : 'Lesão Cutânea');
   
   if (isClinician) {
-    const title = `Condutas Clínicas de Apoio à Decisão para: ${clinicalProfile.name}`;
-    const description = `Diretrizes clínicas e condutas terapêuticas recomendadas para o manejo técnico de ${clinicalProfile.name} acometido por ${woundType}. Baseado em consensos científicos e manuais de estomaterapia de alto nível.`;
+    const title = `Condutas Clínicas de Apoio à Decisão para: ${profile.name || 'Paciente'}`;
+    const description = `Diretrizes clínicas e condutas terapêuticas recomendadas para o manejo técnico de ${profile.name || 'Paciente'} acometido por ${woundType}. Baseado em consensos científicos e manuais de estomaterapia de alto nível.`;
     
     const steps = [
       { 
@@ -37,14 +38,14 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
       });
     }
     
-    if (clinicalProfile.hasDiabetes) {
+    if (profile.hasDiabetes) {
       steps.push({
         title: 'Protocolo de Offloading (Descarga) e Controle Metabólico',
         desc: 'Orientar descarga total da área afetada (offloading) através de calçados terapêuticos de descarga ou gesso de contato total. Monitoramento glicêmico rigoroso com meta de HbA1c < 7.0% para otimizar cicatrização.'
       });
     }
     
-    if (clinicalProfile.hasVenousInsufficiency) {
+    if (profile.hasVenousInsufficiency) {
       steps.push({
         title: 'Terapia Compressiva Multibandas',
         desc: 'Realizar avaliação arterial prévia (mensurar pulso pedioso e ITB). Se ITB > 0.8, prescrever enfaixamento compressivo de curta elasticidade (ex: Bota de Unna ou bandagens multibandas de 2/4 camadas) para combater a hipertensão venosa.'
@@ -74,15 +75,15 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
   // Standard patient simulated protocol
   const title = `Guia Clínico Personalizado: ${woundType} com ${
     [
-      clinicalProfile.hasDiabetes ? 'Diabetes' : null,
-      clinicalProfile.hasHypertension ? 'Hipertensão' : null,
-      clinicalProfile.hasVenousInsufficiency ? 'Insuficiência Venosa' : null,
-      clinicalProfile.hasPeripheralArterialDisease ? 'Doença Arterial Periférica' : null,
-      clinicalProfile.isSmoker ? 'Tabagismo' : null
+      profile.hasDiabetes ? 'Diabetes' : null,
+      profile.hasHypertension ? 'Hipertensão' : null,
+      profile.hasVenousInsufficiency ? 'Insuficiência Venosa' : null,
+      profile.hasPeripheralArterialDisease ? 'Doença Arterial Periférica' : null,
+      profile.isSmoker ? 'Tabagismo' : null
     ].filter(Boolean).join(' + ') || 'Cuidados Gerais'
   }`;
 
-  const description = `Este guia de curativo e autocuidado foi gerado dinamicamente para ${clinicalProfile.name} cruzando a lesão ativa (${woundType}) com seu histórico de comorbidades. Instruções baseadas nos Manuais de Condutas do Ministério da Saúde e Diretrizes de Enfermagem (COFEN).`;
+  const description = `Este guia de curativo e autocuidado foi gerado dinamicamente para ${profile.name || 'Paciente'} cruzando a lesão ativa (${woundType}) com seu histórico de comorbidades. Instruções baseadas nos Manuais de Condutas do Ministério da Saúde e Diretrizes de Enfermagem (COFEN).`;
 
   const steps = [
     { 
