@@ -2466,8 +2466,8 @@ export const getDoctorPatientsWoundEntries = async (doctorId) => {
   try {
     const { data: assignments, error: assError } = await supabase
       .from('doctor_patient_assignment')
-      .eq('doctor_id', doctorId)
-      .select('patient_id');
+      .select('patient_id')
+      .eq('doctor_id', doctorId);
     
     if (assError) throw assError;
     const patientIds = assignments.map(a => a.patient_id);
@@ -2475,6 +2475,7 @@ export const getDoctorPatientsWoundEntries = async (doctorId) => {
 
     const { data, error } = await supabase
       .from('wound_entries')
+      .select('*')
       .in('patient_id', patientIds)
       .order('created_at', { ascending: true });
     
