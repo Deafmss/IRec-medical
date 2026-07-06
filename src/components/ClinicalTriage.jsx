@@ -381,6 +381,31 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     setSelectedHotspot(null);
   };
 
+  const resetTriageForm = () => {
+    setImage(null);
+    setPhotoFile(null);
+    setPain(3);
+    setExudate('moderado');
+    setOdor(false);
+    setSymptomsText('');
+    setAttachments([]);
+    setPatientComplaintType('vermelhidao');
+    setWoundType('Úlcera Venosa');
+    setAppearanceDate('');
+    setAnatomicalLocation('');
+    setLesionStage('Estágio I');
+    setLocalTemperature('Normal');
+    setInfectionSigns('Nenhum');
+    setAppliedDressing('');
+    setDressingQuantity(1);
+    setDressingFrequency('');
+    setPerformedProcedures('');
+    setClinicalEvolution('Estável');
+    setClinicalOutcome('Tratamento em andamento');
+    setResult(null);
+    setSelectedHotspot(null);
+  };
+
   const handleSaveAndFinish = async () => {
     if (result) {
       setIsAnalyzing(true);
@@ -422,30 +447,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
 
       setIsAnalyzing(false);
       setAnalysisStep('');
-      setImage(null);
-      setPhotoFile(null);
-      setPain(3);
-      setExudate('moderado');
-      setOdor(false);
-      setSymptomsText('');
-      setAttachments([]);
-      setPatientComplaintType('vermelhidao');
-      
-      // Reset new states
-      setWoundType('Úlcera Venosa');
-      setAppearanceDate('');
-      setAnatomicalLocation('');
-      setLesionStage('Estágio I');
-      setLocalTemperature('Normal');
-      setInfectionSigns('Nenhum');
-      setAppliedDressing('');
-      setDressingQuantity(1);
-      setDressingFrequency('');
-      setPerformedProcedures('');
-      setClinicalEvolution('Estável');
-      setClinicalOutcome('Tratamento em andamento');
-
-      setResult(null);
+      resetTriageForm();
       setActiveTab('history');
     }
   };
@@ -1248,7 +1250,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             
             <button 
               className="btn btn-secondary" 
-              onClick={() => setResult(null)}
+              onClick={resetTriageForm}
               style={{ width: '100%', height: '48px', fontSize: '13.5px' }}
             >
               Realizar Nova Triagem
