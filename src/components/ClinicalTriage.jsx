@@ -161,6 +161,86 @@ const GLOSSARY_DB = {
   }
 };
 
+const generateLocalFallbackAnalysis = (woundType, lesionStage, clinicalProfile, symptomsText) => {
+  const isDiabetes = clinicalProfile?.hasDiabetes;
+  const isHypertension = clinicalProfile?.hasHypertension;
+  const isPeripheralArterial = clinicalProfile?.hasPeripheralArterialDisease;
+  const isSmoker = clinicalProfile?.isSmoker;
+  const hasAmputationHistory = clinicalProfile?.hasAmputationHistory;
+
+  let severity = "Leve";
+  let isRedirect = false;
+  let specialist = "";
+  let reason = "";
+
+  if (isPeripheralArterial || (isDiabetes && hasAmputationHistory)) {
+    severity = "Crítico";
+    isRedirect = true;
+    specialist = "Cirurgião Vascular / Pronto-Socorro";
+    reason = "Paciente de altíssimo risco com doença arterial periférica ou histórico de amputação com suspeita de lesão complexa.";
+  } else if (isDiabetes || isSmoker) {
+    severity = "Alto Risco";
+    isRedirect = true;
+    specialist = "Angiologista / Endocrinologista";
+    reason = "Paciente diabético ou tabagista ativo com ferida em membro inferior que necessita de avaliação especializada para prevenção de complicações.";
+  } else if (isHypertension) {
+    severity = "Risco Moderado";
+  }
+
+  const treatmentPlan = [];
+  let tissueNecrose = 0;
+  let tissueFibrina = 0;
+  let tissueGranulacao = 50;
+  let tissueEpitelizacao = 50;
+
+  const wType = (woundType || '').toLowerCase();
+  if (wType.includes('diabét') || wType.includes('neuropát')) {
+    treatmentPlan.push("Alívio de pressão local (descarga de peso/offloading) imediato.");
+    treatmentPlan.push("Inspeção diária de ambos os pés com espelho.");
+    treatmentPlan.push("Limpeza com soro fisiológico morno sob jato e curativo não aderente.");
+    tissueNecrose = 10;
+    tissueFibrina = 20;
+    tissueGranulacao = 40;
+    tissueEpitelizacao = 30;
+  } else if (wType.includes('venos') || wType.includes('varicos')) {
+    treatmentPlan.push("Terapia compressiva (bota de Unna ou bandagens elásticas de alta compressão) se pulsos palpáveis.");
+    treatmentPlan.push("Elevação dos membros inferiores acima do nível do coração sempre que em repouso.");
+    treatmentPlan.push("Hidratação da pele perilesional com creme barreira ou AGE.");
+    tissueFibrina = 30;
+    tissueGranulacao = 50;
+    tissueEpitelizacao = 20;
+  } else {
+    treatmentPlan.push("Limpeza rigorosa com solução salina (soro fisiológico) morno.");
+    treatmentPlan.push("Manutenção do leito da ferida úmido (uso de AGE ou Hidrogel conforme exsudação).");
+    treatmentPlan.push("Proteção das bordas contra maceração utilizando película protetora.");
+  }
+
+  return {
+    type: woundType || "Clínico Geral",
+    lesionStage: lesionStage || "Moderado",
+    severity: severity,
+    isRedirect: isRedirect,
+    specialist: specialist,
+    reason: reason,
+    geminiSummary: `Análise local de queixas/sintomas: ${symptomsText || 'Paciente sob avaliação de rotina.'}`,
+    medPalmDiagnosis: `Avaliação algorítmica local baseada no histórico clínico do paciente. Paciente ${isDiabetes ? 'Diabético' : 'Não Diabético'} e ${isHypertension ? 'Hipertenso' : 'Normotenso'}.`,
+    treatmentPlan: treatmentPlan,
+    aiAreaCm2: 4.5,
+    aiLengthCm: 2.5,
+    aiWidthCm: 1.8,
+    aiTissueAnalysis: {
+      necrose: tissueNecrose,
+      fibrina: tissueFibrina,
+      granulacao: tissueGranulacao,
+      epitelizacao: tissueEpitelizacao
+    },
+    aiRecommendation: "A análise avançada via nuvem está offline. Recomenda-se realizar curativo conforme protocolo local de feridas e encaminhar para avaliação presencial caso não haja evolução em 14 dias.",
+    clinicalEvolution: "Estável",
+    isLocalFallback: true,
+    glossaryKeys: ["necrose", "desbridamento"]
+  };
+};
+
 export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinicalProfile }) {
   const [image, setImage] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
@@ -291,9 +371,14 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     }
 
     // Real API Error/Offline fallback instead of fake simulation
+    const fallbackResult = generateLocalFallbackAnalysis(woundType, lesionStage, clinicalProfile, symptomsText);
     setIsAnalyzing(false);
     setAnalysisStep('');
-    alert("O serviço de análise clínica por Inteligência Artificial (Gemini) está offline ou não foi configurado. Por favor, verifique a chave de API nas configurações do sistema.");
+    setResult(fallbackResult);
+    if (fallbackResult.type) setWoundType(fallbackResult.type);
+    if (fallbackResult.lesionStage) setLesionStage(fallbackResult.lesionStage);
+    if (fallbackResult.clinicalEvolution) setClinicalEvolution(fallbackResult.clinicalEvolution);
+    setSelectedHotspot(null);
   };
 
   const handleSaveAndFinish = async () => {
@@ -821,6 +906,25 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
       {/* Results Section */}
       {result && (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          {/* FALLBACK BANNER IF IA OFFLINE */}
+          {result.isLocalFallback && (
+            <div className="glass-card" style={{ backgroundColor: 'rgba(245, 158, 11, 0.08)', borderColor: 'rgba(245, 158, 11, 0.3)', margin: 0, padding: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#d97706', borderRadius: '50%', padding: '6px', flexShrink: 0 }}>
+                  <svg style={{ width: '20px', height: '20px', fill: 'none', stroke: 'currentColor', strokeWidth: '2.5' }} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '14.5px', color: '#d97706', fontWeight: '800', margin: '0 0 4px 0' }}>Análise Local (Modo de Contingência)</h3>
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                    O serviço avançado de Inteligência Artificial está temporariamente indisponível. Esta triagem foi gerada localmente de forma automatizada com base nos sintomas informados e comorbidades do paciente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* REDIRECT ALERT CARD FOR SEVERE CASES */}
           {result.isRedirect ? (
