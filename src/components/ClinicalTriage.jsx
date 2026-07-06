@@ -325,6 +325,8 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
       }
       return updated;
     });
+
+    e.target.value = "";
   };
 
   const handleRemoveAttachment = (indexToRemove) => {
@@ -382,6 +384,9 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
   };
 
   const resetTriageForm = () => {
+    if (attachmentsInputRef.current) {
+      attachmentsInputRef.current.value = "";
+    }
     setImage(null);
     setPhotoFile(null);
     setPain(3);
