@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { updateClinicalProfile, getAssignedDoctor } from '../services/supabaseService';
 import LocalResourcesPanel from './LocalResourcesPanel';
+import ClinicalHistory from './ClinicalHistory';
+import PatientDocuments from './PatientDocuments';
 
 
 // Helper to generate precise caret/daily tasks based on clinical history, comorbidities, and active wound status
@@ -217,7 +219,33 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
     });
   }, [clinicalProfile, entries]);
 
+  const [activeSubTab, setActiveSubTab] = useState('diary'); // 'diary', 'history', 'documents'
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  const calculateProfileProgress = (profile) => {
+    if (!profile) return 0;
+    let filled = 0;
+    const fields = [
+      profile.name,
+      profile.birthDate,
+      profile.gender,
+      profile.healthUnit,
+      profile.medications,
+      profile.allergies,
+      profile.city,
+      profile.state,
+      profile.street,
+      profile.number,
+      profile.phone,
+      profile.cpf
+    ];
+    fields.forEach(f => {
+      if (f && f.toString().trim().length > 0) filled++;
+    });
+    return Math.round((filled / fields.length) * 100);
+  };
+
+  const profileProgress = calculateProfileProgress(clinicalProfile);
   const [profileForm, setProfileForm] = useState({ ...clinicalProfile });
   const [assignedClinician, setAssignedClinician] = useState(null);
   const [showMapModal, setShowMapModal] = useState(false);
@@ -357,8 +385,75 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         </div>
       </div>
 
-      {/* Responsive Dashboard Grid */}
-      <div className="dashboard-grid">
+      {/* Sub-tabs Selection Bar */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <button 
+          onClick={() => setActiveSubTab('diary')}
+          style={{ 
+            padding: '10px 16px', 
+            fontSize: '14px', 
+            fontWeight: '700', 
+            border: 'none', 
+            background: 'none', 
+            borderBottom: activeSubTab === 'diary' ? '3.5px solid var(--primary)' : '3.5px solid transparent',
+            color: activeSubTab === 'diary' ? 'var(--primary)' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+        >
+          📅 Meu Diário
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('history')}
+          style={{ 
+            padding: '10px 16px', 
+            fontSize: '14px', 
+            fontWeight: '700', 
+            border: 'none', 
+            background: 'none', 
+            borderBottom: activeSubTab === 'history' ? '3.5px solid var(--primary)' : '3.5px solid transparent',
+            color: activeSubTab === 'history' ? 'var(--primary)' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+        >
+          📷 Fotos e Evolução
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('documents')}
+          style={{ 
+            padding: '10px 16px', 
+            fontSize: '14px', 
+            fontWeight: '700', 
+            border: 'none', 
+            background: 'none', 
+            borderBottom: activeSubTab === 'documents' ? '3.5px solid var(--primary)' : '3.5px solid transparent',
+            color: activeSubTab === 'documents' ? 'var(--primary)' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+        >
+          📄 Receitas e Atestados
+        </button>
+      </div>
+
+      {activeSubTab === 'history' && (
+        <div className="glass-card animate-fade-in" style={{ padding: '24px', margin: '0 0 24px 0', width: '100%' }}>
+          <ClinicalHistory entries={entries} clinicalProfile={clinicalProfile} />
+        </div>
+      )}
+
+      {activeSubTab === 'documents' && (
+        <div className="glass-card animate-fade-in" style={{ padding: '24px', margin: '0 0 24px 0', width: '100%' }}>
+          <PatientDocuments clinicalProfile={clinicalProfile} />
+        </div>
+      )}
+
+      {activeSubTab === 'diary' && (
+        <div className="dashboard-grid animate-fade-in">
         
         {/* Left Column: Progress summary & Quick actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -469,12 +564,13 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
           {/* Quick Action Buttons */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '4px' }}>
             <button className="btn btn-primary" onClick={() => setActiveTab('upload')} style={{ height: '54px', fontSize: '14px' }}>
-              <svg style={{ width: '18px', height: '18px', fill: 'none', stroke: 'currentColor', strokeWidth: '2.5' }} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              <svg style={{ width: '18px', height: '18px', fill: 'none', stroke: 'currentColor', strokeWidth: '2' }} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
               </svg>
-              Nova Análise
+              Fotografar Ferida
             </button>
-            <button className="btn btn-secondary" onClick={() => setActiveTab('history')} style={{ height: '54px', fontSize: '14px' }}>
+            <button className="btn btn-secondary" onClick={() => setActiveSubTab('history')} style={{ height: '54px', fontSize: '14px' }}>
               <svg style={{ width: '18px', height: '18px', fill: 'none', stroke: 'currentColor', strokeWidth: '2' }} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
@@ -700,151 +796,54 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                 </button>
               </form>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12.5px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Nome do Paciente:</span>
-                  <strong>{clinicalProfile.name}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Data de Nascimento:</span>
-                  <strong>{clinicalProfile.birthDate ? new Date(clinicalProfile.birthDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Sexo:</span>
-                  <strong>{clinicalProfile.gender || 'Não informado'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Unidade de Saúde:</span>
-                  <strong>{clinicalProfile.healthUnit || 'Não informada'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Diabetes:</span>
-                  <strong style={{ color: clinicalProfile.hasDiabetes ? 'var(--danger)' : 'var(--success-light)' }}>
-                    {clinicalProfile.hasDiabetes ? 'Sim' : 'Não'}
-                  </strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Hipertensão:</span>
-                  <strong style={{ color: clinicalProfile.hasHypertension ? 'var(--danger)' : 'var(--success-light)' }}>
-                    {clinicalProfile.hasHypertension ? 'Sim' : 'Não'}
-                  </strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Insuficiência Venosa:</span>
-                  <strong>{clinicalProfile.hasVenousInsufficiency ? 'Sim' : 'Não'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Doença Arterial:</span>
-                  <strong>{clinicalProfile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Tabagismo:</span>
-                  <strong style={{ color: clinicalProfile.isSmoker ? 'var(--danger)' : 'var(--success-light)' }}>
-                    {clinicalProfile.isSmoker ? 'Fumante Ativo' : 'Não Fumante'}
-                  </strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Obesidade:</span>
-                  <strong>{clinicalProfile.isObese ? 'Sim' : 'Não'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Histórico de Amputação:</span>
-                  <strong>{clinicalProfile.hasAmputationHistory ? 'Sim' : 'Não'}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Outras Condições:</span>
-                  <strong>{clinicalProfile.otherConditions || 'Nenhuma registrada'}</strong>
-                </div>
-
-                {/* Historico de ulceras anteriores */}
-                <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Histórico de Úlceras Anteriores:</span>
-                  {clinicalProfile.hasPreviousUlcers ? (
-                    <div style={{ fontSize: '11px', paddingLeft: '10px', borderLeft: '2.5px solid var(--accent)', display: 'flex', flexDirection: 'column', gap: '3px', color: 'var(--text-secondary)' }}>
-                      <p>• Cicatrização anterior em: <strong>{clinicalProfile.previousUlcersHealingTime}</strong></p>
-                      <p>• <strong>Curativos:</strong> {clinicalProfile.previousUlcersTreatments}</p>
-                      <p>• <strong>Local do Tratamento:</strong> {
-                        clinicalProfile.previousUlcersLocation === 'casa' ? 'Feito em Casa (Domiciliar)' :
-                        clinicalProfile.previousUlcersLocation === 'unidade_saude' ? 'Unidade de Saúde (SUS/Posto)' :
-                        'Acompanhado por Profissional Competente'
-                      }</p>
-                    </div>
-                  ) : (
-                    <strong>Nenhum histórico registrado</strong>
-                  )}
-                </div>
-
-                <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '2px' }}>Medicamentos em uso:</span>
-                  <p style={{ fontWeight: '600', padding: '6px 10px', backgroundColor: 'var(--bg-primary)', borderRadius: '6px', fontSize: '11.5px' }}>
-                    {clinicalProfile.medications || 'Nenhum medicamento listado'}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
+                {/* Progress bar card */}
+                <div style={{ padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                      Completude da Ficha
+                    </span>
+                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)' }}>
+                      {profileProgress}%
+                    </span>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden', marginBottom: '10px' }}>
+                    <div style={{ width: `${profileProgress}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px', transition: 'width 0.4s ease' }}></div>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4', margin: 0 }}>
+                    Preencha sua ficha clínica completa para ajudar a IA e os profissionais a personalizarem suas orientações.
                   </p>
                 </div>
 
-                <div>
-                  <span style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '2px' }}>Alergias conhecidas:</span>
-                  <strong style={{ color: clinicalProfile.allergies ? 'var(--danger)' : 'var(--text-primary)' }}>
-                    {clinicalProfile.allergies || 'Nenhuma alergia listada'}
-                  </strong>
-                </div>
-
-                {/* Triage Alerts (Dynamic based on attached exams) */}
-                {clinicalProfile.triageAlerts && clinicalProfile.triageAlerts.length > 0 && (
-                  <div style={{ 
-                    marginTop: '8px', 
-                    padding: '10px', 
-                    borderRadius: '8px', 
-                    backgroundColor: 'rgba(239, 68, 68, 0.04)', 
-                    border: '1px solid rgba(239, 68, 68, 0.15)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px'
-                  }}>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Alertas de Triagem (Exames)
-                    </span>
-                    {clinicalProfile.triageAlerts.map((alert, index) => (
-                      <p key={index} style={{ fontSize: '11.5px', fontWeight: '600', color: 'var(--danger)', margin: 0 }}>
-                        {alert}
-                      </p>
-                    ))}
+                {/* Summary Info */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Nome:</span>
+                    <strong>{clinicalProfile.name}</strong>
                   </div>
-                )}
-
-                {/* Attached Exams List */}
-                <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
-                  <span style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Exames Anexados ao Prontuário:</span>
-                  {clinicalProfile.attachedExams && clinicalProfile.attachedExams.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
-                      {clinicalProfile.attachedExams.map((exam, idx) => (
-                        <div key={idx} style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center', 
-                          padding: '6px 10px', 
-                          backgroundColor: 'var(--bg-primary)', 
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-color)'
-                        }}>
-                          <span style={{ fontSize: '11.5px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            📄 {exam.name}
-                          </span>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                            {exam.date}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <strong style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                      Nenhum exame clínico anexado
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Nascimento:</span>
+                    <strong>{clinicalProfile.birthDate ? new Date(clinicalProfile.birthDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Cidade:</span>
+                    <strong>{clinicalProfile.city || 'Não informada'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Alergias:</span>
+                    <strong style={{ color: clinicalProfile.allergies ? 'var(--danger)' : 'var(--text-primary)' }}>
+                      {clinicalProfile.allergies || 'Nenhuma alergia listada'}
                     </strong>
-                  )}
+                  </div>
                 </div>
 
-                <p style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '4px', lineHeight: '1.3' }}>
-                  *Estes dados clínicos detalhados personalizam os diagnósticos preventivos do iRec.
-                </p>
+                <button 
+                  onClick={() => setIsEditingProfile(true)}
+                  className="btn btn-secondary"
+                  style={{ width: '100%', fontSize: '12px', height: '36px', borderRadius: '8px', padding: '6px' }}
+                >
+                  📝 Visualizar Ficha Completa
+                </button>
               </div>
             )}
           </div>
@@ -956,6 +955,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         </div>
 
       </div>
+      )}
 
       {showMapModal && (
         <div style={{
