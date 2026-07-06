@@ -125,6 +125,11 @@ input, button, textarea, select {
   outline: none;
 }
 
+select option {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
 /* Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

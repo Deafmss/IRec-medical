@@ -584,7 +584,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                   borderRadius: '8px', 
                   border: '1px solid var(--border-color)', 
                   backgroundColor: 'var(--bg-secondary)', 
-                  color: '#ffffff',
+                  color: 'var(--text-primary)',
                   fontSize: '13px',
                   fontWeight: '600',
                   outline: 'none',
