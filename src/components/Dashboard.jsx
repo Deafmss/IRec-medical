@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { updateClinicalProfile, getAssignedDoctor } from '../services/supabaseService';
 import LocalResourcesPanel from './LocalResourcesPanel';
 import ClinicalHistory from './ClinicalHistory';
@@ -957,7 +958,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
       </div>
       )}
 
-      {showMapModal && (
+      {showMapModal && createPortal(
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
@@ -1002,7 +1003,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               <LocalResourcesPanel clinicalProfile={clinicalProfile} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
