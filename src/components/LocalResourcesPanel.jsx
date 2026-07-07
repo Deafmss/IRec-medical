@@ -31,10 +31,14 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
           }
           navigator.geolocation.getCurrentPosition(
             (position) => {
-              resolve({
-                lat: position.coords.latitude,
-                lon: position.coords.longitude
-              });
+              const { latitude, longitude } = position.coords;
+              // Check for dummy/mock coordinates around Null Island (0, 0)
+              if (Math.abs(latitude) < 0.1 && Math.abs(longitude) < 0.1) {
+                console.log("Device returned placeholder 0,0 GPS coordinates. Falling back to profile address.");
+                resolve(null);
+              } else {
+                resolve({ lat: latitude, lon: longitude });
+              }
             },
             (err) => {
               console.log("Auto GPS failed:", err.message);
@@ -49,7 +53,7 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
         const gpsCoords = await tryGps();
         if (gpsCoords) {
           setCoords({ lat: gpsCoords.lat, lon: gpsCoords.lon });
-          setResolvedAddress('Localização precisa via GPS do dispositivo');
+          setResolvedAddress(`GPS do dispositivo (Lat: ${gpsCoords.lat.toFixed(4)}, Lon: ${gpsCoords.lon.toFixed(4)})`);
           setGpsActive(true);
         } else if (clinicalProfile) {
           // Fallback to geocoding profile address
@@ -106,11 +110,16 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
     setGpsActive(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setCoords({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude
-        });
-        setResolvedAddress('Localização precisa via GPS do dispositivo');
+        const { latitude, longitude } = position.coords;
+        if (Math.abs(latitude) < 0.1 && Math.abs(longitude) < 0.1) {
+          setGpsActive(false);
+          setLoading(false);
+          alert("O dispositivo retornou coordenadas de GPS inválidas (0,0). Mantendo busca por endereço cadastrado.");
+          return;
+        }
+
+        setCoords({ lat: latitude, lon: longitude });
+        setResolvedAddress(`GPS do dispositivo (Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)})`);
         setLoading(false);
       },
       (err) => {
@@ -268,8 +277,8 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
             title="Google Maps"
             src={
               googleEmbedQuery === 'hospital'
-                ? `https://maps.google.com/maps?q=hospitais+pronto+socorro+loc:${coords.lat},${coords.lon}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
-                : `https://maps.google.com/maps?q=farmacias+loc:${coords.lat},${coords.lon}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
+                ? `https://maps.google.com/maps?q=hospitais+${coords.lat},${coords.lon}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
+                : `https://maps.google.com/maps?q=farmacias+${coords.lat},${coords.lon}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`
             }
             style={{
               width: '100%',
