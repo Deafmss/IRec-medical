@@ -17,33 +17,60 @@ export default function LocalResourcesPanel({ clinicalProfile, compact = false }
     ? `${clinicalProfile.street || ''}-${clinicalProfile.number || ''}-${clinicalProfile.neighborhood || ''}-${clinicalProfile.city || ''}-${clinicalProfile.state || ''}`
     : '';
 
-  // 1. Geocode address from profile on mount or when address changes
+  // 1. Initial location setup: Try GPS first, fallback to Profile Address
   useEffect(() => {
-    async function initGeocoding() {
-      if (gpsActive) return; // Don't overwrite precise GPS coordinates with address search
-
+    async function initLocation() {
       setLoading(true);
       setError('');
+
+      const tryGps = () => {
+        return new Promise((resolve) => {
+          if (!navigator.geolocation) {
+            resolve(null);
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                lat: position.coords.latitude,
+                lon: position.coords.longitude
+              });
+            },
+            (err) => {
+              console.log("Auto GPS failed:", err.message);
+              resolve(null);
+            },
+            { enableHighAccuracy: true, timeout: 4000 }
+          );
+        });
+      };
+
       try {
-        const result = await geocodeAddress(clinicalProfile);
-        if (result) {
-          setCoords({ lat: result.lat, lon: result.lon });
-          setResolvedAddress(result.displayName);
-        } else {
-          setError('Não foi possível encontrar a localização do endereço cadastrado. Digite um CEP ou endereço válido no seu perfil.');
+        const gpsCoords = await tryGps();
+        if (gpsCoords) {
+          setCoords({ lat: gpsCoords.lat, lon: gpsCoords.lon });
+          setResolvedAddress('Localização precisa via GPS do dispositivo');
+          setGpsActive(true);
+        } else if (clinicalProfile) {
+          // Fallback to geocoding profile address
+          const result = await geocodeAddress(clinicalProfile);
+          if (result) {
+            setCoords({ lat: result.lat, lon: result.lon });
+            setResolvedAddress(result.displayName);
+          } else {
+            setError('Não foi possível obter sua localização precisa do GPS nem encontrar seu endereço de cadastro.');
+          }
         }
       } catch (err) {
-        console.error(err);
-        setError('Ocorreu um erro ao carregar as coordenadas geográficas.');
+        console.error("Location init error:", err);
+        setError('Ocorreu um erro ao carregar sua localização.');
       } finally {
         setLoading(false);
       }
     }
 
-    if (clinicalProfile) {
-      initGeocoding();
-    }
-  }, [profileAddressKey, gpsActive]);
+    initLocation();
+  }, [profileAddressKey]);
 
   // 2. Fetch nearby hospitals and pharmacies when coords change
   useEffect(() => {
