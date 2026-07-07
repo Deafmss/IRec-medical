@@ -356,19 +356,32 @@ export default function App() {
       const entryId = latestWoundEntry ? (latestWoundEntry.id || latestWoundEntry.createdAt) : 'no-entry';
       const cacheKey = `irec_cached_protocol_${profileId}_${entryId}`;
       
-      // If already cached, do nothing
-      if (localStorage.getItem(cacheKey)) return;
+      // Check if already cached and profile characteristics match
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          const profileKeys = ['name', 'hasDiabetes', 'hasHypertension', 'hasVenousInsufficiency', 'hasPeripheralArterialDisease', 'isSmoker', 'isObese', 'medications', 'allergies', 'otherConditions'];
+          const profileMatch = profileKeys.every(k => parsed.profile?.[k] === clinicalProfile[k]);
+          const modeMatch = parsed.isClinician === false;
+          if (profileMatch && modeMatch && parsed.protocol) {
+            // Already cached and matching, skip background fetch
+            return;
+          }
+        } catch (e) {
+          // ignore parsing error and proceed to fetch
+        }
+      }
       
       try {
         console.log("Pre-fetching personalized care guide in the background...");
-        // Import dynamically to optimize initial bundle size
         const { generatePersonalizedProtocol } = await import('./services/geminiService');
-        
         const result = await generatePersonalizedProtocol(clinicalProfile, latestWoundEntry);
         
         if (result) {
           const cacheData = {
             protocol: result,
+            isClinician: false,
             profile: {
               name: clinicalProfile.name,
               hasDiabetes: clinicalProfile.hasDiabetes,

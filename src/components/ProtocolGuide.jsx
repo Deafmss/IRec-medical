@@ -247,14 +247,14 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
-          // Only use cache if the clinical profile characteristics and clinician mode match
           const profileKeys = ['name', 'hasDiabetes', 'hasHypertension', 'hasVenousInsufficiency', 'hasPeripheralArterialDisease', 'isSmoker', 'isObese', 'medications', 'allergies', 'otherConditions'];
           const profileMatch = profileKeys.every(k => parsed.profile?.[k] === clinicalProfile[k]);
-          const modeMatch = parsed.isClinician === isClinician;
+          const modeMatch = parsed.isClinician === isClinician || (parsed.isClinician === undefined && isClinician === false);
           
           if (profileMatch && modeMatch && parsed.protocol) {
             console.log("Using cached personalized protocol...");
             setAiProtocol(parsed.protocol);
+            setLoading(false);
             return;
           }
         } catch (e) {
@@ -262,39 +262,39 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
         }
       }
 
-      setLoading(true);
-      setError('');
+      // Load fallback immediately to avoid blocking the user with a loading spinner!
+      const fallbackProtocol = generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
+      setAiProtocol(fallbackProtocol);
+      setLoading(false); // Set loading to false so no blocker is displayed!
+
       try {
-        console.log("Generating personalized clinical protocol via Gemini...");
+        console.log("Generating personalized clinical protocol via Gemini in background...");
         const result = await generatePersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
         
-        const finalProtocol = result || generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
-        setAiProtocol(finalProtocol);
-        
-        // Cache the result along with the profile properties
-        const cacheData = {
-          protocol: finalProtocol,
-          isClinician: isClinician,
-          profile: {
-            name: clinicalProfile.name,
-            hasDiabetes: clinicalProfile.hasDiabetes,
-            hasHypertension: clinicalProfile.hasHypertension,
-            hasVenousInsufficiency: clinicalProfile.hasVenousInsufficiency,
-            hasPeripheralArterialDisease: clinicalProfile.hasPeripheralArterialDisease,
-            isSmoker: clinicalProfile.isSmoker,
-            isObese: clinicalProfile.isObese,
-            medications: clinicalProfile.medications,
-            allergies: clinicalProfile.allergies,
-            otherConditions: clinicalProfile.otherConditions
-          }
-        };
-        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        if (result) {
+          setAiProtocol(result);
+          
+          // Cache the result along with the profile properties
+          const cacheData = {
+            protocol: result,
+            isClinician: isClinician,
+            profile: {
+              name: clinicalProfile.name,
+              hasDiabetes: clinicalProfile.hasDiabetes,
+              hasHypertension: clinicalProfile.hasHypertension,
+              hasVenousInsufficiency: clinicalProfile.hasVenousInsufficiency,
+              hasPeripheralArterialDisease: clinicalProfile.hasPeripheralArterialDisease,
+              isSmoker: clinicalProfile.isSmoker,
+              isObese: clinicalProfile.isObese,
+              medications: clinicalProfile.medications,
+              allergies: clinicalProfile.allergies,
+              otherConditions: clinicalProfile.otherConditions
+            }
+          };
+          localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        }
       } catch (err) {
-        console.error("Failed to generate protocol:", err);
-        const defaultProtocol = generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
-        setAiProtocol(defaultProtocol);
-      } finally {
-        setLoading(false);
+        console.error("Failed to generate protocol in background:", err);
       }
     }
 
