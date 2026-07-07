@@ -2670,3 +2670,69 @@ export const updateVerificationStatus = async (userId, status) => {
   }
 };
 
+// --- CLINICAL KNOWLEDGE BASE (RAG) MANAGEMENT ---
+export const getTrainingKnowledgeList = async () => {
+  if (!isSupabaseConfigured) {
+    return JSON.parse(localStorage.getItem('irec_training_knowledge') || '[]');
+  }
+  try {
+    const { data, error } = await supabase
+      .from('training_knowledge')
+      .select('id, video_title, category, content, created_at')
+      .order('category', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error("Erro ao buscar base de conhecimento:", err);
+    return [];
+  }
+};
+
+export const updateTrainingKnowledgeChapter = async (id, category, content) => {
+  if (!isSupabaseConfigured) {
+    const list = JSON.parse(localStorage.getItem('irec_training_knowledge') || '[]');
+    const index = list.findIndex(item => item.id === id);
+    if (index !== -1) {
+      list[index].category = category;
+      list[index].content = content;
+      localStorage.setItem('irec_training_knowledge', JSON.stringify(list));
+      return true;
+    }
+    return false;
+  }
+  try {
+    const { error } = await supabase
+      .from('training_knowledge')
+      .update({ category, content })
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error("Erro ao atualizar base de conhecimento:", err);
+    throw err;
+  }
+};
+
+export const deleteTrainingKnowledgeChapter = async (id) => {
+  if (!isSupabaseConfigured) {
+    const list = JSON.parse(localStorage.getItem('irec_training_knowledge') || '[]');
+    const filtered = list.filter(item => item.id !== id);
+    localStorage.setItem('irec_training_knowledge', JSON.stringify(filtered));
+    return true;
+  }
+  try {
+    const { error } = await supabase
+      .from('training_knowledge')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error("Erro ao excluir base de conhecimento:", err);
+    throw err;
+  }
+};
+

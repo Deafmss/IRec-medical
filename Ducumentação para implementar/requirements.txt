@@ -1,0 +1,235 @@
+IREC – Documento de Requisitos Estratégicos do MVP e Roadmap de Inteligência Artificial
+Objetivo do Documento
+Este documento tem como objetivo alinhar a equipe de tecnologia sobre os requisitos fundamentais do MVP do IREC e garantir que todas as decisões de arquitetura, produto e inteligência artificial sejam tomadas com foco na construção do principal ativo estratégico da empresa: uma base de dados clínica proprietária para wound care.
+O objetivo do MVP não é apenas criar uma aplicação funcional para acompanhamento de feridas.
+O objetivo é iniciar, desde o primeiro dia, a construção de uma infraestrutura de inteligência clínica capaz de se tornar a maior plataforma de wound care da América Latina.
+
+PRINCÍPIO FUNDAMENTAL
+Toda funcionalidade desenvolvida deve responder à seguinte pergunta:
+“Esta funcionalidade aumenta a qualidade, quantidade ou valor do dataset clínico do IREC?”
+Se a resposta for não, a funcionalidade deve ser reavaliada.
+O dataset é o principal ativo estratégico da companhia.
+
+BLOCO 1 – GESTÃO DE USUÁRIOS
+Estrutura Multiempresa
+Requisitos
+Cadastro de hospitais
+Cadastro de clínicas
+Cadastro de empresas de home care
+Cadastro de operadoras de saúde
+Perfis de Usuário
+Médico
+Enfermeiro
+Técnico de enfermagem
+Administrador
+Gestor hospitalar
+Auditor
+Paciente (futuro)
+Controle de Acesso
+Permissões por perfil
+Permissões por unidade
+Registro de auditoria de ações
+
+BLOCO 2 – CADASTRO CLÍNICO
+Dados do Paciente
+Informações Básicas
+Nome
+Data de nascimento
+Sexo
+Unidade de atendimento
+Comorbidades
+Diabetes
+Hipertensão
+Insuficiência venosa
+Doença arterial periférica
+Tabagismo
+Obesidade
+Histórico de amputação
+Outras condições clínicas
+Medicamentos
+Registro de medicações relevantes
+
+BLOCO 3 – CADASTRO DA FERIDA
+Classificação Inicial
+Tipo da Lesão
+Pé diabético
+Lesão por pressão
+Úlcera venosa
+Úlcera arterial
+Ferida cirúrgica
+Ferida traumática
+Outras
+Dados Clínicos
+Data de aparecimento
+Local anatômico
+Estágio da lesão
+Grau de severidade
+
+BLOCO 4 – CAPTURA ESTRUTURADA DE IMAGENS
+Módulo Fotográfico
+Funcionalidades
+Captura pelo celular
+Captura pelo tablet
+Upload de imagens
+Compressão automática
+Armazenamento seguro
+Metadados Obrigatórios
+Data
+Hora
+Usuário responsável
+Unidade de saúde
+Tipo de dispositivo
+Padronização
+Guia visual de enquadramento
+Orientação de distância
+Centralização da lesão
+Evoluções Futuras
+Cartão de calibração
+Referência métrica automática
+
+BLOCO 5 – TIMELINE EVOLUTIVA
+Histórico Completo
+Funcionalidades
+Linha do tempo da ferida
+Histórico fotográfico
+Comparação lado a lado
+Evolução cronológica
+Registro de intervenções
+
+BLOCO 6 – ESTRUTURAÇÃO DE DADOS PARA IA
+Dados Clínicos por Avaliação
+Sintomas
+Dor
+Exsudato
+Odor
+Temperatura local
+Sinais de infecção
+Tratamento
+Cobertura utilizada
+Quantidade utilizada
+Frequência de troca
+Procedimentos realizados
+Evolução Clínica
+Melhorou
+Estável
+Piorou
+Desfecho Final
+Cicatrização
+Internação
+Reinternação
+Amputação
+Óbito
+Tratamento em andamento
+
+BLOCO 7 – IA V1 (OBRIGATÓRIA NO MVP)
+Objetivo
+Iniciar imediatamente a construção dos modelos proprietários do IREC.
+Segmentação de Feridas
+Capacidade de:
+Identificar automaticamente a área da lesão
+Separar ferida da pele saudável
+Gerar máscara visual da lesão
+Medição Automatizada
+Calcular:
+Área estimada
+Comprimento
+Largura
+Comparação Temporal
+Analisar:
+Foto anterior
+Foto atual
+Gerando:
+Evolução positiva
+Evolução estável
+Evolução negativa
+
+BLOCO 8 – IA V2
+Classificação Tecidual
+Identificar:
+Necrose
+Fibrina
+Granulação
+Epitelização
+Classificação Clínica
+Determinar:
+Grau de complexidade
+Risco de agravamento
+Necessidade de atenção prioritária
+
+BLOCO 9 – IA V3
+Inteligência de Suporte à Decisão
+Sugestão de Conduta
+Cobertura sugerida
+Frequência sugerida
+Conduta recomendada
+Consumo Inteligente
+Quantidade estimada de material
+Consumo previsto
+Identificação de desperdício
+Explicabilidade
+Toda recomendação deverá apresentar justificativa clínica compreensível para o profissional de saúde.
+
+BLOCO 10 – DASHBOARD EXECUTIVO
+Indicadores Assistenciais
+Total de pacientes
+Total de feridas
+Taxa de cicatrização
+Tempo médio de tratamento
+Evolução por unidade
+Indicadores Operacionais
+Consumo de materiais
+Utilização por paciente
+Utilização por setor
+Indicadores Financeiros
+Custos estimados
+Economia gerada
+Potencial de redução de desperdício
+
+BLOCO 11 – CONSTRUÇÃO DO DATASET
+Prioridade Máxima
+Cada registro precisa armazenar:
+Imagem
+Tipo de ferida
+Comorbidades
+Cobertura utilizada
+Quantidade utilizada
+Evolução clínica
+Resultado final
+Objetivo
+Construir um dataset longitudinal de alta qualidade contendo:
+Imagens
+Evoluções
+Tratamentos
+Desfechos clínicos
+
+BLOCO 12 – ARQUITETURA E INTEGRAÇÕES
+Preparação para Escala
+A arquitetura deve ser preparada para futuras integrações com:
+Tasy
+MV
+Soul MV
+HL7
+FHIR
+Operadoras de saúde
+Plataformas de Home Care
+
+BLOCO 13 – PROPRIEDADE INTELECTUAL
+Desde o MVP
+Toda inovação deverá ser documentada.
+Documentar
+Arquitetura dos algoritmos
+Fluxos de decisão
+Modelos de IA
+Motores de recomendação
+Métodos de medição e classificação
+Objetivo
+Preparar o terreno para:
+Registro de patentes
+Proteção de propriedade intelectual
+Valorização futura da companhia
+
+META ESTRATÉGICA
+O objetivo do IREC não é apenas criar um software de acompanhamento de feridas.
+O objetivo é construir a principal infraestrutura de inteligência clínica em wound care da América Latina.
+Cada foto coletada, cada evolução registrada e cada desfecho documentado aproximam a empresa da construção de um ativo único, capaz de gerar vantagens competitivas sustentáveis, modelos proprietários de inteligência artificial e novas oportunidades de monetização no futuro.
+A prioridade da equipe de tecnologia deve ser desenvolver uma plataforma que capture dados clínicos de alta qualidade enquanto entrega valor imediato para profissionais, hospitais e pacientes.

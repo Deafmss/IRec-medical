@@ -329,7 +329,65 @@ DIRETRIZES DE TOM E LINGUAGEM:
 
     const result = await response.json();
     const jsonText = result.candidates[0].content.parts[0].text;
-    return JSON.parse(jsonText.trim());
+    const resultObj = JSON.parse(jsonText.trim());
+    
+    // GUARDRAIL CLÍNICO DE VALIDAÇÃO DE SEGURANÇA (DUAS VIAS)
+    try {
+      const draftReply = resultObj.reply;
+      
+      const verificationPrompt = `Você é um Médico Revisor Clínico de Segurança.
+Sua única tarefa é analisar a orientação (resposta) sugerida para o paciente e a Ficha Clínica dele, e determinar se a orientação recomendada viola qualquer contraindicação clínica conhecida ou apresenta algum risco ao paciente.
+
+Ficha Clínica do Paciente:
+- Nome: ${profile.name || 'Paciente'}
+- Diabetes: ${profile.hasDiabetes ? 'Sim' : 'Não'}
+- Hipertensão: ${profile.hasHypertension ? 'Sim' : 'Não'}
+- Insuficiência Venosa: ${profile.hasVenousInsufficiency ? 'Sim' : 'Não'}
+- Doença Arterial Periférica: ${profile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
+- Alergias: ${profile.allergies || 'Nenhuma'}
+
+Resposta clínica sugerida:
+"${draftReply}"
+
+REGRAS DE SEGURANÇA E LEGISLAÇÃO:
+1. Terapia compressiva (ex: Bota de Unna, faixas elásticas) é contraindicada para Doença Arterial Obstrutiva Periférica (isquemia) grave.
+2. Curativos hidrocoloides e filmes transparentes são contraindicados para feridas infectadas ou com exsudato abundante.
+3. Se o paciente relatar alergia a algum composto recomendado na resposta, isso é um risco grave.
+4. Qualquer recomendação de medicamento injetável ou tarjado que o enfermeiro/IA não possa prescrever sem receita médica.
+
+Sua resposta deve ser ESTRITAMENTE um objeto JSON pura correspondente a este formato exato:
+{
+  "isSafe": true ou false,
+  "justification": "Explicação clínica concisa se não for seguro, ou em branco se for seguro",
+  "safeAlternative": "Nova resposta totalmente corrigida e segura (escrita em linguagem simples para o paciente) caso a original seja insegura"
+}`;
+
+      const validationRes = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+        contents: [{
+          role: 'user',
+          parts: [{ text: verificationPrompt }]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      });
+      
+      const validationData = await validationRes.json();
+      const validationText = validationData.candidates[0].content.parts[0].text;
+      const validationResult = JSON.parse(validationText.trim());
+      
+      if (validationResult && validationResult.isSafe === false) {
+        console.warn("⚠️ [Safety Guardrail] Bloqueada resposta potencialmente insegura. Justificativa:", validationResult.justification);
+        resultObj.reply = validationResult.safeAlternative;
+        if (!resultObj.profileUpdates) resultObj.profileUpdates = {};
+        if (!resultObj.profileUpdates.triageAlerts) resultObj.profileUpdates.triageAlerts = [];
+        resultObj.profileUpdates.triageAlerts.push("Risco clínico mitigado pelo validador: " + validationResult.justification);
+      }
+    } catch (vErr) {
+      console.error("Erro no guardrail de validação silenciosa:", vErr);
+    }
+
+    return resultObj;
   } catch (err) {
     console.error("Erro na conversação via Gemini API:", err);
     return null;
@@ -701,19 +759,43 @@ export const searchTrainingKnowledge = async (queryText) => {
   if (!supabase || !isSupabaseActive) return [];
   try {
     const embedding = await getGeminiEmbedding(queryText);
-    if (!embedding) return [];
-
-    const { data, error } = await supabase.rpc('match_training_knowledge', {
-      query_embedding: embedding,
-      match_threshold: 0.5,
-      match_count: 3
-    });
-
-    if (error) {
-      console.error("Erro na busca semântica de textos de treinamento:", error);
-      return [];
+    let results = [];
+    
+    if (embedding) {
+      const { data, error } = await supabase.rpc('match_training_knowledge', {
+        query_embedding: embedding,
+        match_threshold: 0.5,
+        match_count: 3
+      });
+      
+      if (!error && data) {
+        results = data;
+      } else if (error) {
+        console.error("Erro na busca semântica de textos de treinamento:", error);
+      }
     }
-    return data || [];
+
+    // Fallback: se a busca vetorial falhar ou vier vazia, faz uma busca por texto direto (ILIKE)
+    if (results.length === 0 && queryText.length > 2) {
+      console.log("[RAG] Ativando busca híbrida por texto (ILIKE) para:", queryText);
+      const cleanWord = queryText.trim().split(" ")[0]; // Pega a primeira palavra para simplificar
+      const { data: textData, error: textError } = await supabase
+        .from('training_knowledge')
+        .select('video_title, category, content')
+        .or(`category.ilike.%${cleanWord}%,content.ilike.%${cleanWord}%`)
+        .limit(2);
+        
+      if (!textError && textData) {
+        results = textData.map(item => ({
+          video_title: item.video_title,
+          category: item.category,
+          content: item.content,
+          similarity: 0.9 // Simulado
+        }));
+      }
+    }
+    
+    return results;
   } catch (err) {
     console.error("Falha ao buscar conhecimento de treinamento:", err);
     return [];

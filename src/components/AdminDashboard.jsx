@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments, getAdminWoundEntries, updateVerificationStatus } from '../services/supabaseService';
+import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments, getAdminWoundEntries, updateVerificationStatus, getTrainingKnowledgeList, updateTrainingKnowledgeChapter, deleteTrainingKnowledgeChapter } from '../services/supabaseService';
 import AdminReports from './AdminReports';
 import DateRangePicker from './DateRangePicker';
 
@@ -12,6 +12,14 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
   const [calls, setCalls] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [woundEntries, setWoundEntries] = useState([]);
+  const [trainingList, setTrainingList] = useState([]);
+  
+  // Chapter editing state
+  const [selectedChapter, setSelectedChapter] = useState(null);
+  const [isEditingChapter, setIsEditingChapter] = useState(false);
+  const [editCategory, setEditCategory] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [savingChapter, setSavingChapter] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,14 +45,15 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, logsData, partnersData, callsData, assignmentsData, woundEntriesData] = await Promise.all([
+      const [statsData, usersData, logsData, partnersData, callsData, assignmentsData, woundEntriesData, trainingData] = await Promise.all([
         getAdminStats(),
         getAllProfiles(),
         getAuditLogs(),
         getRecommendedMaterials(null, null), // Fetch global platform-wide partners
         getAdminTelemedicineCalls(),
         getAdminAssignments(),
-        getAdminWoundEntries()
+        getAdminWoundEntries(),
+        getTrainingKnowledgeList()
       ]);
       
       setStats(statsData);
@@ -54,6 +63,7 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
       setCalls(callsData);
       setAssignments(assignmentsData);
       setWoundEntries(woundEntriesData);
+      setTrainingList(trainingData || []);
     } catch (e) {
       console.error("Erro ao carregar dados do admin:", e);
     } finally {
@@ -980,6 +990,191 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : activeTab === 'curatoria' ? (
+        /* TAB 5: CLINICAL KNOWLEDGE CURATORIAL MANAGER */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          
+          <div className="glass-card" style={{ padding: '24px', margin: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '850', margin: 0, color: 'var(--text-primary)' }}>
+                  📖 Base de Conhecimento Clínica da IA (RAG)
+                </h3>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
+                  Consolidação temática do treinamento de enfermeiros, médicos e artigos do PubMed.
+                </p>
+              </div>
+              <button 
+                onClick={loadData}
+                className="btn btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                🔄 Atualizar Base
+              </button>
+            </div>
+
+            {isEditingChapter ? (
+              /* EDITING MODE */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px', padding: '20px', borderRadius: '8px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '800' }}>✏️ Editar Diretrizes Clínicas - {selectedChapter?.category}</h4>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700' }}>Categoria / Nome do Tópico</label>
+                  <input 
+                    type="text" 
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    style={{
+                      padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)',
+                      backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', width: '100%'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700' }}>Conteúdo das Diretrizes (Markdown)</label>
+                  <textarea 
+                    rows={15}
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    style={{
+                      padding: '12px 14px', borderRadius: '8px', border: '1px solid var(--border-color)',
+                      backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', width: '100%',
+                      fontFamily: 'monospace', fontSize: '13px', resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                  <button 
+                    onClick={() => {
+                      setIsEditingChapter(false);
+                      setSelectedChapter(null);
+                    }}
+                    className="btn btn-secondary"
+                    disabled={savingChapter}
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      setSavingChapter(true);
+                      try {
+                        await updateTrainingKnowledgeChapter(selectedChapter.id, editCategory, editContent);
+                        setIsEditingChapter(false);
+                        setSelectedChapter(null);
+                        await loadData();
+                        alert('Capítulo clínico atualizado com sucesso!');
+                      } catch (err) {
+                        alert('Erro ao salvar atualizações: ' + err.message);
+                      } finally {
+                        setSavingChapter(false);
+                      }
+                    }}
+                    className="btn btn-primary"
+                    disabled={savingChapter}
+                  >
+                    {savingChapter ? 'Salvando...' : 'Salvar Alterações'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* VIEW LIST MODE */
+              <div>
+                {trainingList.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>📭</div>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '14.5px', fontWeight: '750', color: 'var(--text-primary)' }}>Nenhum capítulo indexado na base</h4>
+                    <p style={{ fontSize: '12.5px', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
+                      Para povoar a base de conhecimento de triagem de IA do iRec, execute o script do processador de mídia local na sua máquina com os arquivos de videoaulas correspondentes:
+                    </p>
+                    <code style={{ display: 'block', padding: '10px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', margin: '12px auto', width: 'fit-content', fontSize: '12px' }}>
+                      python treinamento/processador_treinamento.py
+                    </code>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {trainingList.map((chapter) => (
+                      <div 
+                        key={chapter.id} 
+                        style={{
+                          padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)',
+                          backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', gap: '12px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <span 
+                              style={{
+                                fontSize: '11px', fontWeight: '800', textTransform: 'uppercase',
+                                backgroundColor: 'rgba(39, 174, 96, 0.1)', color: 'var(--success-light)',
+                                padding: '3px 8px', borderRadius: '4px'
+                              }}
+                            >
+                              Tópico Ativo
+                            </span>
+                            <h4 style={{ margin: '8px 0 2px 0', fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)' }}>
+                              {chapter.category}
+                            </h4>
+                            <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                              Origem: {chapter.video_title} • Criado em: {new Date(chapter.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              onClick={() => {
+                                setSelectedChapter(chapter);
+                                setEditCategory(chapter.category);
+                                setEditContent(chapter.content);
+                                setIsEditingChapter(true);
+                              }}
+                              className="btn btn-secondary"
+                              style={{ padding: '6px 12px', fontSize: '11.5px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              ✏️ Editar
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                if (window.confirm(`Tem certeza de que deseja excluir permanentemente o capítulo de '${chapter.category}' da base de conhecimento da IA?`)) {
+                                  try {
+                                    await deleteTrainingKnowledgeChapter(chapter.id);
+                                    await loadData();
+                                    alert('Capítulo clínico excluído com sucesso!');
+                                  } catch (err) {
+                                    alert('Erro ao excluir: ' + err.message);
+                                  }
+                                }
+                              }}
+                              className="btn"
+                              style={{
+                                padding: '6px 12px', fontSize: '11.5px', display: 'flex', alignItems: 'center', gap: '4px',
+                                backgroundColor: 'rgba(239, 68, 68, 0.08)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.15)'
+                              }}
+                            >
+                              🗑️ Excluir
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Collapsible preview of chapter contents */}
+                        <div 
+                          style={{
+                            padding: '12px 16px', borderRadius: '6px', backgroundColor: 'var(--bg-secondary)',
+                            fontSize: '12.5px', color: 'var(--text-secondary)', maxHeight: '150px',
+                            overflowY: 'auto', border: '1px solid var(--border-color)', whiteSpace: 'pre-wrap',
+                            lineHeight: '1.6'
+                          }}
+                        >
+                          {chapter.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
