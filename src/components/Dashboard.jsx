@@ -250,6 +250,36 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   const [profileForm, setProfileForm] = useState({ ...clinicalProfile });
   const [assignedClinician, setAssignedClinician] = useState(null);
   const [showMapModal, setShowMapModal] = useState(false);
+  const [profileFormTab, setProfileFormTab] = useState('pessoais'); // 'pessoais', 'endereco', 'clinicos'
+
+  const handleCepLookup = async (cepValue) => {
+    let formatted = cepValue.replace(/\D/g, '');
+    if (formatted.length > 5) {
+      formatted = `${formatted.slice(0, 5)}-${formatted.slice(5, 8)}`;
+    }
+    
+    setProfileForm(prev => ({ ...prev, cep: formatted }));
+    
+    const cleanCep = cepValue.replace(/\D/g, '');
+    if (cleanCep.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setProfileForm(prev => ({
+            ...prev,
+            cep: formatted,
+            street: data.logradouro || '',
+            neighborhood: data.bairro || '',
+            city: data.localidade || '',
+            state: data.uf || ''
+          }));
+        }
+      } catch (err) {
+        console.error("CEP lookup failed:", err);
+      }
+    }
+  };
 
 
 
@@ -591,7 +621,23 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               <button 
                 onClick={() => {
                   setIsEditingProfile(!isEditingProfile);
-                  setProfileForm({ ...clinicalProfile });
+                  setProfileForm({
+                    ...clinicalProfile,
+                    phone: clinicalProfile.phone || '',
+                    emergencyContactName: clinicalProfile.emergencyContactName || '',
+                    emergencyContactPhone: clinicalProfile.emergencyContactPhone || '',
+                    cep: clinicalProfile.cep || '',
+                    street: clinicalProfile.street || '',
+                    number: clinicalProfile.number || '',
+                    complement: clinicalProfile.complement || '',
+                    neighborhood: clinicalProfile.neighborhood || '',
+                    city: clinicalProfile.city || '',
+                    state: clinicalProfile.state || '',
+                    weight: clinicalProfile.weight || '',
+                    height: clinicalProfile.height || '',
+                    bloodType: clinicalProfile.bloodType || ''
+                  });
+                  setProfileFormTab('pessoais');
                 }} 
                 className="btn btn-secondary" 
                 style={{ padding: '4px 10px', fontSize: '11px', height: 'auto', borderRadius: '6px' }}
@@ -602,195 +648,429 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
             {isEditingProfile ? (
               <form onSubmit={handleProfileSave} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Nome do Paciente</label>
-                  <input 
-                    type="text" 
-                    value={profileForm.name}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Data de Nascimento</label>
-                  <input 
-                    type="date" 
-                    value={profileForm.birthDate}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, birthDate: e.target.value }))}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Sexo</label>
-                  <select 
-                    value={profileForm.gender}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, gender: e.target.value }))}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                {/* Tabs Header */}
+                <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '8px', gap: '2px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setProfileFormTab('pessoais')}
+                    style={{
+                      flex: 1,
+                      padding: '8px 2px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: profileFormTab === 'pessoais' ? '2.5px solid var(--primary)' : 'none',
+                      color: profileFormTab === 'pessoais' ? 'var(--primary)' : 'var(--text-secondary)',
+                      cursor: 'pointer'
+                    }}
                   >
-                    <option value="">Selecione...</option>
-                    <option value="Masculino">Masculino</option>
-                    <option value="Feminino">Feminino</option>
-                    <option value="Outro">Outro</option>
-                  </select>
+                    👤 Identificação
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProfileFormTab('endereco')}
+                    style={{
+                      flex: 1,
+                      padding: '8px 2px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: profileFormTab === 'endereco' ? '2.5px solid var(--primary)' : 'none',
+                      color: profileFormTab === 'endereco' ? 'var(--primary)' : 'var(--text-secondary)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📍 Endereço
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProfileFormTab('clinicos')}
+                    style={{
+                      flex: 1,
+                      padding: '8px 2px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: profileFormTab === 'clinicos' ? '2.5px solid var(--primary)' : 'none',
+                      color: profileFormTab === 'clinicos' ? 'var(--primary)' : 'var(--text-secondary)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🩺 Saúde
+                  </button>
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Unidade de Atendimento</label>
-                  <input 
-                    type="text" 
-                    placeholder="Hospital, Clínica ou Home Care..."
-                    value={profileForm.healthUnit}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, healthUnit: e.target.value }))}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                  />
-                </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '4px 0' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={profileForm.hasDiabetes}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, hasDiabetes: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                    />
-                    Tem Diabetes?
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={profileForm.hasHypertension}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, hasHypertension: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                    />
-                    Tem Hipertensão?
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={profileForm.hasVenousInsufficiency}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, hasVenousInsufficiency: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                    />
-                    Tem Insuficiência Venosa?
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={profileForm.hasPeripheralArterialDisease}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, hasPeripheralArterialDisease: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                    />
-                    Doença Arterial Periférica?
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={profileForm.isSmoker}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, isSmoker: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                    />
-                    É Fumante (Tabagista)?
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={profileForm.isObese}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, isObese: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                    />
-                    Tem Obesidade?
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={profileForm.hasAmputationHistory}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, hasAmputationHistory: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                    />
-                    Histórico de Amputação?
-                  </label>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Outras Condições Clínicas</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ex: Insuficiência Renal, etc."
-                    value={profileForm.otherConditions || ''}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, otherConditions: e.target.value }))}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
-                  />
-                </div>
-
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', marginBottom: '6px' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={profileForm.hasPreviousUlcers}
-                      onChange={(e) => setProfileForm(prev => ({ ...prev, hasPreviousUlcers: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                    />
-                    <strong>Histórico de Úlceras Anteriores?</strong>
-                  </label>
-                  
-                  {profileForm.hasPreviousUlcers && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '10px', marginTop: '6px' }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Tempo para fechar / cicatrizar</label>
+                {/* Tab 1: Pessoais */}
+                {profileFormTab === 'pessoais' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Nome do Paciente</label>
+                      <input 
+                        type="text" 
+                        value={profileForm.name || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Data de Nascimento</label>
+                      <input 
+                        type="date" 
+                        value={profileForm.birthDate || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, birthDate: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Sexo</label>
+                      <select 
+                        value={profileForm.gender || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, gender: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                      >
+                        <option value="">Selecione...</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Feminino">Feminino</option>
+                        <option value="Outro">Outro</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Telefone</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ex: (11) 99999-9999"
+                        value={profileForm.phone || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Nome Contato Emergência</label>
                         <input 
                           type="text" 
-                          placeholder="Ex: 3 meses"
-                          value={profileForm.previousUlcersHealingTime}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, previousUlcersHealingTime: e.target.value }))}
-                          style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px' }}
+                          placeholder="Ex: Maria (Esposa)"
+                          value={profileForm.emergencyContactName || ''}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, emergencyContactName: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
                         />
                       </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Curativos e métodos aplicados</label>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Tel. Contato Emergência</label>
                         <input 
                           type="text" 
-                          placeholder="Ex: Hidrogel, carvão ativado..."
-                          value={profileForm.previousUlcersTreatments}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, previousUlcersTreatments: e.target.value }))}
-                          style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px' }}
+                          placeholder="Ex: (11) 98888-8888"
+                          value={profileForm.emergencyContactPhone || ''}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, emergencyContactPhone: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
                         />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Onde foi feito o tratamento?</label>
-                        <select 
-                          value={profileForm.previousUlcersLocation} 
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, previousUlcersLocation: e.target.value }))}
-                          style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px' }}
-                        >
-                          <option value="casa">Em casa (Domiciliar)</option>
-                          <option value="unidade_saude">Unidade de Saúde (SUS/Posto)</option>
-                          <option value="profissional">Profissional competente (Médico/Enfermeiro)</option>
-                        </select>
                       </div>
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Tipo Sanguíneo</label>
+                      <select 
+                        value={profileForm.bloodType || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, bloodType: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                      >
+                        <option value="">Selecione...</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Medicamentos de Uso Contínuo</label>
-                  <input 
-                    type="text" 
-                    value={profileForm.medications}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, medications: e.target.value }))}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
-                  />
-                </div>
+                {/* Tab 2: Endereço */}
+                {profileFormTab === 'endereco' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                        CEP (Auto-completar 🇧🇷)
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="Digite o CEP (Ex: 01001-000)"
+                        value={profileForm.cep || ''}
+                        onChange={(e) => handleCepLookup(e.target.value)}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Rua / Logradouro</label>
+                      <input 
+                        type="text" 
+                        value={profileForm.street || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, street: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Número</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.number || ''}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, number: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                        />
+                      </div>
+                      <div style={{ flex: 1.5 }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Complemento</label>
+                        <input 
+                          type="text" 
+                          placeholder="Ex: Apto 12"
+                          value={profileForm.complement || ''}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, complement: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Bairro</label>
+                      <input 
+                        type="text" 
+                        value={profileForm.neighborhood || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, neighborhood: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ flex: 2 }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Cidade</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.city || ''}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, city: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Estado</label>
+                        <input 
+                          type="text" 
+                          maxLength="2"
+                          placeholder="Ex: SP"
+                          value={profileForm.state || ''}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, state: e.target.value.toUpperCase() }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px', textTransform: 'uppercase' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Alergias Conhecidas</label>
-                  <input 
-                    type="text" 
-                    value={profileForm.allergies}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, allergies: e.target.value }))}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
-                  />
-                </div>
+                {/* Tab 3: Saúde e Histórico */}
+                {profileFormTab === 'clinicos' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Unidade de Atendimento</label>
+                      <input 
+                        type="text" 
+                        placeholder="Hospital, Clínica ou Home Care..."
+                        value={profileForm.healthUnit || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, healthUnit: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Peso (kg)</label>
+                        <input 
+                          type="number" 
+                          step="0.1"
+                          placeholder="Ex: 75.5"
+                          value={profileForm.weight || ''}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, weight: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Altura (cm)</label>
+                        <input 
+                          type="number" 
+                          placeholder="Ex: 175"
+                          value={profileForm.height || ''}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, height: e.target.value }))}
+                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
+                        />
+                      </div>
+                    </div>
+
+                    {profileForm.weight && profileForm.height && (
+                      <div style={{ padding: '8px 12px', borderRadius: '6px', backgroundColor: 'var(--primary-glow)', border: '1px solid var(--primary-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--primary)' }}>IMC (Cálculo Automático)</span>
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)' }}>
+                          {(() => {
+                            const hM = parseFloat(profileForm.height) / 100;
+                            const imcVal = parseFloat(profileForm.weight) / (hM * hM);
+                            let category = '';
+                            if (imcVal < 18.5) category = '(Abaixo do peso)';
+                            else if (imcVal < 25) category = '(Peso normal)';
+                            else if (imcVal < 30) category = '(Sobrepeso)';
+                            else category = '(Obesidade)';
+                            return `${imcVal.toFixed(1)} ${category}`;
+                          })()}
+                        </span>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', margin: '4px 0' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={profileForm.hasDiabetes || false}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasDiabetes: e.target.checked }))}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                        />
+                        Diabetes
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={profileForm.hasHypertension || false}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasHypertension: e.target.checked }))}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                        />
+                        Hipertensão
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={profileForm.hasVenousInsufficiency || false}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasVenousInsufficiency: e.target.checked }))}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                        />
+                        Insuf. Venosa
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={profileForm.hasPeripheralArterialDisease || false}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasPeripheralArterialDisease: e.target.checked }))}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                        />
+                        D. Art. Periférica
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={profileForm.isSmoker || false}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, isSmoker: e.target.checked }))}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                        />
+                        Tabagismo
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={profileForm.isObese || false}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, isObese: e.target.checked }))}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                        />
+                        Obesidade
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer', gridColumn: 'span 2' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={profileForm.hasAmputationHistory || false}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasAmputationHistory: e.target.checked }))}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                        />
+                        Histórico de Amputação
+                      </label>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Outras Condições Clínicas</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ex: Insuficiência Renal, etc."
+                        value={profileForm.otherConditions || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, otherConditions: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
+                      />
+                    </div>
+
+                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', marginBottom: '6px' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={profileForm.hasPreviousUlcers || false}
+                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasPreviousUlcers: e.target.checked }))}
+                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                        />
+                        <strong>Histórico de Úlceras Anteriores?</strong>
+                      </label>
+                      
+                      {profileForm.hasPreviousUlcers && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '10px', marginTop: '6px' }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Tempo para fechar / cicatrizar</label>
+                            <input 
+                              type="text" 
+                              placeholder="Ex: 3 meses"
+                              value={profileForm.previousUlcersHealingTime || ''}
+                              onChange={(e) => setProfileForm(prev => ({ ...prev, previousUlcersHealingTime: e.target.value }))}
+                              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px' }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Curativos e métodos aplicados</label>
+                            <input 
+                              type="text" 
+                              placeholder="Ex: Hidrogel, carvão ativado..."
+                              value={profileForm.previousUlcersTreatments || ''}
+                              onChange={(e) => setProfileForm(prev => ({ ...prev, previousUlcersTreatments: e.target.value }))}
+                              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px' }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Onde foi feito o tratamento?</label>
+                            <select 
+                              value={profileForm.previousUlcersLocation || 'casa'} 
+                              onChange={(e) => setProfileForm(prev => ({ ...prev, previousUlcersLocation: e.target.value }))}
+                              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px' }}
+                            >
+                              <option value="casa">Em casa (Domiciliar)</option>
+                              <option value="unidade_saude">Unidade de Saúde (SUS/Posto)</option>
+                              <option value="profissional">Profissional competente (Médico/Enfermeiro)</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Medicamentos de Uso Contínuo</label>
+                      <input 
+                        type="text" 
+                        value={profileForm.medications || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, medications: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Alergias Conhecidas</label>
+                      <input 
+                        type="text" 
+                        value={profileForm.allergies || ''}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, allergies: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <button type="submit" className="btn btn-primary" style={{ padding: '8px', fontSize: '12px', width: '100%', marginTop: '4px' }}>
                   Salvar Ficha Clínica
