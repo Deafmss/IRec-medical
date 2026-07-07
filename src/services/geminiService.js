@@ -211,8 +211,34 @@ export const chatWithAI = async (message, chatHistory, clinicalProfile, attached
   }
 
   try {
+    const formattedHistory = chatHistory.slice(-6).map(msg => ({
+      role: msg.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }]
+    }));
+
+    // Perform semantic search on our training knowledge base
+    let trainingContextText = "";
+    let visualCasesContextText = "";
+    try {
+      const textMatches = await searchTrainingKnowledge(message);
+      if (textMatches && textMatches.length > 0) {
+        trainingContextText = textMatches.map((m) => 
+          `[Aula/Vídeo de Treinamento: ${m.video_title} - Categoria: ${m.category}] ${m.content}`
+        ).join("\n\n");
+      }
+
+      const visualMatches = await searchTrainingVisualCases(message);
+      if (visualMatches && visualMatches.length > 0) {
+        visualCasesContextText = visualMatches.map((m) => 
+          `[Caso Clínico Ilustrado do Vídeo: ${m.video_title} - Tempo no Vídeo: ${m.timestamp_str} - Link Imagem: ${m.image_url}] Descrição clínica do caso: ${m.clinical_description}`
+        ).join("\n\n");
+      }
+    } catch (err) {
+      console.warn("Erro ao buscar base de treinamento RAG:", err);
+    }
+
     // Keep context window tight (last 6 messages)
-    const systemPrompt = `Você é o "Assistente Clínico iRec", um copiloto de saúde especializado em triagem clínica geral, suporte a feridas cutâneas e triagem de sintomas de doenças.
+    let systemPrompt = `Você é o "Assistente Clínico iRec", um copiloto de saúde especializado em triagem clínica geral, suporte a feridas cutâneas e triagem de sintomas de doenças.
 Você atua como um triador inteligente para o paciente e para a equipe médica:
 - Não se limite a feridas. Trate de queixas gerais como dor de cabeça, febre, sintomas gripais, alergias, mal-estar e outros sintomas.
 - Seu objetivo principal é determinar se a situação do paciente exige intervenção médica presencial ou se pode ser tratada com autocuidado seguro em casa (ajudando em casos que não necessitam de atendimento médico imediato).
@@ -267,6 +293,14 @@ DIRETRIZES DE TOM E LINGUAGEM:
 3. Evite termos médicos difíceis; se precisar usá-los, explique de forma simples (ex: 'vermelhidão na pele' em vez de 'eritema', 'secreção/líquido' em vez de 'exsudado').
 4. O tom deve ser confortável, acolhedor, prático, encorajador e empático. NUNCA seja confrontante, frio ou agressivo.
 5. Em caso de gravidade ou sinais de alerta (Red Flags), mude para um tom DIRETO, SEGURO e FIRME para instruir o paciente a buscar atendimento imediato, mas mantendo a calma e a acolhida, sem causar desespero ou usar tom de confronto.`;
+
+    if (trainingContextText) {
+      systemPrompt += `\n\nCONHECIMENTO EXTRAÍDO DOS VÍDEOS DE TREINAMENTO (Siga essas orientações internas da empresa para responder): \n${trainingContextText}`;
+    }
+
+    if (visualCasesContextText) {
+      systemPrompt += `\n\nEXEMPLOS DE CASOS CLÍNICOS E IMAGENS REAIS DOS VÍDEOS (Mencione para o usuário que existe esse exemplo visual e mostre o Link Imagem correspondente para ele): \n${visualCasesContextText}`;
+    }
 
     formattedHistory.unshift({
       role: 'user',
@@ -638,6 +672,75 @@ Sua resposta deve ser estritamente um objeto JSON puro, sem blocos de código \`
       clinicalEvolution: "Erro de processamento da IA. Transcrição bruta: " + transcriptText.substring(0, 200),
       riskLevel: "Risco Moderado"
     };
+  }
+};
+
+// Generates a 768-dimensional text embedding using gemini-embedding-001
+export const getGeminiEmbedding = async (text) => {
+  if (!isGeminiConfigured) return null;
+  try {
+    const response = await fetchGeminiWithRotation('gemini-embedding-001:embedContent', {
+      model: "models/gemini-embedding-001",
+      content: {
+        parts: [{ text: text }]
+      },
+      outputDimensionality: 768
+    });
+    const data = await response.json();
+    if (data && data.embedding && data.embedding.values) {
+      return data.embedding.values;
+    }
+  } catch (err) {
+    console.error("Erro ao gerar embedding de busca no Gemini:", err);
+  }
+  return null;
+};
+
+// Performs semantic search on the transcribed video knowledge base
+export const searchTrainingKnowledge = async (queryText) => {
+  if (!supabase || !isSupabaseActive) return [];
+  try {
+    const embedding = await getGeminiEmbedding(queryText);
+    if (!embedding) return [];
+
+    const { data, error } = await supabase.rpc('match_training_knowledge', {
+      query_embedding: embedding,
+      match_threshold: 0.5,
+      match_count: 3
+    });
+
+    if (error) {
+      console.error("Erro na busca semântica de textos de treinamento:", error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error("Falha ao buscar conhecimento de treinamento:", err);
+    return [];
+  }
+};
+
+// Performs semantic search on the visual cases descriptions
+export const searchTrainingVisualCases = async (queryText) => {
+  if (!supabase || !isSupabaseActive) return [];
+  try {
+    const embedding = await getGeminiEmbedding(queryText);
+    if (!embedding) return [];
+
+    const { data, error } = await supabase.rpc('match_training_visual_cases', {
+      query_embedding: embedding,
+      match_threshold: 0.5,
+      match_count: 2
+    });
+
+    if (error) {
+      console.error("Erro na busca semântica de casos visuais:", error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error("Falha ao buscar casos visuais de treinamento:", err);
+    return [];
   }
 };
 
