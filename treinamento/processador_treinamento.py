@@ -7,14 +7,6 @@ import urllib.parse
 import time
 import zipfile
 import xml.etree.ElementTree as ET
-import psycopg2
-
-# Conexões do Banco de Dados Supabase (Já integradas no projeto)
-DB_HOST = "aws-1-us-east-2.pooler.supabase.com"
-DB_PORT = 6543
-DB_USER = "postgres.uiaeuzpojqhtjvbqwblb"
-DB_PASS = "aOkqvRQbDaWNls4t"
-DB_NAME = "postgres"
 
 def obter_gemini_key():
     try:
@@ -39,7 +31,7 @@ def requisicao_api_gemini(endpoint_action, body, api_key):
     )
     for tentativa in range(3):
         try:
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(req, timeout=30) as response:
                 return json.loads(response.read().decode("utf-8"))
         except Exception as e:
             if tentativa == 2:
@@ -72,8 +64,15 @@ def iniciar_upload_gemini(file_size, mime_type, display_name, api_key):
     }
     body = {"file": {"display_name": display_name}}
     req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), headers=headers, method="POST")
-    with urllib.request.urlopen(req) as response:
-        return response.headers.get("X-Goog-Upload-URL")
+    for tentativa in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                return response.headers.get("X-Goog-Upload-URL")
+        except Exception as e:
+            if tentativa == 2:
+                raise e
+            print(f"Aviso: Erro ao iniciar upload ({e}). Tentando novamente em 5s...")
+            time.sleep(5)
 
 def enviar_bytes_gemini(upload_url, file_path):
     headers = {
@@ -86,14 +85,28 @@ def enviar_bytes_gemini(upload_url, file_path):
         file_bytes = f.read()
     
     req = urllib.request.Request(upload_url, data=file_bytes, headers=headers, method="POST")
-    with urllib.request.urlopen(req) as response:
-        return json.loads(response.read().decode("utf-8"))
+    for tentativa in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except Exception as e:
+            if tentativa == 2:
+                raise e
+            print(f"Aviso: Erro ao enviar bytes ({e}). Tentando novamente em 5s...")
+            time.sleep(5)
 
 def obter_estado_arquivo_gemini(file_uri, api_key):
     url = f"{file_uri}?key={api_key}"
     req = urllib.request.Request(url, method="GET")
-    with urllib.request.urlopen(req) as response:
-        return json.loads(response.read().decode("utf-8"))
+    for tentativa in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except Exception as e:
+            if tentativa == 2:
+                raise e
+            print(f"Aviso: Erro ao obter estado do arquivo ({e}). Tentando novamente em 5s...")
+            time.sleep(5)
 
 def transcrever_audio_bruto(caminho_audio, api_key):
     file_size = os.path.getsize(caminho_audio)
@@ -105,14 +118,22 @@ def transcrever_audio_bruto(caminho_audio, api_key):
     file_uri = file_info["file"]["uri"]
     
     print("  -> Aguardando processamento do arquivo de áudio...")
+    inicio_espera = time.time()
     while True:
-        status = obter_estado_arquivo_gemini(file_uri, api_key)
-        state = status.get("file", {}).get("state", "PROCESSING")
-        if state == "ACTIVE":
-            break
-        elif state == "FAILED":
-            raise Exception("Falha no processamento do áudio pelo Gemini.")
-        time.sleep(5)
+        try:
+            status = obter_estado_arquivo_gemini(file_uri, api_key)
+            state = status.get("file", {}).get("state", "PROCESSING")
+            if state == "ACTIVE":
+                break
+            elif state == "FAILED":
+                raise Exception("Falha no processamento do áudio pelo Gemini.")
+        except Exception as e:
+            print(f"  -> Aviso durante espera ({e}). Tentando novamente em 10s...")
+            
+        if time.time() - inicio_espera > 600:
+            raise Exception("Timeout: Processamento do arquivo de áudio excedeu 10 minutos.")
+            
+        time.sleep(10)
     
     print("  -> Transcrevendo áudio...")
     prompt = (
@@ -135,7 +156,7 @@ def transcrever_audio_bruto(caminho_audio, api_key):
     
     try:
         req_del = urllib.request.Request(f"{file_uri}?key={api_key}", method="DELETE")
-        with urllib.request.urlopen(req_del) as response:
+        with urllib.request.urlopen(req_del, timeout=10) as response:
             pass
     except Exception:
         pass
@@ -150,14 +171,23 @@ def processar_pdf_documento(caminho_pdf, api_key):
     file_info = enviar_bytes_gemini(upload_url, caminho_pdf)
     file_uri = file_info["file"]["uri"]
     
+    print("  -> Aguardando processamento do arquivo PDF...")
+    inicio_espera = time.time()
     while True:
-        status = obter_estado_arquivo_gemini(file_uri, api_key)
-        state = status.get("file", {}).get("state", "PROCESSING")
-        if state == "ACTIVE":
-            break
-        elif state == "FAILED":
-            raise Exception("Falha no processamento do PDF pelo Gemini.")
-        time.sleep(5)
+        try:
+            status = obter_estado_arquivo_gemini(file_uri, api_key)
+            state = status.get("file", {}).get("state", "PROCESSING")
+            if state == "ACTIVE":
+                break
+            elif state == "FAILED":
+                raise Exception("Falha no processamento do PDF pelo Gemini.")
+        except Exception as e:
+            print(f"  -> Aviso durante espera ({e}). Tentando novamente em 10s...")
+            
+        if time.time() - inicio_espera > 600:
+            raise Exception("Timeout: Processamento do arquivo PDF excedeu 10 minutos.")
+            
+        time.sleep(10)
         
     prompt = (
         "Extraia todo o conteúdo textual relevante deste documento em Português. "
@@ -178,7 +208,7 @@ def processar_pdf_documento(caminho_pdf, api_key):
     
     try:
         req_del = urllib.request.Request(f"{file_uri}?key={api_key}", method="DELETE")
-        with urllib.request.urlopen(req_del) as response:
+        with urllib.request.urlopen(req_del, timeout=10) as response:
             pass
     except Exception:
         pass
@@ -207,6 +237,23 @@ def analisar_imagem_via_gemini(caminho_imagem, api_key):
     file_info = enviar_bytes_gemini(upload_url, caminho_imagem)
     file_uri = file_info["file"]["uri"]
     
+    inicio_espera = time.time()
+    while True:
+        try:
+            status = obter_estado_arquivo_gemini(file_uri, api_key)
+            state = status.get("file", {}).get("state", "PROCESSING")
+            if state == "ACTIVE":
+                break
+            elif state == "FAILED":
+                raise Exception("Falha no processamento da imagem pelo Gemini.")
+        except Exception as e:
+            print(f"  -> Aviso durante espera da imagem ({e})...")
+            
+        if time.time() - inicio_espera > 180:
+            raise Exception("Timeout: Processamento de imagem excedeu 3 minutos.")
+            
+        time.sleep(5)
+    
     prompt = (
         "Descreva clinicamente esta captura de tela de videoaula de feridas. "
         "Forneça as características visuais (esfacelo, necrose, granulação, tipo de lesão, etc.) "
@@ -227,7 +274,7 @@ def analisar_imagem_via_gemini(caminho_imagem, api_key):
     
     try:
         req_del = urllib.request.Request(f"{file_uri}?key={api_key}", method="DELETE")
-        with urllib.request.urlopen(req_del) as response:
+        with urllib.request.urlopen(req_del, timeout=10) as response:
             pass
     except Exception:
         pass
@@ -243,7 +290,7 @@ def extrair_entidades_clinicas(texto_completo, api_key):
         "Retorne estritamente um array JSON contendo apenas strings simples com o nome padronizado de cada tópico identificado. "
         "Exemplo de retorno: [\"Diabetes\", \"Hidrogel\", \"Úlcera Venosa\", \"Alginato de Cálcio\"]\n"
         "Não adicione marcações de markdown como ```json, retorne apenas o texto do JSON.\n\n"
-        f"Texto:\n{texto_completo[:40000]}"  # Limita para caber no contexto inicial
+        f"Texto:\n{texto_completo[:40000]}"
     )
     
     body = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -266,32 +313,29 @@ def extrair_entidades_clinicas(texto_completo, api_key):
 
 def buscar_evidencia_pubmed(topico, api_key):
     print(f"  -> Pesquisando evidências no PubMed para: {topico}...")
-    # Traduz o tópico para inglês para buscar no PubMed
     prompt_traducao = f"Traduza o termo médico '{topico}' para inglês científico. Retorne apenas a tradução, sem pontos."
     body_trad = {"contents": [{"parts": [{"text": prompt_traducao}]}]}
     res_trad = requisicao_api_gemini("gemini-2.5-flash:generateContent", body_trad, api_key)
     termo_en = res_trad["candidates"][0]["content"]["parts"][0]["text"].strip()
     
-    # Faz busca na API pública do NCBI PubMed
     query = urllib.parse.quote(f"{termo_en} wound care therapy")
     url_search = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&retmode=json&retmax=3"
     
     try:
         req = urllib.request.Request(url_search, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=15) as response:
             res_data = json.loads(response.read().decode("utf-8"))
             id_list = res_data.get("esearchresult", {}).get("idlist", [])
             
         if not id_list:
             return "Nenhuma evidência clínica direta encontrada no PubMed para este termo."
             
-        # Puxa sumários dos artigos
         ids = ",".join(id_list)
         url_summary = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={ids}&retmode=json"
         req_sum = urllib.request.Request(url_summary, headers={"User-Agent": "Mozilla/5.0"})
         
         artigos = []
-        with urllib.request.urlopen(req_sum) as response:
+        with urllib.request.urlopen(req_sum, timeout=15) as response:
             sum_data = json.loads(response.read().decode("utf-8"))
             results = sum_data.get("result", {})
             for uid in id_list:
@@ -309,14 +353,12 @@ def buscar_evidencia_pubmed(topico, api_key):
 
 def consolidar_conhecimento_tematico(topico, textos_brutos, api_key):
     print(f"Consolidando e higienizando informações do tópico: {topico}...")
-    
-    # Pega apenas trechos que mencionam o tópico para não estourar o contexto
     trechos_relevantes = []
     for txt in textos_brutos:
         if topico.lower() in txt.lower():
             trechos_relevantes.append(txt[:3000])
             
-    contexto_aulas = "\n\n---\n\n".join(trechos_relevantes[:8]) # Max 8 trechos
+    contexto_aulas = "\n\n---\n\n".join(trechos_relevantes[:8])
     
     prompt = (
         "Você é um revisor clínico de alta precisão. Consolide todas as informações de videoaulas "
@@ -342,7 +384,6 @@ def gerar_relatorio_html(topicos_consolidados, capturas_dir):
     caminho_html = os.path.abspath(os.path.join(os.path.dirname(__file__), "relatorio_revisao_medica.html"))
     print(f"Exportando Relatório de Revisão Médica para: {caminho_html}...")
     
-    # Carrega arquivos de imagem locais na pasta pública
     imagens_locais = []
     if os.path.exists(capturas_dir):
         imagens_locais = sorted([f for f in os.listdir(capturas_dir) if f.endswith(".jpg")])
@@ -355,108 +396,30 @@ def gerar_relatorio_html(topicos_consolidados, capturas_dir):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>iRec - Relatório de Revisão Médica e Base de Conhecimento</title>
         <style>
-            body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #f4f6f9;
-                color: #2c3e50;
-                margin: 0;
-                padding: 0;
-            }
-            .header {
-                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-                color: white;
-                padding: 40px 20px;
-                text-align: center;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            }
-            .header h1 { margin: 0; font-size: 2.5em; }
-            .header p { margin: 10px 0 0 0; font-size: 1.1em; opacity: 0.9; }
-            .container {
-                max-width: 1200px;
-                margin: 40px auto;
-                padding: 0 20px;
-            }
-            .alert-box {
-                background-color: #ebf5fb;
-                border-left: 5px solid #2980b9;
-                padding: 15px;
-                margin-bottom: 35px;
-                border-radius: 4px;
-            }
-            .alert-box h3 { margin: 0 0 5px 0; color: #2980b9; }
-            .alert-box p { margin: 0; font-size: 0.95em; line-height: 1.5; }
-            .chapter-card {
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-                margin-bottom: 40px;
-                padding: 30px;
-                border-top: 5px solid #27ae60;
-            }
-            .chapter-card h2 {
-                margin-top: 0;
-                color: #27ae60;
-                border-bottom: 2px solid #ecf0f1;
-                padding-bottom: 10px;
-                font-size: 1.8em;
-            }
-            .section-title {
-                color: #2c3e50;
-                font-size: 1.2em;
-                margin-top: 25px;
-                font-weight: bold;
-            }
-            .evidence-box {
-                background: #fdfefe;
-                border: 1px solid #e2e8f0;
-                border-radius: 6px;
-                padding: 20px;
-                margin-top: 20px;
-            }
-            .evidence-box h4 { margin: 0 0 10px 0; color: #7f8c8d; }
-            .grid-images {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-                gap: 15px;
-                margin-top: 25px;
-            }
-            .image-card {
-                border: 1px solid #e2e8f0;
-                border-radius: 6px;
-                overflow: hidden;
-                background: #f8fafc;
-            }
-            .image-card img {
-                width: 100%;
-                height: 150px;
-                object-fit: cover;
-            }
-            .image-card p {
-                font-size: 0.8em;
-                padding: 8px;
-                margin: 0;
-                color: #7f8c8d;
-                text-align: center;
-            }
-            .footer {
-                text-align: center;
-                padding: 30px 20px;
-                color: #7f8c8d;
-                font-size: 0.9em;
-                border-top: 1px solid #ecf0f1;
-                margin-top: 60px;
-            }
+            body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; color: #2c3e50; margin: 0; padding: 0; }
+            .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 40px 20px; text-align: center; }
+            .header h1 { margin: 0; }
+            .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+            .alert-box { background-color: #ebf5fb; border-left: 5px solid #2980b9; padding: 15px; margin-bottom: 35px; border-radius: 4px; }
+            .chapter-card { background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 40px; padding: 30px; border-top: 5px solid #27ae60; }
+            .chapter-card h2 { margin-top: 0; color: #27ae60; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+            .section-title { color: #2c3e50; font-size: 1.2em; margin-top: 25px; font-weight: bold; }
+            .evidence-box { background: #fdfefe; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin-top: 20px; }
+            .grid-images { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 25px; }
+            .image-card { border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; background: #f8fafc; }
+            .image-card img { width: 100%; height: 150px; object-fit: cover; }
+            .image-card p { font-size: 0.8em; padding: 8px; margin: 0; color: #7f8c8d; text-align: center; }
         </style>
     </head>
     <body>
         <div class="header">
             <h1>Manual de Conhecimento Clínico iRec</h1>
-            <p>Relatório de Consolidação Temática para Revisão e Homologação Médica</p>
+            <p>Relatório de Consolidação Temática para Revisão Médica</p>
         </div>
         <div class="container">
             <div class="alert-box">
                 <h3>Instruções para o Médico Revisor</h3>
-                <p>Este documento consolida todo o conhecimento extraído das videoaulas de treinamento interno combinadas com pesquisas automáticas de fact-checking científico realizadas no PubMed. Por favor, analise a veracidade de cada capítulo de conduta. Após sua aprovação por escrito, estas informações serão carregadas como base de conhecimento ativa da IA do iRec.</p>
+                <p>Este documento consolida o conhecimento clínico das videoaulas e PubMed. Revise as diretrizes. Após aprovação, use o upload_base.py para carregar no Supabase.</p>
             </div>
     """
     
@@ -469,30 +432,25 @@ def gerar_relatorio_html(topicos_consolidados, capturas_dir):
             </div>
             
             <div class="evidence-box">
-                <h4>Evidências Adicionais de Suporte (PubMed Search Swarm)</h4>
+                <h4>Evidências Adicionais (PubMed)</h4>
                 <p style="font-size: 0.95em; line-height: 1.6; margin: 0;">{dados['pubmed_evidences'].replace('* ', '<br>• ')}</p>
             </div>
         """
         
-        # Filtra e adiciona imagens do tópico
         imagens_topico = [img for img in imagens_locais if topico.lower() in img.lower()]
         if imagens_topico:
             html_content += """<div class="grid-images">"""
-            for img in imagens_topico[:4]: # Max 4 imagens por tópico no HTML
+            for img in imagens_topico[:4]:
                 html_content += f"""
                 <div class="image-card">
-                    <img src="../public/treinamento_capturas/{img}" alt="Slide/Caso Clínico">
+                    <img src="../public/treinamento_capturas/{img}" alt="Slide">
                     <p>{img.split('_min_')[0]}</p>
                 </div>
                 """
             html_content += """</div>"""
-            
         html_content += "</div>"
         
     html_content += """
-        </div>
-        <div class="footer">
-            <p>© iRec Medical - Tecnologia para Salvaguarda de Vidas</p>
         </div>
     </body>
     </html>
@@ -500,6 +458,24 @@ def gerar_relatorio_html(topicos_consolidados, capturas_dir):
     
     with open(caminho_html, "w", encoding="utf-8") as f:
         f.write(html_content)
+
+def carregar_cache():
+    caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), "transcricoes_cache.json")
+    if os.path.exists(caminho):
+        try:
+            with open(caminho, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def salvar_cache(cache):
+    caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), "transcricoes_cache.json")
+    try:
+        with open(caminho, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"Erro ao salvar cache: {e}")
 
 def processar_base():
     api_key = obter_gemini_key()
@@ -514,6 +490,7 @@ def processar_base():
     capturas_dir = os.path.abspath(os.path.join(treinamento_dir, "..", "public", "treinamento_capturas"))
     os.makedirs(capturas_dir, exist_ok=True)
 
+    cache = carregar_cache()
     textos_brutos = []
 
     print("--- FASE 1: EXTRAÇÃO DE CONTEÚDO BRUTO (VÍDEOS E DOCUMENTOS) ---")
@@ -527,7 +504,12 @@ def processar_base():
             
             # PROCESSAR VÍDEOS
             if file.endswith(('.mp4', '.mkv', '.m4v', '.MP4')):
-                print(f"Extraindo áudio de: {file}")
+                if titulo_base in cache:
+                    print(f"Skipping (Já transcrevido em cache): {file}")
+                    textos_brutos.append(cache[titulo_base])
+                    continue
+
+                print(f"Processando vídeo: {file}")
                 caminho_audio = os.path.join(audios_temp_dir, f"{titulo_base}.mp3")
                 cmd_audio = [
                     "ffmpeg", "-y", "-i", caminho_arquivo, 
@@ -539,13 +521,15 @@ def processar_base():
                 try:
                     transcricao = transcrever_audio_bruto(caminho_audio, api_key)
                     textos_brutos.append(transcricao)
+                    cache[titulo_base] = transcricao
+                    salvar_cache(cache)
                 except Exception as e:
                     print(f"Erro ao transcrever {file}: {e}")
                     
                 if os.path.exists(caminho_audio):
                     os.remove(caminho_audio)
 
-                # Extrai prints visuais dos slides
+                # Extrai capturas do vídeo
                 print(f"Extraindo capturas de: {file}")
                 padrao_captura = os.path.join(capturas_dir, f"{titulo_base}_min_%02d_00.jpg")
                 cmd_imagens = [
@@ -557,25 +541,38 @@ def processar_base():
 
             # PROCESSAR DOCUMENTOS PDF
             elif file.endswith('.pdf'):
+                if titulo_base in cache:
+                    print(f"Skipping (PDF já indexado em cache): {file}")
+                    textos_brutos.append(cache[titulo_base])
+                    continue
+
                 try:
                     print(f"Lendo PDF: {file}")
                     conteudo = processar_pdf_documento(caminho_arquivo, api_key)
                     textos_brutos.append(conteudo)
+                    cache[titulo_base] = conteudo
+                    salvar_cache(cache)
                 except Exception as e:
                     print(f"Erro no PDF {file}: {e}")
 
             # PROCESSAR DOCUMENTOS WORD (DOCX)
             elif file.endswith('.docx'):
+                if titulo_base in cache:
+                    print(f"Skipping (DOCX já indexado em cache): {file}")
+                    textos_brutos.append(cache[titulo_base])
+                    continue
+
                 print(f"Lendo DOCX: {file}")
                 conteudo = ler_docx_puro(caminho_arquivo)
                 if conteudo.strip():
                     textos_brutos.append(conteudo)
+                    cache[titulo_base] = conteudo
+                    salvar_cache(cache)
 
     if not textos_brutos:
         print("❌ Nenhum material clínico localizado para processamento.")
         return
 
-    # Junta todo o texto bruto para mapeamento das entidades principais
     texto_consolidado_bruto = "\n\n".join(textos_brutos)
     
     print("\n--- FASE 2: MAPEAMENTO DE ENTIDADES CLÍNICAS (PATOLOGIAS/CURATIVOS) ---")
@@ -585,18 +582,13 @@ def processar_base():
     print("\n--- FASE 3: CONSOLIDAÇÃO TEMÁTICA E ENRIQUECIMENTO CIENTÍFICO (PUBMED) ---")
     topicos_consolidados = {}
     for topico in topicos_mapeados:
-        # Consolida aulas e vídeo transcripts
         conteudo_consolidado = consolidar_conhecimento_tematico(topico, textos_brutos, api_key)
-        
-        # Faz pesquisa PubMed
         pubmed_evidences = buscar_evidencia_pubmed(topico, api_key)
-        
         topicos_consolidados[topico] = {
             "conteudo_markdown": conteudo_consolidado,
             "pubmed_evidences": pubmed_evidences
         }
 
-    # Salva o manual HTML local para aprovação médica off-line
     gerar_relatorio_html(topicos_consolidados, capturas_dir)
 
     print("\n--- FASE 4: SALVANDO BASE DE CONHECIMENTO LOCAL EM JSON ---")
@@ -611,7 +603,7 @@ def processar_base():
     if os.path.exists(audios_temp_dir) and not os.listdir(audios_temp_dir):
         os.rmdir(audios_temp_dir)
 
-    print("\n✅ Base de Conhecimento Temática criada, enriquecida e carregada com sucesso!")
+    print("\n✅ Base de Conhecimento Temática criada, enriquecida e salva localmente!")
 
 if __name__ == "__main__":
     processar_base()
