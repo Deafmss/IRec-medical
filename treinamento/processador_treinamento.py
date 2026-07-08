@@ -599,36 +599,14 @@ def processar_base():
     # Salva o manual HTML local para aprovação médica off-line
     gerar_relatorio_html(topicos_consolidados, capturas_dir)
 
-    print("\n--- FASE 4: IMPORTAÇÃO PARA O BANCO DE DADOS (SUPABASE VETORIAL) ---")
-    print("Conectando ao banco de dados Supabase...")
-    conn = psycopg2.connect(host=DB_HOST, port=DB_PORT, user=DB_USER, password=DB_PASS, database=DB_NAME)
-    cur = conn.cursor()
-
-    # Limpa a tabela para evitar duplicados e gravar a base consolidada limpa
-    cur.execute("TRUNCATE TABLE training_knowledge;")
-    conn.commit()
-
-    for topico, dados in topicos_consolidados.items():
-        # Une a fala do professor com as evidências PubMed em um único texto estruturado
-        texto_final_banco = (
-            f"# Tópico Clínico: {topico}\n\n"
-            f"{dados['conteudo_markdown']}\n\n"
-            f"### Evidências PubMed Associadas:\n{dados['pubmed_evidences']}"
-        )
-        
-        embedding = obter_embedding(texto_final_banco, api_key)
-        if embedding:
-            # Salva na tabela com a categoria do tópico para indexação eficiente
-            cur.execute(
-                "INSERT INTO training_knowledge (video_title, category, content, timestamp_start, timestamp_end, embedding) "
-                "VALUES (%s, %s, %s, %s, %s, %s);",
-                ("Consolidado", topico, texto_final_banco, "Manual", "Manual", embedding)
-            )
-            conn.commit()
-            print(f"  -> Capítulo '{topico}' gravado com sucesso no Supabase!")
-
-    cur.close()
-    conn.close()
+    print("\n--- FASE 4: SALVANDO BASE DE CONHECIMENTO LOCAL EM JSON ---")
+    caminho_json = os.path.join(treinamento_dir, "base_conhecimento_local.json")
+    try:
+        with open(caminho_json, "w", encoding="utf-8") as f:
+            json.dump(topicos_consolidados, f, ensure_ascii=False, indent=4)
+        print(f"✅ Base de conhecimento local salva com sucesso em: {caminho_json}")
+    except Exception as e:
+        print(f"❌ Erro ao salvar arquivo JSON local: {e}")
     
     if os.path.exists(audios_temp_dir) and not os.listdir(audios_temp_dir):
         os.rmdir(audios_temp_dir)
