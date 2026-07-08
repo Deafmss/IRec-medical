@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import base64
 import subprocess
 import urllib.request
 import urllib.parse
@@ -112,12 +113,37 @@ def transcrever_audio_bruto(caminho_audio, api_key):
     file_size = os.path.getsize(caminho_audio)
     display_name = os.path.basename(caminho_audio)
     
-    print("  -> Fazendo upload do áudio para o Gemini...")
+    prompt = (
+        "Você é um transcritor clínico de alta precisão. Transcreva o áudio em Português literal. "
+        "Não resuma nem pule termos técnicos de cicatrização de feridas e enfermagem. "
+        "Retorne apenas a transcrição pura, sem introduções."
+    )
+
+    # Otimização Crítica: Se o arquivo for menor que 20MB, enviar inline (base64)
+    # Isso evita totalmente a fila de processamento da API de arquivos do Gemini
+    if file_size < 20 * 1024 * 1024:
+        print("  -> Transcrevendo áudio via carga inline rápida (Base64)...")
+        with open(caminho_audio, "rb") as f:
+            audio_base64 = base64.b64encode(f.read()).decode("utf-8")
+        
+        body = {
+            "contents": [{
+                "parts": [
+                    {"inline_data": {"mime_type": "audio/mp3", "data": audio_base64}},
+                    {"text": prompt}
+                ]
+            }]
+        }
+        res = requisicao_api_gemini("gemini-2.5-flash:generateContent", body, api_key)
+        return res["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+    # Fallback para arquivos maiores que 20MB (File API)
+    print("  -> Arquivo grande. Fazendo upload para a File API do Gemini...")
     upload_url = iniciar_upload_gemini(file_size, "audio/mp3", display_name, api_key)
     file_info = enviar_bytes_gemini(upload_url, caminho_audio)
     file_uri = file_info["file"]["uri"]
     
-    print("  -> Aguardando processamento do arquivo de áudio...")
+    print("  -> Aguardando processamento da File API do Gemini...")
     inicio_espera = time.time()
     while True:
         try:
@@ -136,12 +162,6 @@ def transcrever_audio_bruto(caminho_audio, api_key):
         time.sleep(10)
     
     print("  -> Transcrevendo áudio...")
-    prompt = (
-        "Você é um transcritor clínico de alta precisão. Transcreva o áudio em Português literal. "
-        "Não resuma nem pule termos técnicos de cicatrização de feridas e enfermagem. "
-        "Retorne apenas a transcrição pura, sem introduções."
-    )
-    
     body = {
         "contents": [{
             "parts": [
@@ -167,6 +187,28 @@ def processar_pdf_documento(caminho_pdf, api_key):
     file_size = os.path.getsize(caminho_pdf)
     display_name = os.path.basename(caminho_pdf)
     
+    # Se o PDF for menor que 20MB, enviar inline (base64)
+    if file_size < 20 * 1024 * 1024:
+        print("  -> Extraindo PDF via carga inline rápida (Base64)...")
+        with open(caminho_pdf, "rb") as f:
+            pdf_base64 = base64.b64encode(f.read()).decode("utf-8")
+        
+        prompt = (
+            "Extraia todo o conteúdo textual relevante deste documento em Português. "
+            "Organize-o de forma clara em markdown. Retorne apenas o conteúdo."
+        )
+        body = {
+            "contents": [{
+                "parts": [
+                    {"inline_data": {"mime_type": "application/pdf", "data": pdf_base64}},
+                    {"text": prompt}
+                ]
+            }]
+        }
+        res = requisicao_api_gemini("gemini-2.5-flash:generateContent", body, api_key)
+        return res["candidates"][0]["content"]["parts"][0]["text"]
+
+    # Fallback para PDFs grandes
     upload_url = iniciar_upload_gemini(file_size, "application/pdf", display_name, api_key)
     file_info = enviar_bytes_gemini(upload_url, caminho_pdf)
     file_uri = file_info["file"]["uri"]
@@ -231,28 +273,10 @@ def ler_docx_puro(caminho):
 
 def analisar_imagem_via_gemini(caminho_imagem, api_key):
     file_size = os.path.getsize(caminho_imagem)
-    display_name = os.path.basename(caminho_imagem)
     
-    upload_url = iniciar_upload_gemini(file_size, "image/jpeg", display_name, api_key)
-    file_info = enviar_bytes_gemini(upload_url, caminho_imagem)
-    file_uri = file_info["file"]["uri"]
-    
-    inicio_espera = time.time()
-    while True:
-        try:
-            status = obter_estado_arquivo_gemini(file_uri, api_key)
-            state = status.get("file", {}).get("state", "PROCESSING")
-            if state == "ACTIVE":
-                break
-            elif state == "FAILED":
-                raise Exception("Falha no processamento da imagem pelo Gemini.")
-        except Exception as e:
-            print(f"  -> Aviso durante espera da imagem ({e})...")
-            
-        if time.time() - inicio_espera > 180:
-            raise Exception("Timeout: Processamento de imagem excedeu 3 minutos.")
-            
-        time.sleep(5)
+    # Enviar imagem inline (base64) diretamente
+    with open(caminho_imagem, "rb") as f:
+        img_base64 = base64.b64encode(f.read()).decode("utf-8")
     
     prompt = (
         "Descreva clinicamente esta captura de tela de videoaula de feridas. "
@@ -263,23 +287,14 @@ def analisar_imagem_via_gemini(caminho_imagem, api_key):
     body = {
         "contents": [{
             "parts": [
-                {"file_data": {"file_uri": file_uri, "mime_type": "image/jpeg"}},
+                {"inline_data": {"mime_type": "image/jpeg", "data": img_base64}},
                 {"text": prompt}
             ]
         }]
     }
     
     res = requisicao_api_gemini("gemini-2.5-flash:generateContent", body, api_key)
-    descricao = res["candidates"][0]["content"]["parts"][0]["text"]
-    
-    try:
-        req_del = urllib.request.Request(f"{file_uri}?key={api_key}", method="DELETE")
-        with urllib.request.urlopen(req_del, timeout=10) as response:
-            pass
-    except Exception:
-        pass
-        
-    return descricao
+    return res["candidates"][0]["content"]["parts"][0]["text"]
 
 def extrair_entidades_clinicas(texto_completo, api_key):
     print("Mapeando entidades clínicas e tópicos principais...")
@@ -300,9 +315,9 @@ def extrair_entidades_clinicas(texto_completo, api_key):
     if texto_json.startswith("```"):
         linhas = texto_json.split("\n")
         if linhas[0].startswith("```"):
-            linhas = linhas[1:]
+            linhas = lines[1:]
         if linhas[-1].startswith("```"):
-            linhas = linhas[:-1]
+            linhas = lines[:-1]
         texto_json = "\n".join(linhas).strip()
         
     try:
@@ -511,8 +526,11 @@ def processar_base():
 
                 print(f"Processando vídeo: {file}")
                 caminho_audio = os.path.join(audios_temp_dir, f"{titulo_base}.mp3")
+                
+                # Aceleração Física GPU/VRAM: Usar decodificação por aceleração de hardware DXVA2/D3D11VA universal (-hwaccel auto)
+                # Isso reduz drasticamente o consumo de CPU e memória RAM
                 cmd_audio = [
-                    "ffmpeg", "-y", "-i", caminho_arquivo, 
+                    "ffmpeg", "-hwaccel", "auto", "-y", "-i", caminho_arquivo, 
                     "-vn", "-ar", "16000", "-ac", "1", "-ab", "64k", "-f", "mp3", 
                     caminho_audio
                 ]
@@ -529,11 +547,11 @@ def processar_base():
                 if os.path.exists(caminho_audio):
                     os.remove(caminho_audio)
 
-                # Extrai capturas do vídeo
+                # Extrai capturas do vídeo acelerado por GPU
                 print(f"Extraindo capturas de: {file}")
                 padrao_captura = os.path.join(capturas_dir, f"{titulo_base}_min_%02d_00.jpg")
                 cmd_imagens = [
-                    "ffmpeg", "-y", "-i", caminho_arquivo,
+                    "ffmpeg", "-hwaccel", "auto", "-y", "-i", caminho_arquivo,
                     "-vf", "fps=1/60,scale=800:-1", "-q:v", "2",
                     padrao_captura
                 ]
