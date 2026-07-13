@@ -48,7 +48,7 @@ export default function DoctorDashboard({
   selectedPatientEntries,
   setSelectedPatientEntries 
 }) {
-  const [activeTab, setActiveTab] = useState('my-patients'); // 'my-patients' or 'all-patients'
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('irec_doctor_active_tab') || 'my-patients'); // 'my-patients' or 'all-patients'
   const [patients, setPatients] = useState([]);
   const [myPatients, setMyPatients] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -77,8 +77,8 @@ export default function DoctorDashboard({
   const [newMatAffiliateLink, setNewMatAffiliateLink] = useState('');
   const [newMatPharmacyName, setNewMatPharmacyName] = useState('');
   const [addingMat, setAddingMat] = useState(false);
-  const [selectedSubTab, setSelectedSubTab] = useState('wounds'); // 'wounds' or 'documents'
-  const [selectedDocTab, setSelectedDocTab] = useState('receita'); // 'receita' or 'atestado'
+  const [selectedSubTab, setSelectedSubTab] = useState(() => localStorage.getItem('irec_doctor_sub_tab') || 'wounds'); // 'wounds' or 'documents'
+  const [selectedDocTab, setSelectedDocTab] = useState(() => localStorage.getItem('irec_doctor_doc_tab') || 'receita'); // 'receita' or 'atestado'
   const [prescriptionItems, setPrescriptionItems] = useState([{ name: '', dosage: '', route: 'Via Oral', instructions: '' }]);
   const [atestadoDays, setAtestadoDays] = useState('3');
   const [atestadoReason, setAtestadoReason] = useState('necessita de afastamento das atividades laborais por motivos de tratamento de lesão de pele');
@@ -138,6 +138,48 @@ export default function DoctorDashboard({
   useEffect(() => {
     loadLists();
   }, []);
+
+  // Persist doctor active tab, sub-tab and document tab in localStorage
+  useEffect(() => {
+    localStorage.setItem('irec_doctor_active_tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('irec_doctor_sub_tab', selectedSubTab);
+  }, [selectedSubTab]);
+
+  useEffect(() => {
+    localStorage.setItem('irec_doctor_doc_tab', selectedDocTab);
+  }, [selectedDocTab]);
+
+  // Periodic polling for patient lists (every 10s)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("[iRec] Polling doctor patients lists...");
+      loadLists();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [doctorProfile]);
+
+  // Periodic polling for selected patient details (documents and materials)
+  useEffect(() => {
+    if (!selectedPatient) return;
+
+    const refreshPatientDetails = async () => {
+      try {
+        const docs = await getPatientDocuments(selectedPatient.id);
+        setPatientDocuments(docs);
+        
+        const mats = await getRecommendedMaterials(selectedPatient.id);
+        setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner'));
+      } catch (err) {
+        console.warn("[iRec] Erro ao atualizar detalhes em tempo real do paciente:", err);
+      }
+    };
+
+    const interval = setInterval(refreshPatientDetails, 10000);
+    return () => clearInterval(interval);
+  }, [selectedPatient]);
 
   // Reload patient entries when a patient is selected
   useEffect(() => {

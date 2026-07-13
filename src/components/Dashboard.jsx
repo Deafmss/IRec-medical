@@ -220,7 +220,12 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
     });
   }, [clinicalProfile, entries]);
 
-  const [activeSubTab, setActiveSubTab] = useState('diary'); // 'diary', 'history', 'documents'
+  const [activeSubTab, setActiveSubTab] = useState(() => localStorage.getItem('irec_patient_sub_tab') || 'diary'); // 'diary', 'history', 'documents'
+
+  // Persist patient active sub-tab
+  useEffect(() => {
+    localStorage.setItem('irec_patient_sub_tab', activeSubTab);
+  }, [activeSubTab]);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const calculateProfileProgress = (profile) => {
@@ -248,6 +253,11 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
   const profileProgress = calculateProfileProgress(clinicalProfile);
   const [profileForm, setProfileForm] = useState({ ...clinicalProfile });
+
+  // Sync profileForm state with incoming clinicalProfile changes (e.g. from real-time refresh)
+  useEffect(() => {
+    setProfileForm({ ...clinicalProfile });
+  }, [clinicalProfile]);
   const [assignedClinician, setAssignedClinician] = useState(null);
   const [showMapModal, setShowMapModal] = useState(false);
   const [profileFormTab, setProfileFormTab] = useState('pessoais'); // 'pessoais', 'endereco', 'clinicos'

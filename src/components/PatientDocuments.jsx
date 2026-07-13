@@ -6,21 +6,33 @@ export default function PatientDocuments({ clinicalProfile }) {
   const [loading, setLoading] = useState(false);
   const [activePrintDoc, setActivePrintDoc] = useState(null);
 
-  const loadDocuments = async () => {
+  const loadDocuments = async (showSpinner = true) => {
     if (!clinicalProfile?.id) return;
-    setLoading(true);
+    if (showSpinner) setLoading(true);
     try {
       const docs = await getPatientDocuments(clinicalProfile.id);
       setDocuments(docs);
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDocuments();
+    loadDocuments(true);
+  }, [clinicalProfile]);
+
+  // Periodic polling to refresh documents in background (every 10 seconds)
+  useEffect(() => {
+    if (!clinicalProfile?.id) return;
+
+    const interval = setInterval(() => {
+      console.log("[iRec] Polling patient documents in background...");
+      loadDocuments(false);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [clinicalProfile]);
 
   const calculateAge = (birthDateString) => {

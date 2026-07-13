@@ -266,12 +266,32 @@ export default function App() {
       
       if (userProfile) {
         setCurrentUser(userProfile);
-        if (userProfile.email === 'admin@irec.com') {
-          setActiveTab('admin-metrics');
-        } else if (userProfile.role === 'doctor') {
-          setActiveTab('doctor-analytics');
+        
+        // Restore activeTab from localStorage if it exists
+        const savedTab = localStorage.getItem('irec_active_tab');
+        if (savedTab) {
+          setActiveTab(savedTab);
         } else {
-          setActiveTab('dashboard');
+          if (userProfile.email === 'admin@irec.com') {
+            setActiveTab('admin-metrics');
+          } else if (userProfile.role === 'doctor') {
+            setActiveTab('doctor-dashboard');
+          } else {
+            setActiveTab('dashboard');
+          }
+        }
+
+        // Restore selected patient if clinician
+        if (userProfile.role === 'doctor' || userProfile.role === 'nurse') {
+          const savedPatient = localStorage.getItem('irec_selected_patient');
+          if (savedPatient) {
+            try {
+              const parsedPatient = JSON.parse(savedPatient);
+              setSelectedPatientForDoctor(parsedPatient);
+            } catch (e) {
+              console.error("Erro ao restaurar paciente selecionado:", e);
+            }
+          }
         }
       }
       setLoadingAuth(false);
@@ -435,12 +455,86 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await signOutUser();
+    try {
+      await signOutUser();
+    } catch (e) {}
     setCurrentUser(null);
+    setSelectedPatientForDoctor(null);
+    setSelectedPatientEntriesForDoctor([]);
+    
+    // Clear localStorage navigation keys
+    localStorage.removeItem('irec_active_user');
+    localStorage.removeItem('irec_active_tab');
+    localStorage.removeItem('irec_selected_patient');
+    localStorage.removeItem('irec_doctor_active_tab');
+    localStorage.removeItem('irec_doctor_sub_tab');
+    localStorage.removeItem('irec_doctor_doc_tab');
+    localStorage.removeItem('irec_patient_sub_tab');
   };
 
+  // Persist activeTab to localStorage
+  useEffect(() => {
+    if (activeTab) {
+      localStorage.setItem('irec_active_tab', activeTab);
+    }
+  }, [activeTab]);
+
+  // Persist selectedPatientForDoctor to localStorage
+  useEffect(() => {
+    if (selectedPatientForDoctor) {
+      localStorage.setItem('irec_selected_patient', JSON.stringify(selectedPatientForDoctor));
+    } else {
+      localStorage.removeItem('irec_selected_patient');
+    }
+  }, [selectedPatientForDoctor]);
+
+  // Periodically fetch clinical data to ensure real-time synchronization
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const refreshData = async () => {
+      // 1. If currentUser is a patient, reload their profile and wound entries
+      if (currentUser.role === 'patient') {
+        try {
+          const profile = await getClinicalProfile(currentUser.id);
+          if (profile) {
+            setClinicalProfile(profile);
+          }
+          const history = await getWoundEntries(currentUser.id);
+          if (history) {
+            setEntries(history);
+          }
+        } catch (e) {
+          console.warn("[iRec] Erro ao sincronizar dados em tempo real do paciente:", e);
+        }
+      }
+      
+      // 2. If currentUser is a clinician (doctor/nurse) and has a selected patient active
+      const isClinician = currentUser.role === 'doctor' || currentUser.role === 'nurse';
+      if (isClinician && selectedPatientForDoctor) {
+        try {
+          const history = await getWoundEntries(selectedPatientForDoctor.id);
+          if (history) {
+            setSelectedPatientEntriesForDoctor(history);
+          }
+        } catch (e) {
+          console.warn("[iRec] Erro ao sincronizar prontuario do paciente ativo:", e);
+        }
+      }
+    };
+
+    // Run every 10 seconds
+    const interval = setInterval(refreshData, 10000);
+    return () => clearInterval(interval);
+  }, [currentUser, selectedPatientForDoctor]);
+
   const addClinicalEntryLocal = (newEntry) => {
-    setEntries((prev) => [...prev, newEntry]);
+    const isClinician = currentUser?.role === 'doctor' || currentUser?.role === 'nurse';
+    if (isClinician) {
+      setSelectedPatientEntriesForDoctor((prev) => [...prev, newEntry]);
+    } else {
+      setEntries((prev) => [...prev, newEntry]);
+    }
   };
 
   // Render active screen

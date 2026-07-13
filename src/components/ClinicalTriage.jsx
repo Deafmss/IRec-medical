@@ -362,11 +362,11 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
 
     setAttachments(prev => {
       const updated = [...prev, ...newAttachments];
-      // Automatically keep the first image file as the primary photoFile for AI analysis
-      const firstImage = updated.find(att => att.file.type.startsWith('image/'));
-      if (firstImage) {
-        setImage(firstImage.url);
-        setPhotoFile(firstImage.file);
+      // Automatically keep the last image file as the primary photoFile for AI analysis (so new uploads overwrite/become active)
+      const lastImage = [...updated].reverse().find(att => att.file.type.startsWith('image/'));
+      if (lastImage) {
+        setImage(lastImage.url);
+        setPhotoFile(lastImage.file);
       } else {
         setImage(null);
         setPhotoFile(null);
@@ -380,10 +380,11 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
   const handleRemoveAttachment = (indexToRemove) => {
     setAttachments(prev => {
       const updated = prev.filter((_, idx) => idx !== indexToRemove);
-      const firstImage = updated.find(att => att.file.type.startsWith('image/'));
-      if (firstImage) {
-        setImage(firstImage.url);
-        setPhotoFile(firstImage.file);
+      // Automatically keep the last image file as the primary photoFile for AI analysis (so new uploads overwrite/become active)
+      const lastImage = [...updated].reverse().find(att => att.file.type.startsWith('image/'));
+      if (lastImage) {
+        setImage(lastImage.url);
+        setPhotoFile(lastImage.file);
       } else {
         setImage(null);
         setPhotoFile(null);
@@ -492,7 +493,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
       };
 
       try {
-        const savedEntry = await addWoundEntryService(newEntryData, photoFile, null, attachments);
+        const savedEntry = await addWoundEntryService(newEntryData, photoFile, clinicalProfile?.id, attachments);
         addClinicalEntry(savedEntry);
       } catch (err) {
         console.error('Falha ao salvar no Supabase:', err);

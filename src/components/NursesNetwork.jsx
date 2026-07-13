@@ -97,6 +97,15 @@ export default function NursesNetwork({ currentUser, setActiveTab, setTelemedici
     loadData();
   }, [currentUser, refreshTrigger]);
 
+  // Periodic background polling to update nurses directory and assignments (every 10 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("[iRec] Polling nurses network list in background...");
+      setRefreshTrigger(prev => prev + 1);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto', position: 'relative', height: '100%', minHeight: 'calc(100vh - 60px)', backgroundColor: 'var(--bg-primary)', fontFamily: 'var(--font-primary)' }}>
       <style>{`
