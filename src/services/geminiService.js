@@ -594,22 +594,17 @@ Sua resposta deve ser estritamente em formato JSON correspondente a este modelo 
       parts: [{ text: message }]
     });
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: formattedHistory,
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
+    const responseData = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+      contents: formattedHistory,
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
     });
 
-    if (!response.ok) throw new Error(`Falha no chat do Copiloto Gemini: ${response.statusText}`);
-    const result = await response.json();
-    const jsonText = result.candidates[0].content.parts[0].text;
+    if (!responseData || !responseData.candidates || !responseData.candidates[0]) {
+      throw new Error(`Falha no chat do Copiloto Gemini`);
+    }
+    const jsonText = responseData.candidates[0].content.parts[0].text;
     return JSON.parse(jsonText.trim());
   } catch (err) {
     console.error("Erro na conversação via Copiloto Gemini API:", err);
