@@ -1324,6 +1324,49 @@ export default function App() {
             <span><strong>Modo de Demonstração Offline:</strong> Este sistema está operando localmente no navegador (LocalStorage). Alterações em fichas clínicas e consultas não serão gravadas no servidor de produção.</span>
           </div>
         )}
+        {/* Top Sticky Header for Accessible Mode Navigation */}
+        {uiMode === 'accessible' && currentUser?.role === 'patient' && activeTab !== 'dashboard' && (
+          <div style={{
+            backgroundColor: '#0284c7',
+            color: '#ffffff',
+            padding: '12px 16px',
+            textAlign: 'center',
+            position: 'sticky',
+            top: 0,
+            zIndex: 99999,
+            boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)',
+            display: 'flex',
+            justifyContent: 'center'
+          }} className="no-print">
+            <button
+              onClick={() => {
+                if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate([60]);
+                setActiveTab('dashboard');
+              }}
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#0284c7',
+                border: 'none',
+                borderRadius: '14px',
+                padding: '14px 24px',
+                fontWeight: '900',
+                fontSize: '17px',
+                cursor: 'pointer',
+                width: '100%',
+                maxWidth: '450px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px'
+              }}
+            >
+              <span style={{ fontSize: '22px' }}>⬅</span>
+              <span>VOLTAR AO INÍCIO (MODO FÁCIL)</span>
+            </button>
+          </div>
+        )}
+
         {activeTab !== 'telemedicine' && renderContent()}
         <Telemedicine 
           currentUser={currentUser} 
