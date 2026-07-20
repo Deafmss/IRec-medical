@@ -180,13 +180,7 @@ export const signUpUser = async (email, password, name, role, additionalData = {
     const user = authData.user;
     if (!user) throw new Error('Falha ao registrar usuário.');
 
-    // If the session is null, it means email verification is enabled on Supabase.
-    // We throw a custom error to let the UI know that signup was successful but confirmation is pending.
-    if (!authData.session) {
-      throw new Error('CONFIRM_EMAIL');
-    }
-
-    // Insert or update profile data (upsert to avoid conflict with the database trigger)
+    // Insert or update profile data (upsert to avoid conflict with database trigger)
     const payload = {
       id: user.id,
       role: role,
@@ -205,13 +199,25 @@ export const signUpUser = async (email, password, name, role, additionalData = {
       .from('clinical_profile')
       .upsert(payload);
 
-    if (profileError) throw profileError;
+    if (profileError) console.warn('[iRec] Aviso ao criar perfil no Supabase:', profileError.message);
 
-    // Fetch and return the newly created profile
-    const profile = await getClinicalProfile(user.id);
-    if (profile) {
-      localStorage.setItem('irec_active_user', JSON.stringify(profile));
-    }
+    // Build the user profile object immediately for zero-friction entry
+    const profile = {
+      id: user.id,
+      role: role,
+      name: name,
+      email: email,
+      crm: additionalData.crm || '',
+      specialty: additionalData.specialty || '',
+      rqe: additionalData.rqe || '',
+      birthDate: additionalData.birthDate || '',
+      gender: additionalData.gender || '',
+      verificationStatus: verificationStatus,
+      professionalDocumentUrl: additionalData.professionalDocumentUrl || ''
+    };
+
+    localStorage.setItem('irec_active_user', JSON.stringify(profile));
+    saveLocalProfile(user.id, profile);
     return profile;
   } catch (err) {
     console.error('Erro no cadastro do Supabase:', err);
