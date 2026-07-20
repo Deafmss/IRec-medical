@@ -401,9 +401,18 @@ export default function AccessibleDashboard({
 
       {/* Symptom Selection Cards */}
       <div>
-        <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff', marginBottom: '14px' }}>
-          👉 Ou toque na foto do que está sentindo:
-        </h2>
+        <div style={{
+          backgroundColor: 'var(--bg-secondary, #1e293b)',
+          padding: '14px 20px',
+          borderRadius: '16px',
+          border: '2px solid #0284c7',
+          marginBottom: '16px',
+          boxShadow: '0 4px 12px rgba(2, 132, 199, 0.15)'
+        }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary, #ffffff)', margin: 0 }}>
+            👉 Ou toque na foto do que está sentindo:
+          </h2>
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
           {symptomCategories.map((cat) => (

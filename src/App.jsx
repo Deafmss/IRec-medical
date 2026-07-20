@@ -1239,8 +1239,8 @@ export default function App() {
             </button>
           )}
 
-          {/* SOS Button */}
-          {currentUser?.role === 'patient' && (
+          {/* SOS Button (Oculto no Modo Fácil para evitar botão duplicado) */}
+          {currentUser?.role === 'patient' && uiMode !== 'accessible' && (
             <button
               onClick={() => setShowSOSModal(true)}
               style={{
@@ -1296,18 +1296,6 @@ export default function App() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
               </svg>
             )}
-          </button>
-
-          {/* Mobile Logout Button */}
-          <button 
-            className="theme-toggle-btn" 
-            onClick={handleLogout}
-            style={{ width: '32px', height: '32px', borderRadius: '8px', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-            title="Sair"
-          >
-            <svg style={{ width: '16px', height: '16px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
-            </svg>
           </button>
         </div>
       </header>
