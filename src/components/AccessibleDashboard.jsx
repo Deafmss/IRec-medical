@@ -105,7 +105,7 @@ export default function AccessibleDashboard({
       icon: '🤕',
       color: '#f59e0b',
       severity: 'Amarelo',
-      prompt: 'Sinto tontura ou dor na cabeça.'
+      guidance: 'Repouse em um local fresco e calmo, beba água e meça sua pressão arterial. Se a tontura vier com formigamento na boca ou perda de força no braço, peça ajuda imediatamente!'
     },
     {
       id: 'fever',
@@ -113,7 +113,7 @@ export default function AccessibleDashboard({
       icon: '🤒',
       color: '#ef4444',
       severity: 'Vermelho',
-      prompt: 'Estou com febre alta ou corpo queimando.'
+      guidance: 'Meça sua temperatura com termômetro, tome bastante água e use roupas leves. Se a febre passar de 38,5°C ou persistir, procure o pronto-socorro.'
     },
     {
       id: 'chest',
@@ -121,7 +121,7 @@ export default function AccessibleDashboard({
       icon: '🫀',
       color: '#dc2626',
       severity: 'Vermelho (Urgência)',
-      prompt: 'Estou com dor ou aperto forte no peito.'
+      guidance: '🚨 ATENÇÃO: Dor ou aperto forte no peito é sinal de urgência! Sente-se confortavelmente, mantenha a calma e aperte o botão vermelho de emergência SOS ou ligue 192.'
     },
     {
       id: 'breath',
@@ -129,7 +129,7 @@ export default function AccessibleDashboard({
       icon: '🫁',
       color: '#dc2626',
       severity: 'Vermelho (Urgência)',
-      prompt: 'Estou com dificuldade para respirar.'
+      guidance: '🚨 ATENÇÃO: Dificuldade intensa para respirar exige cuidado rápido! Sente-se ereto, afrouxe a gola da roupa e peça ajuda imediatamente no botão vermelho SOS.'
     },
     {
       id: 'wound',
@@ -137,7 +137,7 @@ export default function AccessibleDashboard({
       icon: '🩺',
       color: '#0284c7',
       severity: 'Verde/Amarelo',
-      prompt: 'Tenho um machucado, ferida ou lesão na pele.'
+      guidance: 'Lave a lesão delicadamente com soro fisiológico ou água limpa corrente. Proteja com pano limpo e você pode agendar uma avaliação com nossos enfermeiros no app.'
     },
     {
       id: 'belly',
@@ -145,7 +145,7 @@ export default function AccessibleDashboard({
       icon: '🤢',
       color: '#8b5cf6',
       severity: 'Amarelo',
-      prompt: 'Estou com enjoo ou dor forte na barriga.'
+      guidance: 'Descanse, tome pequenos goles de água fresca e evite alimentos pesados. Se a dor for muito forte ou tiver vômitos contínuos, consulte um profissional de saúde.'
     }
   ];
 
@@ -161,7 +161,6 @@ export default function AccessibleDashboard({
   };
 
   const processSymptomQuery = async (queryText) => {
-    // Check if voice input is too short or noise (< 4 characters)
     const cleanText = queryText ? queryText.trim() : '';
     if (!cleanText || cleanText.length < 4 || /^(é|hum|ah|eh|oh|oi)$/i.test(cleanText)) {
       const friendlyPhrase = getRandomNoisePhrase();
@@ -180,7 +179,7 @@ export default function AccessibleDashboard({
       speakText(reply);
     } catch (e) {
       console.error(e);
-      const fallback = "Não conseguimos ouvir agora. Se estiver sentindo dor forte, peça ajuda ou ligue no botão de emergência.";
+      const fallback = "Se estiver sentindo dor forte ou se sentindo muito mal, peça ajuda ou aperte o botão vermelho de emergência SOS.";
       setAiResponse(fallback);
       speakText(fallback);
     } finally {
@@ -191,7 +190,9 @@ export default function AccessibleDashboard({
   const handleSelectSymptom = (cat) => {
     triggerVibration();
     setSelectedSymptom(cat);
-    processSymptomQuery(cat.prompt);
+    const recommendation = cat.guidance;
+    setAiResponse(recommendation);
+    speakText(recommendation);
   };
 
   const handleVoiceRecord = () => {
@@ -343,9 +344,6 @@ export default function AccessibleDashboard({
         <span style={{ fontSize: '48px' }}>{isRecording ? '🎙️🔴' : '🎙️'}</span>
         <span style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff', textAlign: 'center' }}>
           {isRecording ? 'OUVINDO... FALE AGORA!' : 'APERTE AQUI E FALE O QUE ESTÁ SENTINDO'}
-        </span>
-        <span style={{ fontSize: '14px', color: '#e0f2fe', opacity: 0.9 }}>
-          (A inteligência artificial vai te ouvir e responder por voz)
         </span>
       </div>
 
