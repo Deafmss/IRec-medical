@@ -139,6 +139,33 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
     }
   };
 
+  const handleOpenMapsGPS = (e) => {
+    e.preventDefault();
+    triggerVibration();
+
+    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const directMapsUrl = `https://www.google.com/maps/search/hospital+pronto+socorro+upa/@${lat},${lng},15z`;
+          window.open(directMapsUrl, '_blank');
+        },
+        (err) => {
+          console.warn("[iRec] Usando fallback de cidade/estado do cadastro:", err);
+          const cityQuery = (city || state) ? `${city} ${state}`.trim() : '';
+          const fallbackUrl = `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(cityQuery)}`;
+          window.open(fallbackUrl, '_blank');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    } else {
+      const cityQuery = (city || state) ? `${city} ${state}`.trim() : '';
+      const fallbackUrl = `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(cityQuery)}`;
+      window.open(fallbackUrl, '_blank');
+    }
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -318,14 +345,11 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
           </button>
         </div>
 
-        {/* Route to nearest Hospital / UPA */}
-        <a
-          href={googleMapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={triggerVibration}
+        {/* Route to nearest Hospital / UPA with Real GPS */}
+        <button
+          onClick={handleOpenMapsGPS}
           style={{
-            textDecoration: 'none',
+            border: 'none',
             backgroundColor: '#0284c7',
             color: '#ffffff',
             padding: '16px',
@@ -336,12 +360,13 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             gap: '12px',
             fontWeight: '700',
             fontSize: '16px',
+            cursor: 'pointer',
             boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
           }}
         >
           <span style={{ fontSize: '24px' }}>🏥</span>
-          <span>IR PARA HOSPITAL / UPA MAIS PRÓXIMO (MAPA)</span>
-        </a>
+          <span>IR PARA HOSPITAL / UPA MAIS PRÓXIMO (GPS REAL)</span>
+        </button>
 
         {/* Legal Disclaimer */}
         <div style={{ fontSize: '11.5px', color: '#94a3b8', textAlign: 'center', lineHeight: '1.5', padding: '0 8px' }}>
