@@ -21,10 +21,32 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then((reg) => {
-            console.log('[iRec PWA] Service Worker registrado com sucesso:', reg.scope);
+            console.log('[iRec PWA] Service Worker registrado:', reg.scope);
+            
+            // Força a checagem por nova versão sempre que o app é aberto
+            reg.update();
+
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              if (installingWorker) {
+                installingWorker.onstatechange = () => {
+                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('[iRec PWA] Nova versão detectada! Atualizando app automaticamente...');
+                    window.location.reload();
+                  }
+                };
+              }
+            };
           }).catch((err) => {
             console.warn('[iRec PWA] Falha ao registrar Service Worker:', err);
           });
+        });
+
+        // Checa novas versões quando o usuário volta para o app no celular
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            navigator.serviceWorker.ready.then(reg => reg.update());
+          }
         });
       }
     </script>
