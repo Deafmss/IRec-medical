@@ -46,14 +46,31 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// Emergency SOS notification click listener
+// Emergency SOS notification click listener with direct actions
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const action = event.action;
+
+  if (action === 'call_samu') {
+    event.waitUntil(
+      clients.openWindow('tel:192')
+    );
+    return;
+  }
+
+  if (action === 'open_upa') {
+    event.waitUntil(
+      clients.openWindow('https://www.google.com/maps/search/hospital+pronto+socorro+upa')
+    );
+    return;
+  }
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (let i = 0; i < clientList.length; i++) {
         let client = clientList[i];
         if (client.url && 'focus' in client) {
+          client.navigate('/?sos=true');
           return client.focus();
         }
       }

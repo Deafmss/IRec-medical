@@ -79,6 +79,35 @@ export default function App() {
     activeCallSessionRef.current = activeCallSession;
   }, [activeCallSession]);
 
+  // Persistent SOS Notification Sync on Mobile
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+    const syncSOSNotification = async () => {
+      if (Notification.permission === 'granted') {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification('🚨 SOS iRec - Atendimento & Emergência', {
+            body: 'Toque para socorro imediato, ligar 192 ou rota da UPA mais próxima.',
+            icon: '/favicon.png',
+            badge: '/favicon.png',
+            tag: 'irec-sos-persistent',
+            renotify: false,
+            requireInteraction: true,
+            actions: [
+              { action: 'call_samu', title: '📞 Ligar 192 (SAMU)' },
+              { action: 'open_upa', title: '🏥 Rota UPA (Mapa)' }
+            ]
+          });
+        } catch (e) {
+          console.warn("[iRec PWA] Erro ao sincronizar notificação SOS:", e);
+        }
+      }
+    };
+
+    syncSOSNotification();
+  }, [currentUser]);
+
   // Global incoming call listener (polling + BroadcastChannel)
   useEffect(() => {
     if (!currentUser) return;
