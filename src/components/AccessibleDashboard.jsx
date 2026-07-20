@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { chatWithDoctorCopilot } from '../services/geminiService';
 
-// Humanized non-robotic fallback responses for short/unclear audio noise
+// Humanized non-robotic fallback responses for short/unclear audio noise (General Health Context)
 const NOISE_FALLBACK_PHRASES = [
   // Categoria 1: Ouvir de novo / Som baixo
   [
@@ -17,12 +17,12 @@ const NOISE_FALLBACK_PHRASES = [
     "Não entendi muito bem por causa do barulho. Pode repetir com calma?",
     "Ops, ficou um chiadinho no áudio. Pode me falar novamente?"
   ],
-  // Categoria 3: Perguntar onde dói
+  // Categoria 3: Pergunta Geral de Saúde (Serve para qualquer sintoma)
   [
-    "Não entendi direito. Me conte com calma: onde é que está doendo hoje?",
-    "Ficou um pouco confuso. Pode me explicar de um jeito simples o que você está sentindo?",
-    "Não peguei o que você disse. Onde é que está te incomodando agora?",
-    "Pode me contar de novo? Estou aqui prontinho para te ouvir!"
+    "Não entendi direito. Me conte com calma: o que é que você está sentindo hoje?",
+    "Ficou um pouco confuso. Pode me explicar de um jeito simples como posso te ajudar?",
+    "Não peguei o que você disse. O que está te incomodando ou como você está se sentindo?",
+    "Pode me contar de novo? Estou aqui prontinho para cuidar de você!"
   ],
   // Categoria 4: Frase muito curta
   [
