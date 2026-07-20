@@ -33,6 +33,74 @@ if (!isGeminiConfigured) {
   );
 }
 
+// Convert image File to grayscale and return a new File object
+const convertToGrayscale = (imageFile) => {
+  return new Promise((resolve) => {
+    if (!imageFile || !imageFile.type.startsWith('image/')) {
+      resolve(imageFile);
+      return;
+    }
+    
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(imageFile);
+    img.src = objectUrl;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        
+        // Downscale image if it is too large to speed up processing and API transfer
+        const maxDimension = 1024;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const imgData = ctx.getImageData(0, 0, width, height);
+        const data = imgData.data;
+        
+        for (let i = 0; i < data.length; i += 4) {
+          // Standard grayscale weights: 0.299R + 0.587G + 0.114B
+          const brightness = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          data[i] = brightness;     // R
+          data[i + 1] = brightness; // G
+          data[i + 2] = brightness; // B
+        }
+        
+        ctx.putImageData(imgData, 0, 0);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(objectUrl);
+          if (blob) {
+            resolve(new File([blob], imageFile.name, { type: 'image/jpeg' }));
+          } else {
+            resolve(imageFile);
+          }
+        }, 'image/jpeg', 0.85);
+      } catch (err) {
+        console.error("Erro ao converter imagem para escala de cinza:", err);
+        URL.revokeObjectURL(objectUrl);
+        resolve(imageFile); // Fallback to original image on error
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(imageFile);
+    };
+  });
+};
+
 // Convert file to Base64 structure for Gemini Multimodal API
 const fileToGenerativePart = async (file) => {
   return new Promise((resolve, reject) => {
@@ -57,11 +125,20 @@ const fetchGeminiWithRotation = async (modelAndAction, bodyData) => {
   let attempts = 0;
 
   while (attempts < maxRetries) {
+    if (GEMINI_KEYS.length === 0) {
+      throw new Error("Nenhuma chave de API do Gemini válida disponível.");
+    }
+    
+    // Safety check for index out of bounds
+    if (currentKeyIndex >= GEMINI_KEYS.length) {
+      currentKeyIndex = 0;
+    }
+    
     const apiKey = GEMINI_KEYS[currentKeyIndex];
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelAndAction}?key=${apiKey}`;
     
     try {
-      console.log(`[Gemini API] Requesting with key index ${currentKeyIndex}...`);
+      console.log(`[Gemini API] Requesting with key index ${currentKeyIndex} (Total active keys: ${GEMINI_KEYS.length})...`);
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -70,15 +147,26 @@ const fetchGeminiWithRotation = async (modelAndAction, bodyData) => {
         body: JSON.stringify(bodyData)
       });
 
+      // Permanent failures (invalid/unauthorized keys)
+      if (response.status === 401 || response.status === 403 || response.status === 404) {
+        console.error(`[Gemini API] Key index ${currentKeyIndex} is invalid/unauthorized (status ${response.status}). Removing permanently from active list.`);
+        GEMINI_KEYS.splice(currentKeyIndex, 1);
+        if (currentKeyIndex >= GEMINI_KEYS.length) {
+          currentKeyIndex = 0;
+        }
+        continue; // Retry immediately with the next key
+      }
+
       if (response.status === 429) {
-        console.warn(`[Gemini API] Key index ${currentKeyIndex} hit rate limit (429). Rotating key...`);
+        console.warn(`[Gemini API] Key index ${currentKeyIndex} hit rate limit (429). Waiting 2 seconds and rotating key...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
         currentKeyIndex = (currentKeyIndex + 1) % GEMINI_KEYS.length;
         attempts++;
         continue; // Retry with next key
       }
 
       if (!response.ok) {
-        throw new Error(`Falha no Gemini API: ${response.statusText}`);
+        throw new Error(`Falha no Gemini API: ${response.statusText} (status ${response.status})`);
       }
 
       return response;
@@ -91,17 +179,28 @@ const fetchGeminiWithRotation = async (modelAndAction, bodyData) => {
       attempts++;
     }
   }
-  throw new Error("Todas as chaves de API do Gemini excederam o limite.");
+  throw new Error("Todas as chaves de API do Gemini excederam o limite ou são inválidas.");
 };
 
 export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsText) => {
   const profile = clinicalProfile || {};
+  let grayscaleFile = photoFile;
+  
+  if (photoFile && photoFile.type.startsWith('image/')) {
+    try {
+      console.log("[iRec AI] Convertendo imagem para tons de cinza...");
+      grayscaleFile = await convertToGrayscale(photoFile);
+    } catch (e) {
+      console.warn("[iRec AI] Falha ao converter para tons de cinza, usando original:", e);
+    }
+  }
+
   if (isSupabaseActive && supabase) {
     try {
       console.log("Chamando triagem via Supabase Edge Function...");
       let filePart = null;
-      if (photoFile) {
-        filePart = await fileToGenerativePart(photoFile);
+      if (grayscaleFile) {
+        filePart = await fileToGenerativePart(grayscaleFile);
       }
       const { data, error } = await supabase.functions.invoke('gemini-analysis', {
         body: { clinicalProfile: profile, symptomsText, filePart }
@@ -121,8 +220,8 @@ export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsTex
     const parts = [];
     
     // Convert and append the visual image if supplied
-    if (photoFile) {
-      const imagePart = await fileToGenerativePart(photoFile);
+    if (grayscaleFile) {
+      const imagePart = await fileToGenerativePart(grayscaleFile);
       parts.push(imagePart);
     }
 
@@ -195,6 +294,10 @@ Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou inf
     });
 
     const result = await response.json();
+    if (!result.candidates || result.candidates.length === 0 || result.promptFeedback?.blockReason) {
+      console.error("[iRec AI] Resposta do Gemini bloqueada ou sem candidatos:", result);
+      throw new Error(`Chamada do Gemini bloqueada ou sem candidatos: ${result.promptFeedback?.blockReason || 'OUTROS'}`);
+    }
     const jsonText = result.candidates[0].content.parts[0].text;
     return JSON.parse(jsonText.trim());
   } catch (err) {
@@ -311,7 +414,16 @@ DIRETRIZES DE TOM E LINGUAGEM:
     const userParts = [latestUserPart];
     
     if (attachedFile) {
-      const filePart = await fileToGenerativePart(attachedFile);
+      let grayscaleFile = attachedFile;
+      if (attachedFile.type.startsWith('image/')) {
+        try {
+          console.log("[iRec AI] Convertendo anexo do chat para tons de cinza...");
+          grayscaleFile = await convertToGrayscale(attachedFile);
+        } catch (e) {
+          console.warn("[iRec AI] Falha ao converter anexo para tons de cinza:", e);
+        }
+      }
+      const filePart = await fileToGenerativePart(grayscaleFile);
       userParts.push(filePart);
     }
 

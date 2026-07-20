@@ -216,6 +216,50 @@ def fragmentar_audio(caminho_mp3):
     ])
     return chunks, chunks_dir
 
+_whisper_model = None
+
+def obter_whisper_model():
+    global _whisper_model
+    if _whisper_model is None:
+        import whisper
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"\n  -> Carregando modelo local OpenAI Whisper ('base') em GPU ({device.upper()})...")
+        # Load the base model which is highly accurate and very fast
+        _whisper_model = whisper.load_model("base", device=device)
+    return _whisper_model
+
+def transcrever_audio_fallback(caminho_mp3, api_key, chaves=None):
+    """Fallback: fragmenta o audio e transcreve com a API do Gemini se o Whisper local falhar."""
+    prompt = (
+        "Voce e um transcritor clinico de alta precisao especializado em dermatologia e curativos. "
+        "Transcreva LITERALMENTE este trecho de audio em Portugues brasileiro. "
+        "Preserve todos os termos tecnicos medicos, nomes de curativos, patologias e condutas clinicas "
+        "exatamente como pronunciados. "
+        "Retorne SOMENTE a transcricao pura, sem cabecalho, sem comentarios, sem introducao."
+    )
+    chunks, chunks_dir = fragmentar_audio(caminho_mp3)
+    if not chunks:
+        raise Exception("ffmpeg nao gerou nenhum fragmento de audio.")
+    
+    partes = []
+    for i, chunk in enumerate(chunks):
+        try:
+            texto = transcrever_chunk(chunk, api_key, prompt, chaves)
+            if len(texto) >= 30:
+                partes.append(texto)
+        except Exception as e:
+            log_erro(f"Chunk {i+1} de '{os.path.basename(caminho_mp3)}': {e}")
+            
+    try:
+        shutil.rmtree(chunks_dir)
+    except Exception:
+        pass
+        
+    if not partes:
+        raise Exception("Nenhum fragmento foi transcrito com sucesso via API.")
+    return "\n\n".join(partes)
+
 def transcrever_chunk(caminho_chunk, api_key, prompt, chaves=None):
     """Transcreve um unico fragmento de audio via Base64 inline."""
     with open(caminho_chunk, "rb") as f:
@@ -234,66 +278,32 @@ def transcrever_chunk(caminho_chunk, api_key, prompt, chaves=None):
 
 def transcrever_audio(caminho_mp3, api_key, chaves=None):
     """
-    Pipeline de transcricao:
-    1. Fragmenta o MP3 em chunks de 5 min
-    2. Transcreve cada chunk via Base64 inline (sem File API, sem timeout)
-    3. Concatena e retorna o texto completo
+    Pipeline de transcricao local com aceleração GPU Whisper,
+    caindo de volta para a API do Gemini caso haja problemas de VRAM ou driver.
     """
     tamanho_mb = os.path.getsize(caminho_mp3) / (1024 * 1024)
-    minutos = int(CHUNK_SEGUNDOS / 60)
-    print(f"  -> Fragmentando audio ({tamanho_mb:.1f}MB) em segmentos de {minutos} min...")
-
-    chunks, chunks_dir = fragmentar_audio(caminho_mp3)
-
-    if not chunks:
-        raise Exception("ffmpeg nao gerou nenhum fragmento de audio.")
-
-    print(f"  -> {len(chunks)} fragmentos criados. Transcrevendo com Gemini...")
-
-    prompt = (
-        "Voce e um transcritor clinico de alta precisao especializado em dermatologia e curativos. "
-        "Transcreva LITERALMENTE este trecho de audio em Portugues brasileiro. "
-        "Preserve todos os termos tecnicos medicos, nomes de curativos, patologias e condutas clinicas "
-        "exatamente como pronunciados. "
-        "Retorne SOMENTE a transcricao pura, sem cabecalho, sem comentarios, sem introducao."
-    )
-
-    partes = []
-    for i, chunk in enumerate(chunks):
-        chunk_mb = os.path.getsize(chunk) / (1024 * 1024)
-        print(f"     Fragmento {i+1}/{len(chunks)} ({chunk_mb:.1f}MB)...", end=" ", flush=True)
-        try:
-            texto = transcrever_chunk(chunk, api_key, prompt, chaves)
-            if len(texto) < 30:
-                print(f"[CURTO: {len(texto)} chars - possivel silencio]")
-            else:
-                print(f"[OK: {len(texto)} chars]")
-                partes.append(texto)
-            # Throttler ja garante o intervalo — sem sleep adicional
-        except Exception as e:
-            print(f"[ERRO]")
-            log_erro(f"Chunk {i+1} de '{os.path.basename(caminho_mp3)}': {e}")
-
-    # Limpa pasta de chunks temporarios
+    print(f"  -> Processando áudio local ({tamanho_mb:.1f}MB)...")
+    
     try:
-        shutil.rmtree(chunks_dir)
-    except Exception:
-        pass
-
-    if not partes:
-        raise Exception("Nenhum fragmento foi transcrito com sucesso.")
-
-    return "\n\n".join(partes)
+        model = obter_whisper_model()
+        t0 = time.time()
+        print("  -> Transcrevendo localmente com Whisper em GPU (RTX 3070)...")
+        result = model.transcribe(caminho_mp3, language="pt")
+        t1 = time.time()
+        texto = result["text"].strip()
+        print(f"  -> Transcrição local concluída em {t1 - t0:.1f}s.")
+        return texto
+    except Exception as e:
+        print(f"  [AVISO] Erro na transcrição local com Whisper: {e}")
+        print("  -> Iniciando fallback para API do Gemini (fragmentado)...")
+        return transcrever_audio_fallback(caminho_mp3, api_key, chaves)
 
 # --- PROCESSAMENTO DE DOCUMENTOS -----------------------------------------------
 
-def processar_pdf(caminho_pdf, api_key, chaves=None):
-    tamanho_mb = os.path.getsize(caminho_pdf) / (1024 * 1024)
-    print(f"  -> PDF ({tamanho_mb:.1f}MB) via Base64...")
-
+def processar_pdf_fallback(caminho_pdf, api_key, chaves=None):
+    """Fallback: extrai texto de PDF usando a API do Gemini."""
     with open(caminho_pdf, "rb") as f:
         pdf_b64 = base64.b64encode(f.read()).decode("utf-8")
-
     body = {
         "contents": [{
             "parts": [
@@ -304,6 +314,30 @@ def processar_pdf(caminho_pdf, api_key, chaves=None):
     }
     res = requisicao_api_gemini(body, api_key, chaves)
     return res["candidates"][0]["content"]["parts"][0]["text"]
+
+def processar_pdf(caminho_pdf, api_key, chaves=None):
+    """Extrai texto do PDF localmente usando pdfplumber para poupar API."""
+    tamanho_mb = os.path.getsize(caminho_pdf) / (1024 * 1024)
+    print(f"  -> Processando PDF local ({tamanho_mb:.1f}MB)...")
+    
+    try:
+        import pdfplumber
+        texto = ""
+        print("  -> Extraindo texto do PDF localmente com pdfplumber...")
+        with pdfplumber.open(caminho_pdf) as pdf:
+            for i, pagina in enumerate(pdf.pages):
+                conteudo_pag = pagina.extract_text()
+                if conteudo_pag:
+                    texto += f"\n--- PAGINA {i+1} ---\n{conteudo_pag}\n"
+        
+        if not texto.strip():
+            raise Exception("Nenhum texto extraido pelo pdfplumber.")
+            
+        return texto.strip()
+    except Exception as e:
+        print(f"  [AVISO] Erro na extracao local com pdfplumber: {e}")
+        print("  -> Iniciando fallback para API do Gemini...")
+        return processar_pdf_fallback(caminho_pdf, api_key, chaves)
 
 def ler_docx(caminho):
     try:

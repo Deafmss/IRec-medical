@@ -16,6 +16,8 @@ import DoctorPartners from './components/DoctorPartners';
 import AdminDashboard from './components/AdminDashboard';
 import DoctorDashboardAnalytics from './components/DoctorDashboardAnalytics';
 import MyNetworkPortal from './components/MyNetworkPortal';
+import AccessibleDashboard from './components/AccessibleDashboard';
+import SOSEmergencyModal from './components/SOSEmergencyModal';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -31,6 +33,26 @@ export default function App() {
   const [selectedPatientForDoctor, setSelectedPatientForDoctor] = useState(null);
   const [selectedPatientEntriesForDoctor, setSelectedPatientEntriesForDoctor] = useState([]);
   const [pendingVerificationsCount, setPendingVerificationsCount] = useState(0);
+  const [showSOSModal, setShowSOSModal] = useState(false);
+
+  // Persistent UI Mode ('standard' or 'accessible')
+  const [uiMode, setUiMode] = useState(() => localStorage.getItem('irec_ui_mode') || 'standard');
+
+  const toggleUiMode = () => {
+    const nextMode = uiMode === 'standard' ? 'accessible' : 'standard';
+    setUiMode(nextMode);
+    localStorage.setItem('irec_ui_mode', nextMode);
+  };
+
+  // Check URL query params for SOS shortcut trigger
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('sos') === 'true') {
+        setShowSOSModal(true);
+      }
+    }
+  }, []);
 
   const isAdmin = currentUser && currentUser.email === 'admin@irec.com';
 
@@ -559,6 +581,15 @@ export default function App() {
           />
         );
       case 'dashboard':
+        if (uiMode === 'accessible' && currentUser?.role === 'patient') {
+          return (
+            <AccessibleDashboard 
+              clinicalProfile={clinicalProfile} 
+              setActiveTab={setActiveTab} 
+              onOpenSOS={() => setShowSOSModal(true)} 
+            />
+          );
+        }
         return (
           <Dashboard 
             setActiveTab={setActiveTab} 
@@ -1110,7 +1141,55 @@ export default function App() {
           />
         </div>
         
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* Patient UI Mode Toggle Button */}
+          {currentUser?.role === 'patient' && (
+            <button 
+              onClick={toggleUiMode}
+              style={{
+                backgroundColor: uiMode === 'accessible' ? '#0284c7' : 'var(--bg-secondary)',
+                color: uiMode === 'accessible' ? '#ffffff' : 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Alternar entre Modo Padrão e Modo Fácil/Acessível"
+            >
+              <span>👁️</span>
+              <span>{uiMode === 'accessible' ? 'Fácil' : 'Padrão'}</span>
+            </button>
+          )}
+
+          {/* SOS Button */}
+          {currentUser?.role === 'patient' && (
+            <button
+              onClick={() => setShowSOSModal(true)}
+              style={{
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Emergência SOS"
+            >
+              <span>🚨</span>
+              <span>SOS</span>
+            </button>
+          )}
+
           {/* Mobile Profile Button */}
           {!isAdmin && (
             <button 
@@ -1418,6 +1497,13 @@ export default function App() {
           </>
         )}
       </nav>
+
+      {showSOSModal && (
+        <SOSEmergencyModal 
+          onClose={() => setShowSOSModal(false)} 
+          clinicalProfile={clinicalProfile} 
+        />
+      )}
 
       {showProfileModal && (
         <UserProfileModal 

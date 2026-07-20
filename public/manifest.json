@@ -1,0 +1,31 @@
+{
+  "name": "iRec - Atendimento Inteligente e Saúde Geral",
+  "short_name": "iRec",
+  "description": "Plataforma de Atendimento Geral de Saúde, Telemedicina e Emergências",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0284c7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "🚨 SOS Emergência",
+      "short_name": "SOS",
+      "description": "Acionar socorro imediato e rota para UPA/Hospital",
+      "url": "/?sos=true",
+      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+    }
+  ]
+}

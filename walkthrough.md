@@ -204,3 +204,24 @@ Para poder acessar a plataforma pelo celular, o celular e o computador devem est
 2. Observe o balão azul flutuante no canto inferior direito.
 3. Clique nele para abrir a lista de contatos.
 4. Selecione o profissional/paciente e envie mensagens de texto rápido. As notificações visuais (badges) e o chime sonoro funcionarão de forma instantânea em ambos os lados enquanto navegam!
+
+---
+
+## 🆕 Correção de Bugs de Triagem e Anexos (Fase 11)
+
+### 1. Correção do Travamento da Imagem de Análise (`ClinicalTriage.jsx`)
+- **Bug Original:** O sistema buscava sempre a primeira imagem do array de anexos (`find(...)`), fazendo com que qualquer nova imagem adicionada em triagens subsequentes fosse ignorada e a primeira imagem fosse reanalisada continuamente pela IA.
+- **Correção:** Alteramos a busca de imagem ativa na lista de anexos para encontrar o **último** arquivo do tipo imagem (`reverse().find(...)`). Isso permite que novos uploads substituam reativamente a imagem ativa para a IA, corrigindo o travamento relatado pelos testadores.
+
+### 2. Associação Correta de Paciente na Triagem do Profissional (`ClinicalTriage.jsx`)
+- **Bug Original:** Triagens realizadas por médicos ou enfermeiros não eram exibidas no prontuário do paciente porque o formulário passava `null` como ID de paciente na chamada de inserção do Supabase. O banco assumia por padrão o ID do usuário ativo (o próprio médico/enfermeiro).
+- **Correção:** Passamos a enviar explicitamente o identificador `clinicalProfile?.id` na persistência do registro da triagem, assegurando que o arquivo e os dados fiquem vinculados ao prontuário correto do paciente sob atendimento.
+
+### 3. Sincronização em Tempo Real no Painel do Médico (`App.jsx`)
+- **Bug Original:** Após concluir e salvar uma triagem, o painel do médico não atualizava os registros do paciente de forma imediata na aba de histórico evolutivo, necessitando que o médico atualizasse a página.
+- **Correção:** Ajustamos a função `addClinicalEntryLocal` na raiz para verificar o papel do usuário. Caso o usuário ativo seja um clínico, o sistema atualiza reativamente a lista `selectedPatientEntriesForDoctor`, forçando a re-renderização imediata das triagens salvas na tela do profissional de saúde.
+
+### 4. Remoção de Ação Manual de Gravação (`ClinicalTriage.jsx`)
+- **Comportamento Original:** O botão principal da tela de sucesso sugeria salvar os dados no histórico ("Gravar no Histórico Evolutivo"), o que dava a entender que a ação de salvar dependia do clique do usuário, mesmo a triagem já tendo sido salva em segundo plano de forma automática.
+- **Melhoria:** Invertemos os botões. Agora, a ação primária destacada (azul) é "Realizar Nova Triagem", e o botão secundário (cinza) é "Ver no Prontuário / Histórico". Juntamente com o alerta verde de "Salvo automaticamente!", isso deixa explícito que a triagem já foi salva no banco sem necessidade de intervenção do usuário.
+

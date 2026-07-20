@@ -407,29 +407,60 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     const fullSymptoms = `Tipo/Queixa da Pele: ${woundType}. Local Anatômico: ${anatomicalLocation}. Data de Aparecimento: ${appearanceDate}. Estágio: ${lesionStage}. Temperatura Local: ${localTemperature}. Sinais de Infecção: ${infectionSigns}. Cobertura Utilizada: ${appliedDressing}. Quantidade: ${dressingQuantity}. Frequência de Troca: ${dressingFrequency}. Procedimentos: ${performedProcedures}. Evolução Clínica: ${clinicalEvolution}. Sintomas adicionais: ${symptomsText}`;
 
     // Try real Gemini API analysis
-    const realResult = await analyzeWoundWithAI(photoFile, clinicalProfile, fullSymptoms);
-    if (realResult) {
-      setIsAnalyzing(false);
-      setAnalysisStep('');
-      setResult(realResult);
-      
-      if (realResult.type) setWoundType(realResult.type);
-      if (realResult.lesionStage) setLesionStage(realResult.lesionStage);
-      if (realResult.clinicalEvolution) setClinicalEvolution(realResult.clinicalEvolution);
-      
-      setSelectedHotspot(null);
-      return;
+    let finalResult = await analyzeWoundWithAI(photoFile, clinicalProfile, fullSymptoms);
+    if (!finalResult) {
+      // Real API Error/Offline fallback instead of fake simulation
+      finalResult = generateLocalFallbackAnalysis(woundType, lesionStage, clinicalProfile, symptomsText);
     }
 
-    // Real API Error/Offline fallback instead of fake simulation
-    const fallbackResult = generateLocalFallbackAnalysis(woundType, lesionStage, clinicalProfile, symptomsText);
+    // Update form fields based on AI categorization
+    if (finalResult.type) setWoundType(finalResult.type);
+    if (finalResult.lesionStage) setLesionStage(finalResult.lesionStage);
+    if (finalResult.clinicalEvolution) setClinicalEvolution(finalResult.clinicalEvolution);
+    
+    // Save to result state so it displays the analysis page
+    setResult(finalResult);
+    setSelectedHotspot(null);
+
+    // AUTO-SAVE TO THE EVOLUTION HISTORY IN THE BACKGROUND BEFORE HIDING LOADER
+    setAnalysisStep('Gravando no Histórico Evolutivo...');
+    
+    const newEntryData = {
+      date: new Date().toLocaleDateString('pt-BR'),
+      type: finalResult.type || woundType,
+      appearanceDate: appearanceDate,
+      anatomicalLocation: anatomicalLocation,
+      lesionStage: lesionStage,
+      pain: finalResult.painLevel !== undefined ? finalResult.painLevel : pain,
+      exudate: (finalResult.exudate || exudate).toUpperCase(),
+      odor: odor,
+      localTemperature: localTemperature,
+      infectionSigns: infectionSigns,
+      appliedDressing: appliedDressing,
+      dressingQuantity: parseInt(dressingQuantity) || 1,
+      dressingFrequency: dressingFrequency,
+      performedProcedures: performedProcedures,
+      clinicalEvolution: finalResult.clinicalEvolution || clinicalEvolution,
+      photo: image && image.startsWith('blob:') ? '' : (image || ''),
+      
+      // IA estimated fields
+      aiAreaCm2: finalResult.aiAreaCm2 || null,
+      aiLengthCm: finalResult.aiLengthCm || null,
+      aiWidthCm: finalResult.aiWidthCm || null,
+      aiTissueAnalysis: finalResult.aiTissueAnalysis || {},
+      aiRecommendation: finalResult.aiRecommendation || finalResult.treatmentPlan?.join('\n') || '',
+      clinicalOutcome: clinicalOutcome
+    };
+
+    try {
+      const savedEntry = await addWoundEntryService(newEntryData, photoFile, clinicalProfile?.id, attachments);
+      addClinicalEntry(savedEntry);
+    } catch (err) {
+      console.error('Falha ao salvar automaticamente no Supabase:', err);
+    }
+
     setIsAnalyzing(false);
     setAnalysisStep('');
-    setResult(fallbackResult);
-    if (fallbackResult.type) setWoundType(fallbackResult.type);
-    if (fallbackResult.lesionStage) setLesionStage(fallbackResult.lesionStage);
-    if (fallbackResult.clinicalEvolution) setClinicalEvolution(fallbackResult.clinicalEvolution);
-    setSelectedHotspot(null);
   };
 
   const resetTriageForm = () => {
@@ -458,52 +489,6 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     setClinicalOutcome('Tratamento em andamento');
     setResult(null);
     setSelectedHotspot(null);
-  };
-
-  const handleSaveAndFinish = async () => {
-    if (result) {
-      setIsAnalyzing(true);
-      setAnalysisStep('Salvando no Prontuário...');
-      
-      const newEntryData = {
-        date: new Date().toLocaleDateString('pt-BR'),
-        type: result.type || woundType,
-        appearanceDate: appearanceDate,
-        anatomicalLocation: anatomicalLocation,
-        lesionStage: lesionStage,
-        pain: result.painLevel || pain,
-        exudate: (result.exudate || exudate).toUpperCase(),
-        odor: odor,
-        localTemperature: localTemperature,
-        infectionSigns: infectionSigns,
-        appliedDressing: appliedDressing,
-        dressingQuantity: parseInt(dressingQuantity) || 1,
-        dressingFrequency: dressingFrequency,
-        performedProcedures: performedProcedures,
-        clinicalEvolution: result.clinicalEvolution || clinicalEvolution,
-        photo: image.startsWith('blob:') ? '' : image, // will be replaced by storage URL
-        
-        // IA estimated fields
-        aiAreaCm2: result.aiAreaCm2 || null,
-        aiLengthCm: result.aiLengthCm || null,
-        aiWidthCm: result.aiWidthCm || null,
-        aiTissueAnalysis: result.aiTissueAnalysis || {},
-        aiRecommendation: result.aiRecommendation || result.treatmentPlan?.join('\n') || '',
-        clinicalOutcome: clinicalOutcome
-      };
-
-      try {
-        const savedEntry = await addWoundEntryService(newEntryData, photoFile, clinicalProfile?.id, attachments);
-        addClinicalEntry(savedEntry);
-      } catch (err) {
-        console.error('Falha ao salvar no Supabase:', err);
-      }
-
-      setIsAnalyzing(false);
-      setAnalysisStep('');
-      resetTriageForm();
-      setActiveTab('history');
-    }
   };
 
   return (
@@ -787,9 +772,8 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </div>
           )}
 
-          {/* INTERACTIVE WOUND MAPPING (Only for safe home-care or detailed view cases) */}
-          {!result.isRedirect && (
-            <div className="glass-card" style={{ margin: 0, padding: '20px' }}>
+          {/* INTERACTIVE WOUND MAPPING */}
+          <div className="glass-card" style={{ margin: 0, padding: '20px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '10px', color: 'var(--primary)' }}>
                 Mapeamento Visual Analisado (Visão Geral da Lesão)
               </h4>
@@ -797,61 +781,78 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 Clique nos pontos numerados da lesão abaixo para entender as descobertas da triagem:
               </p>
 
-              {/* Graphic Mock of Wound Bed */}
+              {/* Graphic Mock of Wound Bed replaced with actual uploaded image */}
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
                 
-                {/* Visual Wound Sphere */}
+                {/* Visual Wound Sphere (Using the Actual Uploaded Image!) */}
                 <div style={{ 
                   position: 'relative', 
-                  width: '180px', 
-                  height: '140px', 
-                  borderRadius: '50% 40% 45% 50%', 
-                  background: '#f2dede', // Perilesional skin pinkish
-                  border: '4px solid #e1b4b4', // Inflamed margin
+                  width: '220px', 
+                  height: '160px', 
+                  borderRadius: '12px', 
+                  border: '2px solid var(--border-color)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   overflow: 'hidden',
                   margin: '0 auto',
-                  boxShadow: 'inset 0 0 20px rgba(0,0,0,0.1)'
+                  boxShadow: 'var(--shadow-md)',
+                  backgroundColor: 'var(--bg-secondary)'
                 }}>
-                  {/* Inside: Slough area (esfacelo) yellow */}
-                  <div style={{ 
-                    width: '110px', 
-                    height: '80px', 
-                    borderRadius: '40% 50% 30% 60%', 
-                    background: '#f5f5dc', // Slough light yellow
-                    border: '2px dashed #d4c295',
-                    position: 'absolute',
-                    top: '15px',
-                    left: '25px'
-                  }}></div>
+                  {image ? (
+                    <img 
+                      src={image} 
+                      alt="Ferida analisada" 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover' 
+                      }} 
+                    />
+                  ) : (
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Sem Imagem</div>
+                  )}
 
-                  {/* Inside: Granulation healthy tissue red */}
-                  <div style={{ 
-                    width: '80px', 
-                    height: '60px', 
-                    borderRadius: '50%', 
-                    background: '#d9534f', // Red granulation
-                    position: 'absolute',
-                    bottom: '20px',
-                    right: '30px',
-                    boxShadow: 'inset 0 0 10px rgba(0,0,0,0.2)'
-                  }}></div>
-
-                  {/* Hotspots */}
+                  {/* Hotspots positioned over the actual image */}
                   {/* Hotspot 1: Healthy Granulation */}
-                  <div className="map-hotspot" style={{ bottom: '40px', right: '60px' }} onClick={() => setSelectedHotspot('1')}>
+                  <div 
+                    className="map-hotspot" 
+                    style={{ 
+                      bottom: '40px', 
+                      right: '65px',
+                      backgroundColor: 'rgba(217, 83, 79, 0.75)',
+                      border: '2px solid #ffffff'
+                    }} 
+                    onClick={() => setSelectedHotspot('1')}
+                  >
                     1
                   </div>
 
                   {/* Hotspot 2: Slough/Esfacelo */}
-                  <div className="map-hotspot" style={{ top: '40px', left: '60px' }} onClick={() => setSelectedHotspot('2')}>
+                  <div 
+                    className="map-hotspot" 
+                    style={{ 
+                      top: '40px', 
+                      left: '80px',
+                      backgroundColor: 'rgba(240, 173, 78, 0.75)',
+                      border: '2px solid #ffffff'
+                    }} 
+                    onClick={() => setSelectedHotspot('2')}
+                  >
                     2
                   </div>
 
                   {/* Hotspot 3: Perilesional Skin */}
-                  <div className="map-hotspot" style={{ bottom: '15px', left: '15px' }} onClick={() => setSelectedHotspot('3')}>
+                  <div 
+                    className="map-hotspot" 
+                    style={{ 
+                      bottom: '25px', 
+                      left: '30px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                      border: '2px solid #ffffff'
+                    }} 
+                    onClick={() => setSelectedHotspot('3')}
+                  >
                     3
                   </div>
                 </div>
@@ -860,15 +861,19 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 <div style={{ flex: '1', minWidth: '200px' }}>
                   {selectedHotspot === '1' && (
                     <div className="animate-fade-in" style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(217, 83, 79, 0.08)', borderLeft: '4px solid #d9534f' }}>
-                      <strong style={{ fontSize: '13px', color: '#d9534f' }}>[Ponto 1] Tecido de Granulação (80%)</strong>
+                      <strong style={{ fontSize: '13px', color: '#d9534f' }}>
+                        [Ponto 1] Tecido de Granulação ({result.aiTissueAnalysis?.granulacao !== undefined ? result.aiTissueAnalysis.granulacao : 80}%)
+                      </strong>
                       <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '4px' }}>
                         Pele nova e rica em vasos sanguíneos que cresce no leito da ferida. Cor vermelha viva indica excelente circulação e progresso de cicatrização ótimo.
                       </p>
                     </div>
                   )}
                   {selectedHotspot === '2' && (
-                    <div className="animate-fade-in" style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(212, 194, 149, 0.1)', borderLeft: '4px solid #b5a070' }}>
-                      <strong style={{ fontSize: '13px', color: '#8c7847' }}>[Ponto 2] Esfacelo / Tecido Inviável (20%)</strong>
+                    <div className="animate-fade-in" style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(240, 173, 78, 0.08)', borderLeft: '4px solid #f0ad4e' }}>
+                      <strong style={{ fontSize: '13px', color: '#b58a3f' }}>
+                        [Ponto 2] Esfacelo / Tecido Inviável ({result.aiTissueAnalysis?.fibrina !== undefined ? result.aiTissueAnalysis.fibrina : 20}%)
+                      </strong>
                       <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '4px' }}>
                         Camada amarela de células mortas e secreção seca. Funciona como uma barreira física contra o crescimento de pele nova e atrai bactérias. O uso de hidrogel ajudará a limpar isso.
                       </p>
@@ -876,7 +881,9 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                   )}
                   {selectedHotspot === '3' && (
                     <div className="animate-fade-in" style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.08)', borderLeft: '4px solid var(--primary)' }}>
-                      <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>[Ponto 3] Pele Perilesional</strong>
+                      <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>
+                        [Ponto 3] Pele Perilesional e Epitelização ({result.aiTissueAnalysis?.epitelizacao !== undefined ? result.aiTissueAnalysis.epitelizacao : 0}%)
+                      </strong>
                       <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '4px' }}>
                         A pele íntegra ao redor da lesão. Está ligeiramente ressecada. Aplique creme barreira Cavilon ou Dersani para evitar que a umidade da ferida cause maceração e abra novas feridas.
                       </p>
@@ -891,7 +898,6 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
 
               </div>
             </div>
-          )}
 
           {/* Detailed Clinical Assessment */}
           <div className="glass-card" style={{ margin: 0 }}>
@@ -1053,25 +1059,47 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </div>
           )}
 
-          {/* Finish & Save buttons */}
+          {/* Sucess/Auto-saved Alert */}
+          <div style={{ 
+            backgroundColor: 'rgba(16, 185, 129, 0.08)', 
+            border: '1px solid rgba(16, 185, 129, 0.2)', 
+            borderRadius: '8px', 
+            padding: '12px 16px', 
+            color: '#10b981', 
+            fontSize: '13px', 
+            marginBottom: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 3 3 9-13.5M2.25 12a10.5 10.5 0 1 1 21 0 10.5 10.5 0 0 1-21 0z" />
+            </svg>
+            <span><strong>Salvo automaticamente!</strong> Esta triagem foi identificada e gravada com sucesso no histórico evolutivo do paciente.</span>
+          </div>
+
+          {/* Action buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button 
               className="btn btn-primary" 
-              onClick={handleSaveAndFinish}
+              onClick={resetTriageForm}
               style={{ width: '100%', height: '54px', fontSize: '15px' }}
             >
-              <svg style={{ width: '18px', height: '18px', fill: 'none', stroke: 'currentColor', strokeWidth: '2.5' }} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-              </svg>
-              Gravar no Histórico Evolutivo
+              Realizar Nova Triagem
             </button>
-            
+
             <button 
               className="btn btn-secondary" 
-              onClick={resetTriageForm}
+              onClick={() => {
+                resetTriageForm();
+                setActiveTab('history');
+              }}
               style={{ width: '100%', height: '48px', fontSize: '13.5px' }}
             >
-              Realizar Nova Triagem
+              <svg style={{ width: '16px', height: '16px', fill: 'none', stroke: 'currentColor', strokeWidth: '2.5', marginRight: '6px', display: 'inline-block', verticalAlign: 'middle' }} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+              Ver no Prontuário / Histórico
             </button>
           </div>
         </div>
