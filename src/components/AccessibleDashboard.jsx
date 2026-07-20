@@ -1,6 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { chatWithDoctorCopilot } from '../services/geminiService';
 
+// Humanized non-robotic fallback responses for short/unclear audio noise
+const NOISE_FALLBACK_PHRASES = [
+  // Categoria 1: Ouvir de novo / Som baixo
+  [
+    "Desculpe, não consegui te ouvir direito. Pode repetir bem pertinho do celular?",
+    "Ops, o som saiu um pouco baixinho. Consegue falar de novo um pouquinho mais alto?",
+    "Hum, não deu para entender muito bem. Pode repetir para mim?",
+    "Desculpe, acho que não peguei essa parte. Fale comigo de novo, por favor!"
+  ],
+  // Categoria 2: Barulho no ambiente
+  [
+    "Acho que um barulho no ambiente atrapalhou um pouquinho. Pode falar mais perto do microfone?",
+    "Teve um ruído na gravação. Consegue me contar de novo o que está sentindo?",
+    "Não entendi muito bem por causa do barulho. Pode repetir com calma?",
+    "Ops, ficou um chiadinho no áudio. Pode me falar novamente?"
+  ],
+  // Categoria 3: Perguntar onde dói
+  [
+    "Não entendi direito. Me conte com calma: onde é que está doendo hoje?",
+    "Ficou um pouco confuso. Pode me explicar de um jeito simples o que você está sentindo?",
+    "Não peguei o que você disse. Onde é que está te incomodando agora?",
+    "Pode me contar de novo? Estou aqui prontinho para te ouvir!"
+  ],
+  // Categoria 4: Frase muito curta
+  [
+    "Acho que a gravação ficou curtinha demais! Fale um pouquinho mais sobre como você está.",
+    "Não consegui entender essa frase curta. Pode me explicar com mais detalhes?",
+    "Foi tão rapidinho que não deu para ouvir tudo! Pode me dizer mais?",
+    "Ops, cortou um pedacinho da sua fala. Pode repetir para mim?"
+  ],
+  // Categoria 5: Incentivo amigável
+  [
+    "Poxa, não entendi. Tente apertar o botão de novo e falar bem devagar.",
+    "Não se preocupe! Aperte o microfone de novo e me diga como posso te ajudar.",
+    "Ah, não deu para entender. Vamos tentar de novo? Estou te ouvindo!",
+    "Tranquilo! Pode falar novamente bem pertinho que eu presto atenção."
+  ]
+];
+
+const getRandomNoisePhrase = () => {
+  const categoryIndex = Math.floor(Math.random() * NOISE_FALLBACK_PHRASES.length);
+  const phraseIndex = Math.floor(Math.random() * NOISE_FALLBACK_PHRASES[categoryIndex].length);
+  return NOISE_FALLBACK_PHRASES[categoryIndex][phraseIndex];
+};
+
 export default function AccessibleDashboard({ 
   clinicalProfile, 
   setActiveTab, 
@@ -116,6 +161,15 @@ export default function AccessibleDashboard({
   };
 
   const processSymptomQuery = async (queryText) => {
+    // Check if voice input is too short or noise (< 4 characters)
+    const cleanText = queryText ? queryText.trim() : '';
+    if (!cleanText || cleanText.length < 4 || /^(é|hum|ah|eh|oh|oi)$/i.test(cleanText)) {
+      const friendlyPhrase = getRandomNoisePhrase();
+      setAiResponse(friendlyPhrase);
+      speakText(friendlyPhrase);
+      return;
+    }
+
     setLoadingAi(true);
     try {
       const systemPrompt = `Você é o Assistente iRec Fácil. Responda em um único parágrafo muito curto, simples e carinhoso, em português. Não use termos médicos difíceis. Explique o que a pessoa deve fazer de forma clara. Se for algo grave, mande procurar o pronto-socorro.`;
