@@ -101,9 +101,11 @@ export default function App() {
             body: 'Toque para socorro imediato, ligar 192 ou rota da UPA mais próxima.',
             icon: '/favicon.png',
             badge: '/favicon.png',
-            tag: 'irec-sos-persistent',
-            renotify: false,
+            tag: 'irec-sos-persistent-fixed',
+            renotify: true,
             requireInteraction: true,
+            priority: 'max',
+            urgency: 'high',
             actions: [
               { action: 'call_samu', title: '📞 Ligar 192 (SAMU)' },
               { action: 'open_upa', title: '🏥 Rota UPA (Mapa)' }
@@ -129,8 +131,11 @@ export default function App() {
           body: 'Toque para socorro imediato, ligar 192 ou rota da UPA mais próxima.',
           icon: '/favicon.png',
           badge: '/favicon.png',
-          tag: 'irec-sos-persistent',
+          tag: 'irec-sos-persistent-fixed',
+          renotify: true,
           requireInteraction: true,
+          priority: 'max',
+          urgency: 'high',
           actions: [
             { action: 'call_samu', title: '📞 Ligar 192 (SAMU)' },
             { action: 'open_upa', title: '🏥 Rota UPA (Mapa)' }
