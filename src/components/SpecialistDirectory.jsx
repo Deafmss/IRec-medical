@@ -415,7 +415,7 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
                     <p style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', margin: '4px 0 0 0' }}>{doc.stats.patients}</p>
                   </div>
                   <div style={{ padding: '10px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                    <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0 }}>Taxa de Sucesso</p>
+                    <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0 }}>Taxa de Resolução</p>
                     <p style={{ fontSize: '14px', fontWeight: '800', color: '#10b981', margin: '4px 0 0 0' }}>{doc.stats.successRate}</p>
                   </div>
                 </div>
