@@ -1427,8 +1427,9 @@ export default function App() {
       {/* 
          4. MOBILE NAVIGATION (Bottom Bar)
          Visible only on mobile widths via CSS
-      */}
-      <nav className="bottom-nav no-print">
+      {/* Condicional para ocultar barra de navegação no Modo Fácil (Acessível) */}
+      {!(uiMode === 'accessible' && currentUser?.role === 'patient') && (
+        <nav className="bottom-nav no-print">
         {isAdmin ? (
           <>
             <button 
@@ -1570,6 +1571,7 @@ export default function App() {
           </>
         )}
       </nav>
+      )}
 
       {showNotificationPromptModal && (
         <div style={{
