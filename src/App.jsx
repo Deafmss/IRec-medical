@@ -79,9 +79,19 @@ export default function App() {
     activeCallSessionRef.current = activeCallSession;
   }, [activeCallSession]);
 
+  const [showNotificationPromptModal, setShowNotificationPromptModal] = useState(false);
+
   // Persistent SOS Notification Sync on Mobile
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+    // Auto prompt modal for patients if notification permission is default
+    if (currentUser?.role === 'patient' && Notification.permission === 'default') {
+      const timer = setTimeout(() => {
+        setShowNotificationPromptModal(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
 
     const syncSOSNotification = async () => {
       if (Notification.permission === 'granted') {
@@ -107,6 +117,32 @@ export default function App() {
 
     syncSOSNotification();
   }, [currentUser]);
+
+  const handleGrantNotificationPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    try {
+      const perm = await Notification.requestPermission();
+      setShowNotificationPromptModal(false);
+      if (perm === 'granted' && 'serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        reg.showNotification('🚨 SOS iRec - Atendimento & Emergência', {
+          body: 'Toque para socorro imediato, ligar 192 ou rota da UPA mais próxima.',
+          icon: '/favicon.png',
+          badge: '/favicon.png',
+          tag: 'irec-sos-persistent',
+          requireInteraction: true,
+          actions: [
+            { action: 'call_samu', title: '📞 Ligar 192 (SAMU)' },
+            { action: 'open_upa', title: '🏥 Rota UPA (Mapa)' }
+          ]
+        });
+        alert("Notificação fixa de emergência ativada na barra do celular com sucesso!");
+      }
+    } catch (err) {
+      console.error(err);
+      setShowNotificationPromptModal(false);
+    }
+  };
 
   // Global incoming call listener (polling + BroadcastChannel)
   useEffect(() => {
@@ -1526,6 +1562,78 @@ export default function App() {
           </>
         )}
       </nav>
+
+      {showNotificationPromptModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.92)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          fontFamily: 'var(--font-primary, sans-serif)'
+        }}>
+          <div style={{
+            maxWidth: '420px',
+            width: '100%',
+            backgroundColor: '#1e293b',
+            borderRadius: '24px',
+            border: '2px solid #0284c7',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            padding: '28px',
+            textAlign: 'center',
+            color: '#ffffff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{ fontSize: '48px' }}>🚨</div>
+            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800' }}>
+              Ativar Notificação Fixa de Emergência?
+            </h2>
+            <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: '1.6', margin: 0 }}>
+              Para sua segurança, o iRec pode fixar um alerta de emergência na barra do seu celular com o botão de Ligar 192 (SAMU) e Rota da UPA com 1 toque.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+              <button
+                onClick={handleGrantNotificationPermission}
+                style={{
+                  backgroundColor: '#0284c7',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '14px',
+                  padding: '16px',
+                  fontWeight: '800',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)'
+                }}
+              >
+                🔔 SIM, ATIVAR NOTIFICAÇÃO SOS AGORA
+              </button>
+              <button
+                onClick={() => setShowNotificationPromptModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  padding: '8px'
+                }}
+              >
+                Agora não
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSOSModal && (
         <SOSEmergencyModal 
