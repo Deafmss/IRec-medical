@@ -80,3 +80,23 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// Auto re-create SOS notification if user accidentally swipes it away
+self.addEventListener('notificationclose', (event) => {
+  if (event.notification.tag === 'irec-sos-persistent-fixed') {
+    self.registration.showNotification('🚨 SOS iRec - Atendimento & Emergência', {
+      body: 'Toque para socorro imediato, ligar 192 ou rota da UPA mais próxima.',
+      icon: '/favicon.png',
+      badge: '/favicon.png',
+      tag: 'irec-sos-persistent-fixed',
+      renotify: true,
+      requireInteraction: true,
+      priority: 'max',
+      urgency: 'high',
+      actions: [
+        { action: 'call_samu', title: '📞 Ligar 192 (SAMU)' },
+        { action: 'open_upa', title: '🏥 Rota UPA (Mapa)' }
+      ]
+    });
+  }
+});
