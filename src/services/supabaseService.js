@@ -160,10 +160,12 @@ export const signUpUser = async (email, password, name, role, additionalData = {
 
   // Supabase Auth
   try {
+    const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://irec-medical.vercel.app';
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: siteUrl,
         data: { 
           name, 
           role,
@@ -201,7 +203,12 @@ export const signUpUser = async (email, password, name, role, additionalData = {
 
     if (profileError) console.warn('[iRec] Aviso ao criar perfil no Supabase:', profileError.message);
 
-    // Build the user profile object immediately for zero-friction entry
+    // If confirmation email is required by Supabase (authData.session is null)
+    if (!authData.session) {
+      throw new Error('CONFIRM_EMAIL');
+    }
+
+    // Return profile for direct login if email confirmation is disabled
     const profile = {
       id: user.id,
       role: role,

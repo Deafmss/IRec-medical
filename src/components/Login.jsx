@@ -144,8 +144,7 @@ export default function Login({ onLoginSuccess }) {
           }, 1500);
         } catch (signUpErr) {
           if (signUpErr.message === 'CONFIRM_EMAIL') {
-            setSuccessMsg('Cadastro realizado com sucesso! Enviamos um e-mail de confirmação. Por favor, verifique sua caixa de entrada para ativar a conta antes de fazer login.');
-            setEmail('');
+            setSuccessMsg(`Cadastro realizado com sucesso! Enviamos um e-mail de ativação para ${email}. Por favor, acesse sua caixa de entrada e a pasta de SPAM para ativar a conta.`);
             setPassword('');
             setName('');
             setCrm('');
