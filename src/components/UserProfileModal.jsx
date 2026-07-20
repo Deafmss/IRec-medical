@@ -120,7 +120,8 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
     otherConditions: currentUser.otherConditions || '',
     medications: currentUser.medications || '',
     allergies: currentUser.allergies || '',
-    avatarUrl: currentUser.avatarUrl || ''
+    avatarUrl: currentUser.avatarUrl || '',
+    uiMode: localStorage.getItem('irec_ui_mode') || currentUser.uiMode || 'standard'
   });
 
   const [uploading, setUploading] = useState(false);
@@ -263,8 +264,13 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
         otherConditions: formData.otherConditions,
         medications: formData.medications,
         allergies: formData.allergies,
-        avatarUrl: formData.avatarUrl
+        avatarUrl: formData.avatarUrl,
+        uiMode: formData.uiMode
       };
+
+      if (formData.uiMode) {
+        localStorage.setItem('irec_ui_mode', formData.uiMode);
+      }
 
       const result = await updateClinicalProfile(currentUser.id, updatedProfile);
       if (result) {
