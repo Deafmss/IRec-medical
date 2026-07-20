@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAllNurses, getAssignedDoctors, followPatient } from '../services/supabaseService';
+import BookingModal from './BookingModal';
 
 const getNursePremiumDetails = (doc) => {
   if (!doc) return null;
@@ -78,6 +79,7 @@ export default function NursesNetwork({ currentUser, setActiveTab, setTelemedici
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSpecialty, setFilterSpecialty] = useState('all');
   const [selectedNurse, setSelectedNurse] = useState(null);
+  const [bookingNurse, setBookingNurse] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
@@ -264,12 +266,40 @@ export default function NursesNetwork({ currentUser, setActiveTab, setTelemedici
                   </span>
                 </div>
 
-                {/* Footnotes */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: 'var(--text-muted)', paddingTop: '4px' }}>
-                  <span>COREN: {doc.crm || 'Dispensado'}</span>
-                  <span style={{ color: 'var(--primary)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Ver Perfil Clínico →
-                  </span>
+                {/* Footnotes & Hiring Action */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setBookingNurse(doc);
+                    }}
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#10b981',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px',
+                      fontWeight: '800',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>🏥</span>
+                    <span>AGENDAR VISITA / CURATIVO</span>
+                  </button>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                    <span>COREN: {doc.crm || 'Dispensado'}</span>
+                    <span style={{ color: 'var(--primary)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      Ver Perfil Clínico →
+                    </span>
+                  </div>
                 </div>
               </div>
             );
@@ -484,6 +514,15 @@ export default function NursesNetwork({ currentUser, setActiveTab, setTelemedici
           </div>
         );
       })()}
+
+      {bookingNurse && (
+        <BookingModal
+          professional={bookingNurse}
+          currentUser={currentUser}
+          onClose={() => setBookingNurse(null)}
+          onSuccess={() => setActiveTab('dashboard')}
+        />
+      )}
     </div>
   );
 }

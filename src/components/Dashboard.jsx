@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { updateClinicalProfile, getAssignedDoctor } from '../services/supabaseService';
+import { updateClinicalProfile, getAssignedDoctor, getPatientAppointments } from '../services/supabaseService';
 import LocalResourcesPanel from './LocalResourcesPanel';
 import ClinicalHistory from './ClinicalHistory';
 import PatientDocuments from './PatientDocuments';
@@ -221,6 +221,16 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   }, [clinicalProfile, entries]);
 
   const [activeSubTab, setActiveSubTab] = useState(() => localStorage.getItem('irec_patient_sub_tab') || 'diary'); // 'diary', 'history', 'documents'
+  const [myAppointments, setMyAppointments] = useState([]);
+
+  // Load patient appointments
+  useEffect(() => {
+    if (clinicalProfile?.id) {
+      getPatientAppointments(clinicalProfile.id).then(apps => {
+        setMyAppointments(apps || []);
+      });
+    }
+  }, [clinicalProfile]);
 
   // Persist patient active sub-tab
   useEffect(() => {

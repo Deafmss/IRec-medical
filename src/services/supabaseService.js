@@ -1268,6 +1268,130 @@ export const getAllDoctors = async () => {
   }
 };
 
+// --- APPOINTMENTS & HIRING SERVICES ---
+const getLocalAppointments = () => JSON.parse(localStorage.getItem('irec_appointments') || '[]');
+const saveLocalAppointments = (apps) => localStorage.setItem('irec_appointments', JSON.stringify(apps));
+
+export const createAppointment = async (appointmentData) => {
+  const newApp = {
+    id: `app_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    ...appointmentData
+  };
+
+  // Always save in localStorage for instant offline access
+  const localApps = getLocalAppointments();
+  localApps.unshift(newApp);
+  saveLocalAppointments(localApps);
+
+  if (isSupabaseConfigured) {
+    try {
+      const payload = {
+        id: newApp.id,
+        patient_id: appointmentData.patientId,
+        doctor_id: appointmentData.doctorId,
+        patient_name: appointmentData.patientName,
+        doctor_name: appointmentData.doctorName,
+        doctor_specialty: appointmentData.doctorSpecialty,
+        modality: appointmentData.modality,
+        appointment_date: appointmentData.appointmentDate,
+        appointment_time: appointmentData.appointmentTime,
+        notes: appointmentData.notes,
+        address: appointmentData.address,
+        price: appointmentData.price,
+        payment_method: appointmentData.paymentMethod,
+        payment_status: appointmentData.paymentStatus || 'paid',
+        status: appointmentData.status || 'confirmed'
+      };
+
+      const { error } = await supabase.from('appointments').insert(payload);
+      if (error) console.warn('[iRec] Aviso ao salvar agendamento no Supabase (usando local):', error.message);
+    } catch (err) {
+      console.warn('[iRec] Erro ao criar agendamento no Supabase (usando local):', err);
+    }
+  }
+
+  return newApp;
+};
+
+export const getPatientAppointments = async (patientId) => {
+  const localApps = getLocalAppointments().filter(a => a.patientId === patientId);
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data.map(item => ({
+          id: item.id,
+          createdAt: item.created_at,
+          patientId: item.patient_id,
+          doctorId: item.doctor_id,
+          patientName: item.patient_name,
+          doctorName: item.doctor_name,
+          doctorSpecialty: item.doctor_specialty,
+          modality: item.modality,
+          appointmentDate: item.appointment_date,
+          appointmentTime: item.appointment_time,
+          notes: item.notes,
+          address: item.address,
+          price: item.price ? parseFloat(item.price) : 0,
+          paymentMethod: item.payment_method,
+          paymentStatus: item.payment_status,
+          status: item.status
+        }));
+      }
+    } catch (err) {
+      console.warn('[iRec] Usando fallback local para agendamentos do paciente:', err);
+    }
+  }
+
+  return localApps;
+};
+
+export const getDoctorAppointments = async (doctorId) => {
+  const localApps = getLocalAppointments().filter(a => a.doctorId === doctorId);
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data.map(item => ({
+          id: item.id,
+          createdAt: item.created_at,
+          patientId: item.patient_id,
+          doctorId: item.doctor_id,
+          patientName: item.patient_name,
+          doctorName: item.doctor_name,
+          doctorSpecialty: item.doctor_specialty,
+          modality: item.modality,
+          appointmentDate: item.appointment_date,
+          appointmentTime: item.appointment_time,
+          notes: item.notes,
+          address: item.address,
+          price: item.price ? parseFloat(item.price) : 0,
+          paymentMethod: item.payment_method,
+          paymentStatus: item.payment_status,
+          status: item.status
+        }));
+      }
+    } catch (err) {
+      console.warn('[iRec] Usando fallback local para agendamentos do médico:', err);
+    }
+  }
+
+  return localApps;
+};
+
 // 1.2.2. Get all clinical professionals (doctors + nurses)
 export const getAllClinicians = async () => {
   if (!isSupabaseConfigured) {
