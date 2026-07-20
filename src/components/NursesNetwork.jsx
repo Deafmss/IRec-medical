@@ -244,11 +244,8 @@ export default function NursesNetwork({ currentUser, setActiveTab, setTelemedici
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                    <span style={{ fontSize: '10px', backgroundColor: 'var(--primary-glow)', color: 'var(--primary)', padding: '2px 6px', borderRadius: '20px', fontWeight: '700' }}>
-                      ⭐ {doc.stats.rating}
-                    </span>
-                    <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
-                      {doc.stats.patients} atendimentos
+                    <span style={{ fontSize: '10.5px', backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#10b981', padding: '3px 8px', borderRadius: '20px', fontWeight: '800', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                      ✅ Verificado
                     </span>
                   </div>
                 </div>
@@ -399,19 +396,21 @@ export default function NursesNetwork({ currentUser, setActiveTab, setTelemedici
                   </div>
                 </div>
 
-                {/* Quick Performance Indicators */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', textAlign: 'center' }}>
-                  <div style={{ padding: '10px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                    <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0 }}>Pontuação</p>
-                    <p style={{ fontSize: '14px', fontWeight: '800', color: 'var(--primary)', margin: '4px 0 0 0' }}>⭐ {doc.stats.rating}</p>
-                  </div>
-                  <div style={{ padding: '10px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                    <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0 }}>Atendimentos</p>
-                    <p style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', margin: '4px 0 0 0' }}>{doc.stats.patients}</p>
-                  </div>
-                  <div style={{ padding: '10px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                    <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: 0 }}>Taxa de Resolução</p>
-                    <p style={{ fontSize: '14px', fontWeight: '800', color: '#10b981', margin: '4px 0 0 0' }}>{doc.stats.successRate}</p>
+                {/* Verified Accreditation Banner */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  color: '#10b981'
+                }}>
+                  <span style={{ fontSize: '20px' }}>🛡️</span>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: '800', margin: 0 }}>Enfermeiro(a) Verificado(a) iRec</p>
+                    <p style={{ fontSize: '11px', margin: '2px 0 0 0', opacity: 0.9 }}>Registro profissional ativo no COREN com Habilitação Clínica.</p>
                   </div>
                 </div>
 
