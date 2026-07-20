@@ -85,8 +85,11 @@ export default function App() {
   useEffect(() => {
     if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator)) return;
 
-    // Auto prompt modal for patients if notification permission is default
-    if (currentUser?.role === 'patient' && Notification.permission === 'default') {
+    // Check if user is on a mobile smartphone device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (typeof window !== 'undefined' && window.innerWidth <= 768);
+
+    // Auto prompt modal for patients ONLY on mobile devices if notification permission is default
+    if (isMobile && currentUser?.role === 'patient' && Notification.permission === 'default') {
       const timer = setTimeout(() => {
         setShowNotificationPromptModal(true);
       }, 1000);
