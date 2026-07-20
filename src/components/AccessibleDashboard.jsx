@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { chatWithDoctorCopilot } from '../services/geminiService';
 
 export default function AccessibleDashboard({ 
@@ -11,6 +11,47 @@ export default function AccessibleDashboard({
   const [isRecording, setIsRecording] = useState(false);
   const [aiResponse, setAiResponse] = useState(null);
   const [loadingAi, setLoadingAi] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState('default');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationStatus(Notification.permission);
+    }
+  }, []);
+
+  const triggerVibration = () => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate([60]);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    triggerVibration();
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      alert("Seu navegador não suporta notificações de celular.");
+      return;
+    }
+
+    try {
+      const perm = await Notification.requestPermission();
+      setNotificationStatus(perm);
+      if (perm === 'granted') {
+        if ('serviceWorker' in navigator) {
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification('🚨 SOS iRec - Atendimento de Emergência', {
+            body: 'Toque para socorro imediato, ligar 192 ou rota da UPA mais próxima.',
+            icon: '/favicon.png',
+            badge: '/favicon.png',
+            tag: 'irec-sos-persistent',
+            requireInteraction: true
+          });
+        }
+        alert("Notificação fixa de emergência ativada na barra do celular!");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const symptomCategories = [
     {
@@ -64,6 +105,7 @@ export default function AccessibleDashboard({
   ];
 
   const speakText = (text) => {
+    triggerVibration();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
@@ -93,11 +135,13 @@ export default function AccessibleDashboard({
   };
 
   const handleSelectSymptom = (cat) => {
+    triggerVibration();
     setSelectedSymptom(cat);
     processSymptomQuery(cat.prompt);
   };
 
   const handleVoiceRecord = () => {
+    triggerVibration();
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Seu celular não suporta gravação direta de voz. Você pode clicar nos desenhos de sintomas abaixo!");
@@ -181,7 +225,7 @@ export default function AccessibleDashboard({
 
         {/* SOS Trigger */}
         <button
-          onClick={onOpenSOS}
+          onClick={() => { triggerVibration(); onOpenSOS(); }}
           style={{
             backgroundColor: '#ef4444',
             color: '#ffffff',
@@ -201,6 +245,30 @@ export default function AccessibleDashboard({
           <span>SOCORRO / EMERGÊNCIA</span>
         </button>
       </div>
+
+      {/* Persistent Notification Activator Bar */}
+      {notificationStatus !== 'granted' && (
+        <button
+          onClick={requestNotificationPermission}
+          style={{
+            backgroundColor: '#1e293b',
+            color: '#38bdf8',
+            border: '2px dashed #0284c7',
+            borderRadius: '16px',
+            padding: '14px 18px',
+            fontWeight: '800',
+            fontSize: '14.5px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>🔔</span>
+          <span>ATIVAR ALERTA FIXO DE EMERGÊNCIA NA BARRA DO CELULAR</span>
+        </button>
+      )}
 
       {/* Big Voice Button */}
       <div style={{
@@ -315,7 +383,7 @@ export default function AccessibleDashboard({
       {/* Direct Quick Action Buttons */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '10px' }}>
         <button
-          onClick={() => setActiveTab('telemedicine')}
+          onClick={() => { triggerVibration(); setActiveTab('telemedicine'); }}
           style={{
             backgroundColor: '#10b981',
             color: '#ffffff',
@@ -336,7 +404,7 @@ export default function AccessibleDashboard({
         </button>
 
         <button
-          onClick={() => setActiveTab('upload')}
+          onClick={() => { triggerVibration(); setActiveTab('upload'); }}
           style={{
             backgroundColor: '#6366f1',
             color: '#ffffff',
@@ -355,6 +423,11 @@ export default function AccessibleDashboard({
           <span style={{ fontSize: '28px' }}>📷</span>
           <span>TIRAR FOTO DA PELE OU MACHUCADO</span>
         </button>
+      </div>
+
+      {/* Legal Disclaimer Footer */}
+      <div style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', marginTop: '10px', lineHeight: '1.5' }}>
+        ⚖️ <strong>Aviso Legal iRec:</strong> Esta ferramenta fornece triagem informativa e auxílio visual. Não substitui consulta médica presencial. Em caso de urgência, consulte o botão SOS.
       </div>
     </div>
   );

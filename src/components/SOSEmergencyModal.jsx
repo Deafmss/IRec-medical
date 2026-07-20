@@ -1,11 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
   const [selectedEmergency, setSelectedEmergency] = useState(null);
+  const [countdown, setCountdown] = useState(null);
+  const [pendingCall, setPendingCall] = useState(null); // { number: '192', label: 'SAMU' }
+  const [notificationActivated, setNotificationActivated] = useState(false);
 
   const city = clinicalProfile?.city || '';
   const state = clinicalProfile?.state || '';
   const googleMapsUrl = `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(city + ' ' + state)}`;
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setNotificationActivated(true);
+      }
+    }
+  }, []);
+
+  const triggerVibration = () => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate([60]);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    triggerVibration();
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      alert("Seu navegador não suporta notificações de celular.");
+      return;
+    }
+
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        setNotificationActivated(true);
+        if ('serviceWorker' in navigator) {
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification('🚨 SOS iRec - Atendimento de Emergência', {
+            body: 'Toque para socorro imediato, ligar 192 ou rota da UPA mais próxima.',
+            icon: '/favicon.png',
+            badge: '/favicon.png',
+            tag: 'irec-sos-persistent',
+            requireInteraction: true
+          });
+        }
+        alert("Notificação fixa de emergência ativada com sucesso no seu celular!");
+      } else {
+        alert("Permissão para notificações foi negada. Ative as notificações nas configurações do navegador do seu celular.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Anti-accidental click countdown for emergency call
+  const startCallCountdown = (number, label) => {
+    triggerVibration();
+    setPendingCall({ number, label });
+    setCountdown(3);
+  };
+
+  useEffect(() => {
+    let timer = null;
+    if (countdown !== null && countdown > 0) {
+      timer = setTimeout(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (countdown === 0 && pendingCall) {
+      // Execute the phone call
+      window.location.href = `tel:${pendingCall.number}`;
+      setCountdown(null);
+      setPendingCall(null);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown, pendingCall]);
+
+  const cancelCallCountdown = () => {
+    triggerVibration();
+    setCountdown(null);
+    setPendingCall(null);
+  };
 
   const firstAidGuides = [
     {
@@ -54,14 +129,13 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
   ];
 
   const speakText = (text) => {
+    triggerVibration();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'pt-BR';
       utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
-    } else {
-      alert("Seu dispositivo não suporta sintese de voz.");
     }
   };
 
@@ -72,8 +146,8 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.95)',
-      backdropFilter: 'blur(10px)',
+      backgroundColor: 'rgba(15, 23, 42, 0.96)',
+      backdropFilter: 'blur(12px)',
       zIndex: 999999,
       display: 'flex',
       alignItems: 'center',
@@ -89,7 +163,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
         backgroundColor: '#1e293b',
         borderRadius: '24px',
         border: '3px solid #ef4444',
-        boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.35)',
+        boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.4)',
         padding: '24px',
         color: '#ffffff',
         display: 'flex',
@@ -118,7 +192,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             </div>
           </div>
           <button 
-            onClick={onClose}
+            onClick={() => { triggerVibration(); onClose(); }}
             style={{
               background: 'none',
               border: 'none',
@@ -132,12 +206,73 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
           </button>
         </div>
 
+        {/* Mobile Persistent Notification Activator Button */}
+        {!notificationActivated && (
+          <button
+            onClick={requestNotificationPermission}
+            style={{
+              backgroundColor: '#334155',
+              color: '#38bdf8',
+              border: '1px solid #0284c7',
+              borderRadius: '14px',
+              padding: '12px 16px',
+              fontWeight: '700',
+              fontSize: '13.5px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <span>🔔</span>
+            <span>Ativar Notificação Fixa de SOS no Celular</span>
+          </button>
+        )}
+
+        {/* Anti-Accidental Call Countdown Overlay */}
+        {countdown !== null && pendingCall && (
+          <div style={{
+            backgroundColor: '#dc2626',
+            borderRadius: '20px',
+            padding: '20px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px',
+            animation: 'pulseSOS 1s infinite'
+          }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff' }}>
+              LIGANDO PARA O {pendingCall.label} ({pendingCall.number}) EM:
+            </span>
+            <span style={{ fontSize: '54px', fontWeight: '900', color: '#ffffff' }}>
+              {countdown}s
+            </span>
+            <button
+              onClick={cancelCallCountdown}
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#dc2626',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 24px',
+                fontWeight: '800',
+                fontSize: '16px',
+                cursor: 'pointer'
+              }}
+            >
+              ❌ CANCELAR LIGAÇÃO
+            </button>
+          </div>
+        )}
+
         {/* Emergency Call Buttons */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <a
-            href="tel:192"
+          <button
+            onClick={() => startCallCountdown('192', 'SAMU')}
             style={{
-              textDecoration: 'none',
+              border: 'none',
               backgroundColor: '#dc2626',
               color: '#ffffff',
               padding: '18px 12px',
@@ -150,17 +285,18 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
               fontWeight: '800',
               fontSize: '18px',
               textAlign: 'center',
+              cursor: 'pointer',
               boxShadow: '0 8px 20px rgba(220, 38, 38, 0.4)'
             }}
           >
             <span style={{ fontSize: '28px' }}>📞 192</span>
             <span style={{ fontSize: '13px', fontWeight: '600', opacity: 0.9 }}>LIGAR SAMU</span>
-          </a>
+          </button>
 
-          <a
-            href="tel:193"
+          <button
+            onClick={() => startCallCountdown('193', 'BOMBEIROS')}
             style={{
-              textDecoration: 'none',
+              border: 'none',
               backgroundColor: '#d97706',
               color: '#ffffff',
               padding: '18px 12px',
@@ -173,12 +309,13 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
               fontWeight: '800',
               fontSize: '18px',
               textAlign: 'center',
+              cursor: 'pointer',
               boxShadow: '0 8px 20px rgba(217, 119, 6, 0.4)'
             }}
           >
             <span style={{ fontSize: '28px' }}>🚒 193</span>
             <span style={{ fontSize: '13px', fontWeight: '600', opacity: 0.9 }}>BOMBEIROS</span>
-          </a>
+          </button>
         </div>
 
         {/* Route to nearest Hospital / UPA */}
@@ -186,6 +323,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
           href={googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={triggerVibration}
           style={{
             textDecoration: 'none',
             backgroundColor: '#0284c7',
@@ -205,6 +343,11 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
           <span>IR PARA HOSPITAL / UPA MAIS PRÓXIMO (MAPA)</span>
         </a>
 
+        {/* Legal Disclaimer */}
+        <div style={{ fontSize: '11.5px', color: '#94a3b8', textAlign: 'center', lineHeight: '1.5', padding: '0 8px' }}>
+          ⚖️ <strong>Aviso Legal & Regulatório:</strong> O iRec é uma plataforma de suporte e navegação em saúde. Em situações de emergência grave, recorra imediatamente ao 192 (SAMU) ou dirija-se à unidade de saúde mais próxima.
+        </div>
+
         {/* First Aid Quick Guides */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <h3 style={{ margin: '8px 0 4px 0', fontSize: '15px', color: '#cbd5e1', fontWeight: '700' }}>
@@ -215,7 +358,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             {firstAidGuides.map((guide) => (
               <button
                 key={guide.id}
-                onClick={() => setSelectedEmergency(guide)}
+                onClick={() => { triggerVibration(); setSelectedEmergency(guide); }}
                 style={{
                   backgroundColor: selectedEmergency?.id === guide.id ? guide.color : '#334155',
                   color: '#ffffff',
