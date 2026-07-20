@@ -149,15 +149,45 @@ export default function AccessibleDashboard({
     }
   ];
 
+  // Pre-load browser voices for instant smooth speech
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+      }
+    }
+  }, []);
+
   const speakText = (text) => {
     triggerVibration();
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const ptVoices = voices.filter(v => v.lang === 'pt-BR' || v.lang === 'pt_BR' || v.lang.startsWith('pt'));
+
+    // Priority selection for Natural / Neural / High Quality Human Voices
+    const naturalVoice = ptVoices.find(v => 
+      v.name.includes('Google') || 
+      v.name.includes('Natural') || 
+      v.name.includes('Neural') || 
+      v.name.includes('Francisca') || 
+      v.name.includes('Luciana') || 
+      v.name.includes('Felipe') ||
+      v.name.includes('Maria')
+    ) || ptVoices[0];
+
+    if (naturalVoice) {
+      utterance.voice = naturalVoice;
     }
+
+    window.speechSynthesis.speak(utterance);
   };
 
   const processSymptomQuery = async (queryText) => {
