@@ -701,6 +701,18 @@ export default function App() {
           );
         }
         return null;
+      case 'chat':
+        return <AIChatAssistant clinicalProfile={clinicalProfile} setClinicalProfile={setClinicalProfile} />;
+      case 'my_network':
+        return <MyNetworkPortal setActiveTab={setActiveTab} />;
+      case 'doctors_directory':
+        return (
+          <SpecialistDirectory 
+            currentUser={currentUser} 
+            setActiveTab={setActiveTab} 
+            setTelemedicineContactId={setTelemedicineContactId} 
+          />
+        );
       case 'documents':
         return <PatientDocuments clinicalProfile={clinicalProfile} />;
       case 'history':
