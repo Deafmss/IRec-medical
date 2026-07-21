@@ -81,6 +81,18 @@ export default function App() {
   }, [activeCallSession]);
 
   const [showNotificationPromptModal, setShowNotificationPromptModal] = useState(false);
+  const [showIOSInstallBanner, setShowIOSInstallBanner] = useState(false);
+
+  // Auto detect iPhone / iPad in Safari browser (not installed as standalone)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+      if (isIOS && !isStandalone) {
+        setShowIOSInstallBanner(true);
+      }
+    }
+  }, []);
 
   // Persistent SOS Notification Sync on Mobile
   useEffect(() => {
@@ -1818,6 +1830,42 @@ export default function App() {
               to { transform: translateY(0); opacity: 1; }
             }
           `}</style>
+        </div>
+      )}
+
+      {/* iOS Safari Installation Instruction Drawer */}
+      {showIOSInstallBanner && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '12px',
+          right: '12px',
+          backgroundColor: '#0f172a',
+          border: '2px solid #0284c7',
+          borderRadius: '20px',
+          padding: '18px',
+          color: '#ffffff',
+          zIndex: 999999,
+          boxShadow: '0 20px 40px rgba(2, 132, 199, 0.4)',
+          fontFamily: 'var(--font-primary, sans-serif)',
+          animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+        }} className="no-print">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#38bdf8' }}>🍏 Instalar o iRec no seu iPhone:</span>
+            <button
+              onClick={() => setShowIOSInstallBanner(false)}
+              style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '22px', cursor: 'pointer', padding: 0 }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ fontSize: '13.5px', color: '#cbd5e1', lineHeight: '1.6' }}>
+            Para instalar como aplicativo nativo no iOS:
+            <br />
+            1. Toque no ícone de <strong>Compartilhar 📤</strong> (na barra inferior do Safari).
+            <br />
+            2. Role para baixo e selecione <strong>"Adicionar à Tela de Início" ➕</strong>.
+          </div>
         </div>
       )}
     </div>
