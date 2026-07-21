@@ -1,21 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { speakNaturalText } from '../utils/speechUtils';
 
 export function AccessibleTelemedicineView({ currentUser, setActiveTab, onStartVideoCall }) {
-  const speakText = (text) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 0.95;
-      const voices = window.speechSynthesis.getVoices();
-      const ptVoice = voices.find(v => v.lang.startsWith('pt') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Neural'))) || voices.find(v => v.lang.startsWith('pt'));
-      if (ptVoice) utterance.voice = ptVoice;
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
   useEffect(() => {
-    speakText("Para falar por vídeo com o seu profissional de saúde, aperte no botão verde grande na tela.");
+    speakNaturalText("Para falar por vídeo com o seu profissional de saúde, aperte no botão verde grande na tela.");
   }, []);
 
   const triggerVibration = () => {
@@ -72,7 +60,7 @@ export function AccessibleTelemedicineView({ currentUser, setActiveTab, onStartV
         </div>
 
         <button
-          onClick={() => speakText("Para falar por vídeo com o seu profissional de saúde, aperte no botão verde grande na tela.")}
+          onClick={() => speakNaturalText("Para falar por vídeo com o seu profissional de saúde, aperte no botão verde grande na tela.")}
           style={{
             backgroundColor: '#0284c7',
             color: '#ffffff',
@@ -150,21 +138,8 @@ export function AccessibleTelemedicineView({ currentUser, setActiveTab, onStartV
 }
 
 export function AccessibleUploadView({ setActiveTab, onPhotoTaken }) {
-  const speakText = (text) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 0.95;
-      const voices = window.speechSynthesis.getVoices();
-      const ptVoice = voices.find(v => v.lang.startsWith('pt') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Neural'))) || voices.find(v => v.lang.startsWith('pt'));
-      if (ptVoice) utterance.voice = ptVoice;
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
   useEffect(() => {
-    speakText("Aperte no botão roxo grande para abrir a câmera e tirar a foto da ferida ou da pele.");
+    speakNaturalText("Aperte no botão roxo grande para abrir a câmera e tirar a foto da ferida ou da pele.");
   }, []);
 
   const triggerVibration = () => {

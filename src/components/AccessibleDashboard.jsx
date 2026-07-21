@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { chatWithDoctorCopilot } from '../services/geminiService';
+import { speakNaturalText } from '../utils/speechUtils';
 
 // Humanized non-robotic fallback responses for short/unclear audio noise (General Health Context)
 const NOISE_FALLBACK_PHRASES = [
@@ -160,34 +161,7 @@ export default function AccessibleDashboard({
   }, []);
 
   const speakText = (text) => {
-    triggerVibration();
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'pt-BR';
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-
-    const voices = window.speechSynthesis.getVoices();
-    const ptVoices = voices.filter(v => v.lang === 'pt-BR' || v.lang === 'pt_BR' || v.lang.startsWith('pt'));
-
-    // Priority selection for Natural / Neural / High Quality Human Voices
-    const naturalVoice = ptVoices.find(v => 
-      v.name.includes('Google') || 
-      v.name.includes('Natural') || 
-      v.name.includes('Neural') || 
-      v.name.includes('Francisca') || 
-      v.name.includes('Luciana') || 
-      v.name.includes('Felipe') ||
-      v.name.includes('Maria')
-    ) || ptVoices[0];
-
-    if (naturalVoice) {
-      utterance.voice = naturalVoice;
-    }
-
-    window.speechSynthesis.speak(utterance);
+    speakNaturalText(text);
   };
 
   const processSymptomQuery = async (queryText) => {
