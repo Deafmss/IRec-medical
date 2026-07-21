@@ -17,19 +17,29 @@ export const speakNaturalText = (text, rate = 0.95, pitch = 1.0) => {
     const voices = window.speechSynthesis.getVoices();
     const ptVoices = voices.filter(v => v.lang === 'pt-BR' || v.lang === 'pt_BR' || v.lang.startsWith('pt'));
 
-    // Priority selection for Natural / Neural / High Quality Human Voices
-    const naturalVoice = ptVoices.find(v => 
-      v.name.includes('Google') || 
-      v.name.includes('Natural') || 
-      v.name.includes('Neural') || 
-      v.name.includes('Francisca') || 
-      v.name.includes('Luciana') || 
-      v.name.includes('Felipe') ||
-      v.name.includes('Maria')
-    ) || ptVoices[0];
+    // 1. STRICT PRIORITY 1: Official Google Assistant Voice ("Google português do Brasil")
+    let targetVoice = ptVoices.find(v => 
+      v.name.toLowerCase().includes('google português do brasil') ||
+      v.name.toLowerCase().includes('google português') ||
+      (v.name.toLowerCase().includes('google') && v.lang.startsWith('pt'))
+    );
 
-    if (naturalVoice) {
-      utterance.voice = naturalVoice;
+    // 2. PRIORITY 2: High-Quality Microsoft Natural / Neural Voices
+    if (!targetVoice) {
+      targetVoice = ptVoices.find(v => 
+        v.name.toLowerCase().includes('natural') || 
+        v.name.toLowerCase().includes('francisca') ||
+        v.name.toLowerCase().includes('neural')
+      );
+    }
+
+    // 3. PRIORITY 3: Any non-robotic fallback voice
+    if (!targetVoice) {
+      targetVoice = ptVoices.find(v => !v.name.toLowerCase().includes('desktop')) || ptVoices[0];
+    }
+
+    if (targetVoice) {
+      utterance.voice = targetVoice;
     }
 
     window.speechSynthesis.speak(utterance);
