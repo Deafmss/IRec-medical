@@ -19,6 +19,7 @@ import MyNetworkPortal from './components/MyNetworkPortal';
 import AccessibleDashboard from './components/AccessibleDashboard';
 import { AccessibleTelemedicineView, AccessibleUploadView } from './components/AccessibleSubViews';
 import SOSEmergencyModal from './components/SOSEmergencyModal';
+import PermissionsGuideModal from './components/PermissionsGuideModal';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -28,6 +29,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showMobileMoreMenu, setShowMobileMoreMenu] = useState(false);
+  const [showPermissionsGuideModal, setShowPermissionsGuideModal] = useState(false);
   const [activeCallSession, setActiveCallSession] = useState(null);
   const [telemedicineContactId, setTelemedicineContactId] = useState(null);
   const [unreadChatMessagesCount, setUnreadChatMessagesCount] = useState(0);
@@ -104,7 +106,7 @@ export default function App() {
         setDeferredPrompt(null);
       });
     } else {
-      setShowIOSInstallBanner(true);
+      setShowPermissionsGuideModal(true);
     }
   };
 
@@ -1915,6 +1917,10 @@ export default function App() {
             2. Role para baixo e selecione <strong>"Adicionar à Tela de Início" ➕</strong>.
           </div>
         </div>
+      )}
+      {/* Interactive System Permissions & Installation Guide Modal */}
+      {showPermissionsGuideModal && (
+        <PermissionsGuideModal onClose={() => setShowPermissionsGuideModal(false)} />
       )}
     </div>
   );
