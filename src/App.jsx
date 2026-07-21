@@ -17,6 +17,7 @@ import AdminDashboard from './components/AdminDashboard';
 import DoctorDashboardAnalytics from './components/DoctorDashboardAnalytics';
 import MyNetworkPortal from './components/MyNetworkPortal';
 import AccessibleDashboard from './components/AccessibleDashboard';
+import { AccessibleTelemedicineView, AccessibleUploadView } from './components/AccessibleSubViews';
 import SOSEmergencyModal from './components/SOSEmergencyModal';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
@@ -672,6 +673,9 @@ export default function App() {
           />
         );
       case 'upload':
+        if (uiMode === 'accessible' && currentUser?.role === 'patient') {
+          return <AccessibleUploadView setActiveTab={setActiveTab} />;
+        }
         return (
           <ClinicalTriage 
             setActiveTab={setActiveTab} 
@@ -679,19 +683,23 @@ export default function App() {
             clinicalProfile={targetProfile} 
           />
         );
-      case 'chat':
-        return <AIChatAssistant clinicalProfile={clinicalProfile} setClinicalProfile={setClinicalProfile} />;
-      case 'my_network':
-        return <MyNetworkPortal setActiveTab={setActiveTab} />;
-      case 'doctors_directory':
-        return (
-          <SpecialistDirectory 
-            currentUser={currentUser} 
-            setActiveTab={setActiveTab} 
-            setTelemedicineContactId={setTelemedicineContactId} 
-          />
-        );
       case 'telemedicine':
+        if (uiMode === 'accessible' && currentUser?.role === 'patient') {
+          return (
+            <AccessibleTelemedicineView 
+              currentUser={currentUser} 
+              setActiveTab={setActiveTab} 
+              onStartVideoCall={() => {
+                const targetId = telemedicineContactId || 'doc_assigned';
+                if (typeof window !== 'undefined' && window.initiateTelemedicineCall) {
+                  window.initiateTelemedicineCall(targetId);
+                } else {
+                  alert("Iniciando videochamada com o profissional...");
+                }
+              }} 
+            />
+          );
+        }
         return null;
       case 'documents':
         return <PatientDocuments clinicalProfile={clinicalProfile} />;
@@ -1367,16 +1375,18 @@ export default function App() {
           </div>
         )}
 
-        {activeTab !== 'telemedicine' && renderContent()}
-        <Telemedicine 
-          currentUser={currentUser} 
-          activeCallSession={activeCallSession} 
-          setActiveCallSession={setActiveCallSession} 
-          targetContactId={telemedicineContactId}
-          isAppActiveTab={activeTab === 'telemedicine'}
-          setAppActiveTab={setActiveTab}
-          onUnreadCountChange={setUnreadChatMessagesCount}
-        />
+        {(activeTab !== 'telemedicine' || (uiMode === 'accessible' && currentUser?.role === 'patient')) && renderContent()}
+        {!(uiMode === 'accessible' && currentUser?.role === 'patient') && (
+          <Telemedicine 
+            currentUser={currentUser} 
+            activeCallSession={activeCallSession} 
+            setActiveCallSession={setActiveCallSession} 
+            targetContactId={telemedicineContactId}
+            isAppActiveTab={activeTab === 'telemedicine'}
+            setAppActiveTab={setActiveTab}
+            onUnreadCountChange={setUnreadChatMessagesCount}
+          />
+        )}
       </main>
 
       {/* Mobile More Menu slide-up drawer */}
