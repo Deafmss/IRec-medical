@@ -82,6 +82,31 @@ export default function App() {
 
   const [showNotificationPromptModal, setShowNotificationPromptModal] = useState(false);
   const [showIOSInstallBanner, setShowIOSInstallBanner] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  // Capture Android PWA install prompt
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallAppClick = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('[iRec PWA] Usuário aceitou a instalação do aplicativo.');
+        }
+        setDeferredPrompt(null);
+      });
+    } else {
+      setShowIOSInstallBanner(true);
+    }
+  };
 
   // Auto detect iPhone / iPad in Safari browser (not installed as standalone)
   useEffect(() => {
@@ -1247,6 +1272,29 @@ export default function App() {
         </div>
         
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* PWA Direct Install Button */}
+          <button
+            onClick={handleInstallAppClick}
+            style={{
+              backgroundColor: '#10b981',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '5px 9px',
+              fontSize: '11px',
+              fontWeight: '800',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
+            }}
+            title="Instalar iRec no Celular ou Computador"
+          >
+            <span>📲</span>
+            <span>Instalar App</span>
+          </button>
+
           {/* Patient UI Mode Toggle Button */}
           {currentUser?.role === 'patient' && (
             <button 
