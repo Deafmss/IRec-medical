@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getPatientDocuments } from '../services/supabaseService';
 
-export default function PatientDocuments({ clinicalProfile }) {
+export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activePrintDoc, setActivePrintDoc] = useState(null);
@@ -110,9 +110,34 @@ export default function PatientDocuments({ clinicalProfile }) {
         }
       `}</style>
 
-      <div className="documents-header no-print">
-        <h2>Minhas Receitas e Atestados</h2>
-        <p>Acesse aqui os documentos clínicos emitidos pelo seu médico assistente.</p>
+      <div className="documents-header no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h2>Minhas Receitas e Atestados</h2>
+          <p>Acesse aqui os documentos clínicos emitidos pelo seu médico assistente.</p>
+        </div>
+
+        {onOpenReportPDF && (
+          <button
+            onClick={onOpenReportPDF}
+            style={{
+              backgroundColor: '#10b981',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '10px 18px',
+              fontWeight: '800',
+              fontSize: '13.5px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+            }}
+          >
+            <span>📊</span>
+            <span>Gerar Relatório Evolutivo em PDF</span>
+          </button>
+        )}
       </div>
 
       {loading ? (

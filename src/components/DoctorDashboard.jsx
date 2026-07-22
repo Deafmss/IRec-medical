@@ -43,6 +43,7 @@ export default function DoctorDashboard({
   onProfileUpdate, 
   onEditProfile, 
   onOpenChat,
+  onOpenPrescriptionModal,
   selectedPatient,
   setSelectedPatient,
   selectedPatientEntries,
@@ -1468,6 +1469,15 @@ export default function DoctorDashboard({
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {onOpenPrescriptionModal && (
+            <button 
+              className="btn btn-primary" 
+              onClick={onOpenPrescriptionModal}
+              style={{ padding: '6px 14px', fontSize: '12.5px', height: 'auto', borderRadius: '50px', display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#0284c7', color: '#ffffff', fontWeight: '800' }}
+            >
+              📝 Emitir Receita / Atestado
+            </button>
+          )}
           <button 
             className="btn btn-secondary" 
             onClick={() => setDigitalCertModalOpen(true)}

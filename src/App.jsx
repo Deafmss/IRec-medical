@@ -20,6 +20,8 @@ import AccessibleDashboard from './components/AccessibleDashboard';
 import { AccessibleTelemedicineView, AccessibleUploadView } from './components/AccessibleSubViews';
 import SOSEmergencyModal from './components/SOSEmergencyModal';
 import PermissionsGuideModal from './components/PermissionsGuideModal';
+import PrescriptionGeneratorModal from './components/PrescriptionGeneratorModal';
+import ReportPDFGenerator from './components/ReportPDFGenerator';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -37,6 +39,8 @@ export default function App() {
   const [selectedPatientEntriesForDoctor, setSelectedPatientEntriesForDoctor] = useState([]);
   const [pendingVerificationsCount, setPendingVerificationsCount] = useState(0);
   const [showSOSModal, setShowSOSModal] = useState(false);
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  const [showReportPDFModal, setShowReportPDFModal] = useState(false);
 
   // Persistent UI Mode ('standard' or 'accessible')
   const [uiMode, setUiMode] = useState(() => localStorage.getItem('irec_ui_mode') || 'standard');
@@ -687,6 +691,7 @@ export default function App() {
             onProfileUpdate={setCurrentUser} 
             onEditProfile={() => setShowProfileModal(true)} 
             onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }}
+            onOpenPrescriptionModal={() => setShowPrescriptionModal(true)}
             selectedPatient={selectedPatientForDoctor}
             setSelectedPatient={setSelectedPatientForDoctor}
             selectedPatientEntries={selectedPatientEntriesForDoctor}
@@ -753,7 +758,12 @@ export default function App() {
           />
         );
       case 'documents':
-        return <PatientDocuments clinicalProfile={clinicalProfile} />;
+        return (
+          <PatientDocuments
+            clinicalProfile={clinicalProfile}
+            onOpenReportPDF={() => setShowReportPDFModal(true)}
+          />
+        );
       case 'history':
         return <ClinicalHistory entries={entries} clinicalProfile={clinicalProfile} />;
       case 'nurses':
@@ -1921,6 +1931,24 @@ export default function App() {
       {/* Interactive System Permissions & Installation Guide Modal */}
       {showPermissionsGuideModal && (
         <PermissionsGuideModal onClose={() => setShowPermissionsGuideModal(false)} />
+      )}
+
+      {/* Official Prescription / Medical Certificate Generator Modal */}
+      {showPrescriptionModal && (
+        <PrescriptionGeneratorModal
+          currentUser={currentUser}
+          patientProfile={selectedPatientForDoctor || clinicalProfile}
+          onClose={() => setShowPrescriptionModal(false)}
+        />
+      )}
+
+      {/* Evolutionary Wound Healing Report PDF Generator Modal */}
+      {showReportPDFModal && (
+        <ReportPDFGenerator
+          clinicalProfile={clinicalProfile}
+          entries={entries}
+          onClose={() => setShowReportPDFModal(false)}
+        />
       )}
     </div>
   );
