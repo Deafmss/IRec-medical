@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>iRec — graphify tree viewer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      margin: 20px 0 0 24px;
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #1e3a56;
+    }
+    .controls {
+      margin: 20px 0 15px 24px;
+    }
+    button {
+      margin-right: 10px;
+      padding: 8px 18px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:active {
+      background: #004085;
+    }
+    #tree-container {
+      width: calc(100vw - 48px); /* Adjust for body margin/padding */
+      height: 85vh;
+      overflow: auto;
+      border-radius: 8px;
+      background: #fff;
+      margin-left: 24px;
+      margin-right: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid #ddd;
+    }
+    svg {
+      background: #fff;
+      border-radius: 8px;
+      display: block; /* Important for D3 */
+    }
+    .node circle {
+      stroke-width: 2.5px;
+    }
+    .node text { /* Base style for the <text> container */
+      font: 13px 'Segoe UI', sans-serif;
+      paint-order: stroke fill; /* Ensures text is readable over lines */
+      stroke: #fff; /* White halo */
+      stroke-width: 3px; /* Halo thickness */
+      stroke-linejoin: round;
+      stroke-opacity: 0.85; /* Halo opacity */
+    }
+    .link {
+      fill: none;
+      stroke-opacity: 0.7;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>iRec — Knowledge Graph</h1>
+  <div class="controls">
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button onclick="resetView()">Reset View</button>
+  </div>
+  <div id="tree-container">
+    <svg id="tree-svg" width="6000" height="8000"></svg>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    const initialJsonData = {"name":"iRec","total_count":242,"children":[{"name":"android","total_count":14,"children":[{"name":"app","total_count":7,"children":[{"name":"src","total_count":5,"children":[{"name":"androidTest","total_count":2,"children":[{"name":"java","total_count":2,"children":[{"name":"com","total_count":2,"children":[{"name":"getcapacitor","total_count":2,"children":[{"name":"myapp","total_count":2,"children":[{"name":"ExampleInstrumentedTest.java","total_count":2,"children":[{"name":".useAppContext()","total_count":1,"children":[]},{"name":"ExampleInstrumentedTest","total_count":1,"children":[]}]}]}]}]}]}]},{"name":"main","total_count":1,"children":[{"name":"java","total_count":1,"children":[{"name":"com","total_count":1,"children":[{"name":"irec","total_count":1,"children":[{"name":"medical","total_count":1,"children":[{"name":"MainActivity.java","total_count":1,"children":[{"name":"MainActivity","total_count":1,"children":[]}]}]}]}]}]}]},{"name":"test","total_count":2,"children":[{"name":"java","total_count":2,"children":[{"name":"com","total_count":2,"children":[{"name":"getcapacitor","total_count":2,"children":[{"name":"myapp","total_count":2,"children":[{"name":"ExampleUnitTest.java","total_count":2,"children":[{"name":".addition_isCorrect()","total_count":1,"children":[]},{"name":"ExampleUnitTest","total_count":1,"children":[]}]}]}]}]}]}]}]},{"name":"build.gradle","total_count":1,"children":[]},{"name":"capacitor.build.gradle","total_count":1,"children":[]}]},{"name":"gradlew","total_count":3,"children":[{"name":"die()","total_count":1,"children":[]},{"name":"gradlew script","total_count":1,"children":[]},{"name":"warn()","total_count":1,"children":[]}]},{"name":"build.gradle","total_count":1,"children":[]},{"name":"capacitor.settings.gradle","total_count":1,"children":[]},{"name":"settings.gradle","total_count":1,"children":[]},{"name":"variables.gradle","total_count":1,"children":[]}]},{"name":"Ducumenta\u00e7\u00e3o para implementar","total_count":12,"children":[{"name":"processador_treinamento.py","total_count":12,"children":[{"name":"analisar_imagem_via_gemini()","total_count":1,"children":[]},{"name":"chunk_texto()","total_count":1,"children":[]},{"name":"enviar_bytes_gemini()","total_count":1,"children":[]},{"name":"iniciar_upload_gemini()","total_count":1,"children":[]},{"name":"ler_docx_puro()","total_count":1,"children":[]},{"name":"obter_embedding()","total_count":1,"children":[]},{"name":"obter_estado_arquivo_gemini()","total_count":1,"children":[]},{"name":"obter_gemini_key()","total_count":1,"children":[]},{"name":"processar_base()","total_count":1,"children":[]},{"name":"processar_pdf_documento()","total_count":1,"children":[]},{"name":"requisicao_api_gemini()","total_count":1,"children":[]},{"name":"transcrever_audio_com_timestamps()","total_count":1,"children":[]}]}]},{"name":"ios","total_count":11,"children":[{"name":"App","total_count":11,"children":[{"name":"App","total_count":9,"children":[{"name":"AppDelegate.swift","total_count":9,"children":[{"name":".application()","total_count":1,"children":[]},{"name":".applicationDidBecomeActive()","total_count":1,"children":[]},{"name":".applicationDidEnterBackground()","total_count":1,"children":[]},{"name":".applicationWillEnterForeground()","total_count":1,"children":[]},{"name":".applicationWillResignActive()","total_count":1,"children":[]},{"name":".applicationWillTerminate()","total_count":1,"children":[]},{"name":"AppDelegate","total_count":1,"children":[]},{"name":"Capacitor","total_count":1,"children":[]},{"name":"UIKit","total_count":1,"children":[]}]}]},{"name":"CapApp-SPM","total_count":2,"children":[{"name":"Package.swift","total_count":1,"children":[{"name":"PackageDescription","total_count":1,"children":[]}]},{"name":"Sources","total_count":1,"children":[{"name":"CapApp-SPM","total_count":1,"children":[{"name":"CapApp-SPM.swift","total_count":1,"children":[]}]}]}]}]}]},{"name":"package.json","total_count":43,"children":[{"name":"@capacitor/android","total_count":1,"children":[]},{"name":"@capacitor/android","total_count":1,"children":[]},{"name":"@capacitor/cli","total_count":1,"children":[]},{"name":"@capacitor/cli","total_count":1,"children":[]},{"name":"@capacitor/core","total_count":1,"children":[]},{"name":"@capacitor/core","total_count":1,"children":[]},{"name":"@capacitor/ios","total_count":1,"children":[]},{"name":"@capacitor/ios","total_count":1,"children":[]},{"name":"@eslint/js","total_count":1,"children":[]},{"name":"@eslint/js","total_count":1,"children":[]},{"name":"@supabase/supabase-js","total_count":1,"children":[]},{"name":"@supabase/supabase-js","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"@vitejs/plugin-react","total_count":1,"children":[]},{"name":"@vitejs/plugin-react","total_count":1,"children":[]},{"name":"build","total_count":1,"children":[]},{"name":"dependencies","total_count":1,"children":[]},{"name":"dev","total_count":1,"children":[]},{"name":"devDependencies","total_count":1,"children":[]},{"name":"eslint","total_count":1,"children":[]},{"name":"eslint","total_count":1,"children":[]},{"name":"eslint-plugin-react-hooks","total_count":1,"children":[]},{"name":"eslint-plugin-react-hooks","total_count":1,"children":[]},{"name":"eslint-plugin-react-refresh","total_count":1,"children":[]},{"name":"eslint-plugin-react-refresh","total_count":1,"children":[]},{"name":"globals","total_count":1,"children":[]},{"name":"globals","total_count":1,"children":[]},{"name":"lint","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"preview","total_count":1,"children":[]},{"name":"private","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"scripts","total_count":1,"children":[]},{"name":"type","total_count":1,"children":[]},{"name":"version","total_count":1,"children":[]},{"name":"vite","total_count":1,"children":[]},{"name":"vite","total_count":1,"children":[]}]},{"name":"public","total_count":11,"children":[{"name":"manifest.json","total_count":10,"children":[{"name":"background_color","total_count":1,"children":[]},{"name":"description","total_count":1,"children":[]},{"name":"display","total_count":1,"children":[]},{"name":"icons","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"orientation","total_count":1,"children":[]},{"name":"short_name","total_count":1,"children":[]},{"name":"shortcuts","total_count":1,"children":[]},{"name":"start_url","total_count":1,"children":[]},{"name":"theme_color","total_count":1,"children":[]}]},{"name":"sw.js","total_count":1,"children":[{"name":"urlsToCache","total_count":1,"children":[]}]}]},{"name":"src","total_count":148,"children":[{"name":"App.jsx","total_count":1,"children":[{"name":"App()","total_count":1,"children":[]}]},{"name":"components","total_count":48,"children":[{"name":"AccessibleDashboard.jsx","total_count":3,"children":[{"name":"AccessibleDashboard()","total_count":1,"children":[]},{"name":"getRandomNoisePhrase()","total_count":1,"children":[]},{"name":"NOISE_FALLBACK_PHRASES","total_count":1,"children":[]}]},{"name":"AccessibleSubViews.jsx","total_count":2,"children":[{"name":"AccessibleTelemedicineView()","total_count":1,"children":[]},{"name":"AccessibleUploadView()","total_count":1,"children":[]}]},{"name":"AdminDashboard.jsx","total_count":1,"children":[{"name":"AdminDashboard()","total_count":1,"children":[]}]},{"name":"AdminPartners.jsx","total_count":1,"children":[{"name":"AdminPartners()","total_count":1,"children":[]}]},{"name":"AdminReports.jsx","total_count":1,"children":[{"name":"AdminReports()","total_count":1,"children":[]}]},{"name":"AIChatAssistant.jsx","total_count":5,"children":[{"name":"AI_RESPONSES","total_count":1,"children":[]},{"name":"AIChatAssistant()","total_count":1,"children":[]},{"name":"detectTopicFromText()","total_count":1,"children":[]},{"name":"EXAM_RESPONSES","total_count":1,"children":[]},{"name":"SUGGESTIONS","total_count":1,"children":[]}]},{"name":"BookingModal.jsx","total_count":1,"children":[{"name":"BookingModal()","total_count":1,"children":[]}]},{"name":"ClinicalHistory.jsx","total_count":2,"children":[{"name":"ClinicalHistory()","total_count":1,"children":[]},{"name":"WoundTissueOverlay()","total_count":1,"children":[]}]},{"name":"ClinicalTriage.jsx","total_count":4,"children":[{"name":"ClinicalTriage()","total_count":1,"children":[]},{"name":"generateLocalFallbackAnalysis()","total_count":1,"children":[]},{"name":"GLOSSARY_DB","total_count":1,"children":[]},{"name":"WoundTissueOverlay()","total_count":1,"children":[]}]},{"name":"Dashboard.jsx","total_count":2,"children":[{"name":"Dashboard()","total_count":1,"children":[]},{"name":"generateDynamicTasks()","total_count":1,"children":[]}]},{"name":"DateRangePicker.jsx","total_count":1,"children":[{"name":"DateRangePicker()","total_count":1,"children":[]}]},{"name":"DoctorDashboard.jsx","total_count":2,"children":[{"name":"COMMON_CID10","total_count":1,"children":[]},{"name":"DoctorDashboard()","total_count":1,"children":[]}]},{"name":"DoctorDashboardAnalytics.jsx","total_count":1,"children":[{"name":"DoctorDashboardAnalytics()","total_count":1,"children":[]}]},{"name":"DoctorPartners.jsx","total_count":1,"children":[{"name":"DoctorPartners()","total_count":1,"children":[]}]},{"name":"LocalResourcesPanel.jsx","total_count":1,"children":[{"name":"LocalResourcesPanel()","total_count":1,"children":[]}]},{"name":"Login.jsx","total_count":2,"children":[{"name":"ALL_SPECIALTIES","total_count":1,"children":[]},{"name":"Login()","total_count":1,"children":[]}]},{"name":"MyNetworkPortal.jsx","total_count":1,"children":[{"name":"MyNetworkPortal()","total_count":1,"children":[]}]},{"name":"NursesNetwork.jsx","total_count":2,"children":[{"name":"getNursePremiumDetails()","total_count":1,"children":[]},{"name":"NursesNetwork()","total_count":1,"children":[]}]},{"name":"PatientDocuments.jsx","total_count":1,"children":[{"name":"PatientDocuments()","total_count":1,"children":[]}]},{"name":"PermissionsGuideModal.jsx","total_count":1,"children":[{"name":"PermissionsGuideModal()","total_count":1,"children":[]}]},{"name":"PrescriptionGeneratorModal.jsx","total_count":1,"children":[{"name":"PrescriptionGeneratorModal()","total_count":1,"children":[]}]},{"name":"ProtocolGuide.jsx","total_count":3,"children":[{"name":"formatMaterialsForView()","total_count":1,"children":[]},{"name":"generateDefaultPersonalizedProtocol()","total_count":1,"children":[]},{"name":"ProtocolGuide()","total_count":1,"children":[]}]},{"name":"ReportPDFGenerator.jsx","total_count":1,"children":[{"name":"ReportPDFGenerator()","total_count":1,"children":[]}]},{"name":"SOSEmergencyModal.jsx","total_count":1,"children":[{"name":"SOSEmergencyModal()","total_count":1,"children":[]}]},{"name":"SpecialistDirectory.jsx","total_count":2,"children":[{"name":"getDoctorPremiumDetails()","total_count":1,"children":[]},{"name":"SpecialistDirectory()","total_count":1,"children":[]}]},{"name":"Telemedicine.jsx","total_count":2,"children":[{"name":"getDoctorPremiumDetails()","total_count":1,"children":[]},{"name":"Telemedicine()","total_count":1,"children":[]}]},{"name":"UserProfileModal.jsx","total_count":2,"children":[{"name":"ALL_SPECIALTIES","total_count":1,"children":[]},{"name":"UserProfileModal()","total_count":1,"children":[]}]},{"name":"VitalsTelemetry.jsx","total_count":1,"children":[{"name":"VitalsTelemetry()","total_count":1,"children":[]}]}]},{"name":"services","total_count":96,"children":[{"name":"fhirService.js","total_count":3,"children":[{"name":"exportFHIRBundle()","total_count":1,"children":[]},{"name":"exportObservationToFHIR()","total_count":1,"children":[]},{"name":"exportPatientToFHIR()","total_count":1,"children":[]}]},{"name":"geminiService.js","total_count":13,"children":[{"name":"analyzeTelemedicineTranscript()","total_count":1,"children":[]},{"name":"analyzeWoundWithAI()","total_count":1,"children":[]},{"name":"chatWithAI()","total_count":1,"children":[]},{"name":"chatWithDoctorCopilot()","total_count":1,"children":[]},{"name":"convertToGrayscale()","total_count":1,"children":[]},{"name":"fetchGeminiWithRotation()","total_count":1,"children":[]},{"name":"fileToGenerativePart()","total_count":1,"children":[]},{"name":"formatSOAPNote()","total_count":1,"children":[]},{"name":"GEMINI_KEYS","total_count":1,"children":[]},{"name":"generatePersonalizedProtocol()","total_count":1,"children":[]},{"name":"getGeminiEmbedding()","total_count":1,"children":[]},{"name":"searchTrainingKnowledge()","total_count":1,"children":[]},{"name":"searchTrainingVisualCases()","total_count":1,"children":[]}]},{"name":"locationService.js","total_count":4,"children":[{"name":"deg2rad()","total_count":1,"children":[]},{"name":"fetchNearbyHealthcareResources()","total_count":1,"children":[]},{"name":"geocodeAddress()","total_count":1,"children":[]},{"name":"getDistance()","total_count":1,"children":[]}]},{"name":"supabaseService.js","total_count":76,"children":[{"name":"addDoctorNote()","total_count":1,"children":[]},{"name":"addRecommendedMaterial()","total_count":1,"children":[]},{"name":"addWoundEntry()","total_count":1,"children":[]},{"name":"checkCallStatus()","total_count":1,"children":[]},{"name":"checkIncomingCalls()","total_count":1,"children":[]},{"name":"createAppointment()","total_count":1,"children":[]},{"name":"createAuditLog()","total_count":1,"children":[]},{"name":"deleteRecommendedMaterial()","total_count":1,"children":[]},{"name":"deleteTrainingKnowledgeChapter()","total_count":1,"children":[]},{"name":"fileToBase64()","total_count":1,"children":[]},{"name":"followPatient()","total_count":1,"children":[]},{"name":"getActiveUserId()","total_count":1,"children":[]},{"name":"getAdminAssignments()","total_count":1,"children":[]},{"name":"getAdminStats()","total_count":1,"children":[]},{"name":"getAdminTelemedicineCalls()","total_count":1,"children":[]},{"name":"getAdminWoundEntries()","total_count":1,"children":[]},{"name":"getAllClinicians()","total_count":1,"children":[]},{"name":"getAllDoctors()","total_count":1,"children":[]},{"name":"getAllNurses()","total_count":1,"children":[]},{"name":"getAllPatients()","total_count":1,"children":[]},{"name":"getAllProfiles()","total_count":1,"children":[]},{"name":"getAllReceivedMessages()","total_count":1,"children":[]},{"name":"getAssignedDoctor()","total_count":1,"children":[]},{"name":"getAssignedDoctors()","total_count":1,"children":[]},{"name":"getAssignedPatients()","total_count":1,"children":[]},{"name":"getAuditLogs()","total_count":1,"children":[]},{"name":"getChatMessages()","total_count":1,"children":[]},{"name":"getClinicalProfile()","total_count":1,"children":[]},{"name":"getCurrentUser()","total_count":1,"children":[]},{"name":"getDoctorAppointments()","total_count":1,"children":[]},{"name":"getDoctorDocuments()","total_count":1,"children":[]},{"name":"getDoctorPatientsWoundEntries()","total_count":1,"children":[]},{"name":"getDoctorTelemedicineCalls()","total_count":1,"children":[]},{"name":"getLocalAppointments()","total_count":1,"children":[]},{"name":"getLocalAssignments()","total_count":1,"children":[]},{"name":"getLocalCalls()","total_count":1,"children":[]},{"name":"getLocalDocuments()","total_count":1,"children":[]},{"name":"getLocalEntries()","total_count":1,"children":[]},{"name":"getLocalHealthcareResources()","total_count":1,"children":[]},{"name":"getLocalMessages()","total_count":1,"children":[]},{"name":"getLocalProfile()","total_count":1,"children":[]},{"name":"getLocalUsers()","total_count":1,"children":[]},{"name":"getPatientAppointments()","total_count":1,"children":[]},{"name":"getPatientDocuments()","total_count":1,"children":[]},{"name":"getRecommendedMaterials()","total_count":1,"children":[]},{"name":"getTrainingKnowledgeList()","total_count":1,"children":[]},{"name":"getWoundEntries()","total_count":1,"children":[]},{"name":"issueDocument()","total_count":1,"children":[]},{"name":"placeTelemedicineCall()","total_count":1,"children":[]},{"name":"resolvedIdIsValid()","total_count":1,"children":[]},{"name":"saveLocalAppointments()","total_count":1,"children":[]},{"name":"saveLocalAssignments()","total_count":1,"children":[]},{"name":"saveLocalCalls()","total_count":1,"children":[]},{"name":"saveLocalDocuments()","total_count":1,"children":[]},{"name":"saveLocalEntries()","total_count":1,"children":[]},{"name":"saveLocalMessages()","total_count":1,"children":[]},{"name":"saveLocalProfile()","total_count":1,"children":[]},{"name":"saveLocalUsers()","total_count":1,"children":[]},{"name":"sendChatMessage()","total_count":1,"children":[]},{"name":"sendTranscriptChunk()","total_count":1,"children":[]},{"name":"sendWebRTCSignalingEvent()","total_count":1,"children":[]},{"name":"signInUser()","total_count":1,"children":[]},{"name":"signOutUser()","total_count":1,"children":[]},{"name":"signUpUser()","total_count":1,"children":[]},{"name":"subscribeToSignalingEvents()","total_count":1,"children":[]},{"name":"subscribeToWebRTCSignaling()","total_count":1,"children":[]},{"name":"unfollowPatient()","total_count":1,"children":[]},{"name":"updateCallStatus()","total_count":1,"children":[]},{"name":"updateClinicalProfile()","total_count":1,"children":[]},{"name":"updateLastSeen()","total_count":1,"children":[]},{"name":"updateTrainingKnowledgeChapter()","total_count":1,"children":[]},{"name":"updateVerificationStatus()","total_count":1,"children":[]},{"name":"uploadAvatar()","total_count":1,"children":[]},{"name":"uploadExamFileAndTriage()","total_count":1,"children":[]},{"name":"uploadProfessionalCredential()","total_count":1,"children":[]},{"name":"verifyProfessionalRegistry()","total_count":1,"children":[]}]}]},{"name":"utils","total_count":1,"children":[{"name":"speechUtils.js","total_count":1,"children":[{"name":"speakNaturalText()","total_count":1,"children":[]}]}]},{"name":"main.jsx","total_count":1,"children":[]},{"name":"supabaseClient.js","total_count":1,"children":[]}]},{"name":"supabase","total_count":1,"children":[{"name":"functions","total_count":1,"children":[{"name":"gemini-analysis","total_count":1,"children":[{"name":"index.ts","total_count":1,"children":[{"name":"corsHeaders","total_count":1,"children":[]}]}]}]}]},{"name":"eslint.config.js","total_count":1,"children":[]},{"name":"vite.config.js","total_count":1,"children":[]}]};
+
+    function transformData(jsonData) {
+        // Helper function to recursively build the children structure
+        function processNode(node, parentL1StageName) {
+            let displayName = node.name;
+            // Append total_count if it exists and is not already in the name
+            if (node.total_count !== undefined) {
+                if (!/\(Total Count: \d+\)$/.test(displayName)) {
+                    displayName += ` (Total Count: ${node.total_count})`;
+                }
+            }
+
+            const newNode = { name: displayName };
+
+            if (parentL1StageName === "Root") {
+                 newNode.originalStageName = node.name;
+            } else {
+                newNode.originalStageName = parentL1StageName;
+            }
+
+            if (node.children && node.children.length > 0) {
+                const stageNameToPass = (parentL1StageName === "Root") ? node.name : parentL1StageName;
+                newNode.children = node.children.map(child => processNode(child, stageNameToPass));
+            }
+
+            return newNode;
+        }
+
+        let rootDisplayName = jsonData.name;
+        if (jsonData.total_count !== undefined && !/\(Total Count: \d+\)$/.test(rootDisplayName)) {
+            rootDisplayName += ` (Total Count: ${jsonData.total_count})`;
+        }
+
+        return {
+            name: rootDisplayName,
+            originalStageName: "Root",
+            children: (jsonData.children || []).map(child => processNode(child, "Root"))
+        };
+    }
+
+    const treeData = transformData(initialJsonData);
+
+    // Auto-populated phaseColors: every depth-1 child of the root gets
+    // a stable colour from a bigger palette so all top-level dirs are
+    // distinguishable.
+    const PALETTE = [
+      ["#3498DB","#2980B9","#AED6F1"], ["#2ECC71","#27AE60","#A9DFBF"],
+      ["#E74C3C","#C0392B","#F5B7B1"], ["#9B59B6","#8E44AD","#D7BDE2"],
+      ["#F39C12","#D68910","#FAD7A0"], ["#1ABC9C","#117864","#A2D9CE"],
+      ["#34495E","#1B2631","#ABB2B9"], ["#E67E22","#BA4A00","#F5CBA7"],
+      ["#16A085","#0E6655","#A2D9CE"], ["#D35400","#A04000","#EDBB99"],
+      ["#7F8C8D","#566573","#D5DBDB"], ["#C0392B","#7B241C","#F5B7B1"],
+      ["#2E86C1","#1B4F72","#A9CCE3"], ["#28B463","#196F3D","#A9DFBF"],
+      ["#AF7AC5","#6C3483","#D2B4DE"],
+    ];
+    const phaseColors = { "Root": { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+                          "Default": { fill: "#BDC3C7", stroke: "#95A5A6", collapsedFill: "#ECF0F1" } };
+    (initialJsonData.children || []).forEach((c, i) => {
+      const pal = PALETTE[i % PALETTE.length];
+      phaseColors[c.name] = { fill: pal[0], stroke: pal[1], collapsedFill: pal[2] };
+    });
+
+    const levelSpecificPalettes = {
+      0: { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+      2: { fill: "#6ab04c", stroke: "#508a38", collapsedFill: "#a3d391" },
+      3: { fill: "#f0932b", stroke: "#d0730f", collapsedFill: "#f6c07e" },
+      4: { fill: "#be2edd", stroke: "#a01cb3", collapsedFill: "#e08bf2" },
+      5: { fill: "#00a8ff", stroke: "#007ac1", collapsedFill: "#74d2ff" },
+      6: { fill: "#e55039", stroke: "#c23620", collapsedFill: "#f09a8d" },
+      default: { fill: "#747d8c", stroke: "#57606f", collapsedFill: "#a4b0be" }
+    };
+
+    const svgElement = d3.select("#tree-svg");
+    const initialSvgWidth = +svgElement.attr("width");
+    const initialSvgHeight = +svgElement.attr("height");
+    const margin = { top: 40, right: 120, bottom: 80, left: 450 };
+    let width = initialSvgWidth - margin.left - margin.right;
+    let height = initialSvgHeight - margin.top - margin.bottom;
+    const duration = 500;
+    let nodeCounter = 0;
+    const g = svgElement.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    const treemap = d3.tree().nodeSize([40, 0]);
+    let rootNode = d3.hierarchy(treeData, d => d.children);
+    rootNode.x0 = 0;
+    rootNode.y0 = 0;
+
+    if (rootNode.children) {
+      rootNode.children.forEach(d_child => {
+        if (d_child.children) { collapseBranch(d_child); }
+      });
+    }
+    updateTree(rootNode);
+
+    function collapseBranch(d) { if (d.children) { d._children = d.children; d._children.forEach(collapseBranch); d.children = null; } }
+    function expandBranch(d) { if (d._children) { d.children = d._children; d._children = null; } if (d.children) { d.children.forEach(expandBranch); } }
+    window.expandAll = () => { expandBranch(rootNode); updateTree(rootNode); };
+    window.collapseAll = () => { if (rootNode.children) { rootNode.children.forEach(collapseBranch); } updateTree(rootNode); };
+    window.resetView = () => { if (rootNode.children) { rootNode.children.forEach(d_child => { if (d_child.children || d_child._children) { collapseBranch(d_child); } }); } if (rootNode._children && !rootNode.children) { rootNode.children = rootNode._children; rootNode._children = null; } updateTree(rootNode); };
+
+    function updateTree(source) {
+      const treeLayoutData = treemap(rootNode);
+      let nodes = treeLayoutData.descendants();
+      let links = treeLayoutData.descendants().slice(1);
+
+      let minX = 0;
+      let maxX = 0;
+      if (nodes.length > 0) {
+        minX = d3.min(nodes, d => d.x);
+        maxX = d3.max(nodes, d => d.x);
+      }
+
+      let neededHeight = Math.max(initialSvgHeight, maxX - minX + margin.top + margin.bottom + 100);
+      svgElement.transition().duration(duration / 2).attr("height", neededHeight);
+      g.transition().duration(duration / 2).attr("transform", `translate(${margin.left},${margin.top - minX + 40})`);
+
+      nodes.forEach(d => { d.y = d.depth * 400; }); // Adjust horizontal separation if needed
+
+      const node = g.selectAll('g.node').data(nodes, d => d.id || (d.id = ++nodeCounter));
+      const nodeEnter = node.enter().append('g')
+        .attr('class', d => "node" + (d.children || d._children ? " node--internal" : " node--leaf") + (d._children ? " _children" : ""))
+        .attr('transform', d => `translate(${source.y0},${source.x0})`)
+        .on('click', (event, d) => { if (d.children) { d._children = d.children; d.children = null; } else if (d._children) { d.children = d._children; d._children = null; } updateTree(d); })
+        .style('cursor', d => (d.children || d._children) ? 'pointer' : 'default');
+
+      nodeEnter.append('circle').attr('r', 1e-6);
+
+      nodeEnter.append('text')
+        .attr('dy', '.35em')
+        .attr('x', d => d.children || d._children ? -14 : 14)
+        .attr('text-anchor', d => d.children || d._children ? 'end' : 'start')
+        .style("fill-opacity", 1e-6)
+        .call(wrapText, 380);
+
+      const nodeUpdate = nodeEnter.merge(node);
+      nodeUpdate.transition().duration(duration)
+        .attr('transform', d => `translate(${d.y},${d.x})`)
+        .attr('class', d => "node" + (d.children ? " node--internal" : " node--leaf") + (d._children ? " node--internal _children" : ""));
+
+      nodeUpdate.select('circle').attr('r', 8.5)
+        .style('fill', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            if (d._children) return palette.collapsedFill;
+            if (d.children) return palette.fill;
+            return "#fff";
+        })
+        .style('stroke', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            return palette.stroke;
+        });
+      nodeUpdate.select('text').style("fill-opacity", 1).call(wrapText, 380);
+
+      const nodeExit = node.exit().transition().duration(duration).attr('transform', d => `translate(${source.y},${source.x})`).remove();
+      nodeExit.select('circle').attr('r', 1e-6);
+      nodeExit.select('text').style('fill-opacity', 1e-6);
+
+      const link = g.selectAll('path.link').data(links, d => d.id);
+      const linkEnter = link.enter().insert('path', "g").attr('class', 'link').attr('d', d => { const o = { x: source.x0, y: source.y0 }; return diagonal(o, o); });
+
+      linkEnter.merge(link).transition().duration(duration).attr('d', d => diagonal(d, d.parent))
+        .style('stroke', d => {
+            const sourceNode = d.parent;
+            if (!sourceNode) return phaseColors.Default.stroke;
+            const l1AncestorName = sourceNode.data.originalStageName;
+            const colorPalette = phaseColors[l1AncestorName] || phaseColors.Default;
+            return colorPalette.stroke;
+        });
+      link.exit().transition().duration(duration).attr('d', d => { const o = { x: source.x, y: source.y }; return diagonal(o, o); }).remove();
+      nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+    }
+
+    function diagonal(s, d) { return `M ${s.y} ${s.x} C ${(s.y + d.y) / 2} ${s.x}, ${(s.y + d.y) / 2} ${d.x}, ${d.y} ${d.x}`; }
+
+    function wrapText(textElements, maxWidth) {
+        const textPartColors = {
+            name: '#343a40',
+            count: '#0056b3'
+        };
+        const countRegex = /(\s\(Total Count: \d+\))$/;
+
+        textElements.each(function () {
+            const textD3 = d3.select(this);
+            const originalNodeText = textD3.datum().data.name;
+            const x = parseFloat(textD3.attr("x") || 0);
+            const initialDy = textD3.attr("dy");
+            const textAnchor = textD3.attr("text-anchor");
+            const lineHeight = 1.1;
+
+            textD3.text(null);
+
+            let namePart = originalNodeText;
+            let countPartText = "";
+
+            const countMatch = originalNodeText.match(countRegex);
+            if (countMatch && originalNodeText.endsWith(countMatch[0])) {
+                namePart = originalNodeText.substring(0, originalNodeText.length - countMatch[0].length).trim();
+                countPartText = countMatch[0].trim();
+            }
+
+            const tokens = [];
+            namePart.split(/\s+/).filter(Boolean).forEach(word => {
+                tokens.push({ text: word, type: 'name' });
+            });
+            if (countPartText) {
+                tokens.push({ text: countPartText, type: 'count' });
+            }
+
+            if (tokens.length === 0 && originalNodeText) {
+                tokens.push({ text: originalNodeText, type: 'name' });
+            }
+
+            let currentTspan = textD3.append("tspan").attr("x", x).attr("dy", initialDy);
+            if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+
+            let lineTokens = [];
+
+            for (let i = 0; i < tokens.length; i++) {
+                const tokenObj = tokens[i];
+
+                lineTokens.push(tokenObj);
+                currentTspan.text(lineTokens.map(t => t.text).join(" "));
+
+                if (currentTspan.node().getComputedTextLength() > maxWidth && lineTokens.length > 1) {
+                    lineTokens.pop();
+
+                    currentTspan.text(null);
+                    lineTokens.forEach((prevToken, idx) => {
+                        currentTspan.append("tspan")
+                            .text((idx > 0 ? " " : "") + prevToken.text)
+                            .style("fill", textPartColors[prevToken.type] || textPartColors.name)
+                            .style("font-weight", prevToken.type === 'count' ? "bold" : "normal");
+                    });
+
+                    lineTokens = [tokenObj];
+                    currentTspan = textD3.append("tspan").attr("x", x).attr("dy", lineHeight + "em");
+                    if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+                }
+            }
+
+            currentTspan.text(null);
+            lineTokens.forEach((token, idx) => {
+                currentTspan.append("tspan")
+                    .text((idx > 0 ? " " : "") + token.text)
+                    .style("fill", textPartColors[token.type] || textPartColors.name)
+                    .style("font-weight", token.type === 'count' ? "bold" : "normal");
+            });
+
+            if (textD3.selectAll("tspan > tspan").empty() && textD3.select("tspan").text().length === 0 && originalNodeText) {
+                let t = textD3.select("tspan");
+                let displayText = originalNodeText;
+                t.text(displayText).style("fill", textPartColors.name);
+                if (t.node() && t.node().getComputedTextLength() > maxWidth && displayText.length > 20) {
+                    let estimatedChars = Math.floor(maxWidth / (t.node().getComputedTextLength()/displayText.length) );
+                    displayText = displayText.substring(0, Math.max(0, estimatedChars - 3)) + "...";
+                    t.text(displayText);
+                }
+            }
+        });
+    }
+  </script>
+</body>
+</html>

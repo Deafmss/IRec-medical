@@ -1,0 +1,513 @@
+{
+  "communities": {
+    "0": [
+      "src_components_admindashboard",
+      "src_components_admindashboard_admindashboard",
+      "src_components_adminpartners",
+      "src_components_adminpartners_adminpartners",
+      "src_components_adminreports",
+      "src_components_adminreports_adminreports",
+      "src_components_daterangepicker",
+      "src_components_daterangepicker_daterangepicker",
+      "src_components_doctordashboardanalytics",
+      "src_components_doctordashboardanalytics_doctordashboardanalytics",
+      "src_components_doctorpartners",
+      "src_components_doctorpartners_doctorpartners",
+      "src_services_supabaseservice",
+      "src_services_supabaseservice_addrecommendedmaterial",
+      "src_services_supabaseservice_deleterecommendedmaterial",
+      "src_services_supabaseservice_deletetrainingknowledgechapter",
+      "src_services_supabaseservice_getadminassignments",
+      "src_services_supabaseservice_getadminstats",
+      "src_services_supabaseservice_getadmintelemedicinecalls",
+      "src_services_supabaseservice_getadminwoundentries",
+      "src_services_supabaseservice_getallprofiles",
+      "src_services_supabaseservice_getassignedpatients",
+      "src_services_supabaseservice_getauditlogs",
+      "src_services_supabaseservice_getdoctorappointments",
+      "src_services_supabaseservice_getdoctordocuments",
+      "src_services_supabaseservice_getdoctorpatientswoundentries",
+      "src_services_supabaseservice_getdoctortelemedicinecalls",
+      "src_services_supabaseservice_getlocalappointments",
+      "src_services_supabaseservice_getlocaldocuments",
+      "src_services_supabaseservice_getrecommendedmaterials",
+      "src_services_supabaseservice_gettrainingknowledgelist",
+      "src_services_supabaseservice_resolvedidisvalid",
+      "src_services_supabaseservice_updatetrainingknowledgechapter",
+      "src_services_supabaseservice_verifyprofessionalregistry"
+    ],
+    "1": [
+      "src_app",
+      "src_app_app",
+      "src_components_accessibledashboard",
+      "src_components_accessibledashboard_accessibledashboard",
+      "src_components_accessibledashboard_getrandomnoisephrase",
+      "src_components_accessibledashboard_noise_fallback_phrases",
+      "src_components_accessiblesubviews",
+      "src_components_accessiblesubviews_accessibletelemedicineview",
+      "src_components_accessiblesubviews_accessibleuploadview",
+      "src_components_mynetworkportal",
+      "src_components_mynetworkportal_mynetworkportal",
+      "src_components_permissionsguidemodal",
+      "src_components_permissionsguidemodal_permissionsguidemodal",
+      "src_components_prescriptiongeneratormodal",
+      "src_components_prescriptiongeneratormodal_prescriptiongeneratormodal",
+      "src_components_reportpdfgenerator",
+      "src_components_reportpdfgenerator_reportpdfgenerator",
+      "src_components_sosemergencymodal",
+      "src_components_sosemergencymodal_sosemergencymodal",
+      "src_main",
+      "src_services_geminiservice_chatwithdoctorcopilot",
+      "src_services_supabaseservice_getclinicalprofile",
+      "src_services_supabaseservice_getcurrentuser",
+      "src_services_supabaseservice_signoutuser",
+      "src_services_supabaseservice_updatelastseen",
+      "src_utils_speechutils",
+      "src_utils_speechutils_speaknaturaltext"
+    ],
+    "2": [
+      "capacitor_android",
+      "capacitor_core",
+      "capacitor_ios",
+      "package",
+      "package_dependencies",
+      "package_dependencies_capacitor_android",
+      "package_dependencies_capacitor_core",
+      "package_dependencies_capacitor_ios",
+      "package_dependencies_react",
+      "package_dependencies_react_dom",
+      "package_dependencies_supabase_supabase_js",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_dev",
+      "package_scripts_lint",
+      "package_scripts_preview",
+      "package_type",
+      "package_version",
+      "react",
+      "react_dom",
+      "supabase_supabase_js"
+    ],
+    "3": [
+      "src_components_clinicaltriage",
+      "src_components_clinicaltriage_clinicaltriage",
+      "src_components_clinicaltriage_generatelocalfallbackanalysis",
+      "src_components_clinicaltriage_glossary_db",
+      "src_components_clinicaltriage_woundtissueoverlay",
+      "src_components_protocolguide",
+      "src_components_protocolguide_formatmaterialsforview",
+      "src_components_protocolguide_generatedefaultpersonalizedprotocol",
+      "src_components_protocolguide_protocolguide",
+      "src_services_geminiservice",
+      "src_services_geminiservice_analyzetelemedicinetranscript",
+      "src_services_geminiservice_analyzewoundwithai",
+      "src_services_geminiservice_chatwithai",
+      "src_services_geminiservice_converttograyscale",
+      "src_services_geminiservice_fetchgeminiwithrotation",
+      "src_services_geminiservice_filetogenerativepart",
+      "src_services_geminiservice_formatsoapnote",
+      "src_services_geminiservice_gemini_keys",
+      "src_services_geminiservice_generatepersonalizedprotocol",
+      "src_services_geminiservice_getgeminiembedding",
+      "src_services_geminiservice_searchtrainingknowledge",
+      "src_services_geminiservice_searchtrainingvisualcases",
+      "src_services_supabaseservice_getlocalhealthcareresources"
+    ],
+    "4": [
+      "capacitor_cli",
+      "eslint",
+      "eslint_js",
+      "eslint_plugin_react_hooks",
+      "eslint_plugin_react_refresh",
+      "globals",
+      "package_devdependencies",
+      "package_devdependencies_capacitor_cli",
+      "package_devdependencies_eslint",
+      "package_devdependencies_eslint_js",
+      "package_devdependencies_eslint_plugin_react_hooks",
+      "package_devdependencies_eslint_plugin_react_refresh",
+      "package_devdependencies_globals",
+      "package_devdependencies_types_react",
+      "package_devdependencies_types_react_dom",
+      "package_devdependencies_vite",
+      "package_devdependencies_vitejs_plugin_react",
+      "types_react",
+      "types_react_dom",
+      "vite",
+      "vitejs_plugin_react"
+    ],
+    "5": [
+      "any",
+      "bool",
+      "capacitor",
+      "ios_app_app_appdelegate",
+      "ios_app_app_appdelegate_appdelegate",
+      "ios_app_app_appdelegate_appdelegate_application",
+      "ios_app_app_appdelegate_appdelegate_applicationdidbecomeactive",
+      "ios_app_app_appdelegate_appdelegate_applicationdidenterbackground",
+      "ios_app_app_appdelegate_appdelegate_applicationwillenterforeground",
+      "ios_app_app_appdelegate_appdelegate_applicationwillresignactive",
+      "ios_app_app_appdelegate_appdelegate_applicationwillterminate",
+      "nsuseractivity",
+      "uiapplication",
+      "uiapplicationdelegate",
+      "uikit",
+      "uiresponder",
+      "uiuseractivityrestoring",
+      "uiwindow",
+      "url",
+      "void"
+    ],
+    "6": [
+      "src_components_telemedicine",
+      "src_components_telemedicine_getdoctorpremiumdetails",
+      "src_components_telemedicine_telemedicine",
+      "src_services_supabaseservice_checkcallstatus",
+      "src_services_supabaseservice_checkincomingcalls",
+      "src_services_supabaseservice_filetobase64",
+      "src_services_supabaseservice_getallreceivedmessages",
+      "src_services_supabaseservice_getchatmessages",
+      "src_services_supabaseservice_getlocalcalls",
+      "src_services_supabaseservice_getlocalmessages",
+      "src_services_supabaseservice_placetelemedicinecall",
+      "src_services_supabaseservice_savelocalcalls",
+      "src_services_supabaseservice_savelocalmessages",
+      "src_services_supabaseservice_sendchatmessage",
+      "src_services_supabaseservice_sendtranscriptchunk",
+      "src_services_supabaseservice_sendwebrtcsignalingevent",
+      "src_services_supabaseservice_subscribetosignalingevents",
+      "src_services_supabaseservice_subscribetowebrtcsignaling",
+      "src_services_supabaseservice_updatecallstatus"
+    ],
+    "7": [
+      "src_components_clinicalhistory",
+      "src_components_clinicalhistory_clinicalhistory",
+      "src_components_clinicalhistory_woundtissueoverlay",
+      "src_components_dashboard",
+      "src_components_dashboard_dashboard",
+      "src_components_dashboard_generatedynamictasks",
+      "src_components_localresourcespanel",
+      "src_components_localresourcespanel_localresourcespanel",
+      "src_components_patientdocuments",
+      "src_components_patientdocuments_patientdocuments",
+      "src_services_locationservice",
+      "src_services_locationservice_deg2rad",
+      "src_services_locationservice_fetchnearbyhealthcareresources",
+      "src_services_locationservice_geocodeaddress",
+      "src_services_locationservice_getdistance",
+      "src_services_supabaseservice_getpatientappointments",
+      "src_services_supabaseservice_getpatientdocuments"
+    ],
+    "8": [
+      "src_components_aichatassistant",
+      "src_components_aichatassistant_ai_responses",
+      "src_components_aichatassistant_aichatassistant",
+      "src_components_aichatassistant_detecttopicfromtext",
+      "src_components_aichatassistant_exam_responses",
+      "src_components_aichatassistant_suggestions",
+      "src_components_userprofilemodal",
+      "src_components_userprofilemodal_all_specialties",
+      "src_components_userprofilemodal_userprofilemodal",
+      "src_services_supabaseservice_addwoundentry",
+      "src_services_supabaseservice_createauditlog",
+      "src_services_supabaseservice_getactiveuserid",
+      "src_services_supabaseservice_savelocalentries",
+      "src_services_supabaseservice_updateclinicalprofile",
+      "src_services_supabaseservice_uploadavatar",
+      "src_services_supabaseservice_uploadexamfileandtriage"
+    ],
+    "9": [
+      "src_components_bookingmodal",
+      "src_components_bookingmodal_bookingmodal",
+      "src_components_nursesnetwork",
+      "src_components_nursesnetwork_getnursepremiumdetails",
+      "src_components_nursesnetwork_nursesnetwork",
+      "src_components_specialistdirectory",
+      "src_components_specialistdirectory_getdoctorpremiumdetails",
+      "src_components_specialistdirectory_specialistdirectory",
+      "src_services_supabaseservice_createappointment",
+      "src_services_supabaseservice_followpatient",
+      "src_services_supabaseservice_getassigneddoctor",
+      "src_services_supabaseservice_getassigneddoctors",
+      "src_services_supabaseservice_getlocalassignments",
+      "src_services_supabaseservice_savelocalappointments",
+      "src_services_supabaseservice_savelocalassignments"
+    ],
+    "10": [
+      "src_components_login",
+      "src_components_login_all_specialties",
+      "src_components_login_login",
+      "src_services_supabaseservice_getallclinicians",
+      "src_services_supabaseservice_getalldoctors",
+      "src_services_supabaseservice_getallnurses",
+      "src_services_supabaseservice_getlocalprofile",
+      "src_services_supabaseservice_getlocalusers",
+      "src_services_supabaseservice_savelocalprofile",
+      "src_services_supabaseservice_savelocalusers",
+      "src_services_supabaseservice_signinuser",
+      "src_services_supabaseservice_signupuser",
+      "src_services_supabaseservice_updateverificationstatus",
+      "src_services_supabaseservice_uploadprofessionalcredential",
+      "src_supabaseclient"
+    ],
+    "11": [
+      "src_components_doctordashboard",
+      "src_components_doctordashboard_common_cid10",
+      "src_components_doctordashboard_doctordashboard",
+      "src_services_fhirservice",
+      "src_services_fhirservice_exportfhirbundle",
+      "src_services_fhirservice_exportobservationtofhir",
+      "src_services_fhirservice_exportpatienttofhir",
+      "src_services_supabaseservice_adddoctornote",
+      "src_services_supabaseservice_getallpatients",
+      "src_services_supabaseservice_getlocalentries",
+      "src_services_supabaseservice_getwoundentries",
+      "src_services_supabaseservice_issuedocument",
+      "src_services_supabaseservice_savelocaldocuments",
+      "src_services_supabaseservice_unfollowpatient"
+    ],
+    "12": [
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_analisar_imagem_via_gemini",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_chunk_texto",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_enviar_bytes_gemini",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_iniciar_upload_gemini",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_ler_docx_puro",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_obter_embedding",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_obter_estado_arquivo_gemini",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_obter_gemini_key",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_processar_base",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_processar_pdf_documento",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_requisicao_api_gemini",
+      "ducumenta\u00e7\u00e3o_para_implementar_processador_treinamento_transcrever_audio_com_timestamps"
+    ],
+    "13": [
+      "public_manifest",
+      "public_manifest_background_color",
+      "public_manifest_description",
+      "public_manifest_display",
+      "public_manifest_icons",
+      "public_manifest_name",
+      "public_manifest_orientation",
+      "public_manifest_short_name",
+      "public_manifest_shortcuts",
+      "public_manifest_start_url",
+      "public_manifest_theme_color"
+    ],
+    "14": [
+      "android_app_src_androidtest_java_com_getcapacitor_myapp_exampleinstrumentedtest",
+      "android_app_src_androidtest_java_com_getcapacitor_myapp_exampleinstrumentedtest_exampleinstrumentedtest",
+      "android_app_src_androidtest_java_com_getcapacitor_myapp_exampleinstrumentedtest_exampleinstrumentedtest_useappcontext",
+      "android_app_src_androidtest_java_com_getcapacitor_myapp_exampleinstrumentedtest_java_test",
+      "runwith"
+    ],
+    "15": [
+      "android_app_src_test_java_com_getcapacitor_myapp_exampleunittest",
+      "android_app_src_test_java_com_getcapacitor_myapp_exampleunittest_exampleunittest",
+      "android_app_src_test_java_com_getcapacitor_myapp_exampleunittest_exampleunittest_addition_iscorrect",
+      "android_app_src_test_java_com_getcapacitor_myapp_exampleunittest_java_test"
+    ],
+    "16": [
+      "android_gradlew",
+      "android_gradlew__entry",
+      "android_gradlew_die",
+      "android_gradlew_warn"
+    ],
+    "17": [
+      "android_app_src_main_java_com_irec_medical_mainactivity",
+      "android_app_src_main_java_com_irec_medical_mainactivity_mainactivity",
+      "bridgeactivity"
+    ],
+    "18": [
+      "ios_app_capapp_spm_package",
+      "packagedescription"
+    ],
+    "19": [
+      "public_sw",
+      "public_sw_urlstocache"
+    ],
+    "20": [
+      "src_components_vitalstelemetry",
+      "src_components_vitalstelemetry_vitalstelemetry"
+    ],
+    "21": [
+      "supabase_functions_gemini_analysis_index",
+      "supabase_functions_gemini_analysis_index_corsheaders"
+    ],
+    "22": [
+      "android_app_build"
+    ],
+    "23": [
+      "android_app_capacitor_build"
+    ],
+    "24": [
+      "android_build"
+    ],
+    "25": [
+      "android_capacitor_settings"
+    ],
+    "26": [
+      "android_settings"
+    ],
+    "27": [
+      "android_variables"
+    ],
+    "28": [
+      "eslint_config"
+    ],
+    "29": [
+      "ios_app_capapp_spm_sources_capapp_spm_capapp_spm"
+    ],
+    "30": [
+      "vite_config"
+    ]
+  },
+  "cohesion": {
+    "0": 0.15151515151515152,
+    "1": 0.15954415954415954,
+    "2": 0.08695652173913043,
+    "3": 0.16600790513833993,
+    "4": 0.09523809523809523,
+    "5": 0.12631578947368421,
+    "6": 0.19883040935672514,
+    "7": 0.19117647058823528,
+    "8": 0.19166666666666668,
+    "9": 0.22857142857142856,
+    "10": 0.23809523809523808,
+    "11": 0.25274725274725274,
+    "12": 0.3974358974358974,
+    "13": 0.18181818181818182,
+    "14": 0.6,
+    "15": 0.6666666666666666,
+    "16": 0.8333333333333334,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0
+  },
+  "gods": [
+    {
+      "id": "src_components_doctordashboard_doctordashboard",
+      "label": "DoctorDashboard()",
+      "degree": 17
+    },
+    {
+      "id": "src_components_admindashboard_admindashboard",
+      "label": "AdminDashboard()",
+      "degree": 14
+    },
+    {
+      "id": "src_components_telemedicine_telemedicine",
+      "label": "Telemedicine()",
+      "degree": 14
+    },
+    {
+      "id": "src_services_supabaseservice_getlocalprofile",
+      "label": "getLocalProfile()",
+      "degree": 14
+    },
+    {
+      "id": "src_services_supabaseservice_getlocalusers",
+      "label": "getLocalUsers()",
+      "degree": 12
+    },
+    {
+      "id": "src_services_supabaseservice_updateclinicalprofile",
+      "label": "updateClinicalProfile()",
+      "degree": 12
+    },
+    {
+      "id": "src_services_supabaseservice_getrecommendedmaterials",
+      "label": "getRecommendedMaterials()",
+      "degree": 12
+    },
+    {
+      "id": "src_utils_speechutils_speaknaturaltext",
+      "label": "speakNaturalText()",
+      "degree": 12
+    },
+    {
+      "id": "src_app_app",
+      "label": "App()",
+      "degree": 11
+    },
+    {
+      "id": "ios_app_app_appdelegate_appdelegate",
+      "label": "AppDelegate",
+      "degree": 10
+    }
+  ],
+  "surprises": [
+    {
+      "source": "App()",
+      "target": "checkCallStatus()",
+      "source_files": [
+        "src/App.jsx",
+        "src/services/supabaseService.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "App()",
+      "target": "checkIncomingCalls()",
+      "source_files": [
+        "src/App.jsx",
+        "src/services/supabaseService.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "App()",
+      "target": "getAllProfiles()",
+      "source_files": [
+        "src/App.jsx",
+        "src/services/supabaseService.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "App()",
+      "target": "getWoundEntries()",
+      "source_files": [
+        "src/App.jsx",
+        "src/services/supabaseService.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "App()",
+      "target": "updateCallStatus()",
+      "source_files": [
+        "src/App.jsx",
+        "src/services/supabaseService.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

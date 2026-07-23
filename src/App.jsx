@@ -22,7 +22,8 @@ import SOSEmergencyModal from './components/SOSEmergencyModal';
 import PermissionsGuideModal from './components/PermissionsGuideModal';
 import PrescriptionGeneratorModal from './components/PrescriptionGeneratorModal';
 import ReportPDFGenerator from './components/ReportPDFGenerator';
-import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen } from './services/supabaseService';
+import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
+import { generatePersonalizedProtocol } from './services/geminiService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export default function App() {
@@ -66,7 +67,6 @@ export default function App() {
   const fetchPendingCount = async () => {
     if (currentUser && currentUser.email === 'admin@irec.com') {
       try {
-        const { getAllProfiles } = await import('./services/supabaseService');
         const profiles = await getAllProfiles();
         const pending = profiles.filter(p => p.role === 'doctor' && p.verificationStatus === 'pending');
         setPendingVerificationsCount(pending.length);
@@ -534,7 +534,6 @@ export default function App() {
       
       try {
         console.log("Pre-fetching personalized care guide in the background...");
-        const { generatePersonalizedProtocol } = await import('./services/geminiService');
         const result = await generatePersonalizedProtocol(clinicalProfile, latestWoundEntry);
         
         if (result) {
