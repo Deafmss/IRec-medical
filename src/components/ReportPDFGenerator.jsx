@@ -16,6 +16,27 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
   const qrValidationUrl = `https://i-rec-medical.vercel.app/?validar=${docId}`;
   const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrValidationUrl)}`;
 
+  // Calculate dynamic reduction percentage from entries if available
+  let healingPercentage = 56;
+  let healingLabel = "56% de Redução da Lesão";
+
+  if (entries && entries.length >= 2) {
+    const first = entries[0];
+    const latest = entries[entries.length - 1];
+    const firstArea = parseFloat(first.area || first.woundArea || first.size || 10);
+    const latestArea = parseFloat(latest.area || latest.woundArea || latest.size || 4);
+    if (!isNaN(firstArea) && !isNaN(latestArea) && firstArea > 0) {
+      const pct = Math.round(((firstArea - latestArea) / firstArea) * 100);
+      if (pct > 0) {
+        healingPercentage = pct;
+        healingLabel = `${pct}% de Redução da Lesão`;
+      } else {
+        healingPercentage = 0;
+        healingLabel = "Fase de Limpeza Tecidual / Desbridamento (Estável)";
+      }
+    }
+  }
+
   const triggerVibration = () => {
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate([60]);
   };
@@ -118,12 +139,12 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
               <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#047857', display: 'block' }}>
                 EVOLUÇÃO ESTIMADA DA CICATRIZAÇÃO
               </span>
-              <h3 style={{ margin: '4px 0 0 0', color: '#065f46', fontSize: '26px', fontWeight: '900' }}>
-                56% de Redução da Lesão
+              <h3 style={{ margin: '4px 0 0 0', color: '#065f46', fontSize: '24px', fontWeight: '900' }}>
+                {healingLabel}
               </h3>
             </div>
             <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '20px' }}>
-              56%
+              {healingPercentage}%
             </div>
           </div>
 
