@@ -1,4 +1,5 @@
 // Shared Natural Speech Synthesis Utility for iRec
+// Platform-Aware Neural Voice Engine: Google Assistant (Android/Windows) vs Apple Siri (iOS/macOS)
 
 let cachedVoices = [];
 
@@ -36,25 +37,49 @@ export const speakNaturalText = (text, rate = 0.95, pitch = 1.0) => {
       const availableVoices = voices.length > 0 ? voices : cachedVoices;
       const ptVoices = availableVoices.filter(v => v.lang === 'pt-BR' || v.lang === 'pt_BR' || v.lang.startsWith('pt'));
 
-      // 1. STRICT PRIORITY 1: Official Google Assistant Voice ("Google português do Brasil")
-      let targetVoice = ptVoices.find(v => 
-        v.name.toLowerCase().includes('google português do brasil') ||
-        v.name.toLowerCase().includes('google português') ||
-        (v.name.toLowerCase().includes('google') && v.lang.startsWith('pt'))
-      );
+      const isAppleDevice = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
+      let targetVoice = null;
 
-      // 2. PRIORITY 2: High-Quality Microsoft Natural / Neural Voices
-      if (!targetVoice) {
+      if (isAppleDevice) {
+        // ----------------------------------------------------
+        // APPLE / IOS PLATFORM: Siri & Apple Neural Voice Priority
+        // ----------------------------------------------------
         targetVoice = ptVoices.find(v => 
-          v.name.toLowerCase().includes('natural') || 
-          v.name.toLowerCase().includes('francisca') ||
-          v.name.toLowerCase().includes('neural')
+          v.name.toLowerCase().includes('siri') ||
+          v.name.toLowerCase().includes('luciana') ||
+          v.name.toLowerCase().includes('joana') ||
+          v.name.toLowerCase().includes('felipe') ||
+          (v.name.toLowerCase().includes('apple') && v.lang.startsWith('pt'))
         );
-      }
 
-      // 3. PRIORITY 3: Any non-robotic fallback voice
-      if (!targetVoice) {
-        targetVoice = ptVoices.find(v => !v.name.toLowerCase().includes('desktop')) || ptVoices[0];
+        // Fallback for Safari iOS native voice
+        if (!targetVoice) {
+          targetVoice = ptVoices.find(v => v.lang === 'pt-BR' || v.lang === 'pt_BR') || ptVoices[0];
+        }
+      } else {
+        // ----------------------------------------------------
+        // ANDROID / WINDOWS PLATFORM: Google Assistant Voice Priority
+        // ----------------------------------------------------
+        // 1. STRICT PRIORITY 1: Official Google Assistant Voice ("Google português do Brasil")
+        targetVoice = ptVoices.find(v => 
+          v.name.toLowerCase().includes('google português do brasil') ||
+          v.name.toLowerCase().includes('google português') ||
+          (v.name.toLowerCase().includes('google') && v.lang.startsWith('pt'))
+        );
+
+        // 2. PRIORITY 2: High-Quality Microsoft Natural / Neural Voices (Windows / Edge)
+        if (!targetVoice) {
+          targetVoice = ptVoices.find(v => 
+            v.name.toLowerCase().includes('natural') || 
+            v.name.toLowerCase().includes('francisca') ||
+            v.name.toLowerCase().includes('neural')
+          );
+        }
+
+        // 3. PRIORITY 3: Any non-robotic fallback voice
+        if (!targetVoice) {
+          targetVoice = ptVoices.find(v => !v.name.toLowerCase().includes('desktop')) || ptVoices[0];
+        }
       }
 
       if (targetVoice) {
