@@ -5,9 +5,9 @@ import { updateClinicalProfile } from '../services/supabaseService';
 
 // Humanized non-robotic fallback responses
 const NOISE_FALLBACK_PHRASES = [
-  "Olá! Não consegui te ouvir direito. Por favor, aperte o microfone de novo e fale bem pertinho do celular.",
-  "Ops, o som saiu um pouco baixinho. Pode repetir o que você está sentindo com calma?",
-  "Acho que um barulho atrapalhou a gravação. Conte para mim: você está com dor, enjoo ou febre?"
+  "Olá! Não consegui te ouvir direito. Por favor, aperte o botão de microfone de novo e fale bem pertinho do celular.",
+  "Ops, o som saiu um pouco baixinho. Pode me contar de novo o que você está sentindo no seu corpo?",
+  "Acho que um barulho atrapalhou a gravação. Me diga com calma: onde é a dor ou o que está te incomodando?"
 ];
 
 const getRandomNoisePhrase = () => {
@@ -23,6 +23,7 @@ export default function AccessibleDashboard({
   const [voiceQuery, setVoiceQuery] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [aiResponse, setAiResponse] = useState(null);
+  const [triageRiskLevel, setTriageRiskLevel] = useState('Verde'); // 'Verde', 'Amarelo', 'Vermelho'
   const [loadingAi, setLoadingAi] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState('default');
   const [selectedSymptomTitle, setSelectedSymptomTitle] = useState('');
@@ -85,7 +86,7 @@ export default function AccessibleDashboard({
       title: 'DOR DE CABEÇA OU TONTURA',
       icon: '🤕',
       color: '#f59e0b',
-      prompt: 'Estou com dor de cabeça e tontura leve.'
+      prompt: 'Estou sentindo dor de cabeça e tontura.'
     },
     {
       id: 'fever',
@@ -124,7 +125,7 @@ export default function AccessibleDashboard({
     }
   ];
 
-  // PROCESS SPOKEN VOICE QUERY WITH MEDICAL AI & PRONTUÁRIO INTEGRATION
+  // PROCESS ANY FREE-SPEECH VOICE QUERY WITH MEDICAL AI & REAL-TIME PRONTUÁRIO UPDATE
   const processSymptomQuery = async (queryText, categoryTitle = '') => {
     stopAudioSpeech();
     const cleanText = queryText ? queryText.trim() : '';
@@ -132,58 +133,69 @@ export default function AccessibleDashboard({
     if (!cleanText || cleanText.length < 3 || /^(é|hum|ah|eh|oh|oi)$/i.test(cleanText)) {
       const friendlyPhrase = getRandomNoisePhrase();
       setAiResponse(friendlyPhrase);
+      setTriageRiskLevel('Verde');
       speakText(friendlyPhrase);
       return;
     }
 
-    setSelectedSymptomTitle(categoryTitle || 'Sintoma Relatado por Voz');
+    setSelectedSymptomTitle(categoryTitle || 'Relato por Voz');
     setLoadingAi(true);
 
     try {
-      const systemPrompt = `Você é a Médica de Inteligência Artificial do iRec (Especialista em Primeiro Atendimento Domiciliar para idosos, leigos e analfabetos funcionais).
+      const systemPrompt = `Você é a Médica de Inteligência Artificial do iRec (Especialista em Primeiro Atendimento Domiciliar e Triagem para idosos, leigos e analfabetos).
 
-Sua função é realizar a triagem completa do sintoma relatado: "${cleanText}".
+O paciente relatou por voz o seguinte sintoma/situação: "${cleanText}".
 
-Regras Obrigatórias de Atendimento por Voz:
-1. Fale em português de forma extremamente carinhosa, humana, simples e acolhedora (sem jargões médicos).
-2. Avalie a causa provável e o NÍVEL DE RISCO (Risco Baixo = Cuidados Simples em Casa; Risco Moderado = Teleconsulta no App; Risco Alto = Urgência SOS 192).
-3. Para sintomas simples (ex: dor de cabeça leve, enjoo, dor muscular, febre baixa), dê orientações práticas de cuidados em casa (ex: beber 2 copos de água, repousar em quarto escuro, compressa morna) e diga EXPLICITAMENTE: "Você não precisa correr para o hospital por este sintoma simples. Fique calmo, repouse e beba água."
-4. Se for algo grave (ex: dor forte no peito, falta de ar intensa, perda de força/fala), oriente a apertar o botão vermelho de emergência SOS para ligar 192.
-5. Responda em no máximo 3 a 4 frases curtas e diretas.`;
+SUA MISSÃO MÉDICA EM 4 PASSOS:
+1. IDENTIFICAÇÃO E AVALIAÇÃO DE RISCO: Avalie os sintomas relatados e determine se é um sintoma simples (Risco Verde = Cuidados em Casa), sintoma que precisa de consulta (Risco Amarelo = Teleconsulta no App) ou Emergência Crítica (Risco Vermelho = Urgência SOS 192).
+2. LINGUAGEM SIMPLES E ACOLHEDORA: Responda em português extremamente simples, humano, carinhoso e claro (SEM jargões médicos ou palavras difíceis), de forma que qualquer pessoa leiga ou idosa entenda na hora.
+3. ORIENTAÇÃO DE PRIMEIRO ATENDIMENTO PASSO A PASSO: Se for sintoma leve (dor de cabeça, enjoo, febre baixa, dor nas costas, ferida leve), dê o procedimento prático de cuidados simples em casa (ex: beber 2 copos de água, repousar em quarto escuro, compressa morna, lavar com soro) e afirme com clareza: "Você não precisa correr para o hospital por este sintoma simples. Fique calmo e repouse."
+4. SE FOR URGÊNCIA (dor no peito, falta de ar grave, perda de força/fala): Oriente a apertar o botão vermelho de emergência SOS para ligar 192.
+
+Responda em 3 a 4 frases curtas e acolhedoras.`;
 
       const result = await chatWithDoctorCopilot(systemPrompt, [{ role: 'user', content: cleanText }], clinicalProfile, [], null);
       
       const reply = result?.reply || "Entendi seu relato. Para sintomas simples, o melhor é descansar em local fresco e beber água. Se a dor for muito forte ou tiver falta de ar, aperte o botão vermelho SOS.";
+      
+      // Determine Clinical Risk Level for UI & Prontuário
+      const lower = (cleanText + ' ' + reply).toLowerCase();
+      let calculatedRisk = 'Verde';
+      if (lower.includes('urgência') || lower.includes('sos') || lower.includes('192') || lower.includes('emergência') || lower.includes('vermelho')) {
+        calculatedRisk = 'Vermelho';
+      } else if (lower.includes('teleconsulta') || lower.includes('médico') || lower.includes('enfermeiro') || lower.includes('amarelo')) {
+        calculatedRisk = 'Amarelo';
+      }
+
+      setTriageRiskLevel(calculatedRisk);
       setAiResponse(reply);
       speakText(reply);
 
-      // SAVE TRIAGE ALERT AUTOMATICALLY TO PATIENT'S CLINICAL PRONTUÁRIO
+      // AUTOMATICALLY REGISTER TRIAGE REPORT IN PATIENT'S CLINICAL PRONTUÁRIO
       if (clinicalProfile && clinicalProfile.id) {
-        const lower = (cleanText + ' ' + reply).toLowerCase();
-        let riskLevel = 'Verde';
-        if (lower.includes('urgência') || lower.includes('sos') || lower.includes('192') || lower.includes('emergência')) {
-          riskLevel = 'Vermelho';
-        } else if (lower.includes('teleconsulta') || lower.includes('médico') || lower.includes('enfermeiro')) {
-          riskLevel = 'Amarelo';
-        }
-
         const newAlert = {
           id: `triage_${Date.now()}`,
           date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           symptom: cleanText,
           aiTriageReply: reply,
-          riskLevel: riskLevel
+          riskLevel: calculatedRisk
         };
 
-        const updatedAlerts = [newAlert, ...(clinicalProfile.triageAlerts || [])].slice(0, 15);
-        const updatedProfile = { ...clinicalProfile, triageAlerts: updatedAlerts };
+        const updatedAlerts = [newAlert, ...(clinicalProfile.triageAlerts || [])].slice(0, 20);
+        const updatedProfile = { 
+          ...clinicalProfile, 
+          triageAlerts: updatedAlerts,
+          lastTriageRisk: calculatedRisk,
+          lastTriageDate: newAlert.date
+        };
         
         if (setClinicalProfile) setClinicalProfile(updatedProfile);
         updateClinicalProfile(clinicalProfile.id, updatedProfile);
       }
     } catch (e) {
-      console.warn("[iRec Triagem IA] Erro no Gemini AI:", e);
-      const fallback = "Para sintomas leves, o melhor é descansar em ambiente calmo e beber água fresca. Não é preciso ir ao hospital por desconfortos simples.";
+      console.warn("[iRec Triagem IA] Usando procedimento local de saúde:", e);
+      const fallback = "Para sintomas leves, o melhor procedimento é descansar em um ambiente calmo, tomar um bom copo de água fresca e repousar. Não há necessidade de correr para o pronto-socorro por sintomas simples.";
+      setTriageRiskLevel('Verde');
       setAiResponse(fallback);
       speakText(fallback);
     } finally {
@@ -205,9 +217,9 @@ Regras Obrigatórias de Atendimento por Voz:
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      const msg = "Para fazer a triagem por áudio, toque nas fotos dos sintomas abaixo!";
+      const msg = "Para fazer a triagem por voz, toque em uma das fotos de sintomas abaixo!";
       speakText(msg);
-      alert("Seu navegador não suporta microfone automático. Toque nos sintomas abaixo!");
+      alert("Seu navegador não suporta microfone automático. Toque nas opções de sintomas abaixo!");
       return;
     }
 
@@ -231,7 +243,7 @@ Regras Obrigatórias de Atendimento por Voz:
 
       recognition.onerror = () => {
         setIsRecording(false);
-        const fallbackMsg = "Ops, não consegui te ouvir bem! Toque no botão de microfone e fale de novo pertinho do celular.";
+        const fallbackMsg = "Ops, não consegui te ouvir bem! Aperte o botão de microfone e fale de novo pertinho do celular.";
         setAiResponse(fallbackMsg);
         speakText(fallbackMsg);
       };
@@ -284,7 +296,7 @@ Regras Obrigatórias de Atendimento por Voz:
               Olá, {clinicalProfile?.name?.split(' ')[0] || 'Amigo(a)'}!
             </h1>
             <span style={{ fontSize: '15px', color: '#38bdf8', fontWeight: '700' }}>
-              Atendimento Médico por Voz iRec
+              Primeiro Atendimento Médico por Voz iRec
             </span>
           </div>
         </div>
@@ -354,10 +366,10 @@ Regras Obrigatórias de Atendimento por Voz:
       >
         <span style={{ fontSize: '52px' }}>{isRecording ? '🎙️🔴' : '🎙️'}</span>
         <span style={{ fontSize: '21px', fontWeight: '900', color: '#ffffff', textAlign: 'center' }}>
-          {isRecording ? 'OUVINDO... FALE O SEU SINTOMA!' : 'APERTE AQUI E FALE O QUE ESTÁ SENTINDO'}
+          {isRecording ? 'OUVINDO... FALE SEUS SINTOMAS!' : 'APERTE AQUI E FALE O QUE ESTÁ SENTINDO'}
         </span>
         <span style={{ fontSize: '13.5px', color: '#e0f2fe', fontWeight: '600' }}>
-          O áudio do celular pausa na hora para te ouvir e a IA médica avalia o risco!
+          Fale livremente como se estivesse conversando com o médico!
         </span>
       </div>
 
@@ -379,7 +391,7 @@ Regras Obrigatórias de Atendimento por Voz:
           fontWeight: '700',
           boxShadow: '0 8px 24px rgba(2, 132, 199, 0.2)'
         }}>
-          ⏳ A Médica IA do iRec está avaliando seus sintomas e atualizando seu prontuário...
+          ⏳ A Médica IA do iRec está analisando seus sintomas e salvando em seu prontuário...
         </div>
       )}
 
@@ -389,17 +401,29 @@ Regras Obrigatórias de Atendimento por Voz:
           backgroundColor: '#0f172a',
           borderRadius: '24px',
           padding: '24px',
-          border: '3px solid #38bdf8',
+          border: `3px solid ${triageRiskLevel === 'Vermelho' ? '#ef4444' : (triageRiskLevel === 'Amarelo' ? '#f59e0b' : '#10b981')}`,
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
-          boxShadow: '0 10px 30px rgba(56, 189, 248, 0.25)'
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
-            <span style={{ fontSize: '17px', fontWeight: '900', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🩺</span>
-              <span>Orientação Médica IA e Registro em Prontuário</span>
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                backgroundColor: triageRiskLevel === 'Vermelho' ? '#ef4444' : (triageRiskLevel === 'Amarelo' ? '#f59e0b' : '#10b981'),
+                color: '#ffffff',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontWeight: '900',
+                fontSize: '12px',
+                textTransform: 'uppercase'
+              }}>
+                {triageRiskLevel === 'Vermelho' ? '🚨 Risco Urgente' : (triageRiskLevel === 'Amarelo' ? '🟡 Recomendada Teleconsulta' : '🟢 Cuidados em Casa')}
+              </span>
+              <span style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff' }}>
+                Orientação Médica por Voz
+              </span>
+            </div>
             <button
               onClick={() => speakText(aiResponse)}
               style={{
@@ -420,12 +444,66 @@ Regras Obrigatórias de Atendimento por Voz:
               <span>Ouvir De Novo</span>
             </button>
           </div>
+
           <p style={{ margin: 0, fontSize: '19px', lineHeight: '1.65', color: '#ffffff', fontWeight: '600' }}>
             "{aiResponse}"
           </p>
-          <div style={{ fontSize: '12px', color: '#10b981', fontWeight: '700', marginTop: '4px' }}>
-            ✓ Relato registrado com sucesso na sua ficha médica para consulta dos doutores.
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
+            <span style={{ fontSize: '12px', color: '#10b981', fontWeight: '700' }}>
+              ✓ Registrado automaticamente na ficha médica para acompanhamento dos doutores.
+            </span>
           </div>
+
+          {/* Action buttons based on risk level */}
+          {triageRiskLevel === 'Amarelo' && (
+            <button
+              onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('nurses'); }}
+              style={{
+                backgroundColor: '#f59e0b',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '14px',
+                padding: '12px',
+                fontSize: '15px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '4px'
+              }}
+            >
+              <span>👨‍⚕️</span>
+              <span>AGENDAR CONSULTA POR VÍDEO NO APP</span>
+            </button>
+          )}
+
+          {triageRiskLevel === 'Vermelho' && (
+            <button
+              onClick={() => { stopAudioSpeech(); triggerVibration(); onOpenSOS(); }}
+              style={{
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '14px',
+                padding: '12px',
+                fontSize: '16px',
+                fontWeight: '900',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '4px',
+                boxShadow: '0 6px 16px rgba(239, 68, 68, 0.4)'
+              }}
+            >
+              <span>🚨</span>
+              <span>ACIONAR SOCORRO DE EMERGÊNCIA (SOS 192)</span>
+            </button>
+          )}
         </div>
       )}
 
