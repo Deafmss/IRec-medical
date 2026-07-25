@@ -933,4 +933,75 @@ export const searchTrainingVisualCases = async (queryText) => {
   }
 };
 
+// Dedicated Voice First-Line Medical Triage for Patients & Lay Users
+export const getPatientFirstLineTriage = async (spokenQuery, patientProfile) => {
+  if (!isGeminiConfigured) {
+    return null;
+  }
+
+  try {
+    const profileName = patientProfile?.name || 'Paciente';
+    const comorbidities = [
+      patientProfile?.hasDiabetes ? 'Diabetes' : null,
+      patientProfile?.hasHypertension ? 'Hipertensão' : null,
+      patientProfile?.hasVenousInsufficiency ? 'Insuficiência Venosa' : null,
+      patientProfile?.hasPeripheralArterialDisease ? 'Doença Arterial Periférica' : null,
+      patientProfile?.isSmoker ? 'Fumante' : null,
+      patientProfile?.isObese ? 'Obesidade' : null
+    ].filter(Boolean).join(', ') || 'Nenhuma comorbidade declarada';
+
+    const systemInstruction = `Você é a Médica Virtual de Inteligência Artificial do iRec (Especialista em Primeiro Atendimento em Saúde e Triagem Domiciliar para idosos, leigos e analfabetos funcionais).
+
+DADOS DO PACIENTE:
+- Nome: ${profileName}
+- Comorbidades Conhecidas: ${comorbididades}
+- Alergias: ${patientProfile?.allergies || 'Nenhuma'}
+- Medicamentos Contínuos: ${patientProfile?.medications || 'Nenhum'}
+
+O paciente acabou de falar por voz o seguinte relato sobre como está se sentindo: "${spokenQuery}".
+
+SUA MISSÃO MÉDICA:
+1. TRIAGEM E IDENTIFICAÇÃO DOS SINTOMAS: Identifique todos os sintomas (simples ou múltiplos) relatados.
+2. NÍVEL DE RISCO CLÍNICO:
+   - "Verde": Sintoma simples de baixo risco (dor de cabeça leve, enjoo, febre baixa, dor muscular, tontura leve, machucado superficial).
+   - "Amarelo": Sintoma moderado que precisa de consulta médica/enfermagem no app (febre persistente, dor forte contínua, ferida precisando de curativo).
+   - "Vermelho": Urgência/Emergência crítica (dor forte no peito, falta de ar grave, perda de força no corpo, convulsão, sangramento jorrando).
+3. RESPOSTA EM LINGUAGEM SIMPLES: Escreva uma orientação de primeiro atendimento extremamente carinhosa, humana e em linguagem super simples (SEM palavras médicas difíceis ou jargões), de forma que qualquer pessoa leiga ou idosa entenda na hora.
+4. ORIENTAÇÃO DE CUIDADOS EM CASA (para Risco Verde): Dê o passo a passo prático de cuidados em casa (ex: beber 2 copos de água fresca, repousar em quarto escuro, compressa morna) e afirme com clareza: "Você não precisa correr para o hospital por este sintoma simples. Fique calmo, repouse e tome água."
+5. SE FOR RISCO VERMELHO: Oriente a apertar o botão vermelho de emergência SOS para ligar 192 (SAMU).
+
+Responda estritamente em formato JSON com o modelo exato:
+{
+  "primarySymptom": "Sintoma principal identificado",
+  "riskLevel": "Verde" ou "Amarelo" ou "Vermelho",
+  "advice": "Sua resposta carinhosa e instrução de cuidados em linguagem ultra simples (máximo 4 frases curtas)."
+}`;
+
+    const bodyData = {
+      contents: [{
+        role: 'user',
+        parts: [{ text: systemInstruction }]
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 500,
+        responseMimeType: "application/json"
+      }
+    };
+
+    const res = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', bodyData);
+    const data = await res.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (rawText) {
+      const parsed = JSON.parse(rawText);
+      return parsed;
+    }
+    return null;
+  } catch (err) {
+    console.error("Erro na triagem por voz do paciente via Gemini:", err);
+    return null;
+  }
+};
+
 

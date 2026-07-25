@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { chatWithDoctorCopilot } from '../services/geminiService';
+import { getPatientFirstLineTriage } from '../services/geminiService';
 import { speakNaturalText } from '../utils/speechUtils';
 import { updateClinicalProfile } from '../services/supabaseService';
 
@@ -142,34 +142,33 @@ export default function AccessibleDashboard({
     setLoadingAi(true);
 
     try {
-      const systemPrompt = `Você é a Médica de Inteligência Artificial do iRec (Especialista em Primeiro Atendimento Domiciliar e Triagem para idosos, leigos e analfabetos).
+      // Call dedicated Patient Voice Triage AI
+      const aiTriageResult = await getPatientFirstLineTriage(cleanText, clinicalProfile);
 
-O paciente relatou por voz o seguinte sintoma/situação: "${cleanText}".
+      let replyText = "";
+      let calculatedRisk = "Verde";
 
-SUA MISSÃO MÉDICA EM 4 PASSOS:
-1. IDENTIFICAÇÃO E AVALIAÇÃO DE RISCO: Avalie os sintomas relatados e determine se é um sintoma simples (Risco Verde = Cuidados em Casa), sintoma que precisa de consulta (Risco Amarelo = Teleconsulta no App) ou Emergência Crítica (Risco Vermelho = Urgência SOS 192).
-2. LINGUAGEM SIMPLES E ACOLHEDORA: Responda em português extremamente simples, humano, carinhoso e claro (SEM jargões médicos ou palavras difíceis), de forma que qualquer pessoa leiga ou idosa entenda na hora.
-3. ORIENTAÇÃO DE PRIMEIRO ATENDIMENTO PASSO A PASSO: Se for sintoma leve (dor de cabeça, enjoo, febre baixa, dor nas costas, ferida leve), dê o procedimento prático de cuidados simples em casa (ex: beber 2 copos de água, repousar em quarto escuro, compressa morna, lavar com soro) e afirme com clareza: "Você não precisa correr para o hospital por este sintoma simples. Fique calmo e repouse."
-4. SE FOR URGÊNCIA (dor no peito, falta de ar grave, perda de força/fala): Oriente a apertar o botão vermelho de emergência SOS para ligar 192.
-
-Responda em 3 a 4 frases curtas e acolhedoras.`;
-
-      const result = await chatWithDoctorCopilot(systemPrompt, [{ role: 'user', content: cleanText }], clinicalProfile, [], null);
-      
-      const reply = result?.reply || "Entendi seu relato. Para sintomas simples, o melhor é descansar em local fresco e beber água. Se a dor for muito forte ou tiver falta de ar, aperte o botão vermelho SOS.";
-      
-      // Determine Clinical Risk Level for UI & Prontuário
-      const lower = (cleanText + ' ' + reply).toLowerCase();
-      let calculatedRisk = 'Verde';
-      if (lower.includes('urgência') || lower.includes('sos') || lower.includes('192') || lower.includes('emergência') || lower.includes('vermelho')) {
-        calculatedRisk = 'Vermelho';
-      } else if (lower.includes('teleconsulta') || lower.includes('médico') || lower.includes('enfermeiro') || lower.includes('amarelo')) {
-        calculatedRisk = 'Amarelo';
+      if (aiTriageResult && aiTriageResult.advice) {
+        replyText = aiTriageResult.advice;
+        calculatedRisk = aiTriageResult.riskLevel || "Verde";
+      } else {
+        // High quality local fallback if Gemini is offline
+        const lower = cleanText.toLowerCase();
+        if (lower.includes('peito') || lower.includes('ar') || lower.includes('avc') || lower.includes('sangue')) {
+          calculatedRisk = 'Vermelho';
+          replyText = 'ATENÇÃO: Este sintoma é um sinal de alerta! Mantenha a calma, sente-se e aperte o botão vermelho de emergência SOS para ligar 192 (SAMU).';
+        } else if (lower.includes('febre') || lower.includes('ferida') || lower.includes('dor')) {
+          calculatedRisk = 'Amarelo';
+          replyText = 'Entendi seu desconforto. Se os sintomas continuarem por mais de 24 horas, recomendamos agendar uma consulta rápida por vídeo com nossos médicos no próprio app iRec sem sair de casa.';
+        } else {
+          calculatedRisk = 'Verde';
+          replyText = 'Olá! Para este sintoma leve, o procedimento recomendado é tomar 2 copos de água fresca, repousar em um ambiente calmo e escuro e evitar esforços. Você não precisa ir ao hospital por este sintoma simples. Fique calmo!';
+        }
       }
 
       setTriageRiskLevel(calculatedRisk);
-      setAiResponse(reply);
-      speakText(reply);
+      setAiResponse(replyText);
+      speakText(replyText);
 
       // AUTOMATICALLY REGISTER TRIAGE REPORT IN PATIENT'S CLINICAL PRONTUÁRIO
       if (clinicalProfile && clinicalProfile.id) {
@@ -177,7 +176,8 @@ Responda em 3 a 4 frases curtas e acolhedoras.`;
           id: `triage_${Date.now()}`,
           date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           symptom: cleanText,
-          aiTriageReply: reply,
+          primarySymptom: aiTriageResult?.primarySymptom || categoryTitle || 'Sintoma Relatado por Voz',
+          aiTriageReply: replyText,
           riskLevel: calculatedRisk
         };
 
