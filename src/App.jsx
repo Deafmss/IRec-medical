@@ -714,6 +714,7 @@ export default function App() {
           return (
             <AccessibleDashboard 
               clinicalProfile={clinicalProfile} 
+              setClinicalProfile={setClinicalProfile}
               setActiveTab={setActiveTab} 
               onOpenSOS={() => setShowSOSModal(true)} 
             />
