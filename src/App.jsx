@@ -961,9 +961,9 @@ export default function App() {
               src="/logo.png" 
               alt="iRec Logo" 
               style={{ 
-                height: isSidebarCollapsed ? '28px' : '36px',
+                height: isSidebarCollapsed ? '34px' : '52px',
                 objectFit: 'contain',
-                maxWidth: isSidebarCollapsed ? '28px' : '110px',
+                maxWidth: isSidebarCollapsed ? '34px' : '165px',
                 transition: 'all 0.2s ease',
                 backgroundColor: 'transparent'
               }} 
@@ -1286,9 +1286,9 @@ export default function App() {
             src="/logo.png" 
             alt="iRec Logo" 
             style={{ 
-              height: '28px',
+              height: '40px',
               objectFit: 'contain',
-              maxWidth: '90px',
+              maxWidth: '140px',
               backgroundColor: 'transparent'
             }} 
           />

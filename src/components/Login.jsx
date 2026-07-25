@@ -531,11 +531,11 @@ export default function Login({ onLoginSuccess }) {
             src="/logo.png" 
             alt="iRec Logo" 
             style={{ 
-              height: '60px', 
+              height: '80px', 
               objectFit: 'contain',
-              maxWidth: '180px',
+              maxWidth: '240px',
               backgroundColor: 'transparent',
-              marginBottom: '10px'
+              marginBottom: '12px'
             }} 
           />
           <p className="login-subtitle">Plataforma Inteligente de Cuidado de Feridas</p>
