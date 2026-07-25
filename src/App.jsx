@@ -89,6 +89,18 @@ export default function App() {
   const [showNotificationPromptModal, setShowNotificationPromptModal] = useState(false);
   const [showIOSInstallBanner, setShowIOSInstallBanner] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  // Detect standalone mode (app installed on home screen)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkStandalone = 
+        window.navigator.standalone || 
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (document.referrer && document.referrer.includes('android-app://'));
+      setIsStandalone(!!checkStandalone);
+    }
+  }, []);
 
   // Capture Android PWA install prompt
   useEffect(() => {
@@ -118,8 +130,8 @@ export default function App() {
   useEffect(() => {
     if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-      if (isIOS && !isStandalone) {
+      const isAppStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+      if (isIOS && !isAppStandalone) {
         setShowIOSInstallBanner(true);
       }
     }
@@ -1283,28 +1295,30 @@ export default function App() {
         </div>
         
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* PWA Direct Install Button */}
-          <button
-            onClick={handleInstallAppClick}
-            style={{
-              backgroundColor: '#10b981',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '5px 9px',
-              fontSize: '11px',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
-            }}
-            title="Instalar iRec no Celular ou Computador"
-          >
-            <span>📲</span>
-            <span>Instalar App</span>
-          </button>
+          {/* PWA Direct Install Button (Visible ONLY when browsing in regular browser, hidden once installed) */}
+          {!isStandalone && (
+            <button
+              onClick={handleInstallAppClick}
+              style={{
+                backgroundColor: '#10b981',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '5px 9px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
+              }}
+              title="Instalar iRec no Celular ou Computador"
+            >
+              <span>📲</span>
+              <span>Instalar App</span>
+            </button>
+          )}
 
           {/* Patient UI Mode Toggle Button */}
           {currentUser?.role === 'patient' && (
