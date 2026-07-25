@@ -154,15 +154,18 @@ export default function AccessibleDashboard({
       } else {
         // High quality local fallback if Gemini is offline
         const lower = cleanText.toLowerCase();
-        if (lower.includes('peito') || lower.includes('ar') || lower.includes('avc') || lower.includes('sangue')) {
+        if (lower.includes('peito') || lower.includes('falta de ar') || lower.includes('avc') || lower.includes('jorrando')) {
           calculatedRisk = 'Vermelho';
-          replyText = 'ATENÇÃO: Este sintoma é um sinal de alerta! Mantenha a calma, sente-se e aperte o botão vermelho de emergência SOS para ligar 192 (SAMU).';
-        } else if (lower.includes('febre') || lower.includes('ferida') || lower.includes('dor')) {
+          replyText = 'ATENÇÃO: Este sintoma é um sinal de urgência. Mantenha a calma, sente-se e aperte o botão vermelho de emergência SOS para ligar 192 (SAMU).';
+        } else if (lower.includes('cabeça') || lower.includes('enjoo') || lower.includes('tontura') || lower.includes('cansaço') || lower.includes('muscular')) {
+          calculatedRisk = 'Verde';
+          replyText = 'Olá! Esta é uma situação simples para cuidar em casa. Tome 2 copos de água fresca, repouse em um quarto calmo e escuro e evite telas. Você NÃO precisa ir ao hospital por esta dor de cabeça. Fique calmo e repouse!';
+        } else if (lower.includes('febre alta') || lower.includes('secreção')) {
           calculatedRisk = 'Amarelo';
           replyText = 'Entendi seu desconforto. Se os sintomas continuarem por mais de 24 horas, recomendamos agendar uma consulta rápida por vídeo com nossos médicos no próprio app iRec sem sair de casa.';
         } else {
           calculatedRisk = 'Verde';
-          replyText = 'Olá! Para este sintoma leve, o procedimento recomendado é tomar 2 copos de água fresca, repousar em um ambiente calmo e escuro e evitar esforços. Você não precisa ir ao hospital por este sintoma simples. Fique calmo!';
+          replyText = 'Olá! Para este sintoma leve, o procedimento recomendado é tomar 2 copos de água fresca e repousar em um ambiente calmo. Você não precisa ir ao hospital por este sintoma simples. Fique calmo!';
         }
       }
 

@@ -968,20 +968,19 @@ DADOS DO PACIENTE:
 O paciente acabou de falar por voz o seguinte relato sobre como está se sentindo: "${spokenQuery}".
 
 SUA MISSÃO MÉDICA:
-1. TRIAGEM E IDENTIFICAÇÃO DOS SINTOMAS: Identifique todos os sintomas (simples ou múltiplos) relatados.
-2. NÍVEL DE RISCO CLÍNICO:
-   - "Verde": Sintoma simples de baixo risco (dor de cabeça leve, enjoo, febre baixa, dor muscular, tontura leve, machucado superficial).
-   - "Amarelo": Sintoma moderado que precisa de consulta médica/enfermagem no app (febre persistente, dor forte contínua, ferida precisando de curativo).
-   - "Vermelho": Urgência/Emergência crítica (dor forte no peito, falta de ar grave, perda de força no corpo, convulsão, sangramento jorrando).
-3. RESPOSTA EM LINGUAGEM SIMPLES: Escreva uma orientação de primeiro atendimento extremamente carinhosa, humana e em linguagem super simples (SEM palavras médicas difíceis ou jargões), de forma que qualquer pessoa leiga ou idosa entenda na hora.
-4. ORIENTAÇÃO DE CUIDADOS EM CASA (para Risco Verde): Dê o passo a passo prático de cuidados em casa (ex: beber 2 copos de água fresca, repousar em quarto escuro, compressa morna) e afirme com clareza: "Você não precisa correr para o hospital por este sintoma simples. Fique calmo, repouse e tome água."
-5. SE FOR RISCO VERMELHO: Oriente a apertar o botão vermelho de emergência SOS para ligar 192 (SAMU).
+1. TRIAGEM E IDENTIFICAÇÃO DOS SINTOMAS: Identifique os sintomas relatados.
+2. REGRAS RIGOROSAS DE RISCO CLÍNICO:
+   - "Verde" (RISCO BAIXO / CUIDADOS EM CASA): Dor de cabeça isolada, enjoo, tontura leve, febre baixa, cansaço, dor de barriga simples ou corte superficial SÃO RIGOROSAMENTE RISCO VERDE. Diga de forma clara e tranquila que a pessoa DEVE cuidar em casa e que NÃO precisa ir ao hospital.
+   - "Amarelo" (RISCO MODERADO / TELECONSULTA NO APP): Sintomas que persistem por dias ou necessitam de avaliação de curativo especial.
+   - "Vermelho" (URGÊNCIA / EMERGÊNCIA): Dor no peito com aperto, falta de ar grave, perda de força/fala (AVC), perda de consciência ou sangramento arterial jorrando.
+3. RESPOSTA EM LINGUAGEM ULTRA SIMPLES: Escreva uma orientação extremamente humana, carinhosa e em linguagem simples (SEM jargões médicos), de forma que qualquer pessoa entenda na hora.
+4. PARA DOR DE CABEÇA OU ENJOO (RISCO VERDE): Oriente a tomar 2 copos de água fresca, repousar em quarto escuro e tranquilo e afirme com clareza: "Você não precisa ir ao hospital por esta dor de cabeça. Fique calmo, tome água e repouse."
 
 Responda estritamente em formato JSON com o modelo exato:
 {
   "primarySymptom": "Sintoma principal identificado",
   "riskLevel": "Verde" ou "Amarelo" ou "Vermelho",
-  "advice": "Sua resposta carinhosa e instrução de cuidados em linguagem ultra simples (máximo 4 frases curtas)."
+  "advice": "Sua resposta carinhosa e instrução de cuidados em linguagem ultra simples (máximo 3 a 4 frases)."
 }`;
 
     const bodyData = {
