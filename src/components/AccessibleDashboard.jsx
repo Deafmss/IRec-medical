@@ -2,82 +2,85 @@ import React, { useState, useEffect } from 'react';
 import { chatWithDoctorCopilot } from '../services/geminiService';
 import { speakNaturalText } from '../utils/speechUtils';
 
-// Humanized non-robotic fallback responses for short/unclear audio noise
+// Humanized non-robotic fallback responses
 const NOISE_FALLBACK_PHRASES = [
-  "Olá! Não consegui entender direitinho. Pode me contar com calma: o que você está sentindo hoje?",
-  "Acho que o som saiu um pouco baixinho. Aperte o botão azul e me diga se está com dor de cabeça, enjoo ou febre.",
-  "Ops, não deu para te ouvir bem. Pode falar bem pertinho do celular para eu te orientar?",
-  "Não entendi a gravação. Me diga: o que está te incomodando no seu corpo hoje?"
+  "Olá! Não consegui te ouvir direito. Por favor, aperte o microfone de novo e fale bem pertinho do celular.",
+  "Ops, o som saiu um pouco baixinho. Pode repetir o que você está sentindo com calma?",
+  "Acho que um barulho atrapalhou a gravação. Conte para mim: você está com dor, enjoo ou febre?"
 ];
 
 const getRandomNoisePhrase = () => {
   return NOISE_FALLBACK_PHRASES[Math.floor(Math.random() * NOISE_FALLBACK_PHRASES.length)];
 };
 
-// First-Line Virtual Health Assistant Engine (Cuidados Primários e Triagem Carinhosa)
-const getSmartLocalAdvice = (queryText) => {
-  const text = (queryText || '').toLowerCase();
-
-  // 1. DOR DE CABEÇA / ENXAQUECA / TONTURA
-  if (text.includes('cabeça') || text.includes('enxaqueca') || text.includes('tontura') || text.includes('labirintite')) {
-    return {
-      title: '🤕 ORIENTAÇÃO PARA DOR DE CABEÇA E TONTURA LEVE',
-      isEmergency: false,
-      text: 'Olá! Entendo seu desconforto. Para dor de cabeça ou tontura leve, o melhor a fazer é ficar em um quarto silencioso e com pouca luz, tomar um bom copo de água e repousar. Você não precisa ir ao hospital por uma dor de cabeça simples! Fique calmo e descanse. Só procure a emergência se a dor surgir de repente de forma insuportável ou se tiver visão borrada e perda de força no braço.'
-    };
+// Interactive Triage Database (Triagem Guiada de Risco e Causa)
+const INTERACTIVE_TRIAGE_DATA = {
+  head: {
+    id: 'head',
+    title: 'DOR DE CABEÇA OU TONTURA',
+    icon: '🤕',
+    color: '#f59e0b',
+    step1Question: 'Sua dor de cabeça começou aos poucos após um dia cansativo, sol forte ou pouca água?',
+    step2Question: 'Você está com febre alta, visão embaçada, boca torta ou vômitos fortes?',
+    greenResult: '🟢 TRIAGEM: RISCO BAIXO (CUIDADOS EM CASA)\nA causa provável é tensão ou falta de água. Beba 2 copos de água fresca, repouse em um quarto calmo e escuro e evite telas. Você NÃO precisa ir ao hospital por isso!',
+    yellowResult: '🟡 TRIAGEM: RISCO MODERADO (TELECONSULTA NO APP)\nComo a dor persiste e está incomodando, recomendamos fazer uma consulta por vídeo no próprio app iRec com nossos médicos, sem precisar sair de casa.',
+    redResult: '🔴 TRIAGEM: ALERTA DE URGÊNCIA (SOS 192)\nATENÇÃO: Dor de cabeça repentina e violenta acompanhada de visão alterada é sinal de emergência. Aperte o botão vermelho SOS para ligar 192 (SAMU).'
+  },
+  fever: {
+    id: 'fever',
+    title: 'FEBRE OU CALAFRIO',
+    icon: '🤒',
+    color: '#ef4444',
+    step1Question: 'A febre começou recentemente com corpo pesado ou sintomas leves de resfriado?',
+    step2Question: 'A febre passou de 38.5°C mesmo após tomar banho morno ou você sente falta de ar?',
+    greenResult: '🟢 TRIAGEM: RISCO BAIXO (CUIDADOS EM CASA)\nVista roupas leves, tome bastante água e repouse. Se a febre for menor que 38,5°C, você pode se cuidar em casa com segurança sem ir ao hospital.',
+    yellowResult: '🟡 TRIAGEM: RISCO MODERADO (AVALIAÇÃO MÉDICA)\nComo a febre persiste, recomendamos agendar um atendimento por vídeo no app para orientação de medicamentos.',
+    redResult: '🔴 TRIAGEM: ALERTA DE URGÊNCIA (SOS 192)\nFebre muito alta acompanhada de falta de ar exige atendimento de emergência. Aperte o botão vermelho SOS!'
+  },
+  belly: {
+    id: 'belly',
+    title: 'ENJOO OU DOR NA BARRIGA',
+    icon: '🤢',
+    color: '#8b5cf6',
+    step1Question: 'O enjoo ou dor de barriga começou após comer algo gorduroso ou fora da rotina?',
+    step2Question: 'Você está vomitando continuamente sem conseguir beber água ou sentindo dor muito forte no lado direito da barriga?',
+    greenResult: '🟢 TRIAGEM: RISCO BAIXO (CUIDADOS EM CASA)\nTome pequenos goles de água gelada ou chá morno, evite comida pesada e repouse. Não é necessário ir ao hospital por enjoo simples!',
+    yellowResult: '🟡 TRIAGEM: RISCO MODERADO (CONSULTA NO APP)\nSe o desconforto na barriga continuar por mais de 24 horas, fale com um médico ou enfermeiro pelo próprio aplicativo.',
+    redResult: '🔴 TRIAGEM: ALERTA DE URGÊNCIA (SOS 192)\nVômitos graves contínuos com dor abdominal intensa requerem avaliação de emergência no pronto-socorro.'
+  },
+  wound: {
+    id: 'wound',
+    title: 'FERIDA OU CORTE',
+    icon: '🩺',
+    color: '#0284c7',
+    step1Question: 'É um corte pequeno ou ferida de pele sem sangramento jorrando?',
+    step2Question: 'A ferida está saindo secreção amarelada com mal cheiro, vermelhidão espalhando ou dor intensa?',
+    greenResult: '🟢 TRIAGEM: RISCO BAIXO (CUIDADO DOMICILIAR)\nLave com soro fisiológico ou água limpa corrente e proteja com gaze. Você pode agendar uma avaliação com nossos enfermeiros no app sem sair de casa!',
+    yellowResult: '🟡 TRIAGEM: RISCO MODERADO (AVALIAÇÃO DE ENFERMAGEM)\nA ferida precisa de curativo especial. Agende uma visita com um enfermeiro estomaterapeuta na aba de profissionais.',
+    redResult: '🔴 TRIAGEM: ALERTA DE URGÊNCIA\nSe houver sangramento intenso não estancado ou corte profundo, procure o pronto-socorro mais próximo.'
+  },
+  chest: {
+    id: 'chest',
+    title: 'DOR NO PEITO (URGÊNCIA)',
+    icon: '🫀',
+    color: '#dc2626',
+    step1Question: 'A dor no peito é um aperto forte que queima ou espalha para o braço esquerdo ou pescoço?',
+    step2Question: 'Você está com suor frio, falta de ar ou sensação de desmaio?',
+    greenResult: '🟢 TRIAGEM: TENSÃO MUSCULAR OU GASTRITE\nSe for uma pontada leve ao respirar após esforço, tente se sentar e relaxar. Se a dor persistir, consulte um médico.',
+    yellowResult: '🔴 TRIAGEM: URGÊNCIA MÉDICA\nAperto no peito deve ser avaliado com prioridade. Aperte o botão vermelho SOS para orientação imediata.',
+    redResult: '🔴 TRIAGEM: EMERGÊNCIA (SOS 192)\n🚨 ATENÇÃO: Aperto no peito com suor frio é sinal de emergência! Aperte o botão vermelho SOS agora para ligar para o 192 (SAMU).'
+  },
+  breath: {
+    id: 'breath',
+    title: 'FALTA DE AR (URGÊNCIA)',
+    icon: '🫁',
+    color: '#dc2626',
+    step1Question: 'A falta de ar surgiu após cansaço físico ou quando você tenta falar frases inteiras?',
+    step2Question: 'Os seus lábios estão arroxeados ou você não consegue puxar o ar de jeito nenhum?',
+    greenResult: '🟢 TRIAGEM: CANSASO OU ANSIEDADE LEVE\nSente-se ereto em local ventilado, tome água devagar e respire pelo nariz puxando o ar com calma.',
+    yellowResult: '🔴 TRIAGEM: AVALIAÇÃO DE URGÊNCIA\nDificuldade para respirar precisa de cuidado rápido. Aperte o botão vermelho SOS para suporte.',
+    redResult: '🔴 TRIAGEM: EMERGÊNCIA CRÍTICA (SOS 192)\n🚨 URGÊNCIA: Falta de ar grave exige socorro imediato. Aperte o botão vermelho SOS!'
   }
-
-  // 2. ENJOO / MÁ DIGESTÃO / VÔMITO / DOR DE BARRIGA
-  if (text.includes('enjoo') || text.includes('estômago') || text.includes('barriga') || text.includes('vômito') || text.includes('vomito') || text.includes('náusea') || text.includes('digestão')) {
-    return {
-      title: '🤢 ORIENTAÇÃO PARA ENJOO OU MAL-ESTAR ABDOMINAL',
-      isEmergency: false,
-      text: 'Sinto muito pelo enjoo! Para aliviar o desconforto na barriga, sente-se confortavelmente, tome pequenos goles de água fresca ou chá morno e evite alimentos gordurosos. Não há necessidade de ir ao pronto-socorro por um enjoo comum. Descanse e aguarde o organismo se recuperar com calma.'
-    };
-  }
-
-  // 3. FEBRE LEVE / CALAFRIO / GRIPE
-  if (text.includes('febre') || text.includes('calafrio') || text.includes('gripe') || text.includes('resfriado') || text.includes('coriza')) {
-    return {
-      title: '🤒 ORIENTAÇÃO PARA FEBRE OU GRIPE LEVE',
-      isEmergency: false,
-      text: 'Se estiver com febre baixa ou corpo pesado, coloque roupas leves, beba bastante água e repouse. Meça sua temperatura com o termômetro. Se estiver abaixo de 38,5°C, você pode se cuidar em casa com toda segurança sem precisar ir ao hospital.'
-    };
-  }
-
-  // 4. DOR NAS COSTAS / MUSCULAR / CORPO MOÍDO
-  if (text.includes('costas') || text.includes('pescoço') || text.includes('muscular') || text.includes('corpo') || text.includes('coluna') || text.includes('perna')) {
-    return {
-      title: '💪 ORIENTAÇÃO PARA DOR MUSCULAR OU NAS COSTAS',
-      isEmergency: false,
-      text: 'Dor nas costas ou tensão muscular melhora muito descansando em uma posição confortável e colocando uma compressa morna por 15 minutos. Evite carregar peso. É uma dor comum do dia a dia e você não precisa ir ao hospital por isso.'
-    };
-  }
-
-  // 5. FERIDA / CORTE / MACHUCADO
-  if (text.includes('ferida') || text.includes('corte') || text.includes('sangue') || text.includes('machucado') || text.includes('úlcera') || text.includes('curativo')) {
-    return {
-      title: '🩺 CUIDADO COM FERIDAS E CORTES',
-      isEmergency: false,
-      text: 'Para um corte ou ferida leve, lave delicadamente com soro fisiológico ou água corrente limpa e proteja com uma gaze. Não precisa ir ao hospital: você pode agendar uma avaliação com nossos enfermeiros especialistas no próprio aplicativo sem sair de casa!'
-    };
-  }
-
-  // 6. EMERGÊNCIAS REAIS (DOR NO PEITO / FALTA DE AR INTENSA / AVC)
-  if (text.includes('peito') || text.includes('coração') || text.includes('ar') || text.includes('sufocamento') || text.includes('desmaio') || text.includes('derrame') || text.includes('avc')) {
-    return {
-      title: '🚨 ATENÇÃO: SINAL DE URGÊNCIA',
-      isEmergency: true,
-      text: 'ATENÇÃO: Dor forte ou aperto no peito, falta de ar intensa ou perda repentina de força no corpo são sinais de urgência! Mantenha a calma, sente-se e aperte o botão vermelho de emergência SOS para ligar para o 192 (SAMU).'
-    };
-  }
-
-  // Default Empathetic First-Line Response
-  return {
-    title: '💙 PRIMEIRO ATENDIMENTO IREC',
-    isEmergency: false,
-    text: `Olá! Entendi que você está sentindo: "${queryText}". Para sintomas leves e desconfortos comuns, o melhor remedinho é manter a calma, tomar um copo de água fresca e descansar em um lugar bem confortável. Você não precisa ir ao hospital por sintomas simples. Fique tranquilo e se os sintomas continuarem, fale com nossos profissionais no aplicativo!`
-  };
 };
 
 export default function AccessibleDashboard({ 
@@ -85,12 +88,16 @@ export default function AccessibleDashboard({
   setActiveTab, 
   onOpenSOS 
 }) {
-  const [selectedSymptom, setSelectedSymptom] = useState(null);
   const [voiceQuery, setVoiceQuery] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [aiResponse, setAiResponse] = useState(null);
   const [loadingAi, setLoadingAi] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState('default');
+
+  // Interactive Triage State
+  const [activeTriage, setActiveTriage] = useState(null); // triage object from INTERACTIVE_TRIAGE_DATA
+  const [triageStep, setTriageStep] = useState(null); // 1 = cause, 2 = risk, 3 = result
+  const [step1Answer, setStep1Answer] = useState(null); // true = Sim, false = Nao
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -104,7 +111,19 @@ export default function AccessibleDashboard({
     }
   };
 
+  // IMMEDIATELY stop audio playback before performing any user action or recording
+  const stopAudioSpeech = () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
+  const speakText = (text) => {
+    speakNaturalText(text);
+  };
+
   const requestNotificationPermission = async () => {
+    stopAudioSpeech();
     triggerVibration();
     if (typeof window === 'undefined' || !('Notification' in window)) {
       alert("Seu navegador não suporta notificações de celular.");
@@ -132,55 +151,53 @@ export default function AccessibleDashboard({
     }
   };
 
-  const symptomCategories = [
-    {
-      id: 'head',
-      title: 'DOR DE CABEÇA / TONTURA',
-      icon: '🤕',
-      color: '#f59e0b',
-      guidance: 'Para dor de cabeça ou tontura leve, descanse em um quarto calmo e escuro, tome bastante água e repouse. Não é necessário ir ao hospital por dor de cabeça comum. Fique calmo!'
-    },
-    {
-      id: 'fever',
-      title: 'FEBRE LEVE OU CALAFRIO',
-      icon: '🤒',
-      color: '#ef4444',
-      guidance: 'Se estiver com febre baixa, vista roupas leves, tome água fresca e descanse. Se a febre for menor que 38,5°C, você pode se cuidar em casa com toda segurança.'
-    },
-    {
-      id: 'chest',
-      title: 'DOR NO PEITO (URGÊNCIA)',
-      icon: '🫀',
-      color: '#dc2626',
-      guidance: '🚨 ATENÇÃO: Dor forte ou aperto no peito é sinal de urgência! Mantenha a calma, sente-se e aperte o botão vermelho de emergência SOS para ligar 192.'
-    },
-    {
-      id: 'breath',
-      title: 'FALTA DE AR (URGÊNCIA)',
-      icon: '🫁',
-      color: '#dc2626',
-      guidance: '🚨 ATENÇÃO: Dificuldade intensa para respirar exige socorro rápido! Sente-se ereto e aperte o botão vermelho de emergência SOS.'
-    },
-    {
-      id: 'wound',
-      title: 'FERIDA OU CORTE',
-      icon: '🩺',
-      color: '#0284c7',
-      guidance: 'Lave o corte com soro ou água limpa e proteja com pano limpo. Não precisa ir ao hospital: você pode agendar um atendimento de enfermagem no próprio aplicativo!'
-    },
-    {
-      id: 'belly',
-      title: 'ENJOO OU DOR NA BARRIGA',
-      icon: '🤢',
-      color: '#8b5cf6',
-      guidance: 'Para enjoo ou dor de barriga simples, tome pequenos goles de água fresca e descanse. Não há necessidade de ir ao hospital por um enjoo comum. Aguarde passar!'
-    }
-  ];
+  // START INTERACTIVE TRIAGE FLOW FOR A SYMPTOM
+  const startInteractiveTriage = (triageId) => {
+    stopAudioSpeech();
+    triggerVibration();
 
-  const speakText = (text) => {
-    speakNaturalText(text);
+    const data = INTERACTIVE_TRIAGE_DATA[triageId] || INTERACTIVE_TRIAGE_DATA['head'];
+    setActiveTriage(data);
+    setTriageStep(1);
+    setStep1Answer(null);
+
+    const questionText = `Triagem de ${data.title}. Pergunta 1: ${data.step1Question}. Responda SIM ou NÃO nos botões abaixo.`;
+    setAiResponse(questionText);
+    speakText(questionText);
   };
 
+  // HANDLE INTERACTIVE TRIAGE STEP ANSWERS (SIM / NAO)
+  const handleTriageAnswer = (answerBool) => {
+    stopAudioSpeech();
+    triggerVibration();
+
+    if (!activeTriage) return;
+
+    if (triageStep === 1) {
+      setStep1Answer(answerBool);
+      setTriageStep(2);
+      const q2Text = `Entendido. Pergunta 2 de segurança: ${activeTriage.step2Question}. Responda SIM ou NÃO nos botões abaixo.`;
+      setAiResponse(q2Text);
+      speakText(q2Text);
+    } else if (triageStep === 2) {
+      setTriageStep(3); // Result
+      let resultText = '';
+      if (answerBool === true) {
+        // High Risk / Emergency
+        resultText = activeTriage.redResult;
+      } else if (step1Answer === true) {
+        // Low Risk / Home Care
+        resultText = activeTriage.greenResult;
+      } else {
+        // Moderate Risk / Telemedicine
+        resultText = activeTriage.yellowResult;
+      }
+      setAiResponse(resultText);
+      speakText(resultText);
+    }
+  };
+
+  // PROCESS SPOKEN VOICE QUERY WITH INTERACTIVE TRIAGE MATCHING
   const processSymptomQuery = async (queryText) => {
     const cleanText = queryText ? queryText.trim() : '';
     if (!cleanText || cleanText.length < 3 || /^(é|hum|ah|eh|oh|oi)$/i.test(cleanText)) {
@@ -190,43 +207,63 @@ export default function AccessibleDashboard({
       return;
     }
 
-    // 1. INSTANT FIRST-LINE HEALTH ADVICE (Immediate Audio Feedback)
-    const localAdvice = getSmartLocalAdvice(cleanText);
-    setAiResponse(localAdvice.text);
-    speakText(localAdvice.text);
+    const lower = cleanText.toLowerCase();
 
-    // 2. ENHANCE WITH GEMINI AI IF AVAILABLE
+    // Map spoken keywords to interactive triage
+    if (lower.includes('cabeça') || lower.includes('enxaqueca') || lower.includes('tontura')) {
+      startInteractiveTriage('head');
+      return;
+    }
+    if (lower.includes('enjoo') || lower.includes('barriga') || lower.includes('estômago') || lower.includes('vômito')) {
+      startInteractiveTriage('belly');
+      return;
+    }
+    if (lower.includes('febre') || lower.includes('calafrio') || lower.includes('gripe')) {
+      startInteractiveTriage('fever');
+      return;
+    }
+    if (lower.includes('ferida') || lower.includes('corte') || lower.includes('machucado') || lower.includes('sangue')) {
+      startInteractiveTriage('wound');
+      return;
+    }
+    if (lower.includes('peito') || lower.includes('coração')) {
+      startInteractiveTriage('chest');
+      return;
+    }
+    if (lower.includes('ar') || lower.includes('respirar') || lower.includes('sufoco')) {
+      startInteractiveTriage('breath');
+      return;
+    }
+
+    // Default Fallback: AI Assistant
     setLoadingAi(true);
     try {
-      const systemPrompt = `Você é o Assistente iRec de Primeiro Atendimento em Saúde para idosos e leigos. O usuário disse: "${cleanText}". Dê uma orientação de primeiro atendimento extremamente simples, carinhosa e prática para cuidar em casa (ex: repousar, beber água, compressa morna). Acalme o paciente e deixe bem claro se é um sintoma simples que NÃO precisa ir ao hospital, ou se é urgência real. Máximo 3 frases curtas.`;
+      const systemPrompt = `Você é o Assistente iRec de Triagem de Saúde para idosos e leigos. O usuário disse: "${cleanText}". Dê uma resposta de triagem de primeiro atendimento muito simples e carinhosa. Diga se é algo simples para cuidar em casa (ex: repousar, tomar água) sem ir ao hospital, ou se é emergência. Máximo 3 frases curtas.`;
       const result = await chatWithDoctorCopilot(systemPrompt, [{ role: 'user', content: cleanText }], clinicalProfile, [], null);
       
-      if (result?.reply && result.reply.length > 15) {
-        setAiResponse(result.reply);
-        speakText(result.reply);
-      }
+      const reply = result?.reply || "Recebemos sua dúvida. Se for um sintoma leve, repouse e beba água. Se sentir dor forte, aperte o botão vermelho SOS.";
+      setAiResponse(reply);
+      speakText(reply);
     } catch (e) {
-      console.warn("[iRec Primeiro Atendimento] Usando conselho local inteligente de saúde:", e);
+      console.warn("[iRec Triagem] Erro no Gemini AI:", e);
+      const fallback = "Para sintomas leves, o melhor é descansar em ambiente calmo e beber água fresca. Não é preciso ir ao hospital por desconfortos simples.";
+      setAiResponse(fallback);
+      speakText(fallback);
     } finally {
       setLoadingAi(false);
     }
   };
 
-  const handleSelectSymptom = (cat) => {
-    triggerVibration();
-    setSelectedSymptom(cat);
-    const recommendation = cat.guidance;
-    setAiResponse(recommendation);
-    speakText(recommendation);
-  };
-
   const handleVoiceRecord = () => {
+    // CRITICAL BUG FIX: Immediately CANCEL any active audio speech narration before recording!
+    stopAudioSpeech();
     triggerVibration();
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      const msg = "Olá! Para ouvir uma orientação de primeiro atendimento, toque em uma das opções com desenho abaixo!";
+      const msg = "Para fazer a triagem por áudio, toque nas fotos dos sintomas abaixo!";
       speakText(msg);
-      alert("Seu navegador não suporta microfone automático. Toque nas fotos dos sintomas abaixo!");
+      alert("Seu navegador não suporta microfone automático. Toque nos sintomas abaixo!");
       return;
     }
 
@@ -250,7 +287,7 @@ export default function AccessibleDashboard({
 
       recognition.onerror = () => {
         setIsRecording(false);
-        const fallbackMsg = "Ops, não consegui te ouvir bem! Toque no botão de microfone e fale de novo perto do celular.";
+        const fallbackMsg = "Ops, não consegui te ouvir bem! Toque no botão de microfone e fale de novo pertinho do celular.";
         setAiResponse(fallbackMsg);
         speakText(fallbackMsg);
       };
@@ -303,14 +340,14 @@ export default function AccessibleDashboard({
               Olá, {clinicalProfile?.name?.split(' ')[0] || 'Amigo(a)'}!
             </h1>
             <span style={{ fontSize: '15px', color: '#94a3b8', fontWeight: '600' }}>
-              Primeiro Atendimento iRec (Modo Fácil)
+              Triagem de Saúde iRec (Modo Fácil)
             </span>
           </div>
         </div>
 
         {/* SOS Trigger */}
         <button
-          onClick={() => { triggerVibration(); onOpenSOS(); }}
+          onClick={() => { stopAudioSpeech(); triggerVibration(); onOpenSOS(); }}
           style={{
             backgroundColor: '#ef4444',
             color: '#ffffff',
@@ -355,7 +392,7 @@ export default function AccessibleDashboard({
         </button>
       )}
 
-      {/* Big Voice Button for First-Line Care */}
+      {/* Big Voice Button for First-Line Care (Interrupts Speech Instantly) */}
       <div style={{
         backgroundColor: isRecording ? '#dc2626' : '#0284c7',
         borderRadius: '24px',
@@ -376,7 +413,7 @@ export default function AccessibleDashboard({
           {isRecording ? 'OUVINDO... FALE O SEU SINTOMA!' : 'APERTE AQUI E FALE O QUE ESTÁ SENTINDO'}
         </span>
         <span style={{ fontSize: '13.5px', color: '#e0f2fe', fontWeight: '600' }}>
-          Exemplo: "Estou com dor de cabeça", "Estou com enjoo"
+          Ao clicar, o áudio do celular pausa na hora para te ouvir sem eco!
         </span>
       </div>
 
@@ -397,47 +434,139 @@ export default function AccessibleDashboard({
           fontSize: '18px',
           fontWeight: '700'
         }}>
-          ⏳ O assistente iRec está preparando sua orientação de saúde...
+          ⏳ O assistente iRec está calculando o risco da sua triagem...
         </div>
       )}
 
-      {aiResponse && !loadingAi && (
+      {/* INTERACTIVE TRIAGE CARD & STEP QUESTIONS */}
+      {activeTriage && triageStep !== null && (
         <div style={{
           backgroundColor: '#0f172a',
           borderRadius: '24px',
-          padding: '22px',
-          border: '3px solid #38bdf8',
+          padding: '24px',
+          border: `3px solid ${activeTriage.color}`,
           display: 'flex',
           flexDirection: 'column',
-          gap: '14px',
-          boxShadow: '0 8px 24px rgba(56, 189, 248, 0.2)'
+          gap: '16px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.4)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '18px', fontWeight: '800', color: '#38bdf8' }}>
-              🔊 Orientação de Primeiro Atendimento iRec:
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155', paddingBottom: '12px' }}>
+            <span style={{ fontSize: '18px', fontWeight: '900', color: activeTriage.color, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>{activeTriage.icon}</span>
+              <span>{activeTriage.title}</span>
             </span>
             <button
-              onClick={() => speakText(aiResponse)}
-              style={{
-                backgroundColor: '#0284c7',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '8px 16px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
+              onClick={() => { stopAudioSpeech(); setActiveTriage(null); setTriageStep(null); }}
+              style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}
             >
-              🔊 Ouvir De Novo
+              ✕
             </button>
           </div>
-          <p style={{ margin: 0, fontSize: '19px', lineHeight: '1.65', color: '#ffffff', fontWeight: '600' }}>
-            "{aiResponse}"
-          </p>
+
+          {/* STEP 1 & 2 INTERACTIVE QUESTION BUTTONS (SIM / NÃO) */}
+          {(triageStep === 1 || triageStep === 2) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <p style={{ margin: 0, fontSize: '19px', lineHeight: '1.6', color: '#ffffff', fontWeight: '700' }}>
+                {triageStep === 1 ? activeTriage.step1Question : activeTriage.step2Question}
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <button
+                  onClick={() => handleTriageAnswer(true)}
+                  style={{
+                    backgroundColor: '#10b981',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '16px',
+                    padding: '18px',
+                    fontSize: '22px',
+                    fontWeight: '900',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    boxShadow: '0 6px 16px rgba(16, 185, 129, 0.4)'
+                  }}
+                >
+                  <span>👍</span>
+                  <span>SIM</span>
+                </button>
+
+                <button
+                  onClick={() => handleTriageAnswer(false)}
+                  style={{
+                    backgroundColor: '#ef4444',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '16px',
+                    padding: '18px',
+                    fontSize: '22px',
+                    fontWeight: '900',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    boxShadow: '0 6px 16px rgba(239, 68, 68, 0.4)'
+                  }}
+                >
+                  <span>👎</span>
+                  <span>NÃO</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3 RESULT DISPLAY */}
+          {triageStep === 3 && aiResponse && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <p style={{ margin: 0, fontSize: '18px', lineHeight: '1.65', color: '#ffffff', fontWeight: '600', whitespace: 'pre-line' }}>
+                {aiResponse}
+              </p>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => speakText(aiResponse)}
+                  style={{
+                    backgroundColor: '#0284c7',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '10px 18px',
+                    fontWeight: '800',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>🔊</span>
+                  <span>Ouvir De Novo</span>
+                </button>
+
+                <button
+                  onClick={() => { stopAudioSpeech(); startInteractiveTriage(activeTriage.id); }}
+                  style={{
+                    backgroundColor: '#334155',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '10px 18px',
+                    fontWeight: '800',
+                    fontSize: '14px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔄 Refazer Triagem
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Symptom Selection Cards */}
+      {/* SYMPTOM SELECTION CARDS (STARTS INTERACTIVE TRIAGE) */}
       <div>
         <div style={{
           backgroundColor: 'var(--bg-secondary, #1e293b)',
@@ -448,17 +577,17 @@ export default function AccessibleDashboard({
           boxShadow: '0 4px 12px rgba(2, 132, 199, 0.15)'
         }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary, #ffffff)', margin: 0 }}>
-            👉 Ou toque na imagem do que está sentindo:
+            👉 Toque abaixo para iniciar a Triagem Guiada de Saúde:
           </h2>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-          {symptomCategories.map((cat) => (
+          {Object.values(INTERACTIVE_TRIAGE_DATA).map((cat) => (
             <button
               key={cat.id}
-              onClick={() => handleSelectSymptom(cat)}
+              onClick={() => startInteractiveTriage(cat.id)}
               style={{
-                backgroundColor: selectedSymptom?.id === cat.id ? cat.color : '#1e293b',
+                backgroundColor: activeTriage?.id === cat.id ? cat.color : '#1e293b',
                 border: `3px solid ${cat.color}`,
                 borderRadius: '20px',
                 padding: '20px 14px',
@@ -484,7 +613,7 @@ export default function AccessibleDashboard({
       {/* Direct Quick Action Buttons */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '10px' }}>
         <button
-          onClick={() => { triggerVibration(); setActiveTab('upload'); }}
+          onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('upload'); }}
           style={{
             backgroundColor: '#10b981',
             color: '#ffffff',
@@ -506,7 +635,7 @@ export default function AccessibleDashboard({
         </button>
 
         <button
-          onClick={() => { triggerVibration(); setActiveTab('nurses'); }}
+          onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('nurses'); }}
           style={{
             backgroundColor: '#8b5cf6',
             color: '#ffffff',
