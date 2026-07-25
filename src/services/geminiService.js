@@ -513,12 +513,19 @@ export const chatWithDoctorCopilot = async (message, chatHistory, patientProfile
   }
 
   try {
-    const formattedHistory = chatHistory.slice(-6).map(msg => ({
+    const safeHistory = Array.isArray(chatHistory) ? chatHistory : [];
+    const safeWounds = Array.isArray(woundEntries) ? woundEntries : [];
+    const docName = doctorProfile?.name || 'Profissional de Saúde';
+    const docSpec = doctorProfile?.specialty || 'Clínica Geral';
+    const docCrm = doctorProfile?.crm || 'Não informado';
+    const patName = patientProfile?.name || 'Paciente';
+
+    const formattedHistory = safeHistory.slice(-6).map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'model',
       parts: [{ text: msg.text }]
     }));
 
-    const formattedWounds = woundEntries.map(entry => `
+    const formattedWounds = safeWounds.map(entry => `
 - Data: ${entry.date}
   Tipo da Ferida: ${entry.type}
   Estágio: ${entry.lesionStage}
@@ -531,22 +538,22 @@ export const chatWithDoctorCopilot = async (message, chatHistory, patientProfile
 `).join('\n');
 
     const systemPrompt = `Você é o "Copiloto Médico de IA da Plataforma iRec", um assistente de inteligência artificial de alta especialização médica em cicatrização de feridas (Wound Care), dermatologia e cirurgia vascular.
-Você auxilia o(a) Dr(a). ${doctorProfile.name} (Especialidade: ${doctorProfile.specialty}, CRM: ${doctorProfile.crm}) a analisar casos clínicos, triar a evolução de lesões cutâneas e chegar a laudos diagnósticos precisos.
+Você auxilia o(a) Dr(a). ${docName} (Especialidade: ${docSpec}, CRM: ${docCrm}) a analisar casos clínicos, triar a evolução de lesões cutâneas e chegar a laudos diagnósticos precisos.
 
 DADOS DO PACIENTE ATIVO:
-- Nome: ${patientProfile.name}
-- Idade/Nascimento: ${patientProfile.birthDate || 'Não informada'}
-- Sexo: ${patientProfile.gender || 'Não informado'}
-- Diabetes: ${patientProfile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão: ${patientProfile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${patientProfile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${patientProfile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-- Tabagismo: ${patientProfile.isSmoker ? 'Sim (Fumante)' : 'Não'}
-- Obesidade: ${patientProfile.isObese ? 'Sim' : 'Não'}
-- Histórico de Amputação: ${patientProfile.hasAmputationHistory ? 'Sim' : 'Não'}
-- Outras Condições: ${patientProfile.otherConditions || 'Nenhuma'}
-- Alergias Conhecidas: ${patientProfile.allergies || 'Nenhuma'}
-- Medicamentos Contínuos: ${patientProfile.medications || 'Nenhum'}
+- Nome: ${patName}
+- Idade/Nascimento: ${patientProfile?.birthDate || 'Não informada'}
+- Sexo: ${patientProfile?.gender || 'Não informado'}
+- Diabetes: ${patientProfile?.hasDiabetes ? 'Sim' : 'Não'}
+- Hipertensão: ${patientProfile?.hasHypertension ? 'Sim' : 'Não'}
+- Insuficiência Venosa: ${patientProfile?.hasVenousInsufficiency ? 'Sim' : 'Não'}
+- Doença Arterial Periférica: ${patientProfile?.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
+- Tabagismo: ${patientProfile?.isSmoker ? 'Sim (Fumante)' : 'Não'}
+- Obesidade: ${patientProfile?.isObese ? 'Sim' : 'Não'}
+- Histórico de Amputação: ${patientProfile?.hasAmputationHistory ? 'Sim' : 'Não'}
+- Outras Condições: ${patientProfile?.otherConditions || 'Nenhuma'}
+- Alergias Conhecidas: ${patientProfile?.allergies || 'Nenhuma'}
+- Medicamentos Contínuos: ${patientProfile?.medications || 'Nenhum'}
 
 HISTÓRICO EVOLUTIVO DE LESÕES (LOG DE ENVIOS):
 ${formattedWounds || 'Nenhuma lesão ou triagem enviada ainda.'}
