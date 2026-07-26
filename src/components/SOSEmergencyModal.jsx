@@ -5,10 +5,27 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
   const [countdown, setCountdown] = useState(null);
   const [pendingCall, setPendingCall] = useState(null); // { number: '192', label: 'SAMU' }
   const [notificationActivated, setNotificationActivated] = useState(false);
+  const [userGps, setUserGps] = useState(null);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        (err) => {
+          console.warn("GPS de emergência não capturado:", err);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }, []);
 
   const city = clinicalProfile?.city || '';
   const state = clinicalProfile?.state || '';
-  const googleMapsUrl = `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(city + ' ' + state)}`;
+  const googleMapsUrl = userGps 
+    ? `https://www.google.com/maps/search/hospital+pronto+socorro+upa/@${userGps.lat},${userGps.lng},15z`
+    : `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(city + ' ' + state)}`;
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {

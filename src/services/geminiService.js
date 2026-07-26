@@ -241,43 +241,41 @@ Considere obrigatoriamente a Ficha Clínica do paciente:
 - Histórico de Amputação: ${profile.hasAmputationHistory ? 'Sim' : 'Não'}
 - Outras Condições: ${profile.otherConditions || 'Nenhuma'}
 - Medicamentos Ativos: ${profile.medications || 'Nenhum'}
-- Alergias Conhecidas: ${profile.allergies || 'Nenhuma'}
+- Alergias CDIRETRIZES GERAIS DE TRIAGEM E RECOMENDAÇÃO:
+0. VALIDAÇÃO RIGOROSA DA IMAGEM: Verifique a imagem anexada. Se a imagem NÃO for uma foto real de pele humana, ferida, lesão, queimadura, erupção cutânea ou exame médico (ex: se for um print de tela de celular, imagem de texto, meme, carro, objeto, documento ou paisagem), defina "isValidWound": false e explicite em "invalidReason" que a foto não é de uma lesão de pele.
+1. Caso a imagem seja de uma ferida/lesão cutânea ativa, analise a composição de tecidos (necrose, fibrina, granulação e epitelização) e sugira as condutas e coberturas adequadas.
+2. Classifique o risco geral como Leve, Moderado, Alto Risco ou Crítico.
+3. Identifique Sinais de Alerta (Red Flags) que exijam encaminhamento urgente para o pronto-socorro.
 
-DIRETRIZES GERAIS DE TRIAGEM E RECOMENDAÇÃO:
-1. Caso a queixa ou imagem envolva uma ferida/lesão cutânea ativa, analise a composição de tecidos (necrose, fibrina, granulação e epitelização) e sugira as condutas e coberturas adequadas (ex: hidrogel, alginato de cálcio, hidrocoloide ou carvão ativado com prata).
-2. Caso a queixa seja de natureza geral (ex: febre, dor no peito, falta de ar, manchas, exames laboratoriais, tosse, tontura), avalie a gravidade clínica do quadro, as comorbidades do paciente e a interação com seus medicamentos ativos e alergias.
-3. Classifique o risco geral como Leve, Moderado, Alto Risco ou Crítico.
-4. Identifique Sinais de Alerta (Red Flags) que exijam encaminhamento urgente para o pronto-socorro.
-5. Importante (Linguagem e Tom): O paciente é LEIGO e pode ter baixa familiaridade com tecnologia e medicina. Todas as explicações (geminiSummary, medPalmDiagnosis, treatmentPlan e aiRecommendation) devem ser simples, diretas e precisas.
-   - O tom das respostas deve ser confortável, empático, calmo e acolhedor. NUNCA use um tom agressivo, frio ou confrontante.
-   - EXCEÇÃO DE URGÊNCIA: Se a situação envolver sinais de perigo iminente ou gravidade alta (isRedirect = true), o tom deve mudar para DIRETO e FIRME para indicar a importância da ajuda médica urgente, mas mantendo a segurança e sem ser confrontante ou alarmista.
-   - Evite jargões técnicos. Se precisar citar termos como 'necrose', 'fibrina' ou 'exsudato', explique de forma muito simples: 'necrose (pele preta ou casca seca)', 'esfacelo/fibrina (aquela secreção amarelada ou morta)', 'exsudato (líquido que sai do ferimento)'.
-
-Sua tarefa é analisar os sintomas, estimar dados clínicos pertinentes ao tipo de queixa e retornar ESTRITAMENTE um objeto JSON puro, sem formatação markdown envolta (sem blocos de código \`\`\`json ou textos adicionais), correspondente a este formato exato:
+Sua tarefa é analisar os sintomas, estimar dados clínicos pertinentes ao tipo de queixa e retornar ESTRITAMENTE um objeto JSON puro (sem formatação markdown), correspondente a este formato exato:
 {
-  "type": "Tipo da Queixa ou Especialidade Principal (Ex: Clínico Geral, Dermatologia, Cardiologia, Pneumologia, Pé Diabético, Úlcera Venosa, Outros)",
+  "isValidWound": true, -- false se a imagem for um print, meme, documento ou foto aleatoria que nao seja uma lesao de pele
+  "invalidReason": "", -- Mensagem de erro caso isValidWound seja false (ex: "A imagem anexada é um print de tela e não uma foto de lesão de pele. Envie uma foto nítida da ferida.")
+  "type": "Tipo da Queixa ou Especialidade Principal (Ex: Clínico Geral, Dermatologia, Pé Diabético, Úlcera Venosa, Outros)",
   "lesionStage": "Nível de Gravidade/Estágio (Ex: Leve, Moderado, Avançado, Estágio I, Estágio II, Não Classificável)",
   "severity": "Classificação da gravidade (Ex: Leve, Risco Moderado, Alto Risco, Crítico)",
-  "isRedirect": false, -- true se houver sinais de perigo clínico (Red Flags) que exijam atendimento médico imediato (ex: dor torácica opressiva, febre alta persistente, dispneia intensa, infecção sistêmica ativa ou pé insensível infeccionado).
-  "specialist": "Especialidade recomendada caso isRedirect seja true (Ex: Pronto-Socorro, Cardiologista, Cirurgião Vascular, Dermatologista), senão string vazia",
+  "isRedirect": false, -- true se houver sinais de perigo clínico (Red Flags) que exijam atendimento médico imediato.
+  "specialist": "Especialidade recomendada caso isRedirect seja true, senão string vazia",
   "reason": "Explicação curta e simples do motivo do encaminhamento se isRedirect for true, senão string vazia",
   "geminiSummary": "Resumo em linguagem muito simples da queixa e sintomas relatados pelo paciente",
   "medPalmDiagnosis": "Explicação acolhedora e simples de como os sintomas se relacionam com o histórico e as comorbidades do paciente.",
   "treatmentPlan": [
-    "Instrução 1 de cuidado recomendada em linguagem simples (ex: 'Lave o local delicadamente com soro morno' em vez de 'Irrigar com solução salina isotônica')",
+    "Instrução 1 de cuidado recomendada em linguagem simples",
     "Instrução 2...",
     "Instrução 3..."
   ],
-  "aiAreaCm2": null, -- Estimativa numérica aproximada da área em cm² (somente se for lesão cutânea, senão null)
-  "aiLengthCm": null, -- Comprimento em cm (somente se for lesão cutânea, senão null)
-  "aiWidthCm": null, -- Largura em cm (somente se for lesão cutânea, senão null)
+  "aiAreaCm2": null,
+  "aiLengthCm": null,
+  "aiWidthCm": null,
   "aiTissueAnalysis": {
-    "necrose": 0, -- % de necrose se houver lesão (0-100, senão 0)
-    "fibrina": 0, -- % de fibrina se houver lesão (0-100, senão 0)
-    "granulacao": 0, -- % de granulação se houver lesão (0-100, senão 0)
-    "epitelizacao": 0 -- % de epitelização se houver lesão (0-100, senão 0)
+    "necrose": 0,
+    "fibrina": 0,
+    "granulacao": 0,
+    "epitelizacao": 0
   },
-  "aiRecommendation": "Recomendação clínica detalhada e indicação de condutas de enfermagem ou suporte médico baseado nos sintomas informados.",
+  "aiRecommendation": "Recomendação clínica detalhada e indicação de condutas.",
+  "clinicalEvolution": "Estável"
+}endação clínica detalhada e indicação de condutas de enfermagem ou suporte médico baseado nos sintomas informados.",
   "clinicalEvolution": "Estável" -- Comparativo do estado geral ("Melhorou", "Estável" ou "Piorou")
 }
 
@@ -957,6 +955,18 @@ export const getPatientFirstLineTriage = async (spokenQuery, patientProfile) => 
       patientProfile?.isObese ? 'Obesidade' : null
     ].filter(Boolean).join(', ') || 'Nenhuma comorbidade declarada';
 
+    // Safety Pre-Check for Emergency & Severe Trauma (Atropelamento, Fratura, Amputação, Dor no Peito)
+    const lower = (spokenQuery || '').toLowerCase();
+    const isEmergency = /atropelad|acidente|arranc|amputa|quebrad|quebrei|fratura|coraç|corac|peito|infarto|avc|derrame|falta de ar|sufoc|desmai|inconscien|convuls|jorrand|sangramento forte|esmagad|queimadura grave|veneno|intoxica|caiu d/i.test(lower);
+
+    if (isEmergency) {
+      return {
+        primarySymptom: "Emergência Médica / Trauma Grave",
+        riskLevel: "Vermelho",
+        advice: "ATENÇÃO DE EMERGÊNCIA! O seu relato indica um evento médico grave ou trauma. Por favor, mantenha a calma, peça ajuda a alguém próximo e procure o Pronto-Socorro IMEDIATAMENTE ou ligue 192 (SAMU) ou 193 (Bombeiros). Não permaneça em casa!"
+      };
+    }
+
     const systemInstruction = `Você é a Médica Virtual de Inteligência Artificial do iRec (Especialista em Primeiro Atendimento em Saúde e Triagem Domiciliar para idosos, leigos e analfabetos funcionais).
 
 DADOS DO PACIENTE:
@@ -970,11 +980,10 @@ O paciente acabou de falar por voz o seguinte relato sobre como está se sentind
 SUA MISSÃO MÉDICA:
 1. TRIAGEM E IDENTIFICAÇÃO DOS SINTOMAS: Identifique os sintomas relatados.
 2. REGRAS RIGOROSAS DE RISCO CLÍNICO:
-   - "Verde" (RISCO BAIXO / CUIDADOS EM CASA): Dor de cabeça isolada, enjoo, tontura leve, febre baixa, cansaço, dor de barriga simples ou corte superficial SÃO RIGOROSAMENTE RISCO VERDE. Diga de forma clara e tranquila que a pessoa DEVE cuidar em casa e que NÃO precisa ir ao hospital.
+   - "Vermelho" (URGÊNCIA / EMERGÊNCIA GRAVE): QUALQUER dor no peito/coração, atropelamento, acidente, membro quebrado/amputado, falta de ar grave, perda de consciência, AVC ou sangramento forte SÃO RIGOROSAMENTE RISCO VERMELHO. Ordene ir imediatamente ao Pronto-Socorro ou ligar 192 (SAMU).
    - "Amarelo" (RISCO MODERADO / TELECONSULTA NO APP): Sintomas que persistem por dias ou necessitam de avaliação de curativo especial.
-   - "Vermelho" (URGÊNCIA / EMERGÊNCIA): Dor no peito com aperto, falta de ar grave, perda de força/fala (AVC), perda de consciência ou sangramento arterial jorrando.
+   - "Verde" (RISCO BAIXO / CUIDADOS EM CASA): APENAS dor de cabeça isolada sem trauma, enjoo simples, tontura leve sem queda, febre baixa sem rigidez de nuca, cansaço simples, dor de barriga sem sangramento SÃO RISCO VERDE. Diga de forma clara e tranquila que a pessoa DEVE cuidar em casa e que NÃO precisa ir ao hospital.
 3. RESPOSTA EM LINGUAGEM ULTRA SIMPLES: Escreva uma orientação extremamente humana, carinhosa e em linguagem simples (SEM jargões médicos), de forma que qualquer pessoa entenda na hora.
-4. PARA DOR DE CABEÇA OU ENJOO (RISCO VERDE): Oriente a tomar 2 copos de água fresca, repousar em quarto escuro e tranquilo e afirme com clareza: "Você não precisa ir ao hospital por esta dor de cabeça. Fique calmo, tome água e repouse."
 
 Responda estritamente em formato JSON com o modelo exato:
 {

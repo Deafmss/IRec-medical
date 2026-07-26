@@ -141,6 +141,41 @@ export default function AccessibleDashboard({
     setSelectedSymptomTitle(categoryTitle || 'Relato por Voz');
     setLoadingAi(true);
 
+    // CRITICAL SAFETY GUARD: Pre-classify severe trauma, accidents, chest pain, fractures, amputations or bleeding
+    const lower = cleanText.toLowerCase();
+    const isEmergency = /atropelad|acidente|arranc|amputa|quebrad|quebrei|fratura|coraç|corac|peito|infarto|avc|derrame|falta de ar|sufoc|desmai|inconscien|convuls|jorrand|sangramento forte|esmagad|queimadura grave|veneno|intoxica|caiu d/i.test(lower);
+
+    if (isEmergency) {
+      const emergencyReply = "ATENÇÃO DE EMERGÊNCIA! O seu relato indica um evento médico grave ou trauma. Por favor, mantenha a calma, peça ajuda a alguém próximo e procure o Pronto-Socorro IMEDIATAMENTE ou ligue 192 (SAMU) ou 193 (Bombeiros). Não permaneça em casa!";
+      setTriageRiskLevel('Vermelho');
+      setAiResponse(emergencyReply);
+      speakText(emergencyReply);
+
+      if (clinicalProfile && clinicalProfile.id) {
+        const newAlert = {
+          id: `triage_${Date.now()}`,
+          date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          symptom: cleanText,
+          primarySymptom: categoryTitle || 'Emergência Médica / Trauma Gravíssimo',
+          aiTriageReply: emergencyReply,
+          riskLevel: 'Vermelho'
+        };
+
+        const updatedAlerts = [newAlert, ...(clinicalProfile.triageAlerts || [])].slice(0, 20);
+        const updatedProfile = { 
+          ...clinicalProfile, 
+          triageAlerts: updatedAlerts,
+          lastTriageRisk: 'Vermelho',
+          lastTriageDate: newAlert.date
+        };
+        
+        if (setClinicalProfile) setClinicalProfile(updatedProfile);
+        updateClinicalProfile(clinicalProfile.id, updatedProfile);
+      }
+      setLoadingAi(false);
+      return;
+    }
+
     try {
       // Call dedicated Patient Voice Triage AI
       const aiTriageResult = await getPatientFirstLineTriage(cleanText, clinicalProfile);

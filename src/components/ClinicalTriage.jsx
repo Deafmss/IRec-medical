@@ -408,6 +408,14 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
 
     // Try real Gemini API analysis
     let finalResult = await analyzeWoundWithAI(photoFile, clinicalProfile, fullSymptoms);
+    
+    if (finalResult && finalResult.isValidWound === false) {
+      alert(finalResult.invalidReason || "A imagem enviada não é uma foto de ferida ou lesão de pele. Por favor, envie uma foto nítida da região afetada.");
+      setIsAnalyzing(false);
+      setAnalysisStep('');
+      return;
+    }
+
     if (!finalResult) {
       // Real API Error/Offline fallback instead of fake simulation
       finalResult = generateLocalFallbackAnalysis(woundType, lesionStage, clinicalProfile, symptomsText);
