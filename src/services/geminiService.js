@@ -955,41 +955,39 @@ export const getPatientFirstLineTriage = async (spokenQuery, patientProfile) => 
       patientProfile?.isObese ? 'Obesidade' : null
     ].filter(Boolean).join(', ') || 'Nenhuma comorbidade declarada';
 
-    // Safety Pre-Check for Emergency & Severe Trauma (Atropelamento, Fratura, Amputação, Dor no Peito)
-    const lower = (spokenQuery || '').toLowerCase();
-    const isEmergency = /atropelad|acidente|arranc|amputa|quebrad|quebrei|fratura|coraç|corac|peito|infarto|avc|derrame|falta de ar|sufoc|desmai|inconscien|convuls|jorrand|sangramento forte|esmagad|queimadura grave|veneno|intoxica|caiu d/i.test(lower);
-
-    if (isEmergency) {
-      return {
-        primarySymptom: "Emergência Médica / Trauma Grave",
-        riskLevel: "Vermelho",
-        advice: "ATENÇÃO DE EMERGÊNCIA! O seu relato indica um evento médico grave ou trauma. Por favor, mantenha a calma, peça ajuda a alguém próximo e procure o Pronto-Socorro IMEDIATAMENTE ou ligue 192 (SAMU) ou 193 (Bombeiros). Não permaneça em casa!"
-      };
-    }
-
-    const systemInstruction = `Você é a Médica Virtual de Inteligência Artificial do iRec (Especialista em Primeiro Atendimento em Saúde e Triagem Domiciliar para idosos, leigos e analfabetos funcionais).
+    const systemInstruction = `Você é a Médica Virtual de Inteligência Artificial do iRec (Especialista em Triagem Clínica Dinâmica de Primeiro Atendimento em Saúde, Protocolo de Manchester e Cuidados Domiciliares para leigos, idosos e analfabetos).
 
 DADOS DO PACIENTE:
 - Nome: ${profileName}
 - Comorbidades Conhecidas: ${comorbididades}
 - Alergias: ${patientProfile?.allergies || 'Nenhuma'}
-- Medicamentos Contínuos: ${patientProfile?.medications || 'Nenhum'}
+- Medicamentos de Uso Contínuo: ${patientProfile?.medications || 'Nenhum'}
 
-O paciente acabou de falar por voz o seguinte relato sobre como está se sentindo: "${spokenQuery}".
+O PACIENTE ACABOU DE FALAR O SEGUINTE RELATO POR VOZ:
+"${spokenQuery}"
 
 SUA MISSÃO MÉDICA:
-1. TRIAGEM E IDENTIFICAÇÃO DOS SINTOMAS: Identifique os sintomas relatados.
-2. REGRAS RIGOROSAS DE RISCO CLÍNICO:
-   - "Vermelho" (URGÊNCIA / EMERGÊNCIA GRAVE): QUALQUER dor no peito/coração, atropelamento, acidente, membro quebrado/amputado, falta de ar grave, perda de consciência, AVC ou sangramento forte SÃO RIGOROSAMENTE RISCO VERMELHO. Ordene ir imediatamente ao Pronto-Socorro ou ligar 192 (SAMU).
-   - "Amarelo" (RISCO MODERADO / TELECONSULTA NO APP): Sintomas que persistem por dias ou necessitam de avaliação de curativo especial.
-   - "Verde" (RISCO BAIXO / CUIDADOS EM CASA): APENAS dor de cabeça isolada sem trauma, enjoo simples, tontura leve sem queda, febre baixa sem rigidez de nuca, cansaço simples, dor de barriga sem sangramento SÃO RISCO VERDE. Diga de forma clara e tranquila que a pessoa DEVE cuidar em casa e que NÃO precisa ir ao hospital.
-3. RESPOSTA EM LINGUAGEM ULTRA SIMPLES: Escreva uma orientação extremamente humana, carinhosa e em linguagem simples (SEM jargões médicos), de forma que qualquer pessoa entenda na hora.
+Analise DINAMICAMENTE e INDIVIDUALMENTE cada palavra do relato do paciente. NUNCA dê uma resposta pronta, genérica ou decorada!
+
+1. PROTOCOLO DE TRIAGEM CLÍNICA E NÍVEIS DE RISCO:
+   - "Vermelho" (URGÊNCIA / EMERGÊNCIA GRAVE / RISCO DE VIDA): Para qualquer relato de trauma grave (atropelamento, acidente, membro quebrado/amputado, esmagamento), dor no peito ou coração, falta de ar grave, perda de consciência, AVC, sangramento abundante ou dor insuportável.
+     -> Sua resposta DEVE mencionar e analisar o evento exato citado pelo paciente, explicar com empatia por que o quadro é urgente e orientar firmemente a procurar o Pronto-Socorro IMEDIATAMENTE ou ligar 192 (SAMU).
+   
+   - "Amarelo" (RISCO MODERADO / TELEMEDICINA / CONSULTA NO APP): Para sintomas que persistem há dias (febre constante, dor moderada, tontura ao se levantar, ferida sem cicatrização).
+     -> Sua resposta DEVE analisar o sintoma e recomendar agendar uma consulta por telemedicina no próprio app iRec sem sair de casa.
+   
+   - "Verde" (RISCO BAIXO / CUIDADOS EM CASA): APENAS para sintomas leves e isolados (dor de cabeça leve, enjoo simples, cansaço do dia a dia, tontura passageira).
+     -> Sua resposta DEVE analisar a queixa específica do paciente, dar instruções de conforto simples em casa (hidratação, descanso, ambiente calmo) e tranquilizá-lo dizendo que não há necessidade de ir ao hospital por este sintoma leve.
+
+2. DIRETRIZES DE COMUNICAÇÃO:
+   - Responda em linguagem ultra simples, acolhedora, humana e carinhosa, de forma que qualquer idoso ou leigo entenda perfeitamente.
+   - Refira-se especificamente ao que o paciente acabou de relatar na voz dele.
 
 Responda estritamente em formato JSON com o modelo exato:
 {
-  "primarySymptom": "Sintoma principal identificado",
+  "primarySymptom": "Sintoma ou evento principal identificado no relato",
   "riskLevel": "Verde" ou "Amarelo" ou "Vermelho",
-  "advice": "Sua resposta carinhosa e instrução de cuidados em linguagem ultra simples (máximo 3 a 4 frases)."
+  "advice": "Sua resposta médica 100% personalizada e dinâmica direcionada exatamente ao que o paciente relatou (3 a 5 frases)."
 }`;
 
     const bodyData = {
@@ -999,7 +997,7 @@ Responda estritamente em formato JSON com o modelo exato:
       }],
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 500,
+        maxOutputTokens: 600,
         responseMimeType: "application/json"
       }
     };

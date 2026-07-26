@@ -141,43 +141,8 @@ export default function AccessibleDashboard({
     setSelectedSymptomTitle(categoryTitle || 'Relato por Voz');
     setLoadingAi(true);
 
-    // CRITICAL SAFETY GUARD: Pre-classify severe trauma, accidents, chest pain, fractures, amputations or bleeding
-    const lower = cleanText.toLowerCase();
-    const isEmergency = /atropelad|acidente|arranc|amputa|quebrad|quebrei|fratura|coraç|corac|peito|infarto|avc|derrame|falta de ar|sufoc|desmai|inconscien|convuls|jorrand|sangramento forte|esmagad|queimadura grave|veneno|intoxica|caiu d/i.test(lower);
-
-    if (isEmergency) {
-      const emergencyReply = "ATENÇÃO DE EMERGÊNCIA! O seu relato indica um evento médico grave ou trauma. Por favor, mantenha a calma, peça ajuda a alguém próximo e procure o Pronto-Socorro IMEDIATAMENTE ou ligue 192 (SAMU) ou 193 (Bombeiros). Não permaneça em casa!";
-      setTriageRiskLevel('Vermelho');
-      setAiResponse(emergencyReply);
-      speakText(emergencyReply);
-
-      if (clinicalProfile && clinicalProfile.id) {
-        const newAlert = {
-          id: `triage_${Date.now()}`,
-          date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          symptom: cleanText,
-          primarySymptom: categoryTitle || 'Emergência Médica / Trauma Gravíssimo',
-          aiTriageReply: emergencyReply,
-          riskLevel: 'Vermelho'
-        };
-
-        const updatedAlerts = [newAlert, ...(clinicalProfile.triageAlerts || [])].slice(0, 20);
-        const updatedProfile = { 
-          ...clinicalProfile, 
-          triageAlerts: updatedAlerts,
-          lastTriageRisk: 'Vermelho',
-          lastTriageDate: newAlert.date
-        };
-        
-        if (setClinicalProfile) setClinicalProfile(updatedProfile);
-        updateClinicalProfile(clinicalProfile.id, updatedProfile);
-      }
-      setLoadingAi(false);
-      return;
-    }
-
     try {
-      // Call dedicated Patient Voice Triage AI
+      // Call dedicated Patient Voice Triage AI (Gemini 2.5 Flash/Pro) for 100% dynamic medical analysis
       const aiTriageResult = await getPatientFirstLineTriage(cleanText, clinicalProfile);
 
       let replyText = "";
@@ -187,20 +152,16 @@ export default function AccessibleDashboard({
         replyText = aiTriageResult.advice;
         calculatedRisk = aiTriageResult.riskLevel || "Verde";
       } else {
-        // High quality local fallback if Gemini is offline
+        // Dynamic fallback referencing exact patient speech if offline
         const lower = cleanText.toLowerCase();
-        if (lower.includes('peito') || lower.includes('falta de ar') || lower.includes('avc') || lower.includes('jorrando')) {
+        const isSevere = /atropelad|acidente|arranc|amputa|quebrad|quebrei|fratura|coraç|corac|peito|infarto|avc|derrame|falta de ar|sufoc|desmai|inconscien|convuls|jorrand|sangramento forte|esmagad|queimadura grave|veneno|intoxica|caiu d/i.test(lower);
+        
+        if (isSevere) {
           calculatedRisk = 'Vermelho';
-          replyText = 'ATENÇÃO: Este sintoma é um sinal de urgência. Mantenha a calma, sente-se e aperte o botão vermelho de emergência SOS para ligar 192 (SAMU).';
-        } else if (lower.includes('cabeça') || lower.includes('enjoo') || lower.includes('tontura') || lower.includes('cansaço') || lower.includes('muscular')) {
-          calculatedRisk = 'Verde';
-          replyText = 'Olá! Esta é uma situação simples para cuidar em casa. Tome 2 copos de água fresca, repouse em um quarto calmo e escuro e evite telas. Você NÃO precisa ir ao hospital por esta dor de cabeça. Fique calmo e repouse!';
-        } else if (lower.includes('febre alta') || lower.includes('secreção')) {
-          calculatedRisk = 'Amarelo';
-          replyText = 'Entendi seu desconforto. Se os sintomas continuarem por mais de 24 horas, recomendamos agendar uma consulta rápida por vídeo com nossos médicos no próprio app iRec sem sair de casa.';
+          replyText = `Atenção! Pelo seu relato de "${cleanText}", este quadro exige atendimento de emergência urgente. Mantenha a calma e procure o Pronto-Socorro imediatamente ou ligue 192 (SAMU).`;
         } else {
           calculatedRisk = 'Verde';
-          replyText = 'Olá! Para este sintoma leve, o procedimento recomendado é tomar 2 copos de água fresca e repousar em um ambiente calmo. Você não precisa ir ao hospital por este sintoma simples. Fique calmo!';
+          replyText = `Compreendi seu relato sobre "${cleanText}". Recomendamos repousar, manter boa hidratação e observar a evolução. Se houver piora ou novos sintomas, consulte nosso serviço de telemedicina no aplicativo.`;
         }
       }
 
