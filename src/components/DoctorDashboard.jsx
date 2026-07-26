@@ -223,10 +223,12 @@ export default function DoctorDashboard({
       };
       fetchEntries();
       // Reset AI chat history for this patient
+      const docName = doctorProfile?.name ? doctorProfile.name.split(' ')[0] : 'Doutor(a)';
+      const patName = selectedPatient?.name || 'Paciente';
       setChatHistory([
         { 
           sender: 'ai', 
-          text: `Olá, Dr(a). ${doctorProfile.name.split(' ')[0]}! Estou carregado com os dados clínicos e histórico do(a) paciente **${selectedPatient.name}**. \n\nComo posso auxiliá-lo na conduta de cuidados e escolha de coberturas hoje?` 
+          text: `Olá, Dr(a). ${docName}! Estou carregado com os dados clínicos e histórico do(a) paciente **${patName}**. \n\nComo posso auxiliá-lo na conduta de cuidados e escolha de coberturas hoje?` 
         }
       ]);
     }
@@ -1464,8 +1466,8 @@ export default function DoctorDashboard({
         <div className="clinician-welcome">
           <h2>Painel Clínico iRec</h2>
           <p>
-            Profissional logado: Dr(a). {doctorProfile.name} • {doctorProfile.specialty}
-            {doctorProfile.rqe ? ` • RQE: ${doctorProfile.rqe}` : ''}
+            Profissional logado: Dr(a). {doctorProfile?.name || 'Profissional'} • {doctorProfile?.specialty || 'Geral'}
+            {doctorProfile?.rqe ? ` • RQE: ${doctorProfile.rqe}` : ''}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -1496,7 +1498,7 @@ export default function DoctorDashboard({
             <svg style={{ width: '18px', height: '18px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.375M9 18h3.375m1.875-12h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-9.75c-.621 0-1.125-.504-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 0a9.06 9.06 0 0 1-1.5-.124M12 11.25a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
             </svg>
-            CRM/Registro: {doctorProfile.crm || 'N/A'}
+            CRM/Registro: {doctorProfile?.crm || 'N/A'}
           </div>
         </div>
       </div>
@@ -1671,7 +1673,7 @@ export default function DoctorDashboard({
                     {selectedPatient.avatarUrl ? (
                       <img src={selectedPatient.avatarUrl} alt={selectedPatient.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                     ) : (
-                      selectedPatient.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase()
+                      (selectedPatient?.name || 'P').split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase()
                     )}
                   </div>
                   <div>

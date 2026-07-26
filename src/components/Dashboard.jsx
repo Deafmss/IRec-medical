@@ -264,10 +264,12 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   const profileProgress = calculateProfileProgress(clinicalProfile);
   const [profileForm, setProfileForm] = useState({ ...clinicalProfile });
 
-  // Sync profileForm state with incoming clinicalProfile changes (e.g. from real-time refresh)
+  // Sync profileForm state with incoming clinicalProfile changes ONLY when user is not actively editing
   useEffect(() => {
-    setProfileForm({ ...clinicalProfile });
-  }, [clinicalProfile]);
+    if (!isEditingProfile) {
+      setProfileForm({ ...clinicalProfile });
+    }
+  }, [clinicalProfile, isEditingProfile]);
   const [assignedClinician, setAssignedClinician] = useState(null);
   const [showMapModal, setShowMapModal] = useState(false);
   const [profileFormTab, setProfileFormTab] = useState('pessoais'); // 'pessoais', 'endereco', 'clinicos'
