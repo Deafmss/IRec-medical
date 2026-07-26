@@ -84,9 +84,12 @@ export default function Login({ onLoginSuccess }) {
   const [name, setName] = useState('');
   
   // Patient fields
+  const [cpf, setCpf] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState('');
-  
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+
   // Doctor fields
   const [crm, setCrm] = useState('');
   const [crmState, setCrmState] = useState('SP');
@@ -115,10 +118,17 @@ export default function Login({ onLoginSuccess }) {
 
         let additionalData = {};
         if (role === 'patient') {
+          const cleanCpf = (cpf || '').replace(/\D/g, '');
+          if (!cleanCpf || cleanCpf.length !== 11) {
+            throw new Error('Por favor, informe seu CPF completo (11 dígitos) para validação de pessoa física.');
+          }
           if (!birthDate || !gender) {
             throw new Error('Por favor, informe sua data de nascimento e gênero.');
           }
-          additionalData = { birthDate, gender };
+          if (!city || !state) {
+            throw new Error('Por favor, informe sua cidade e estado para o serviço de localização de resgate e emergências.');
+          }
+          additionalData = { cpf, birthDate, gender, city, state };
         } else {
           const label = clinicianType === 'doctor' ? 'CRM' : 'COREN';
           if (!crm) {
@@ -667,6 +677,17 @@ export default function Login({ onLoginSuccess }) {
           {isRegistering && role === 'patient' && (
             <>
               <div className="form-group">
+                <label className="form-label">CPF * (Confirmação de Pessoa Física)</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="000.000.000-00"
+                  value={cpf} 
+                  onChange={(e) => setCpf(e.target.value)} 
+                  required
+                />
+              </div>
+              <div className="form-group">
                 <label className="form-label">Data de Nascimento *</label>
                 <input 
                   type="date" 
@@ -689,6 +710,30 @@ export default function Login({ onLoginSuccess }) {
                   <option value="Feminino">Feminino</option>
                   <option value="Outro">Outro / Prefiro não dizer</option>
                 </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Cidade e Estado Residencial * (Localização de Socorro / SOS)</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    style={{ flex: 2 }}
+                    placeholder="Cidade (Ex: São Paulo)"
+                    value={city} 
+                    onChange={(e) => setCity(e.target.value)} 
+                    required
+                  />
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    style={{ flex: 1, textTransform: 'uppercase' }}
+                    placeholder="UF"
+                    maxLength={2}
+                    value={state} 
+                    onChange={(e) => setState(e.target.value)} 
+                    required
+                  />
+                </div>
               </div>
             </>
           )}

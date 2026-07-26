@@ -21,11 +21,18 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
     }
   }, []);
 
+  const street = clinicalProfile?.street || '';
+  const number = clinicalProfile?.number || '';
+  const neighborhood = clinicalProfile?.neighborhood || '';
   const city = clinicalProfile?.city || '';
   const state = clinicalProfile?.state || '';
+  const cep = clinicalProfile?.cep || '';
+
+  const fullPhysicalAddress = [street, number, neighborhood, city, state, cep ? `CEP ${cep}` : ''].filter(Boolean).join(', ');
+
   const googleMapsUrl = userGps 
     ? `https://www.google.com/maps/search/hospital+pronto+socorro+upa/@${userGps.lat},${userGps.lng},15z`
-    : `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(city + ' ' + state)}`;
+    : `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(fullPhysicalAddress || (city + ' ' + state))}`;
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {

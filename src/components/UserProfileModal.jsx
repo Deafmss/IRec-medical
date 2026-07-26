@@ -219,6 +219,20 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
     setErrorMsg('');
     setSuccessMsg('');
 
+    if (currentUser?.role === 'patient') {
+      const cleanCpf = (formData.cpf || '').replace(/\D/g, '');
+      if (!cleanCpf || cleanCpf.length !== 11) {
+        setErrorMsg('O CPF é obrigatório e deve conter 11 dígitos para confirmação de identidade.');
+        setSaving(false);
+        return;
+      }
+      if (!formData.city || !formData.state) {
+        setErrorMsg('Cidade e Estado são obrigatórios no cadastro para a localização de emergências/SOS.');
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       // Map back formatting and values
       const updatedProfile = {
