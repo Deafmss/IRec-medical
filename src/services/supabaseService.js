@@ -679,6 +679,18 @@ export const updateClinicalProfile = async (arg1, arg2 = null) => {
 
     if (error) throw error;
     
+    // Always sync local profile cache so data doesn't revert on refresh/navigation
+    saveLocalProfile(userId, profile);
+    const active = localStorage.getItem('irec_active_user');
+    if (active) {
+      try {
+        const activeObj = JSON.parse(active);
+        if (activeObj.id === userId) {
+          localStorage.setItem('irec_active_user', JSON.stringify(profile));
+        }
+      } catch (e) {}
+    }
+
     // Log audit log
     createAuditLog('UPDATE_CLINICAL_PROFILE', userId, { fields_updated: Object.keys(payload) });
 
@@ -686,6 +698,15 @@ export const updateClinicalProfile = async (arg1, arg2 = null) => {
   } catch (err) {
     console.error('Erro ao atualizar perfil no Supabase:', err);
     saveLocalProfile(userId, profile);
+    const active = localStorage.getItem('irec_active_user');
+    if (active) {
+      try {
+        const activeObj = JSON.parse(active);
+        if (activeObj.id === userId) {
+          localStorage.setItem('irec_active_user', JSON.stringify(profile));
+        }
+      } catch (e) {}
+    }
     return profile;
   }
 };

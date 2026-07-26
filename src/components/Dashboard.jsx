@@ -410,7 +410,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
     painLevel: hasActiveWound ? `${latestEntry.pain}/10 (${getPainLabel(latestEntry.pain)})` : 'Sem dor relatada',
     nurseAssigned: assignedClinician 
       ? `Dr(a). ${assignedClinician.name} (${assignedClinician.specialty || 'Clínico'})` 
-      : 'Aguardando vinculação médica'
+      : 'Nenhum profissional contratado'
   };
 
   const patientCity = (clinicalProfile?.city || '').trim().toLowerCase();
@@ -429,10 +429,17 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
           <h2 style={{ fontSize: '22px', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Seu Painel de Monitoramento</h2>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <span className="badge badge-success">
-            <span style={{ display: 'inline-block', width: '6px', height: '6px', backgroundColor: 'var(--success-light)', borderRadius: '50%', marginRight: '4px' }}></span>
-            Em Acompanhamento
-          </span>
+          {assignedClinician ? (
+            <span className="badge badge-success">
+              <span style={{ display: 'inline-block', width: '6px', height: '6px', backgroundColor: 'var(--success-light)', borderRadius: '50%', marginRight: '4px' }}></span>
+              Em Acompanhamento ({assignedClinician.name})
+            </span>
+          ) : (
+            <span className="badge" style={{ backgroundColor: 'rgba(2, 132, 199, 0.1)', color: '#0284c7', border: '1px solid #0284c7', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
+              <span style={{ display: 'inline-block', width: '6px', height: '6px', backgroundColor: '#0284c7', borderRadius: '50%', marginRight: '6px' }}></span>
+              Cadastro Novo (Sem Profissional Contratado)
+            </span>
+          )}
         </div>
       </div>
 
