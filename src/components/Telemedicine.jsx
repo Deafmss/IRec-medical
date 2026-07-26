@@ -193,7 +193,9 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
-  const [consentGiven, setConsentGiven] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(() => {
+    return localStorage.getItem('irec_telemedicine_consent_accepted') === 'true';
+  });
   const [showConsentModal, setShowConsentModal] = useState(false);
   
   const messagesEndRef = useRef(null);
@@ -586,26 +588,35 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     return () => clearInterval(timer);
   }, [callState]);
 
+  // Automatic video element stream binders for audio/video playback
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.play().catch(e => console.warn('Erro ao reproduzir vídeo local:', e));
+    }
+  }, [localStream, callState]);
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.volume = 1.0;
+      remoteVideoRef.current.play().catch(e => console.warn('Erro ao reproduzir vídeo/áudio remoto:', e));
+    }
+  }, [remoteStream, callState]);
+
   // Hook WebRTC P2P
   useEffect(() => {
     if (callState === 'active' && activeCall) {
       const isCaller = activeCall.callerId === currentUser.id;
       console.log(`Inicializando WebRTC P2P. Sou iniciador? ${isCaller}`);
       initializeWebRTC(activeCall.id, isCaller);
-    }
-  }, [callState, activeCall]);
-
-  // Request camera and microphone when video call starts
-  useEffect(() => {
-    if (callState === 'active') {
-      startMediaStream();
       startECGAnimation();
       startVitalsSimulation();
-    } else {
+    } else if (callState === 'idle') {
       endMediaStream();
       stopECGAnimation();
     }
-  }, [callState]);
+  }, [callState, activeCall]);
 
   // Manage SpeechRecognition lifecycle based on callState
   useEffect(() => {
@@ -822,22 +833,32 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     return () => clearInterval(vitalsInterval);
   };
 
+  // Webcam streamer helper
+  const startMediaStream = async () => {
+    if (localStream) return localStream;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: 'user' },
+        audio: true
+      });
+      setLocalStream(stream);
+      return stream;
+    } catch (err) {
+      console.warn('Câmera ou Microfone não disponíveis:', err);
+      return null;
+    }
+  };
+
   // WebRTC P2P Connection and Signaling
   const initializeWebRTC = async (callId, isCaller) => {
     try {
-      console.log("Iniciando conexao WebRTC P2P para chamada:", callId);
+      console.log("Iniciando conexão WebRTC P2P para chamada:", callId);
       
-      // Get local stream
-      let stream = localStream;
+      // Get or request local media stream
+      const stream = await startMediaStream();
       if (!stream) {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, facingMode: 'user' },
-          audio: true
-        });
-        setLocalStream(stream);
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
+        console.warn("Nenhum stream de áudio/vídeo disponível para WebRTC");
+        return;
       }
 
       // STUN configuration
@@ -851,19 +872,16 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       const pc = new RTCPeerConnection(configuration);
       peerConnectionRef.current = pc;
 
-      // Add tracks
+      // Add tracks to PeerConnection
       stream.getTracks().forEach(track => {
         pc.addTrack(track, stream);
       });
 
-      // Handle remote track
+      // Handle remote track arriving
       pc.ontrack = (event) => {
-        console.log("Track remota recebida com sucesso!");
+        console.log("Track remota recebida com sucesso!", event.streams);
         if (event.streams && event.streams[0]) {
           setRemoteStream(event.streams[0]);
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = event.streams[0];
-          }
         }
       };
 
@@ -874,7 +892,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         }
       };
 
-      // Subscribe to WebRTC events
+      // Subscribe to WebRTC signaling events
       const unsubscribeSignaling = subscribeToWebRTCSignaling(callId, async (signal) => {
         if (signal.sender_id === currentUser.id) return;
         
@@ -908,22 +926,6 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       }
     } catch (e) {
       console.error("Erro ao inicializar WebRTC:", e);
-    }
-  };
-
-  // Webcam streamer
-  const startMediaStream = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 320, height: 240, facingMode: 'user' },
-        audio: true
-      });
-      setLocalStream(stream);
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.warn('Câmera ou Microfone não disponíveis:', err);
     }
   };
 
@@ -2618,7 +2620,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               Recusar
             </button>
             <button 
-              onClick={() => setShowConsentModal(true)}
+              onClick={() => consentGiven ? acceptCall() : setShowConsentModal(true)}
               style={{
                 backgroundColor: '#10b981',
                 color: '#ffffff',
@@ -2804,8 +2806,8 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               {showExpressChat && (
                 <div style={{
                   position: 'absolute',
-                  bottom: '24px',
-                  left: '24px',
+                  bottom: '150px',
+                  right: '24px',
                   width: isMobile ? 'calc(100% - 48px)' : '340px',
                   height: isMobile ? '300px' : '400px',
                   backgroundColor: 'rgba(15, 23, 42, 0.85)',
@@ -3651,6 +3653,8 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               </button>
               <button 
                 onClick={() => {
+                  localStorage.setItem('irec_telemedicine_consent_accepted', 'true');
+                  setConsentGiven(true);
                   setShowConsentModal(false);
                   acceptCall();
                 }}
