@@ -50,7 +50,7 @@ export default function DoctorDashboard({
   setSelectedPatientEntries,
   initialTab
 }) {
-  const [activeTab, setActiveTab] = useState(() => initialTab || localStorage.getItem('irec_doctor_active_tab') || 'my-patients'); // 'my-patients' or 'all-patients'
+  const [activeTab, setActiveTab] = useState(() => initialTab || 'my-patients');
   const [patients, setPatients] = useState([]);
   const [myPatients, setMyPatients] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);

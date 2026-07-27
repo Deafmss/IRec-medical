@@ -697,6 +697,7 @@ export default function App() {
       case 'doctor-dashboard':
         return (
           <DoctorDashboard 
+            key={activeTab}
             doctorProfile={currentUser} 
             setActiveTab={setActiveTab} 
             onProfileUpdate={setCurrentUser} 
@@ -707,6 +708,7 @@ export default function App() {
             setSelectedPatient={setSelectedPatientForDoctor}
             selectedPatientEntries={selectedPatientEntriesForDoctor}
             setSelectedPatientEntries={setSelectedPatientEntriesForDoctor}
+            initialTab="my-patients"
           />
         );
       case 'dashboard':
@@ -803,22 +805,6 @@ export default function App() {
         );
       case 'doctor-analytics':
         return <DoctorDashboardAnalytics currentUser={currentUser} />;
-      case 'doctor-dashboard':
-        return (
-          <DoctorDashboard 
-            key={activeTab}
-            doctorProfile={currentUser} 
-            setActiveTab={setActiveTab} 
-            onProfileUpdate={setCurrentUser} 
-            onEditProfile={() => setShowProfileModal(true)} 
-            onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }}
-            selectedPatient={selectedPatientForDoctor}
-            setSelectedPatient={setSelectedPatientForDoctor}
-            selectedPatientEntries={selectedPatientEntriesForDoctor}
-            setSelectedPatientEntries={setSelectedPatientEntriesForDoctor}
-            initialTab="my-patients"
-          />
-        );
       case 'doctor-agenda':
         return (
           <DoctorDashboard 
@@ -828,6 +814,7 @@ export default function App() {
             onProfileUpdate={setCurrentUser} 
             onEditProfile={() => setShowProfileModal(true)} 
             onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }}
+            onOpenPrescriptionModal={() => setShowPrescriptionModal(true)}
             selectedPatient={selectedPatientForDoctor}
             setSelectedPatient={setSelectedPatientForDoctor}
             selectedPatientEntries={selectedPatientEntriesForDoctor}
@@ -854,15 +841,18 @@ export default function App() {
         }
         return currentUser?.role === 'doctor' ? (
           <DoctorDashboard 
+            key={activeTab}
             doctorProfile={currentUser} 
             setActiveTab={setActiveTab} 
             onProfileUpdate={setCurrentUser} 
             onEditProfile={() => setShowProfileModal(true)} 
             onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }}
+            onOpenPrescriptionModal={() => setShowPrescriptionModal(true)}
             selectedPatient={selectedPatientForDoctor}
             setSelectedPatient={setSelectedPatientForDoctor}
             selectedPatientEntries={selectedPatientEntriesForDoctor}
             setSelectedPatientEntries={setSelectedPatientEntriesForDoctor}
+            initialTab="my-patients"
           />
         ) : (
           <Dashboard 
