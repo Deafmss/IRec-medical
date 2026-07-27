@@ -806,6 +806,7 @@ export default function App() {
       case 'doctor-dashboard':
         return (
           <DoctorDashboard 
+            key={activeTab}
             doctorProfile={currentUser} 
             setActiveTab={setActiveTab} 
             onProfileUpdate={setCurrentUser} 
@@ -821,6 +822,7 @@ export default function App() {
       case 'doctor-agenda':
         return (
           <DoctorDashboard 
+            key={activeTab}
             doctorProfile={currentUser} 
             setActiveTab={setActiveTab} 
             onProfileUpdate={setCurrentUser} 
