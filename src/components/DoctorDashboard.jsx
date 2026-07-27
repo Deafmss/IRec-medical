@@ -1306,9 +1306,15 @@ export default function DoctorDashboard({
 
           {/* Search & Filters Bar (Only for Patients List View) */}
           {activeTab !== 'my-agenda' && (
-            <div className="filter-search-bar no-print">
-              <div className="search-input-wrapper" style={{ flex: 1 }}>
-                <svg className="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <div className="filter-search-bar no-print" style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
+              <div className="search-input-wrapper" style={{ flex: 1, minWidth: '260px', position: 'relative' }}>
+                <svg 
+                  style={{ width: '18px', height: '18px', position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor" 
+                  strokeWidth="2.5"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.603 10.602Z" />
                 </svg>
                 <input 
@@ -1316,6 +1322,7 @@ export default function DoctorDashboard({
                   placeholder="Buscar paciente em acompanhamento por nome..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px 10px 38px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1323,6 +1330,7 @@ export default function DoctorDashboard({
                 className="filter-select"
                 value={filterAlert}
                 onChange={(e) => setFilterAlert(e.target.value)}
+                style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '13px', cursor: 'pointer' }}
               >
                 <option value="all">Todas as Condições</option>
                 <option value="diabetes">Apenas Diabéticos</option>
