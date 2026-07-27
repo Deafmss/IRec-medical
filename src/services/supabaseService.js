@@ -1293,10 +1293,57 @@ export const getAllDoctors = async () => {
 const getLocalAppointments = () => JSON.parse(localStorage.getItem('irec_appointments') || '[]');
 const saveLocalAppointments = (apps) => localStorage.setItem('irec_appointments', JSON.stringify(apps));
 
+export const checkAppointmentCollision = async (doctorId, date, time) => {
+  try {
+    const existingApps = await getDoctorAppointments(doctorId);
+    const collision = existingApps.some(app => {
+      if (app.status === 'canceled' || app.status === 'Cancelado') return false;
+      return app.appointmentDate === date && app.appointmentTime === time;
+    });
+    return collision;
+  } catch (err) {
+    console.warn('[iRec] Erro ao verificar colisão de horário:', err);
+    return false;
+  }
+};
+
+export const updateAppointmentStatus = async (appointmentId, status) => {
+  const localApps = getLocalAppointments();
+  const idx = localApps.findIndex(a => a.id === appointmentId);
+  if (idx !== -1) {
+    localApps[idx].status = status;
+    saveLocalAppointments(localApps);
+  }
+
+  if (isSupabaseConfigured) {
+    try {
+      await supabase
+        .from('appointments')
+        .update({ status: status })
+        .eq('id', appointmentId);
+    } catch (err) {
+      console.warn('[iRec] Erro ao atualizar status da consulta no Supabase:', err);
+    }
+  }
+  return true;
+};
+
 export const createAppointment = async (appointmentData) => {
+  // Cal.com collision prevention check
+  const isColliding = await checkAppointmentCollision(
+    appointmentData.doctorId, 
+    appointmentData.appointmentDate, 
+    appointmentData.appointmentTime
+  );
+
+  if (isColliding) {
+    throw new Error('Este horário acabou de ser reservado por outro paciente. Por favor, selecione outro horário disponível.');
+  }
+
   const newApp = {
     id: `app_${Date.now()}`,
     createdAt: new Date().toISOString(),
+    status: appointmentData.status || 'Agendado',
     ...appointmentData
   };
 

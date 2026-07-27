@@ -892,6 +892,26 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         }
       };
 
+      // Resilient WebRTC (React Native WebRTC / TRTC): Auto ICE Restart on connection drop
+      pc.oniceconnectionstatechange = async () => {
+        console.log("[WebRTC ICE State]:", pc.iceConnectionState);
+        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+          console.warn("[WebRTC ICE Auto-Reconnect] Rede oscilou ou reconectou. Disparando ICE Restart...");
+          try {
+            if (pc.restartIce) {
+              pc.restartIce();
+            }
+            if (isCaller) {
+              const offer = await pc.createOffer({ iceRestart: true });
+              await pc.setLocalDescription(offer);
+              await sendWebRTCSignalingEvent(callId, currentUser.id, 'offer', offer);
+            }
+          } catch (reconnectErr) {
+            console.warn("[WebRTC ICE] Erro na reconexão automática:", reconnectErr);
+          }
+        }
+      };
+
       // Subscribe to WebRTC signaling events
       const unsubscribeSignaling = subscribeToWebRTCSignaling(callId, async (signal) => {
         if (signal.sender_id === currentUser.id) return;

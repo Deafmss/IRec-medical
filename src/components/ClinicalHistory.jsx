@@ -127,6 +127,20 @@ function WoundTissueOverlay({ entry }) {
 export default function ClinicalHistory({ entries, clinicalProfile }) {
   const maxPain = 10;
   
+  useEffect(() => {
+    // Medplum Audit Logger integration: record medical record access for LGPD compliance
+    if (clinicalProfile) {
+      import('../services/auditLogger').then(({ createAuditLog }) => {
+        createAuditLog(
+          'Leitura de Prontuário', 
+          { id: 'clinician_active', name: 'Profissional Autorizado', role: 'Médico/Enfermeiro' }, 
+          clinicalProfile, 
+          `Acesso de leitura ao histórico clínico e exames do paciente ${clinicalProfile.name || ''}`
+        );
+      }).catch(err => console.warn('[iRec AuditLog] Falha ao registrar log:', err));
+    }
+  }, [clinicalProfile]);
+
   const getEntryProgress = (entry) => {
     if (entry.progress !== undefined && entry.progress !== null) return entry.progress;
     if (entry.aiTissueAnalysis) {
@@ -138,6 +152,15 @@ export default function ClinicalHistory({ entries, clinicalProfile }) {
   };
   
   const handlePrint = () => {
+    // Log PDF export in Audit System
+    import('../services/auditLogger').then(({ createAuditLog }) => {
+      createAuditLog(
+        'Exportação PDF / Impressão', 
+        { id: 'clinician_active', name: 'Profissional Autorizado', role: 'Médico/Enfermeiro' }, 
+        clinicalProfile, 
+        `Impressão/Exportação em PDF do prontuário do paciente ${clinicalProfile?.name || ''}`
+      );
+    }).catch(() => {});
     window.print();
   };
 

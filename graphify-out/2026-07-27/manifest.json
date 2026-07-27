@@ -1,0 +1,322 @@
+{
+  "Ducumenta\u00e7\u00e3o para implementar/processador_treinamento.py": {
+    "mtime": 1783438051.954329,
+    "ast_hash": "dd4af7b8c439db294e633fc487698f4d",
+    "semantic_hash": "dd4af7b8c439db294e633fc487698f4d"
+  },
+  "android/app/build.gradle": {
+    "mtime": 1784738650.884529,
+    "ast_hash": "523b5d5596dc69f6f38cae2322d6dc27",
+    "semantic_hash": "523b5d5596dc69f6f38cae2322d6dc27"
+  },
+  "android/app/capacitor.build.gradle": {
+    "mtime": 1784738897.4401143,
+    "ast_hash": "b863e425fbde80251bd3c68ac8ccba02",
+    "semantic_hash": "b863e425fbde80251bd3c68ac8ccba02"
+  },
+  "android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java": {
+    "mtime": 1784050294.0,
+    "ast_hash": "fbaf7cc870c663eb52dcf218531c439d",
+    "semantic_hash": "fbaf7cc870c663eb52dcf218531c439d"
+  },
+  "android/app/src/main/java/com/irec/medical/MainActivity.java": {
+    "mtime": 1784738650.8834982,
+    "ast_hash": "37c6dbb0fb8063651eb0800a7e304e1f",
+    "semantic_hash": "37c6dbb0fb8063651eb0800a7e304e1f"
+  },
+  "android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java": {
+    "mtime": 1784050294.0,
+    "ast_hash": "e91b4501c14da821682fa5c26a16d616",
+    "semantic_hash": "e91b4501c14da821682fa5c26a16d616"
+  },
+  "android/build.gradle": {
+    "mtime": 1784050294.0,
+    "ast_hash": "682315a426653617c6a74fc12bef55b6",
+    "semantic_hash": "682315a426653617c6a74fc12bef55b6"
+  },
+  "android/capacitor.settings.gradle": {
+    "mtime": 1784738897.4401143,
+    "ast_hash": "455ebb7f9fe84a6974da6bdae43097c2",
+    "semantic_hash": "455ebb7f9fe84a6974da6bdae43097c2"
+  },
+  "android/gradlew": {
+    "mtime": 1784050294.0,
+    "ast_hash": "794669d78aef1dd5c7d889ef618b311a",
+    "semantic_hash": "794669d78aef1dd5c7d889ef618b311a"
+  },
+  "android/settings.gradle": {
+    "mtime": 1784050294.0,
+    "ast_hash": "f6cd925b3f859e23c3d819fe2459e0e4",
+    "semantic_hash": "f6cd925b3f859e23c3d819fe2459e0e4"
+  },
+  "android/variables.gradle": {
+    "mtime": 1784050294.0,
+    "ast_hash": "4b3fce8ea2a515a9d2e47e74757172ec",
+    "semantic_hash": "4b3fce8ea2a515a9d2e47e74757172ec"
+  },
+  "capacitor.config.json": {
+    "mtime": 1784738620.5412526,
+    "ast_hash": "36aa127789685924bcb97f12c0601ffb",
+    "semantic_hash": "36aa127789685924bcb97f12c0601ffb"
+  },
+  "eslint.config.js": {
+    "mtime": 1781964813.9356122,
+    "ast_hash": "3aa4b57d7f08181d86bde52a4dcb7f22",
+    "semantic_hash": "3aa4b57d7f08181d86bde52a4dcb7f22"
+  },
+  "ios/App/App/AppDelegate.swift": {
+    "mtime": 1784050294.0,
+    "ast_hash": "b2865a48d0e54c1613fa58272418bf98",
+    "semantic_hash": "b2865a48d0e54c1613fa58272418bf98"
+  },
+  "ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1784050294.0,
+    "ast_hash": "7453c3002126811a57c38b2740f990cf",
+    "semantic_hash": "7453c3002126811a57c38b2740f990cf"
+  },
+  "ios/App/App/Assets.xcassets/Contents.json": {
+    "mtime": 1784050294.0,
+    "ast_hash": "31cc68f34934a99c0b0c1bebde56309c",
+    "semantic_hash": "31cc68f34934a99c0b0c1bebde56309c"
+  },
+  "ios/App/App/Assets.xcassets/Splash.imageset/Contents.json": {
+    "mtime": 1784050294.0,
+    "ast_hash": "1162e1cddd7ea769bcacdd1aa7b4ac72",
+    "semantic_hash": "1162e1cddd7ea769bcacdd1aa7b4ac72"
+  },
+  "ios/App/CapApp-SPM/Package.swift": {
+    "mtime": 1784738898.035062,
+    "ast_hash": "a1b25ab85336633248b0ca4abb5be8aa",
+    "semantic_hash": "a1b25ab85336633248b0ca4abb5be8aa"
+  },
+  "ios/App/CapApp-SPM/Sources/CapApp-SPM/CapApp-SPM.swift": {
+    "mtime": 1784050294.0,
+    "ast_hash": "0d92cb44a62bc3f2d73464a2e4f9a890",
+    "semantic_hash": "0d92cb44a62bc3f2d73464a2e4f9a890"
+  },
+  "package.json": {
+    "mtime": 1784738604.7322443,
+    "ast_hash": "025aa9a14560f169f851b3d7c037b8e1",
+    "semantic_hash": "025aa9a14560f169f851b3d7c037b8e1"
+  },
+  "public/manifest.json": {
+    "mtime": 1784560627.8464162,
+    "ast_hash": "9b162c4aa044c5a012f194e0132a5ccc",
+    "semantic_hash": "9b162c4aa044c5a012f194e0132a5ccc"
+  },
+  "public/sw.js": {
+    "mtime": 1784588175.52676,
+    "ast_hash": "a1f53c714dc2251f001177258a0fb77a",
+    "semantic_hash": "a1f53c714dc2251f001177258a0fb77a"
+  },
+  "src/App.jsx": {
+    "mtime": 1784738791.1984,
+    "ast_hash": "1bd540fe225b050796977d529683b140",
+    "semantic_hash": "1bd540fe225b050796977d529683b140"
+  },
+  "src/components/AIChatAssistant.jsx": {
+    "mtime": 1783223765.9896903,
+    "ast_hash": "0bb8c90f93a12f0bf546c37241d9c1fc",
+    "semantic_hash": "0bb8c90f93a12f0bf546c37241d9c1fc"
+  },
+  "src/components/AccessibleDashboard.jsx": {
+    "mtime": 1784593268.024105,
+    "ast_hash": "373f84af52e825c709da44dcda80b08a",
+    "semantic_hash": "373f84af52e825c709da44dcda80b08a"
+  },
+  "src/components/AccessibleSubViews.jsx": {
+    "mtime": 1784593251.7465718,
+    "ast_hash": "c76f79a0030c2b45b62fd9a4e2fa44d3",
+    "semantic_hash": "c76f79a0030c2b45b62fd9a4e2fa44d3"
+  },
+  "src/components/AdminDashboard.jsx": {
+    "mtime": 1783446142.7875628,
+    "ast_hash": "24777995410879dac7e4b6def69cf565",
+    "semantic_hash": "24777995410879dac7e4b6def69cf565"
+  },
+  "src/components/AdminPartners.jsx": {
+    "mtime": 1782855578.4454002,
+    "ast_hash": "34660ae8874b31805ebb09bbc4af3800",
+    "semantic_hash": "34660ae8874b31805ebb09bbc4af3800"
+  },
+  "src/components/AdminReports.jsx": {
+    "mtime": 1783198850.1400332,
+    "ast_hash": "c2611a0a283bbeca07fb5c09a0c36488",
+    "semantic_hash": "c2611a0a283bbeca07fb5c09a0c36488"
+  },
+  "src/components/BookingModal.jsx": {
+    "mtime": 1784589681.3646092,
+    "ast_hash": "ab0a76ae7ee9d73f4880df5e4d6f5a6f",
+    "semantic_hash": "ab0a76ae7ee9d73f4880df5e4d6f5a6f"
+  },
+  "src/components/ClinicalHistory.jsx": {
+    "mtime": 1783222011.2415442,
+    "ast_hash": "192b9de1eb5a71adb3dbcf367ac3feae",
+    "semantic_hash": "192b9de1eb5a71adb3dbcf367ac3feae"
+  },
+  "src/components/ClinicalTriage.jsx": {
+    "mtime": 1784154967.0749032,
+    "ast_hash": "15b91c9f5c48364d97f8ca3dc19e575f",
+    "semantic_hash": "15b91c9f5c48364d97f8ca3dc19e575f"
+  },
+  "src/components/Dashboard.jsx": {
+    "mtime": 1784589862.060826,
+    "ast_hash": "9d9813b06d238e0342f9df1e2e3eed7d",
+    "semantic_hash": "9d9813b06d238e0342f9df1e2e3eed7d"
+  },
+  "src/components/DateRangePicker.jsx": {
+    "mtime": 1782878967.4059005,
+    "ast_hash": "43036d55d37bc26734c2a6fc583e8428",
+    "semantic_hash": "43036d55d37bc26734c2a6fc583e8428"
+  },
+  "src/components/DoctorDashboard.jsx": {
+    "mtime": 1784738860.7540927,
+    "ast_hash": "fb2bba8868b115587ce666ebbe68f964",
+    "semantic_hash": "fb2bba8868b115587ce666ebbe68f964"
+  },
+  "src/components/DoctorDashboardAnalytics.jsx": {
+    "mtime": 1782878992.0989182,
+    "ast_hash": "52463e837cc54623577a6fbb3184e2aa",
+    "semantic_hash": "52463e837cc54623577a6fbb3184e2aa"
+  },
+  "src/components/DoctorPartners.jsx": {
+    "mtime": 1782866873.657215,
+    "ast_hash": "5b59192a1004ac8031aca100605ec334",
+    "semantic_hash": "5b59192a1004ac8031aca100605ec334"
+  },
+  "src/components/LocalResourcesPanel.jsx": {
+    "mtime": 1783385688.1875887,
+    "ast_hash": "8906d2e23d71559c2cab94605043f2fc",
+    "semantic_hash": "8906d2e23d71559c2cab94605043f2fc"
+  },
+  "src/components/Login.jsx": {
+    "mtime": 1784576776.879131,
+    "ast_hash": "15ac9749e5f050351113c987c6c982cf",
+    "semantic_hash": "15ac9749e5f050351113c987c6c982cf"
+  },
+  "src/components/MyNetworkPortal.jsx": {
+    "mtime": 1783373470.0768826,
+    "ast_hash": "4f60cfe9a16f9c32ca2e3c007f78cb98",
+    "semantic_hash": "4f60cfe9a16f9c32ca2e3c007f78cb98"
+  },
+  "src/components/NursesNetwork.jsx": {
+    "mtime": 1784590683.8122697,
+    "ast_hash": "3510fa2618b2a43c03c8c826cae605ba",
+    "semantic_hash": "3510fa2618b2a43c03c8c826cae605ba"
+  },
+  "src/components/PatientDocuments.jsx": {
+    "mtime": 1784738751.6362994,
+    "ast_hash": "3d2a6e5cb0f2b177cc02cb48b30cc487",
+    "semantic_hash": "3d2a6e5cb0f2b177cc02cb48b30cc487"
+  },
+  "src/components/PermissionsGuideModal.jsx": {
+    "mtime": 1784596020.6344566,
+    "ast_hash": "4c7bfa4f7cf8b2a9689f054bfe71576f",
+    "semantic_hash": "4c7bfa4f7cf8b2a9689f054bfe71576f"
+  },
+  "src/components/PrescriptionGeneratorModal.jsx": {
+    "mtime": 1784738518.4011488,
+    "ast_hash": "c413f106df93bd6615fad4f04722cd89",
+    "semantic_hash": "c413f106df93bd6615fad4f04722cd89"
+  },
+  "src/components/ProtocolGuide.jsx": {
+    "mtime": 1783388807.318803,
+    "ast_hash": "db581efade4cc49c8f95e0b54f75ede0",
+    "semantic_hash": "db581efade4cc49c8f95e0b54f75ede0"
+  },
+  "src/components/ReportPDFGenerator.jsx": {
+    "mtime": 1784738529.9456367,
+    "ast_hash": "e2cb09a18a74923cbca9a6d18e856bac",
+    "semantic_hash": "e2cb09a18a74923cbca9a6d18e856bac"
+  },
+  "src/components/SOSEmergencyModal.jsx": {
+    "mtime": 1784588500.098703,
+    "ast_hash": "3f4eb94ba3a70d00d762801faf5e4755",
+    "semantic_hash": "3f4eb94ba3a70d00d762801faf5e4755"
+  },
+  "src/components/SpecialistDirectory.jsx": {
+    "mtime": 1784590650.750664,
+    "ast_hash": "8f18f1173492ea96c7cd43922b30cbca",
+    "semantic_hash": "8f18f1173492ea96c7cd43922b30cbca"
+  },
+  "src/components/Telemedicine.jsx": {
+    "mtime": 1783223532.3809927,
+    "ast_hash": "41ee65cb18aeb7046949f6f2d56061c8",
+    "semantic_hash": "41ee65cb18aeb7046949f6f2d56061c8"
+  },
+  "src/components/UserProfileModal.jsx": {
+    "mtime": 1784573443.9942217,
+    "ast_hash": "adc3d492b8f6f5ed12b011390661379a",
+    "semantic_hash": "adc3d492b8f6f5ed12b011390661379a"
+  },
+  "src/components/VitalsTelemetry.jsx": {
+    "mtime": 1783223283.4401567,
+    "ast_hash": "46a49ba0a17515cb96a0a8233c225c36",
+    "semantic_hash": "46a49ba0a17515cb96a0a8233c225c36"
+  },
+  "src/main.jsx": {
+    "mtime": 1781964814.0024943,
+    "ast_hash": "e13723e2574429d9a6d849727e3ff695",
+    "semantic_hash": "e13723e2574429d9a6d849727e3ff695"
+  },
+  "src/services/fhirService.js": {
+    "mtime": 1782532745.5198839,
+    "ast_hash": "288d26e7ce8a5cc3d1aeb2bb418eec45",
+    "semantic_hash": "288d26e7ce8a5cc3d1aeb2bb418eec45"
+  },
+  "src/services/geminiService.js": {
+    "mtime": 1784634464.121794,
+    "ast_hash": "437682ab4cfafcb1c69a3d484082534f",
+    "semantic_hash": "437682ab4cfafcb1c69a3d484082534f"
+  },
+  "src/services/locationService.js": {
+    "mtime": 1782536065.9619641,
+    "ast_hash": "369f89978b66895c389cfaf58e8d5c31",
+    "semantic_hash": "369f89978b66895c389cfaf58e8d5c31"
+  },
+  "src/services/supabaseService.js": {
+    "mtime": 1784589883.2732222,
+    "ast_hash": "d1d5aa36c9b9ec65c367fd73060cc8fd",
+    "semantic_hash": "d1d5aa36c9b9ec65c367fd73060cc8fd"
+  },
+  "src/supabaseClient.js": {
+    "mtime": 1782004310.4967895,
+    "ast_hash": "67aa8f8763a41a780b5b94d7bf315dec",
+    "semantic_hash": "67aa8f8763a41a780b5b94d7bf315dec"
+  },
+  "src/utils/speechUtils.js": {
+    "mtime": 1784594152.1954381,
+    "ast_hash": "6e7a280e231835c5e9bd5d20f86ba364",
+    "semantic_hash": "6e7a280e231835c5e9bd5d20f86ba364"
+  },
+  "supabase/functions/gemini-analysis/index.ts": {
+    "mtime": 1783221686.3820527,
+    "ast_hash": "5decb5d816171c30f3e36240e1c47658",
+    "semantic_hash": "5decb5d816171c30f3e36240e1c47658"
+  },
+  "vite.config.js": {
+    "mtime": 1781964813.9495347,
+    "ast_hash": "88439104b3c207f17d33ef3160e3b080",
+    "semantic_hash": "88439104b3c207f17d33ef3160e3b080"
+  },
+  "Bugs localizados pelos testes/WhatsApp Ptt 2026-07-10 at 14.18.57.ogg": {
+    "mtime": 1783792437.6138132,
+    "ast_hash": "16f3feebccd8befc3add386dd0be1d7c",
+    "semantic_hash": "16f3feebccd8befc3add386dd0be1d7c"
+  },
+  "Bugs localizados pelos testes/WhatsApp Ptt 2026-07-10 at 14.21.07.ogg": {
+    "mtime": 1783792443.280609,
+    "ast_hash": "93500fc2098db72c0c9310d495ba64f3",
+    "semantic_hash": "93500fc2098db72c0c9310d495ba64f3"
+  },
+  "Bugs localizados pelos testes/WhatsApp Ptt 2026-07-10 at 14.22.37.ogg": {
+    "mtime": 1783792456.2159781,
+    "ast_hash": "cb7a5e946d247100b9ad9dd493085f26",
+    "semantic_hash": "cb7a5e946d247100b9ad9dd493085f26"
+  },
+  "Bugs localizados pelos testes/WhatsApp Ptt 2026-07-10 at 14.24.53.ogg": {
+    "mtime": 1783792468.2721624,
+    "ast_hash": "93e36ea802a9c12e1777bbcc51c9feb3",
+    "semantic_hash": "93e36ea802a9c12e1777bbcc51c9feb3"
+  }
+}

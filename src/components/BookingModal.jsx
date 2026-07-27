@@ -70,12 +70,20 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
         price: price,
         paymentMethod: paymentMethod,
         paymentStatus: 'paid',
-        status: 'confirmed'
+        status: 'Agendado'
       };
 
       const result = await createAppointment(appointmentData);
       setLoading(false);
       if (result) {
+        // Log Audit Event (Medplum)
+        try {
+          const { createAuditLog } = await import('../services/auditLogger');
+          createAuditLog('Agendamento de Consulta', currentUser, professional, `Consulta ${modality === 'online' ? 'Online' : 'Presencial'} agendada para ${selectedDate} às ${selectedTime}`);
+        } catch (e) {
+          console.warn('[iRec AuditLog] Falha ao importar audit logger:', e);
+        }
+
         setStep(5); // Success step
       } else {
         throw new Error('Erro ao registrar agendamento. Tente novamente.');
