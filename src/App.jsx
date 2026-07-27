@@ -803,6 +803,21 @@ export default function App() {
         );
       case 'doctor-analytics':
         return <DoctorDashboardAnalytics currentUser={currentUser} />;
+      case 'doctor-dashboard':
+        return (
+          <DoctorDashboard 
+            doctorProfile={currentUser} 
+            setActiveTab={setActiveTab} 
+            onProfileUpdate={setCurrentUser} 
+            onEditProfile={() => setShowProfileModal(true)} 
+            onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }}
+            selectedPatient={selectedPatientForDoctor}
+            setSelectedPatient={setSelectedPatientForDoctor}
+            selectedPatientEntries={selectedPatientEntriesForDoctor}
+            setSelectedPatientEntries={setSelectedPatientEntriesForDoctor}
+            initialTab="my-patients"
+          />
+        );
       case 'doctor-agenda':
         return (
           <DoctorDashboard 

@@ -183,6 +183,12 @@ export default function DoctorDashboard({
     localStorage.setItem('irec_doctor_doc_tab', selectedDocTab);
   }, [selectedDocTab]);
 
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
   // Periodic polling for patient lists (every 10s)
   useEffect(() => {
     const interval = setInterval(() => {
