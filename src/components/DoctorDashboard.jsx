@@ -1531,7 +1531,12 @@ export default function DoctorDashboard({
           )}
           <button 
             className="btn btn-secondary" 
-            onClick={() => setDigitalCertModalOpen(true)}
+            onClick={() => {
+              if (digitalCertType === 'none') {
+                setDigitalCertType('a1');
+              }
+              setDigitalCertModalOpen(true);
+            }}
             style={{ 
               padding: '6px 14px', 
               fontSize: '12.5px', 
