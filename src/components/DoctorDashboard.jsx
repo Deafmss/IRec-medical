@@ -39,7 +39,7 @@ const COMMON_CID10 = [
 
 export default function DoctorDashboard({ 
   doctorProfile, 
-  setActiveTab: setAppActiveTab, 
+  setActiveTab: setParentActiveTab, 
   onProfileUpdate, 
   onEditProfile, 
   onOpenChat,
@@ -47,9 +47,10 @@ export default function DoctorDashboard({
   selectedPatient,
   setSelectedPatient,
   selectedPatientEntries,
-  setSelectedPatientEntries 
+  setSelectedPatientEntries,
+  initialTab
 }) {
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('irec_doctor_active_tab') || 'my-patients'); // 'my-patients' or 'all-patients'
+  const [activeTab, setActiveTab] = useState(() => initialTab || localStorage.getItem('irec_doctor_active_tab') || 'my-patients'); // 'my-patients' or 'all-patients'
   const [patients, setPatients] = useState([]);
   const [myPatients, setMyPatients] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
