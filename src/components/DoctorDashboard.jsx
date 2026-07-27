@@ -1512,98 +1512,70 @@ export default function DoctorDashboard({
 
       {!selectedPatient ? (
         <>
-          {/* Summary KPIs */}
+          {/* Summary KPIs - Protected LGPD Doctor Privacy */}
           <div className="stats-strip no-print">
             <div 
-              className={`stat-box interactive ${activeTab === 'all-patients' && filterAlert !== 'infection' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('all-patients');
-                setFilterAlert('all');
-                setSearchQuery('');
-              }}
-              title="Filtrar por todos os pacientes cadastrados"
-            >
-              <span className="label">Total de Pacientes</span>
-              <span className="value">{patients.length}</span>
-            </div>
-            <div 
-              className={`stat-box interactive ${activeTab === 'my-patients' && filterAlert !== 'infection' ? 'active' : ''}`}
+              className={`stat-box interactive ${activeTab !== 'my-agenda' && filterAlert !== 'infection' ? 'active' : ''}`}
               onClick={() => {
                 setActiveTab('my-patients');
                 setFilterAlert('all');
                 setSearchQuery('');
               }}
-              title="Filtrar por pacientes vinculados ao meu acompanhamento"
+              title="Pacientes vinculados ao seu acompanhamento médico"
             >
-              <span className="label">Acompanhados por Mim</span>
+              <span className="label">Pacientes sob Meu Acompanhamento</span>
               <span className="value">{myPatients.length}</span>
+            </div>
+            <div 
+              className={`stat-box interactive ${activeTab === 'my-agenda' ? 'active' : ''}`}
+              onClick={() => setActiveTab('my-agenda')}
+              title="Consultas e atendimentos agendados"
+            >
+              <span className="label">Consultas na Minha Agenda</span>
+              <span className="value">{doctorAppointments.length}</span>
             </div>
             <div 
               className={`stat-box interactive ${filterAlert === 'infection' ? 'active' : ''}`}
               onClick={() => {
+                setActiveTab('my-patients');
                 setFilterAlert('infection');
               }}
-              title="Filtrar apenas por casos críticos ou com sinais de infecção"
+              title="Filtrar apenas por pacientes da sua carteira com sinais de infecção ou alerta"
             >
-              <span className="label">Casos com Alerta de Risco</span>
+              <span className="label">Alertas de Infecção / Risco</span>
               <span className="value">
-                {patients.filter(p => p.triageAlerts && p.triageAlerts.length > 0).length}
+                {myPatients.filter(p => p.triageAlerts && p.triageAlerts.length > 0).length}
               </span>
             </div>
           </div>
 
-          {/* Tab Selector & Filters */}
-          <div className="filter-search-bar no-print">
-            <div className="login-tabs" style={{ margin: 0 }}>
-              <button 
-                type="button" 
-                className={`login-tab-btn ${activeTab === 'my-agenda' ? 'active' : ''}`}
-                onClick={() => setActiveTab('my-agenda')}
-                style={{ minWidth: '150px', backgroundColor: activeTab === 'my-agenda' ? '#0284c7' : 'transparent', color: activeTab === 'my-agenda' ? '#fff' : 'inherit' }}
-              >
-                📅 Minha Agenda ({doctorAppointments.length})
-              </button>
-              <button 
-                type="button" 
-                className={`login-tab-btn ${activeTab === 'my-patients' ? 'active' : ''}`}
-                onClick={() => setActiveTab('my-patients')}
-                style={{ minWidth: '150px' }}
-              >
-                Meus Pacientes ({myPatients.length})
-              </button>
-              <button 
-                type="button" 
-                className={`login-tab-btn ${activeTab === 'all-patients' ? 'active' : ''}`}
-                onClick={() => setActiveTab('all-patients')}
-                style={{ minWidth: '150px' }}
-              >
-                Todos os Pacientes ({patients.length})
-              </button>
-            </div>
+          {/* Search & Filters Bar (Only for Patients List View) */}
+          {activeTab !== 'my-agenda' && (
+            <div className="filter-search-bar no-print">
+              <div className="search-input-wrapper" style={{ flex: 1 }}>
+                <svg className="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.603 10.602Z" />
+                </svg>
+                <input 
+                  type="text" 
+                  placeholder="Buscar paciente em acompanhamento por nome..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
 
-            <div className="search-input-wrapper">
-              <svg className="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.603 10.602Z" />
-              </svg>
-              <input 
-                type="text" 
-                placeholder="Buscar paciente por nome..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <select 
+                className="filter-select"
+                value={filterAlert}
+                onChange={(e) => setFilterAlert(e.target.value)}
+              >
+                <option value="all">Todas as Condições</option>
+                <option value="diabetes">Apenas Diabéticos</option>
+                <option value="hypertension">Apenas Hipertensos</option>
+                <option value="infection">Apenas com Alertas de Infecção</option>
+              </select>
             </div>
-
-            <select 
-              className="filter-select"
-              value={filterAlert}
-              onChange={(e) => setFilterAlert(e.target.value)}
-            >
-              <option value="all">Todas as Condições</option>
-              <option value="diabetes">Apenas Diabéticos</option>
-              <option value="hypertension">Apenas Hipertensos</option>
-              <option value="infection">Apenas com Alertas de Infecção</option>
-            </select>
-          </div>
+          )}
 
           {/* Patients Cards List OR Appointments Agenda List */}
           {activeTab === 'my-agenda' ? (
