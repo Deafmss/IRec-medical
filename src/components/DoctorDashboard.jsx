@@ -99,6 +99,7 @@ export default function DoctorDashboard({
   // Digital Certificate Config states
   const [digitalCertModalOpen, setDigitalCertModalOpen] = useState(false);
   const [digitalCertType, setDigitalCertType] = useState(() => localStorage.getItem('irec_cert_type') || 'none');
+  const [certModalTab, setCertModalTab] = useState('a1');
   const [birdIdUser, setBirdIdUser] = useState(() => localStorage.getItem('irec_birdid_user') || '');
   const [a1CertName, setA1CertName] = useState(() => localStorage.getItem('irec_a1_name') || '');
   const [a1CertFile, setA1CertFile] = useState(null);
@@ -1532,9 +1533,6 @@ export default function DoctorDashboard({
           <button 
             className="btn btn-secondary" 
             onClick={() => {
-              if (digitalCertType === 'none') {
-                setDigitalCertType('a1');
-              }
               setDigitalCertModalOpen(true);
             }}
             style={{ 
@@ -3575,59 +3573,114 @@ export default function DoctorDashboard({
                 </div>
               )}
             </div>
-
-            {/* Selector Tabs */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', backgroundColor: 'rgba(15, 23, 42, 0.5)', padding: '4px', borderRadius: '8px' }}>
               <button
-                onClick={() => {
-                  setDigitalCertType('birdid');
-                  localStorage.setItem('irec_cert_type', 'birdid');
-                }}
+                type="button"
+                onClick={() => setCertModalTab('a1')}
                 style={{
                   padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
-                  backgroundColor: digitalCertType === 'birdid' ? '#10b981' : 'transparent',
-                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                ☁️ Nuvem (BirdID)
-              </button>
-              <button
-                onClick={() => {
-                  setDigitalCertType('a1');
-                  localStorage.setItem('irec_cert_type', 'a1');
-                }}
-                style={{
-                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
-                  backgroundColor: digitalCertType === 'a1' ? '#10b981' : 'transparent',
+                  backgroundColor: certModalTab === 'a1' ? '#10b981' : 'transparent',
                   color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
                 }}
               >
                 📂 Arquivo A1
               </button>
               <button
-                onClick={() => {
-                  setDigitalCertType('a3');
-                  localStorage.setItem('irec_cert_type', 'a3');
-                }}
+                type="button"
+                onClick={() => setCertModalTab('a3')}
                 style={{
                   padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
-                  backgroundColor: digitalCertType === 'a3' ? '#10b981' : 'transparent',
+                  backgroundColor: certModalTab === 'a3' ? '#10b981' : 'transparent',
                   color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
                 }}
               >
                 🔌 USB / Cartão A3
               </button>
+              <button
+                type="button"
+                onClick={() => setCertModalTab('birdid')}
+                style={{
+                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
+                  backgroundColor: certModalTab === 'birdid' ? '#10b981' : 'transparent',
+                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                ☁️ Nuvem (BirdID)
+              </button>
             </div>
 
             {/* Dynamic settings form panel */}
             <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {digitalCertType === 'birdid' && (
+              {certModalTab === 'a1' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    Conecte sua conta do provedor de certificado em nuvem (BirdID, Soluti ou Gov.br) para validar assinaturas via OTP temporário.
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Importe seu arquivo de certificado A1 médico (formatos .pfx ou .p12). Ele é armazenado de forma criptografada no seu dispositivo.
                   </div>
                   <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Usuário / CPF (Provedor Nuvem):</label>
+                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Selecionar Arquivo do Certificado (.PFX / .P12):</label>
+                    <input
+                      type="file"
+                      accept=".pfx,.p12"
+                      style={{ fontSize: '12px', color: '#fff', backgroundColor: 'rgba(15, 23, 42, 0.6)', padding: '6px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.15)' }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setA1CertFile(file);
+                          setA1CertName(file.name);
+                          localStorage.setItem('irec_a1_name', file.name);
+                        }
+                      }}
+                    />
+                    {a1CertName && (
+                      <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700' }}>
+                        📄 Arquivo Selecionado: {a1CertName}
+                      </span>
+                    )}
+                  </div>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Senha do Arquivo de Certificado:</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '8px', fontSize: '12.5px', borderRadius: '6px' }}
+                      placeholder="Digite a senha da chave privada .pfx"
+                      value={a1CertPassword}
+                      onChange={(e) => setA1CertPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {certModalTab === 'a3' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Conecte seu token USB físico ou insira o Cartão Smartcard na leitora do seu computador.
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    padding: '12px',
+                    borderRadius: '8px'
+                  }}>
+                    <span style={{ fontSize: '22px' }}>🔌</span>
+                    <div style={{ fontSize: '12px' }}>
+                      <strong style={{ color: '#10b981' }}>Leitor / Token Ativo:</strong> Aladdin eToken / Safenet PKCS#11 <br />
+                      <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.6)' }}>Serviço de Assinatura Serpro Signer / WebPKI ativo na porta localhost.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {certModalTab === 'birdid' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Conecte sua conta do provedor de certificado em nuvem (BirdID, Soluti ou Vidaas) para validação via OTP.
+                  </div>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '700' }}>CPF / Usuário do Provedor de Nuvem:</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3639,64 +3692,6 @@ export default function DoctorDashboard({
                         localStorage.setItem('irec_birdid_user', e.target.value);
                       }}
                     />
-                  </div>
-                </div>
-              )}
-
-              {digitalCertType === 'a1' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    Importe seu arquivo de certificado A1 (formatos .pfx ou .p12). Ele ficará salvo localmente neste dispositivo.
-                  </div>
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Selecionar Arquivo de Certificado:</label>
-                    <input
-                      type="file"
-                      accept=".pfx,.p12"
-                      style={{ fontSize: '12px', color: '#fff' }}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setA1CertFile(file);
-                          setA1CertName(file.name);
-                          localStorage.setItem('irec_a1_name', file.name);
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Senha do Certificado:</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '8px', fontSize: '12.5px', borderRadius: '6px' }}
-                      placeholder="Senha do arquivo .pfx"
-                      value={a1CertPassword}
-                      onChange={(e) => setA1CertPassword(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {digitalCertType === 'a3' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    Utiliza o agente local de assinatura (compatível com Serpro, WebPKI, Safenet) para ler o token físico conectado na porta USB do computador.
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
-                    border: '1px solid rgba(16, 185, 129, 0.15)',
-                    padding: '10px',
-                    borderRadius: '8px'
-                  }}>
-                    <span style={{ fontSize: '18px' }}>🔌</span>
-                    <div style={{ fontSize: '12px' }}>
-                      <strong>Token Identificado:</strong> Aladdin eToken JC <br />
-                      <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.5)' }}>Leitora de Smartcard ativa via Serpro Signer localhost.</span>
-                    </div>
                   </div>
                 </div>
               )}
@@ -3731,7 +3726,7 @@ export default function DoctorDashboard({
                       setA1CertName('');
                       setA1CertFile(null);
                       setA1CertPassword('');
-                      alert('Vínculo do certificado digital removido. O status voltará a ser Pendente (Vermelho).');
+                      alert('Vínculo do certificado digital removido. O status voltou a ser Pendente (Vermelho).');
                     }}
                     className="btn"
                     style={{
@@ -3747,24 +3742,25 @@ export default function DoctorDashboard({
               <button
                 type="button"
                 onClick={() => {
-                  if (digitalCertType === 'none') {
-                    alert('Nenhum tipo de certificado selecionado. Selecione A1, A3 ou Nuvem para ativar seu certificado digital.');
+                  if (certModalTab === 'a1' && !a1CertName && !a1CertFile) {
+                    alert('⚠️ Por favor, selecione seu arquivo de certificado A1 (.PFX ou .P12) primeiro.');
                     return;
                   }
 
-                  if (digitalCertType === 'a1' && !a1CertName && !a1CertFile) {
-                    alert('Por favor, selecione o arquivo .PFX ou .P12 do seu Certificado A1 antes de salvar.');
+                  if (certModalTab === 'a1' && !a1CertPassword) {
+                    alert('⚠️ Por favor, digite a senha do seu arquivo de certificado A1.');
                     return;
                   }
 
-                  if (digitalCertType === 'birdid' && !birdIdUser) {
-                    alert('Por favor, digite seu Usuário/CPF do provedor de certificado em nuvem antes de salvar.');
+                  if (certModalTab === 'birdid' && !birdIdUser) {
+                    alert('⚠️ Por favor, digite seu Usuário/CPF do provedor de certificado em nuvem.');
                     return;
                   }
 
-                  localStorage.setItem('irec_cert_type', digitalCertType);
+                  setDigitalCertType(certModalTab);
+                  localStorage.setItem('irec_cert_type', certModalTab);
                   setDigitalCertModalOpen(false);
-                  alert(`✅ Certificado Digital (${digitalCertType.toUpperCase()}) configurado e ativado com sucesso! As receitas e atestados emitidos receberão assinatura ICP-Brasil.`);
+                  alert(`✅ Certificado Digital (${certModalTab.toUpperCase()}) configurado e ativado com sucesso! As receitas e atestados emitidos receberão assinatura ICP-Brasil.`);
                 }}
                 className="btn btn-primary"
                 style={{ flex: 1, padding: '10px', fontSize: '12.5px', borderRadius: '8px', fontWeight: 'bold', backgroundColor: '#10b981' }}
