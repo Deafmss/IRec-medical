@@ -121,6 +121,8 @@ export default function DoctorDashboard({
   const recognitionRef = useRef(null);
 
 
+  const [doctorAppointments, setDoctorAppointments] = useState([]);
+
   // Load lists
   const loadLists = async () => {
     setLoading(true);
@@ -129,6 +131,10 @@ export default function DoctorDashboard({
       setPatients(all);
       const mine = await getAssignedPatients(doctorProfile.id);
       setMyPatients(mine);
+      if (doctorProfile?.id) {
+        const apps = await getDoctorAppointments(doctorProfile.id);
+        setDoctorAppointments(apps);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -1550,6 +1556,14 @@ export default function DoctorDashboard({
             <div className="login-tabs" style={{ margin: 0 }}>
               <button 
                 type="button" 
+                className={`login-tab-btn ${activeTab === 'my-agenda' ? 'active' : ''}`}
+                onClick={() => setActiveTab('my-agenda')}
+                style={{ minWidth: '150px', backgroundColor: activeTab === 'my-agenda' ? '#0284c7' : 'transparent', color: activeTab === 'my-agenda' ? '#fff' : 'inherit' }}
+              >
+                📅 Minha Agenda ({doctorAppointments.length})
+              </button>
+              <button 
+                type="button" 
                 className={`login-tab-btn ${activeTab === 'my-patients' ? 'active' : ''}`}
                 onClick={() => setActiveTab('my-patients')}
                 style={{ minWidth: '150px' }}
@@ -1590,8 +1604,108 @@ export default function DoctorDashboard({
             </select>
           </div>
 
-          {/* Patients Cards List */}
-          {loading ? (
+          {/* Patients Cards List OR Appointments Agenda List */}
+          {activeTab === 'my-agenda' ? (
+            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                    📅 Agenda de Consultas & Telemedicina
+                  </h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                    Gerencie suas consultas agendadas, atendimentos por vídeo e salas de espera ativas.
+                  </p>
+                </div>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={loadLists}
+                  style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '50px' }}
+                >
+                  🔄 Atualizar Agenda
+                </button>
+              </div>
+
+              {doctorAppointments.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '32px', margin: '0 0 8px 0' }}>📅</p>
+                  <p style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)' }}>Nenhuma consulta agendada para este médico no momento.</p>
+                  <p style={{ fontSize: '12px' }}>Quando um paciente contratar uma consulta online ou presencial, ela aparecerá automaticamente aqui.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+                  {doctorAppointments.map(app => (
+                    <div 
+                      key={app.id}
+                      style={{
+                        backgroundColor: 'var(--bg-primary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '16px',
+                        padding: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={{ 
+                            fontSize: '10.5px', 
+                            fontWeight: '800', 
+                            padding: '3px 8px', 
+                            borderRadius: '50px',
+                            backgroundColor: app.status === 'Em Espera' ? 'rgba(234, 179, 8, 0.15)' : (app.status === 'Concluído' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(2, 132, 199, 0.15)'),
+                            color: app.status === 'Em Espera' ? '#eab308' : (app.status === 'Concluído' ? '#10b981' : '#0284c7')
+                          }}>
+                            ● {app.status || 'Agendado'}
+                          </span>
+                          <h4 style={{ fontSize: '15px', fontWeight: '700', margin: '8px 0 2px 0', color: 'var(--text-primary)' }}>
+                            {app.patientName || 'Paciente'}
+                          </h4>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            {app.modality === 'online' ? '💻 Telemedicina (Vídeo)' : '🏥 Presencial'}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '800', color: '#10b981' }}>
+                            {app.price ? `R$ ${app.price.toFixed(2)}` : 'Pago'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '12px', backgroundColor: 'var(--bg-secondary)', padding: '10px 12px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>📆 <strong>Data:</strong> {app.appointmentDate}</span>
+                        <span>⏰ <strong>Horário:</strong> {app.appointmentTime}</span>
+                      </div>
+
+                      {app.notes && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                          "<strong>Nota:</strong> {app.notes}"
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => {
+                            const foundPatient = patients.find(p => p.id === app.patientId || p.name === app.patientName);
+                            if (foundPatient) {
+                              setSelectedPatient(foundPatient);
+                            } else {
+                              setSelectedPatient({ id: app.patientId, name: app.patientName, email: app.patientEmail });
+                            }
+                          }}
+                          style={{ flex: 1, padding: '8px', fontSize: '12px', borderRadius: '10px', backgroundColor: '#0284c7' }}
+                        >
+                          📹 Abrir Prontuário / Telemedicina
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : loading ? (
             <div className="glass-card" style={{ textAlign: 'center', padding: '40px' }}>Carregando dados dos prontuários...</div>
           ) : filteredPatients.length === 0 ? (
             <div className="glass-card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>

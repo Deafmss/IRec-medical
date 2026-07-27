@@ -1470,8 +1470,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_admindashboard",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "admindashboard.jsx"
     },
     {
@@ -1481,8 +1481,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_admindashboard_admindashboard",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "admindashboard()"
     },
     {
@@ -1492,8 +1492,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_adminpartners",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "adminpartners.jsx"
     },
     {
@@ -1503,8 +1503,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_adminpartners_adminpartners",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "adminpartners()"
     },
     {
@@ -1514,8 +1514,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_adminreports",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "adminreports.jsx"
     },
     {
@@ -1525,8 +1525,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "src_components_adminreports_adminreports",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "adminreports()"
     },
     {
@@ -1536,8 +1536,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_bookingmodal",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "bookingmodal.jsx"
     },
     {
@@ -1547,8 +1547,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_bookingmodal_bookingmodal",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "bookingmodal()"
     },
     {
@@ -1701,8 +1701,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_doctordashboard",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "doctordashboard.jsx"
     },
     {
@@ -1712,8 +1712,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_doctordashboard_common_cid10",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "common_cid10"
     },
     {
@@ -1723,8 +1723,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_components_doctordashboard_doctordashboard",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "doctordashboard()"
     },
     {
@@ -1756,8 +1756,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_doctorpartners",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "doctorpartners.jsx"
     },
     {
@@ -1767,8 +1767,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_doctorpartners_doctorpartners",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "doctorpartners()"
     },
     {
@@ -1855,8 +1855,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_nursesnetwork",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "nursesnetwork.jsx"
     },
     {
@@ -1866,8 +1866,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_nursesnetwork_getnursepremiumdetails",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "getnursepremiumdetails()"
     },
     {
@@ -1877,8 +1877,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_components_nursesnetwork_nursesnetwork",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "nursesnetwork()"
     },
     {
@@ -1954,8 +1954,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_protocolguide",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 3,
+      "community_name": "DoctorDashboard.jsx",
       "norm_label": "protocolguide.jsx"
     },
     {
@@ -1965,8 +1965,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_protocolguide_generatedefaultpersonalizedprotocol",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 3,
+      "community_name": "DoctorDashboard.jsx",
       "norm_label": "generatedefaultpersonalizedprotocol()"
     },
     {
@@ -1976,8 +1976,8 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "src_components_protocolguide_formatmaterialsforview",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 3,
+      "community_name": "DoctorDashboard.jsx",
       "norm_label": "formatmaterialsforview()"
     },
     {
@@ -1987,8 +1987,8 @@
       "source_location": "L180",
       "_origin": "ast",
       "id": "src_components_protocolguide_protocolguide",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 3,
+      "community_name": "DoctorDashboard.jsx",
       "norm_label": "protocolguide()"
     },
     {
@@ -2042,8 +2042,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_specialistdirectory",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "specialistdirectory.jsx"
     },
     {
@@ -2053,8 +2053,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_specialistdirectory_getdoctorpremiumdetails",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "getdoctorpremiumdetails()"
     },
     {
@@ -2064,8 +2064,8 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "src_components_specialistdirectory_specialistdirectory",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "specialistdirectory()"
     },
     {
@@ -2174,8 +2174,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_fhirservice",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "fhirservice.js"
     },
     {
@@ -2185,8 +2185,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_services_fhirservice_exportpatienttofhir",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "exportpatienttofhir()"
     },
     {
@@ -2196,8 +2196,8 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "src_services_fhirservice_exportobservationtofhir",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "exportobservationtofhir()"
     },
     {
@@ -2207,8 +2207,8 @@
       "source_location": "L250",
       "_origin": "ast",
       "id": "src_services_fhirservice_exportfhirbundle",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "exportfhirbundle()"
     },
     {
@@ -2295,8 +2295,8 @@
       "source_location": "L508",
       "_origin": "ast",
       "id": "src_services_geminiservice_chatwithdoctorcopilot",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "chatwithdoctorcopilot()"
     },
     {
@@ -2317,8 +2317,8 @@
       "source_location": "L710",
       "_origin": "ast",
       "id": "src_services_geminiservice_formatsoapnote",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "formatsoapnote()"
     },
     {
@@ -2328,8 +2328,8 @@
       "source_location": "L772",
       "_origin": "ast",
       "id": "src_services_geminiservice_analyzetelemedicinetranscript",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 3,
+      "community_name": "DoctorDashboard.jsx",
       "norm_label": "analyzetelemedicinetranscript()"
     },
     {
@@ -2493,8 +2493,8 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getlocalentries",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "getlocalentries()"
     },
     {
@@ -2504,8 +2504,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_services_supabaseservice_savelocalentries",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 6,
+      "community_name": "Telemedicine.jsx",
       "norm_label": "savelocalentries()"
     },
     {
@@ -2526,8 +2526,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "src_services_supabaseservice_savelocalassignments",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "savelocalassignments()"
     },
     {
@@ -2647,8 +2647,8 @@
       "source_location": "L801",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getwoundentries",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "getwoundentries()"
     },
     {
@@ -2658,8 +2658,8 @@
       "source_location": "L861",
       "_origin": "ast",
       "id": "src_services_supabaseservice_addwoundentry",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 6,
+      "community_name": "Telemedicine.jsx",
       "norm_label": "addwoundentry()"
     },
     {
@@ -2724,8 +2724,8 @@
       "source_location": "L1294",
       "_origin": "ast",
       "id": "src_services_supabaseservice_savelocalappointments",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "savelocalappointments()"
     },
     {
@@ -2735,8 +2735,8 @@
       "source_location": "L1296",
       "_origin": "ast",
       "id": "src_services_supabaseservice_createappointment",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "createappointment()"
     },
     {
@@ -2779,8 +2779,8 @@
       "source_location": "L1461",
       "_origin": "ast",
       "id": "src_services_supabaseservice_followpatient",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "followpatient()"
     },
     {
@@ -2790,8 +2790,8 @@
       "source_location": "L1497",
       "_origin": "ast",
       "id": "src_services_supabaseservice_unfollowpatient",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "unfollowpatient()"
     },
     {
@@ -2801,8 +2801,8 @@
       "source_location": "L1528",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getassignedpatients",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "getassignedpatients()"
     },
     {
@@ -2823,8 +2823,8 @@
       "source_location": "L1672",
       "_origin": "ast",
       "id": "src_services_supabaseservice_adddoctornote",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "adddoctornote()"
     },
     {
@@ -2845,8 +2845,8 @@
       "source_location": "L1724",
       "_origin": "ast",
       "id": "src_services_supabaseservice_savelocaldocuments",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "savelocaldocuments()"
     },
     {
@@ -2856,8 +2856,8 @@
       "source_location": "L1727",
       "_origin": "ast",
       "id": "src_services_supabaseservice_issuedocument",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "issuedocument()"
     },
     {
@@ -2889,8 +2889,8 @@
       "source_location": "L1837",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getlocalhealthcareresources",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 3,
+      "community_name": "DoctorDashboard.jsx",
       "norm_label": "getlocalhealthcareresources()"
     },
     {
@@ -3065,8 +3065,8 @@
       "source_location": "L2362",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getrecommendedmaterials",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "getrecommendedmaterials()"
     },
     {
@@ -3076,8 +3076,8 @@
       "source_location": "L2413",
       "_origin": "ast",
       "id": "src_services_supabaseservice_addrecommendedmaterial",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "addrecommendedmaterial()"
     },
     {
@@ -3087,8 +3087,8 @@
       "source_location": "L2442",
       "_origin": "ast",
       "id": "src_services_supabaseservice_deleterecommendedmaterial",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "deleterecommendedmaterial()"
     },
     {
@@ -3098,8 +3098,8 @@
       "source_location": "L2465",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getauditlogs",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getauditlogs()"
     },
     {
@@ -3109,8 +3109,8 @@
       "source_location": "L2483",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getallprofiles",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getallprofiles()"
     },
     {
@@ -3120,8 +3120,8 @@
       "source_location": "L2527",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getadminstats",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getadminstats()"
     },
     {
@@ -3131,8 +3131,8 @@
       "source_location": "L2567",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getadmintelemedicinecalls",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getadmintelemedicinecalls()"
     },
     {
@@ -3142,8 +3142,8 @@
       "source_location": "L2584",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getadminassignments",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getadminassignments()"
     },
     {
@@ -3153,8 +3153,8 @@
       "source_location": "L2600",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getadminwoundentries",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getadminwoundentries()"
     },
     {
@@ -3252,8 +3252,8 @@
       "source_location": "L2832",
       "_origin": "ast",
       "id": "src_services_supabaseservice_gettrainingknowledgelist",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "gettrainingknowledgelist()"
     },
     {
@@ -3263,8 +3263,8 @@
       "source_location": "L2850",
       "_origin": "ast",
       "id": "src_services_supabaseservice_updatetrainingknowledgechapter",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "updatetrainingknowledgechapter()"
     },
     {
@@ -3274,8 +3274,8 @@
       "source_location": "L2876",
       "_origin": "ast",
       "id": "src_services_supabaseservice_deletetrainingknowledgechapter",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "deletetrainingknowledgechapter()"
     },
     {
@@ -3475,6 +3475,105 @@
       "community": 33,
       "community_name": "\ud83c\udfdb\ufe0f Projetos de Refer\u00eancia do GitHub",
       "norm_label": "\ud83d\udca1 pontos de melhoria diretos para o irec"
+    },
+    {
+      "label": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "file_type": "document",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "plano_de_melhoria_e_aprendizado",
+      "community": 34,
+      "community_name": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "norm_label": "plano_de_melhoria_e_aprendizado.md"
+    },
+    {
+      "label": "\ud83d\udccb Plano de Aprendizado e Melhoria Cont\u00ednua: iRec",
+      "file_type": "document",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "plano_de_melhoria_e_aprendizado_plano_de_aprendizado_e_melhoria_cont\u00ednua_irec",
+      "community": 34,
+      "community_name": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "norm_label": "\ud83d\udccb plano de aprendizado e melhoria continua: irec"
+    },
+    {
+      "label": "\ud83c\udfaf Objetivo de Evolu\u00e7\u00e3o",
+      "file_type": "document",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L7",
+      "_origin": "ast",
+      "id": "plano_de_melhoria_e_aprendizado_objetivo_de_evolu\u00e7\u00e3o",
+      "community": 34,
+      "community_name": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "norm_label": "\ud83c\udfaf objetivo de evolucao"
+    },
+    {
+      "label": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "file_type": "document",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L12",
+      "_origin": "ast",
+      "id": "plano_de_melhoria_e_aprendizado_projetos_do_github_para_estudo_aprendizado",
+      "community": 34,
+      "community_name": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "norm_label": "\ud83d\udcda projetos do github para estudo & aprendizado"
+    },
+    {
+      "label": "1. Medplum (`medplum/medplum`)",
+      "file_type": "document",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "plano_de_melhoria_e_aprendizado_1_medplum_medplum_medplum",
+      "community": 34,
+      "community_name": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "norm_label": "1. medplum (`medplum/medplum`)"
+    },
+    {
+      "label": "2. TRTC Web & React Native WebRTC (`react-native-webrtc/react-native-webrtc`)",
+      "file_type": "document",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L20",
+      "_origin": "ast",
+      "id": "plano_de_melhoria_e_aprendizado_2_trtc_web_react_native_webrtc_react_native_webrtc_react_native_webrtc",
+      "community": 34,
+      "community_name": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "norm_label": "2. trtc web & react native webrtc (`react-native-webrtc/react-native-webrtc`)"
+    },
+    {
+      "label": "3. Novu (`novuhq/novu`)",
+      "file_type": "document",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "plano_de_melhoria_e_aprendizado_3_novu_novuhq_novu",
+      "community": 34,
+      "community_name": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "norm_label": "3. novu (`novuhq/novu`)"
+    },
+    {
+      "label": "4. Cal.com (`calcom/cal.com`)",
+      "file_type": "document",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "plano_de_melhoria_e_aprendizado_4_cal_com_calcom_cal_com",
+      "community": 34,
+      "community_name": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "norm_label": "4. cal.com (`calcom/cal.com`)"
+    },
+    {
+      "label": "\ud83d\udee0\ufe0f Roteiro de Implementa\u00e7\u00e3o Passo a Passo",
+      "file_type": "document",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L38",
+      "_origin": "ast",
+      "id": "plano_de_melhoria_e_aprendizado_roteiro_de_implementa\u00e7\u00e3o_passo_a_passo",
+      "community": 34,
+      "community_name": "\ud83d\udcda Projetos do GitHub para Estudo & Aprendizado",
+      "norm_label": "\ud83d\udee0\ufe0f roteiro de implementacao passo a passo"
     },
     {
       "label": "README.md",
@@ -11789,6 +11888,94 @@
       "_origin": "ast",
       "source": "estudo_de_referencia_projetos_de_refer\u00eancia_do_github",
       "target": "estudo_de_referencia_3_destaque_especial_cal_com_calcom_cal_com",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "plano_de_melhoria_e_aprendizado",
+      "target": "plano_de_melhoria_e_aprendizado_plano_de_aprendizado_e_melhoria_cont\u00ednua_irec",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "plano_de_melhoria_e_aprendizado_plano_de_aprendizado_e_melhoria_cont\u00ednua_irec",
+      "target": "plano_de_melhoria_e_aprendizado_objetivo_de_evolu\u00e7\u00e3o",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "plano_de_melhoria_e_aprendizado_plano_de_aprendizado_e_melhoria_cont\u00ednua_irec",
+      "target": "plano_de_melhoria_e_aprendizado_projetos_do_github_para_estudo_aprendizado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L38",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "plano_de_melhoria_e_aprendizado_plano_de_aprendizado_e_melhoria_cont\u00ednua_irec",
+      "target": "plano_de_melhoria_e_aprendizado_roteiro_de_implementa\u00e7\u00e3o_passo_a_passo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "plano_de_melhoria_e_aprendizado_projetos_do_github_para_estudo_aprendizado",
+      "target": "plano_de_melhoria_e_aprendizado_1_medplum_medplum_medplum",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "plano_de_melhoria_e_aprendizado_projetos_do_github_para_estudo_aprendizado",
+      "target": "plano_de_melhoria_e_aprendizado_2_trtc_web_react_native_webrtc_react_native_webrtc_react_native_webrtc",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "plano_de_melhoria_e_aprendizado_projetos_do_github_para_estudo_aprendizado",
+      "target": "plano_de_melhoria_e_aprendizado_3_novu_novuhq_novu",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "PLANO_DE_MELHORIA_E_APRENDIZADO.md",
+      "source_location": "L31",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "plano_de_melhoria_e_aprendizado_projetos_do_github_para_estudo_aprendizado",
+      "target": "plano_de_melhoria_e_aprendizado_4_cal_com_calcom_cal_com",
       "confidence_score": 1.0
     },
     {

@@ -1,13 +1,18 @@
 # Graph Report - Irec  (2026-07-27)
 
 ## Corpus Check
-- 66 files · ~2,273,449 words
+- 67 files · ~2,274,080 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 364 nodes · 720 edges · 35 communities (28 shown, 7 thin omitted)
+- 369 nodes · 731 edges · 36 communities (29 shown, 7 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `ef645e0a`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - supabaseService.js
@@ -35,6 +40,7 @@
 - CapApp-SPM/README.md
 - 🏛️ Projetos de Referência do GitHub
 - 📚 Projetos do GitHub para Estudo & Aprendizado
+- followPatient
 
 ## God Nodes (most connected - your core abstractions)
 1. `DoctorDashboard()` - 17 edges
@@ -55,23 +61,23 @@
   src/App.jsx → src/services/supabaseService.js
 - `App()` --calls--> `getAllProfiles()`  [EXTRACTED]
   src/App.jsx → src/services/supabaseService.js
-- `App()` --calls--> `getWoundEntries()`  [EXTRACTED]
+- `App()` --calls--> `getClinicalProfile()`  [EXTRACTED]
   src/App.jsx → src/services/supabaseService.js
-- `App()` --calls--> `updateCallStatus()`  [EXTRACTED]
+- `App()` --calls--> `getWoundEntries()`  [EXTRACTED]
   src/App.jsx → src/services/supabaseService.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (35 total, 7 thin omitted)
+## Communities (36 total, 7 thin omitted)
 
 ### Community 0 - "supabaseService.js"
-Cohesion: 0.10
-Nodes (43): BookingModal(), ALL_SPECIALTIES, Login(), getNursePremiumDetails(), NursesNetwork(), getDoctorPremiumDetails(), SpecialistDirectory(), Telemedicine() (+35 more)
+Cohesion: 0.22
+Nodes (16): Telemedicine(), checkCallStatus(), checkIncomingCalls(), getAllReceivedMessages(), getChatMessages(), getLocalCalls(), getLocalMessages(), placeTelemedicineCall() (+8 more)
 
 ### Community 1 - "App.jsx"
-Cohesion: 0.14
-Nodes (18): App(), AccessibleDashboard(), getRandomNoisePhrase(), NOISE_FALLBACK_PHRASES, AccessibleTelemedicineView(), AccessibleUploadView(), MyNetworkPortal(), PermissionsGuideModal() (+10 more)
+Cohesion: 0.15
+Nodes (16): App(), AccessibleDashboard(), getRandomNoisePhrase(), NOISE_FALLBACK_PHRASES, AccessibleTelemedicineView(), AccessibleUploadView(), MyNetworkPortal(), PermissionsGuideModal() (+8 more)
 
 ### Community 2 - "package.json"
 Cohesion: 0.09
@@ -90,24 +96,24 @@ Cohesion: 0.13
 Nodes (13): Any, Bool, Capacitor, AppDelegate, NSUserActivity, UIApplication, UIApplicationDelegate, UIKit (+5 more)
 
 ### Community 6 - "Telemedicine.jsx"
-Cohesion: 0.19
-Nodes (15): AI_RESPONSES, AIChatAssistant(), detectTopicFromText(), EXAM_RESPONSES, SUGGESTIONS, ALL_SPECIALTIES, UserProfileModal(), addWoundEntry() (+7 more)
+Cohesion: 0.11
+Nodes (28): AI_RESPONSES, AIChatAssistant(), detectTopicFromText(), EXAM_RESPONSES, SUGGESTIONS, ALL_SPECIALTIES, Login(), ALL_SPECIALTIES (+20 more)
 
 ### Community 7 - "Dashboard.jsx"
-Cohesion: 0.14
-Nodes (15): ClinicalHistory(), Dashboard(), generateDynamicTasks(), LocalResourcesPanel(), PatientDocuments(), deg2rad(), fetchNearbyHealthcareResources(), geocodeAddress() (+7 more)
+Cohesion: 0.15
+Nodes (11): ClinicalHistory(), Dashboard(), generateDynamicTasks(), LocalResourcesPanel(), PatientDocuments(), deg2rad(), fetchNearbyHealthcareResources(), geocodeAddress() (+3 more)
 
 ### Community 8 - "🆕 Recursos Premium & Acessibilidade (Fase 10)"
 Cohesion: 0.06
 Nodes (34): 10. Unificação da Rede de Enfermagem (`NursesNetwork.jsx` & `App.jsx`), 11. Design de Ficha Clínica Centralizada e Flutuante (`SpecialistDirectory.jsx` & `NursesNetwork.jsx`), 12. Reordenação e Agrupamento dos Diretórios (`App.jsx`), 13. Otimização do Guia de Protocolos Clínicos para Médicos (`App.jsx` & `ProtocolGuide.jsx` & `DoctorDashboard.jsx` & `geminiService.js`), 14. Otimização da Inicialização do App & Proteção Contra Loading Infinito (`App.jsx` & `supabaseService.js`), 15. Sistema de Venda e Recomendação de Insumos com Links de Afiliados (`AdminPartners.jsx` & `DoctorDashboard.jsx` & `ProtocolGuide.jsx` & `supabaseService.js`), 1. Chat Flutuante / Expresso Global (`Telemedicine.jsx`), 1. Correção do Travamento da Imagem de Análise (`ClinicalTriage.jsx`) (+26 more)
 
 ### Community 9 - "followPatient"
-Cohesion: 0.19
-Nodes (18): AdminPartners(), COMMON_CID10, DoctorDashboard(), DoctorPartners(), exportFHIRBundle(), exportObservationToFHIR(), exportPatientToFHIR(), chatWithDoctorCopilot() (+10 more)
+Cohesion: 0.18
+Nodes (17): COMMON_CID10, DoctorDashboard(), exportFHIRBundle(), exportObservationToFHIR(), exportPatientToFHIR(), chatWithDoctorCopilot(), formatSOAPNote(), addDoctorNote() (+9 more)
 
 ### Community 10 - "DoctorDashboardAnalytics.jsx"
-Cohesion: 0.18
-Nodes (16): AdminDashboard(), AdminReports(), DateRangePicker(), DoctorDashboardAnalytics(), deleteTrainingKnowledgeChapter(), getAdminAssignments(), getAdminStats(), getAdminTelemedicineCalls() (+8 more)
+Cohesion: 0.14
+Nodes (28): AdminDashboard(), AdminPartners(), AdminReports(), DateRangePicker(), DoctorDashboardAnalytics(), DoctorPartners(), addRecommendedMaterial(), checkAppointmentCollision() (+20 more)
 
 ### Community 11 - "React + Vite"
 Cohesion: 0.50
@@ -137,6 +143,10 @@ Nodes (6): 1. Medplum (`medplum/medplum`), 2. Fasten Health (`fastenhealth/faste
 Cohesion: 0.22
 Nodes (8): 1. Medplum (`medplum/medplum`), 2. TRTC Web & React Native WebRTC (`react-native-webrtc/react-native-webrtc`), 3. Novu (`novuhq/novu`), 4. Cal.com (`calcom/cal.com`), 🎯 Objetivo de Evolução, 📋 Plano de Aprendizado e Melhoria Contínua: iRec, 📚 Projetos do GitHub para Estudo & Aprendizado, 🛠️ Roteiro de Implementação Passo a Passo
 
+### Community 35 - "followPatient"
+Cohesion: 0.25
+Nodes (11): BookingModal(), getNursePremiumDetails(), NursesNetwork(), getDoctorPremiumDetails(), SpecialistDirectory(), createAppointment(), followPatient(), getAssignedDoctor() (+3 more)
+
 ## Knowledge Gaps
 - **91 isolated node(s):** `UIKit`, `Capacitor`, `PackageDescription`, `name`, `private` (+86 more)
   These have ≤1 connection - possible missing edges or undocumented components.
@@ -146,16 +156,16 @@ Nodes (8): 1. Medplum (`medplum/medplum`), 2. TRTC Web & React Native WebRTC (`r
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `package.json`?**
-  _High betweenness centrality (0.010) - this node is a cross-community bridge._
+  _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **What connects `UIKit`, `Capacitor`, `PackageDescription` to the rest of the system?**
   _91 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `supabaseService.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.10407239819004525 - nodes in this community are weakly interconnected._
-- **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.08695652173913043 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._
 - **Should `AppDelegate` be split into smaller, more focused modules?**
   _Cohesion score 0.12631578947368421 - nodes in this community are weakly interconnected._
+- **Should `Telemedicine.jsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.11491935483870967 - nodes in this community are weakly interconnected._
+- **Should `🆕 Recursos Premium & Acessibilidade (Fase 10)` be split into smaller, more focused modules?**
+  _Cohesion score 0.05714285714285714 - nodes in this community are weakly interconnected._
