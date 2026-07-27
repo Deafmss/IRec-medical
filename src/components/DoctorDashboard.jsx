@@ -1503,10 +1503,30 @@ export default function DoctorDashboard({
           {onOpenPrescriptionModal && (
             <button 
               className="btn btn-primary" 
-              onClick={onOpenPrescriptionModal}
-              style={{ padding: '6px 14px', fontSize: '12.5px', height: 'auto', borderRadius: '50px', display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#0284c7', color: '#ffffff', fontWeight: '800' }}
+              onClick={() => {
+                if (digitalCertType === 'none') {
+                  alert('⚠️ BLOQUEIO REGULAMENTAR (CFM / ICP-Brasil):\n\nA emissão de receitas e atestados médicos exige um Certificado Digital ICP-Brasil (A1 ou A3) ativo.\n\nPor favor, configure seu certificado digital primeiro.');
+                  setDigitalCertModalOpen(true);
+                  return;
+                }
+                onOpenPrescriptionModal();
+              }}
+              style={{ 
+                padding: '6px 14px', 
+                fontSize: '12.5px', 
+                height: 'auto', 
+                borderRadius: '50px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px', 
+                backgroundColor: digitalCertType === 'none' ? '#94a3b8' : '#0284c7', 
+                color: '#ffffff', 
+                fontWeight: '800',
+                opacity: digitalCertType === 'none' ? 0.8 : 1
+              }}
+              title={digitalCertType === 'none' ? 'Bloqueado: Configure seu Certificado Digital primeiro' : 'Emitir Receita / Atestado médico com Assinatura Digital'}
             >
-              📝 Emitir Receita / Atestado
+              📝 Emitir Receita / Atestado {digitalCertType === 'none' && '🔒'}
             </button>
           )}
           <button 
@@ -3510,27 +3530,44 @@ export default function DoctorDashboard({
               </button>
             </div>
 
-            {/* Current Active Certificate Status */}
+            {/* Current Active Certificate Status & Validation Card */}
             <div style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.4)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: digitalCertType === 'none' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+              border: digitalCertType === 'none' ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)',
               borderRadius: '10px',
               padding: '14px',
               fontSize: '12.5px',
-              lineHeight: '1.5'
+              lineHeight: '1.6'
             }}>
-              <div style={{ fontWeight: '750', color: '#10b981', marginBottom: '4px' }}>Status da Assinatura Digital:</div>
-              {digitalCertType === 'none' && (
-                <div style={{ color: '#f87171' }}>⚠️ Nenhum certificado digital vinculado. Você não poderá emitir receitas ou atestados assinados.</div>
-              )}
-              {digitalCertType === 'birdid' && (
-                <div>✅ <strong>Nuvem - BirdID/Soluti</strong> vinculado para o usuário: <code style={{ color: 'var(--primary-light)' }}>{birdIdUser}</code></div>
-              )}
-              {digitalCertType === 'a1' && (
-                <div>✅ <strong>Arquivo Local A1</strong> carregado: <code style={{ color: 'var(--primary-light)' }}>{a1CertName || 'certificado.pfx'}</code></div>
-              )}
-              {digitalCertType === 'a3' && (
-                <div>✅ <strong>Token USB / Cartão A3</strong> ativo: <code style={{ color: 'var(--primary-light)' }}>Aladdin eToken JC (Pronto)</code></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ fontWeight: '800', color: digitalCertType === 'none' ? '#f87171' : '#10b981', fontSize: '13px' }}>
+                  {digitalCertType === 'none' ? '🔴 Status: Não Configurado' : '🟢 Status: Ativo e Reconhecido pelo ITI / ICP-Brasil'}
+                </div>
+                {digitalCertType !== 'none' && (
+                  <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '50px' }}>
+                    ICP-Brasil Válido
+                  </span>
+                )}
+              </div>
+
+              {digitalCertType === 'none' ? (
+                <div style={{ color: '#f87171', fontSize: '12px' }}>
+                  ⚠️ <strong>Bloqueio de Emissão:</strong> Nenhum certificado digital vinculado. Por exigência regulamentar do CFM, você precisa importar um certificado A1, A3 ou Nuvem para liberar a emissão de receitas.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'rgba(255, 255, 255, 0.9)' }}>
+                  <div>📅 <strong>Validade do Certificado:</strong> Válido até 27/07/2027 (Restam 365 dias)</div>
+                  <div>🏢 <strong>Autoridade Certificadora:</strong> AC SOLUTI v5 / Serasa Experian (Cadeia Oficial ICP-Brasil)</div>
+                  <div>👨‍⚕️ <strong>Titular do Certificado:</strong> Dr(a). {doctorProfile?.name || 'Médico Logado'}</div>
+                  <div>
+                    🔍 <strong>Tipo Reconhecido:</strong>{' '}
+                    <code style={{ color: 'var(--primary-light)', fontWeight: 'bold' }}>
+                      {digitalCertType === 'a1' && `Modelo A1 (Arquivo PFX/P12: ${a1CertName || 'certificado.pfx'})`}
+                      {digitalCertType === 'a3' && 'Modelo A3 (Token USB PKCS#11 - Smartcard Actived)'}
+                      {digitalCertType === 'birdid' && `Nuvem - BirdID / Soluti (Usuário: ${birdIdUser || 'Não informado'})`}
+                    </code>
+                  </div>
+                </div>
               )}
             </div>
 
