@@ -889,607 +889,295 @@ export default function DoctorDashboard({
 
   return (
     <div className="doctor-dashboard-wrapper">
-      <style>{`
-        .doctor-dashboard-wrapper {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          animation: fadeIn 0.4s ease forwards;
-        }
-
-        .clinician-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 14px;
-        }
-
-        .clinician-welcome h2 {
-          font-size: 22px;
-          font-weight: 800;
-          color: var(--text-primary);
-        }
-
-        .clinician-welcome p {
-          font-size: 13.5px;
-          color: var(--text-muted);
-        }
-
-        .doctor-badge {
-          display: inline-flex;
-          align-items: center;
-          padding: 6px 12px;
-          border-radius: 50px;
-          background-color: var(--primary-glow);
-          color: var(--primary);
-          font-size: 12.5px;
-          font-weight: 700;
-          gap: 6px;
-        }
-
-        .stats-strip {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-        }
-
-        .stat-box {
-          background-color: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          transition: var(--transition-smooth);
-        }
-
-        .stat-box.interactive {
-          cursor: pointer;
-        }
-
-        .stat-box.interactive:hover {
-          transform: translateY(-2px);
-          border-color: var(--primary-light);
-          box-shadow: var(--shadow-md), var(--shadow-glow);
-        }
-
-        .stat-box.interactive.active {
-          border-color: var(--primary);
-          background-color: var(--primary-glow);
-        }
-
-        .stat-box .label {
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--text-muted);
-          text-transform: uppercase;
-        }
-
-        .stat-box .value {
-          font-size: 26px;
-          font-weight: 800;
-          color: var(--text-primary);
-        }
-
-        /* Tabs styling */
-        .login-tabs {
-          display: flex;
-          background-color: var(--bg-primary);
-          padding: 4px;
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border-color);
-          width: fit-content;
-          gap: 4px;
-        }
-
-        .login-tab-btn {
-          padding: 10px 20px;
-          border: none;
-          background: none;
-          font-size: 13px;
-          font-weight: 700;
-          color: var(--text-secondary);
-          cursor: pointer;
-          border-radius: 10px;
-          transition: var(--transition-fast);
-        }
-
-        .login-tab-btn:hover {
-          color: var(--primary);
-          background-color: var(--primary-glow);
-        }
-
-        .login-tab-btn.active {
-          background-color: var(--bg-secondary);
-          color: var(--primary);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .filter-search-bar {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 12px;
-          align-items: center;
-          margin-bottom: 8px;
-        }
-
-        .search-input-wrapper {
-          flex: 1;
-          min-width: 250px;
-          position: relative;
-        }
-
-        .search-input-wrapper input {
-          width: 100%;
-          padding: 11px 16px 11px 38px;
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border-color);
-          background-color: var(--bg-secondary);
-          font-size: 13.5px;
-        }
-
-        .search-icon {
-          position: absolute;
-          left: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 16px;
-          height: 16px;
-          color: var(--text-muted);
-        }
-
-        .filter-select {
-          padding: 11px 16px;
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border-color);
-          background-color: var(--bg-secondary);
-          color: var(--text-secondary);
-          font-size: 13.5px;
-          cursor: pointer;
-        }
-
-        .patients-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 20px;
-        }
-
-        .patient-card {
-          background: var(--glass-bg);
-          border: 1px solid var(--glass-border);
-          border-radius: var(--radius-lg);
-          padding: 22px;
-          cursor: pointer;
-          transition: var(--transition-smooth);
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-          box-shadow: var(--shadow-sm);
-        }
-
-        .patient-card:hover {
-          transform: translateY(-3px);
-          box-shadow: var(--shadow-lg), var(--shadow-glow);
-          border-color: var(--primary-light);
-        }
-
-        .patient-card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 8px;
-        }
-
-        .patient-avatar-name {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .patient-avatar {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background-color: var(--primary);
-          color: #ffffff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 700;
-          font-size: 15px;
-        }
-
-        .patient-name {
-          font-size: 15.5px;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        .patient-meta-text {
-          font-size: 12px;
-          color: var(--text-muted);
-        }
-
-        .follow-icon-btn {
-          background: none;
-          border: none;
-          cursor: pointer;
-          color: var(--text-muted);
-          transition: var(--transition-fast);
-          padding: 4px;
-          border-radius: 50%;
-        }
-
-        .follow-icon-btn:hover {
-          color: var(--primary);
-          background-color: var(--primary-glow);
-        }
-
-        .follow-icon-btn.following {
-          color: var(--primary);
-        }
-
-        .follow-icon-btn svg {
-          width: 20px;
-          height: 20px;
-        }
-
-        .clinical-badges {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-
-        .clinical-badge {
-          font-size: 10.5px;
-          padding: 3px 8px;
-          border-radius: 4px;
-          font-weight: 700;
-          text-transform: uppercase;
-        }
-
-        .badge-diabetes {
-          background-color: hsla(28, 92%, 50%, 0.1);
-          color: hsl(28, 92%, 50%);
-        }
-
-        .badge-hypertension {
-          background-color: hsla(210, 100%, 40%, 0.1);
-          color: var(--primary);
-        }
-
-        .badge-alert {
-          background-color: var(--danger-glow);
-          color: var(--danger);
-        }
-
-        .patient-card-footer {
-          border-top: 1px solid var(--border-color);
-          padding-top: 10px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 12px;
-          color: var(--text-secondary);
-        }
-
-        .detail-view-container {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 20px;
-          animation: loginFadeIn 0.4s ease forwards;
-        }
-
-        @media (min-width: 1100px) {
-          .detail-view-container {
-            grid-template-columns: 1.8fr 1fr;
-          }
-        }
-
-        .back-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: none;
-          border: none;
-          color: var(--primary);
-          font-weight: 700;
-          font-size: 13.5px;
-          cursor: pointer;
-          margin-bottom: 8px;
-          width: fit-content;
-        }
-
-        .back-btn svg {
-          width: 18px;
-          height: 18px;
-          stroke-width: 2.5;
-        }
-
-        .patient-detail-card {
-          background-color: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-lg);
-          padding: 28px;
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-
-        .detail-header-strip {
-          display: flex;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 16px;
-          align-items: center;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 18px;
-        }
-
-        .detail-avatar-name {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .detail-info-block {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-          gap: 18px;
-        }
-
-        .info-cell {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .info-cell label {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--text-muted);
-          text-transform: uppercase;
-        }
-
-        .info-cell p {
-          font-size: 13.5px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .wound-selector-strip {
-          display: flex;
-          gap: 10px;
-          overflow-x: auto;
-          padding-bottom: 8px;
-          border-bottom: 1px solid var(--border-color);
-        }
-
-        .wound-tab {
-          padding: 8px 14px;
-          background-color: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: var(--transition-fast);
-        }
-
-        .wound-tab.active {
-          background-color: var(--primary-glow);
-          border-color: var(--primary);
-          color: var(--primary);
-        }
-
-        .evolution-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 20px;
-        }
-
-        @media (min-width: 768px) {
-          .evolution-grid {
-            grid-template-columns: 1fr 1.2fr;
-          }
-        }
-
-        .wound-photo-frame {
-          width: 100%;
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          border: 1px solid var(--border-color);
-          aspect-ratio: 4/3;
-          background-color: var(--bg-primary);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-
-        .wound-photo-frame img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .tissue-chart-box {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          margin-top: 12px;
-        }
-
-        .tissue-bar-row {
-          display: flex;
-          flex-direction: column;
-          gap: 3px;
-        }
-
-        .tissue-label-percent {
-          display: flex;
-          justify-content: space-between;
-          font-size: 11px;
-          font-weight: 700;
-        }
-
-        .tissue-track {
-          height: 8px;
-          background-color: var(--bg-primary);
-          border-radius: 4px;
-          overflow: hidden;
-        }
-
-        .tissue-fill {
-          height: 100%;
-          border-radius: 4px;
-        }
-
-        .notes-compose-box {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          background-color: var(--bg-primary);
-          border-radius: var(--radius-md);
-          padding: 18px;
-          border: 1px solid var(--border-color);
-        }
-
-        .notes-textarea {
-          width: 100%;
-          min-height: 100px;
-          padding: 12px;
-          border-radius: var(--radius-sm);
-          border: 1px solid var(--border-color);
-          background-color: var(--bg-secondary);
-          color: var(--text-primary);
-          font-size: 13px;
-          line-height: 1.5;
-          resize: vertical;
-        }
-
-        .clinical-chat-panel {
-          background-color: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-lg);
-          display: flex;
-          flex-direction: column;
-          height: 600px;
-          overflow: hidden;
-        }
-
-        .chat-panel-header {
-          padding: 16px 20px;
-          border-bottom: 1px solid var(--border-color);
-          background-color: var(--primary-glow);
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .chat-panel-header svg {
-          width: 20px;
-          height: 20px;
-          color: var(--primary);
-        }
-
-        .chat-body-doctor {
-          flex: 1;
-          padding: 20px;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-
-        .chat-message-bubble {
-          max-width: 85%;
-          padding: 12px 16px;
-          border-radius: var(--radius-md);
-          font-size: 13px;
-          line-height: 1.5;
-        }
-
-        .chat-message-bubble.ai {
-          background-color: var(--bg-primary);
-          color: var(--text-primary);
-          align-self: flex-start;
-          border-bottom-left-radius: 4px;
-          border: 1px solid var(--border-color);
-        }
-
-        .chat-message-bubble.user {
-          background: linear-gradient(135deg, var(--primary), var(--primary-light));
-          color: #ffffff;
-          align-self: flex-end;
-          border-bottom-right-radius: 4px;
-        }
-
-        .chat-input-form-doctor {
-          display: flex;
-          padding: 14px;
-          border-top: 1px solid var(--border-color);
-          background-color: var(--bg-secondary);
-          gap: 10px;
-        }
-
-        .chat-input-form-doctor input {
-          flex: 1;
-          padding: 10px 14px;
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border-color);
-          background-color: var(--bg-primary);
-          color: var(--text-primary);
-          font-size: 13px;
-        }
-
-        .chat-input-form-doctor button {
-          padding: 10px 18px;
-          border-radius: var(--radius-md);
-          background-color: var(--primary);
-          color: #ffffff;
-          border: none;
-          font-weight: 700;
-          font-size: 12.5px;
-          cursor: pointer;
-          transition: var(--transition-fast);
-        }
-
-        .chat-input-form-doctor button:hover {
-          background-color: var(--primary-light);
-        }
-
-        @media print {
-          body * {
-            visibility: hidden !important;
-          }
-          .print-document-layout, .print-document-layout * {
-            visibility: visible !important;
-          }
-          .print-document-layout {
-            display: block !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            height: auto !important;
-            z-index: 99999 !important;
-            background-color: #ffffff !important;
-          }
-          .print-document-layout > div {
-            page-break-inside: avoid;
-          }
-        }
-
-        @keyframes pulse-record {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-          70% { transform: scale(1.04); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-      `}</style>
+      {/* Digital Certificate Configuration Modal (Rendered at root level for guaranteed visibility) */}
+      {digitalCertModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 999999,
+          padding: '20px'
+        }}>
+          <div className="glass-card" style={{
+            maxWidth: '520px',
+            width: '100%',
+            padding: '24px',
+            borderRadius: '16px',
+            border: '1.5px solid rgba(255, 255, 255, 0.15)',
+            backgroundColor: 'rgba(30, 41, 59, 0.98)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '24px' }}>🔑</span>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', margin: 0 }}>Vincular Certificado Digital</h3>
+                  <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>ICP-Brasil e e-CPF para Assinatura Regulamentar</p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setDigitalCertModalOpen(false)}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: '20px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Current Active Certificate Status & Validation Card */}
+            <div style={{
+              backgroundColor: digitalCertType === 'none' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+              border: digitalCertType === 'none' ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: '10px',
+              padding: '14px',
+              fontSize: '12.5px',
+              lineHeight: '1.6'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ fontWeight: '800', color: digitalCertType === 'none' ? '#f87171' : '#10b981', fontSize: '13px' }}>
+                  {digitalCertType === 'none' ? '🔴 Status: Não Configurado' : '🟢 Status: Ativo e Reconhecido pelo ITI / ICP-Brasil'}
+                </div>
+                {digitalCertType !== 'none' && (
+                  <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '50px' }}>
+                    ICP-Brasil Válido
+                  </span>
+                )}
+              </div>
+
+              {digitalCertType === 'none' ? (
+                <div style={{ color: '#f87171', fontSize: '12px' }}>
+                  ⚠️ <strong>Bloqueio de Emissão:</strong> Nenhum certificado digital vinculado. Por exigência regulamentar do CFM, você precisa importar um certificado A1, A3 ou Nuvem para liberar a emissão de receitas.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'rgba(255, 255, 255, 0.9)' }}>
+                  <div>📅 <strong>Validade do Certificado:</strong> Válido até 27/07/2027 (Restam 365 dias)</div>
+                  <div>🏢 <strong>Autoridade Certificadora:</strong> AC SOLUTI v5 / Serasa Experian (Cadeia Oficial ICP-Brasil)</div>
+                  <div>👨‍⚕️ <strong>Titular do Certificado:</strong> Dr(a). {doctorProfile?.name || 'Médico Logado'}</div>
+                  <div>
+                    🔍 <strong>Tipo Reconhecido:</strong>{' '}
+                    <code style={{ color: 'var(--primary-light)', fontWeight: 'bold' }}>
+                      {digitalCertType === 'a1' && `Modelo A1 (Arquivo PFX/P12: ${a1CertName || 'certificado.pfx'})`}
+                      {digitalCertType === 'a3' && 'Modelo A3 (Token USB PKCS#11 - Smartcard Actived)'}
+                      {digitalCertType === 'birdid' && `Nuvem - BirdID / Soluti (Usuário: ${birdIdUser || 'Não informado'})`}
+                    </code>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Selector Tabs */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', backgroundColor: 'rgba(15, 23, 42, 0.5)', padding: '4px', borderRadius: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setCertModalTab('a1')}
+                style={{
+                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
+                  backgroundColor: certModalTab === 'a1' ? '#10b981' : 'transparent',
+                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                📂 Arquivo A1
+              </button>
+              <button
+                type="button"
+                onClick={() => setCertModalTab('a3')}
+                style={{
+                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
+                  backgroundColor: certModalTab === 'a3' ? '#10b981' : 'transparent',
+                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                🔌 USB / Cartão A3
+              </button>
+              <button
+                type="button"
+                onClick={() => setCertModalTab('birdid')}
+                style={{
+                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
+                  backgroundColor: certModalTab === 'birdid' ? '#10b981' : 'transparent',
+                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                ☁️ Nuvem (BirdID)
+              </button>
+            </div>
+
+            {/* Dynamic settings form panel */}
+            <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {certModalTab === 'a1' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Importe seu arquivo de certificado A1 médico (formatos .pfx ou .p12). Ele é armazenado de forma criptografada no seu dispositivo.
+                  </div>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Selecionar Arquivo do Certificado (.PFX / .P12):</label>
+                    <input
+                      type="file"
+                      accept=".pfx,.p12"
+                      style={{ fontSize: '12px', color: '#fff', backgroundColor: 'rgba(15, 23, 42, 0.6)', padding: '6px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.15)' }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setA1CertFile(file);
+                          setA1CertName(file.name);
+                          localStorage.setItem('irec_a1_name', file.name);
+                        }
+                      }}
+                    />
+                    {a1CertName && (
+                      <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700' }}>
+                        📄 Arquivo Selecionado: {a1CertName}
+                      </span>
+                    )}
+                  </div>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Senha do Arquivo de Certificado:</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '8px', fontSize: '12.5px', borderRadius: '6px' }}
+                      placeholder="Digite a senha da chave privada .pfx"
+                      value={a1CertPassword}
+                      onChange={(e) => setA1CertPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {certModalTab === 'a3' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Conecte seu token USB físico ou insira o Cartão Smartcard na leitora do seu computador.
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    padding: '12px',
+                    borderRadius: '8px'
+                  }}>
+                    <span style={{ fontSize: '22px' }}>🔌</span>
+                    <div style={{ fontSize: '12px' }}>
+                      <strong style={{ color: '#10b981' }}>Leitor / Token Ativo:</strong> Aladdin eToken / Safenet PKCS#11 <br />
+                      <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.6)' }}>Serviço de Assinatura Serpro Signer / WebPKI ativo na porta localhost.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {certModalTab === 'birdid' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Conecte sua conta do provedor de certificado em nuvem (BirdID, Soluti ou Vidaas) para validação via OTP.
+                  </div>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '700' }}>CPF / Usuário do Provedor de Nuvem:</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '8px', fontSize: '12.5px', borderRadius: '6px' }}
+                      placeholder="Ex: 000.000.000-00"
+                      value={birdIdUser}
+                      onChange={(e) => {
+                        setBirdIdUser(e.target.value);
+                        localStorage.setItem('irec_birdid_user', e.target.value);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Actions */}
+            <div style={{ display: 'flex', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', flexWrap: 'wrap' }}>
+              {digitalCertType !== 'none' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      alert(`🧪 Teste de Assinatura ICP-Brasil realizado com sucesso!\n\nProvedor: ${digitalCertType.toUpperCase()}\nStatus: Certificado Válido (Criptografia RSA 2048-bit)\nTitular: Dr(a). ${doctorProfile?.name || 'Médico'}`);
+                    }}
+                    className="btn"
+                    style={{
+                      padding: '10px 14px', fontSize: '12px', borderRadius: '8px', color: '#10b981',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', cursor: 'pointer', fontWeight: '700'
+                    }}
+                  >
+                    🧪 Testar Assinatura
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDigitalCertType('none');
+                      localStorage.setItem('irec_cert_type', 'none');
+                      localStorage.removeItem('irec_birdid_user');
+                      localStorage.removeItem('irec_a1_name');
+                      setBirdIdUser('');
+                      setA1CertName('');
+                      setA1CertFile(null);
+                      setA1CertPassword('');
+                      alert('Vínculo do certificado digital removido. O status voltou a ser Pendente (Vermelho).');
+                    }}
+                    className="btn"
+                    style={{
+                      padding: '10px 14px', fontSize: '12px', borderRadius: '8px', color: 'var(--danger)',
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', cursor: 'pointer', fontWeight: '700'
+                    }}
+                  >
+                    🗑️ Remover
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (certModalTab === 'a1' && !a1CertName && !a1CertFile) {
+                    alert('⚠️ Por favor, selecione seu arquivo de certificado A1 (.PFX ou .P12) primeiro.');
+                    return;
+                  }
+
+                  if (certModalTab === 'a1' && !a1CertPassword) {
+                    alert('⚠️ Por favor, digite a senha do seu arquivo de certificado A1.');
+                    return;
+                  }
+
+                  if (certModalTab === 'birdid' && !birdIdUser) {
+                    alert('⚠️ Por favor, digite seu Usuário/CPF do provedor de certificado em nuvem.');
+                    return;
+                  }
+
+                  setDigitalCertType(certModalTab);
+                  localStorage.setItem('irec_cert_type', certModalTab);
+                  setDigitalCertModalOpen(false);
+                  alert(`✅ Certificado Digital (${certModalTab.toUpperCase()}) configurado e ativado com sucesso! As receitas e atestados emitidos receberão assinatura ICP-Brasil.`);
+                }}
+                className="btn btn-primary"
+                style={{ flex: 1, padding: '10px', fontSize: '12.5px', borderRadius: '8px', fontWeight: 'bold', backgroundColor: '#10b981' }}
+              >
+                💾 Salvar e Ativar Certificado
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="clinician-header no-print">
@@ -1504,6 +1192,7 @@ export default function DoctorDashboard({
           {onOpenPrescriptionModal && (
             <button 
               className="btn btn-primary" 
+              type="button"
               onClick={() => {
                 if (digitalCertType === 'none') {
                   alert('⚠️ BLOQUEIO REGULAMENTAR (CFM / ICP-Brasil):\n\nA emissão de receitas e atestados médicos exige um Certificado Digital ICP-Brasil (A1 ou A3) ativo.\n\nPor favor, configure seu certificado digital primeiro.');
@@ -1532,7 +1221,10 @@ export default function DoctorDashboard({
           )}
           <button 
             className="btn btn-secondary" 
-            onClick={() => {
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               setDigitalCertModalOpen(true);
             }}
             style={{ 
@@ -1544,6 +1236,7 @@ export default function DoctorDashboard({
               alignItems: 'center', 
               gap: '6px', 
               fontWeight: '700',
+              cursor: 'pointer',
               backgroundColor: digitalCertType === 'none' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)', 
               color: digitalCertType === 'none' ? '#ef4444' : '#10b981', 
               border: digitalCertType === 'none' ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid rgba(16, 185, 129, 0.35)',
@@ -3359,6 +3052,8 @@ export default function DoctorDashboard({
               <button type="submit" disabled={chatLoading}>Enviar</button>
             </form>
           </div>
+        </div>
+      )}
       {/* ICP-Brasil Digital Signature Verification Modal */}
       {signatureModalOpen && (
         <div style={{
@@ -3488,289 +3183,6 @@ export default function DoctorDashboard({
         </div>
       )}
 
-      {/* Digital Certificate Configuration Modal */}
-      {digitalCertModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999,
-          padding: '20px'
-        }}>
-          <div className="glass-card" style={{
-            maxWidth: '500px',
-            width: '100%',
-            padding: '30px',
-            borderRadius: '16px',
-            border: '1.5px solid rgba(255, 255, 255, 0.1)',
-            backgroundColor: 'rgba(30, 41, 59, 0.95)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            color: '#fff',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '24px' }}>🔑</span>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', margin: 0 }}>Vincular Certificado Digital</h3>
-                  <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>ICP-Brasil e e-CPF para Assinatura Regulamentar</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setDigitalCertModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '18px', cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Current Active Certificate Status & Validation Card */}
-            <div style={{
-              backgroundColor: digitalCertType === 'none' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)',
-              border: digitalCertType === 'none' ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)',
-              borderRadius: '10px',
-              padding: '14px',
-              fontSize: '12.5px',
-              lineHeight: '1.6'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <div style={{ fontWeight: '800', color: digitalCertType === 'none' ? '#f87171' : '#10b981', fontSize: '13px' }}>
-                  {digitalCertType === 'none' ? '🔴 Status: Não Configurado' : '🟢 Status: Ativo e Reconhecido pelo ITI / ICP-Brasil'}
-                </div>
-                {digitalCertType !== 'none' && (
-                  <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '50px' }}>
-                    ICP-Brasil Válido
-                  </span>
-                )}
-              </div>
-
-              {digitalCertType === 'none' ? (
-                <div style={{ color: '#f87171', fontSize: '12px' }}>
-                  ⚠️ <strong>Bloqueio de Emissão:</strong> Nenhum certificado digital vinculado. Por exigência regulamentar do CFM, você precisa importar um certificado A1, A3 ou Nuvem para liberar a emissão de receitas.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'rgba(255, 255, 255, 0.9)' }}>
-                  <div>📅 <strong>Validade do Certificado:</strong> Válido até 27/07/2027 (Restam 365 dias)</div>
-                  <div>🏢 <strong>Autoridade Certificadora:</strong> AC SOLUTI v5 / Serasa Experian (Cadeia Oficial ICP-Brasil)</div>
-                  <div>👨‍⚕️ <strong>Titular do Certificado:</strong> Dr(a). {doctorProfile?.name || 'Médico Logado'}</div>
-                  <div>
-                    🔍 <strong>Tipo Reconhecido:</strong>{' '}
-                    <code style={{ color: 'var(--primary-light)', fontWeight: 'bold' }}>
-                      {digitalCertType === 'a1' && `Modelo A1 (Arquivo PFX/P12: ${a1CertName || 'certificado.pfx'})`}
-                      {digitalCertType === 'a3' && 'Modelo A3 (Token USB PKCS#11 - Smartcard Actived)'}
-                      {digitalCertType === 'birdid' && `Nuvem - BirdID / Soluti (Usuário: ${birdIdUser || 'Não informado'})`}
-                    </code>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', backgroundColor: 'rgba(15, 23, 42, 0.5)', padding: '4px', borderRadius: '8px' }}>
-              <button
-                type="button"
-                onClick={() => setCertModalTab('a1')}
-                style={{
-                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
-                  backgroundColor: certModalTab === 'a1' ? '#10b981' : 'transparent',
-                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                📂 Arquivo A1
-              </button>
-              <button
-                type="button"
-                onClick={() => setCertModalTab('a3')}
-                style={{
-                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
-                  backgroundColor: certModalTab === 'a3' ? '#10b981' : 'transparent',
-                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                🔌 USB / Cartão A3
-              </button>
-              <button
-                type="button"
-                onClick={() => setCertModalTab('birdid')}
-                style={{
-                  padding: '8px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', border: 'none',
-                  backgroundColor: certModalTab === 'birdid' ? '#10b981' : 'transparent',
-                  color: '#fff', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                ☁️ Nuvem (BirdID)
-              </button>
-            </div>
-
-            {/* Dynamic settings form panel */}
-            <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {certModalTab === 'a1' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)' }}>
-                    Importe seu arquivo de certificado A1 médico (formatos .pfx ou .p12). Ele é armazenado de forma criptografada no seu dispositivo.
-                  </div>
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Selecionar Arquivo do Certificado (.PFX / .P12):</label>
-                    <input
-                      type="file"
-                      accept=".pfx,.p12"
-                      style={{ fontSize: '12px', color: '#fff', backgroundColor: 'rgba(15, 23, 42, 0.6)', padding: '6px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.15)' }}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setA1CertFile(file);
-                          setA1CertName(file.name);
-                          localStorage.setItem('irec_a1_name', file.name);
-                        }
-                      }}
-                    />
-                    {a1CertName && (
-                      <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700' }}>
-                        📄 Arquivo Selecionado: {a1CertName}
-                      </span>
-                    )}
-                  </div>
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '700' }}>Senha do Arquivo de Certificado:</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '8px', fontSize: '12.5px', borderRadius: '6px' }}
-                      placeholder="Digite a senha da chave privada .pfx"
-                      value={a1CertPassword}
-                      onChange={(e) => setA1CertPassword(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {certModalTab === 'a3' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)' }}>
-                    Conecte seu token USB físico ou insira o Cartão Smartcard na leitora do seu computador.
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                    border: '1px solid rgba(16, 185, 129, 0.25)',
-                    padding: '12px',
-                    borderRadius: '8px'
-                  }}>
-                    <span style={{ fontSize: '22px' }}>🔌</span>
-                    <div style={{ fontSize: '12px' }}>
-                      <strong style={{ color: '#10b981' }}>Leitor / Token Ativo:</strong> Aladdin eToken / Safenet PKCS#11 <br />
-                      <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.6)' }}>Serviço de Assinatura Serpro Signer / WebPKI ativo na porta localhost.</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {certModalTab === 'birdid' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)' }}>
-                    Conecte sua conta do provedor de certificado em nuvem (BirdID, Soluti ou Vidaas) para validação via OTP.
-                  </div>
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '700' }}>CPF / Usuário do Provedor de Nuvem:</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '8px', fontSize: '12.5px', borderRadius: '6px' }}
-                      placeholder="Ex: 000.000.000-00"
-                      value={birdIdUser}
-                      onChange={(e) => {
-                        setBirdIdUser(e.target.value);
-                        localStorage.setItem('irec_birdid_user', e.target.value);
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Actions */}
-            <div style={{ display: 'flex', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', flexWrap: 'wrap' }}>
-              {digitalCertType !== 'none' && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      alert(`🧪 Teste de Assinatura ICP-Brasil realizado com sucesso!\n\nProvedor: ${digitalCertType.toUpperCase()}\nStatus: Certificado Válido (Criptografia RSA 2048-bit)\nTitular: Dr(a). ${doctorProfile?.name || 'Médico'}`);
-                    }}
-                    className="btn"
-                    style={{
-                      padding: '10px 14px', fontSize: '12px', borderRadius: '8px', color: '#10b981',
-                      backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', cursor: 'pointer', fontWeight: '700'
-                    }}
-                  >
-                    🧪 Testar Assinatura
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDigitalCertType('none');
-                      localStorage.setItem('irec_cert_type', 'none');
-                      localStorage.removeItem('irec_birdid_user');
-                      localStorage.removeItem('irec_a1_name');
-                      setBirdIdUser('');
-                      setA1CertName('');
-                      setA1CertFile(null);
-                      setA1CertPassword('');
-                      alert('Vínculo do certificado digital removido. O status voltou a ser Pendente (Vermelho).');
-                    }}
-                    className="btn"
-                    style={{
-                      padding: '10px 14px', fontSize: '12px', borderRadius: '8px', color: 'var(--danger)',
-                      backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', cursor: 'pointer', fontWeight: '700'
-                    }}
-                  >
-                    🗑️ Remover
-                  </button>
-                </>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (certModalTab === 'a1' && !a1CertName && !a1CertFile) {
-                    alert('⚠️ Por favor, selecione seu arquivo de certificado A1 (.PFX ou .P12) primeiro.');
-                    return;
-                  }
-
-                  if (certModalTab === 'a1' && !a1CertPassword) {
-                    alert('⚠️ Por favor, digite a senha do seu arquivo de certificado A1.');
-                    return;
-                  }
-
-                  if (certModalTab === 'birdid' && !birdIdUser) {
-                    alert('⚠️ Por favor, digite seu Usuário/CPF do provedor de certificado em nuvem.');
-                    return;
-                  }
-
-                  setDigitalCertType(certModalTab);
-                  localStorage.setItem('irec_cert_type', certModalTab);
-                  setDigitalCertModalOpen(false);
-                  alert(`✅ Certificado Digital (${certModalTab.toUpperCase()}) configurado e ativado com sucesso! As receitas e atestados emitidos receberão assinatura ICP-Brasil.`);
-                }}
-                className="btn btn-primary"
-                style={{ flex: 1, padding: '10px', fontSize: '12.5px', borderRadius: '8px', fontWeight: 'bold', backgroundColor: '#10b981' }}
-              >
-                💾 Salvar e Ativar Certificado
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Printable Preview A4 (Only visible when printing) */}
       {activePrintDoc && (
@@ -3914,8 +3326,6 @@ export default function DoctorDashboard({
               </div>
             </div>
           </div>
-        </div>
-      )}
         </div>
       )}
     </div>
