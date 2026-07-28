@@ -15,6 +15,7 @@ import AdminPartners from './components/AdminPartners';
 import DoctorPartners from './components/DoctorPartners';
 import AdminDashboard from './components/AdminDashboard';
 import DoctorDashboardAnalytics from './components/DoctorDashboardAnalytics';
+import DoctorAgendaPage from './components/doctor/DoctorAgendaPage';
 import MyNetworkPortal from './components/MyNetworkPortal';
 import AccessibleDashboard from './components/AccessibleDashboard';
 import { AccessibleTelemedicineView, AccessibleUploadView } from './components/AccessibleSubViews';
@@ -807,19 +808,10 @@ export default function App() {
         return <DoctorDashboardAnalytics currentUser={currentUser} />;
       case 'doctor-agenda':
         return (
-          <DoctorDashboard 
-            key={activeTab}
-            doctorProfile={currentUser} 
+          <DoctorAgendaPage 
+            currentUser={currentUser} 
             setActiveTab={setActiveTab} 
-            onProfileUpdate={setCurrentUser} 
-            onEditProfile={() => setShowProfileModal(true)} 
-            onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }}
-            onOpenPrescriptionModal={() => setShowPrescriptionModal(true)}
-            selectedPatient={selectedPatientForDoctor}
             setSelectedPatient={setSelectedPatientForDoctor}
-            selectedPatientEntries={selectedPatientEntriesForDoctor}
-            setSelectedPatientEntries={setSelectedPatientEntriesForDoctor}
-            initialTab="my-agenda"
           />
         );
       case 'admin-partners':
