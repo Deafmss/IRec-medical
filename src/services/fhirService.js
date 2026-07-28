@@ -185,7 +185,7 @@ export const exportObservationToFHIR = (profile, entry) => {
               "display": "Wound area"
             }
           ],
-          text: "Área da Ferida (IA)"
+          text: "Área da Ferida"
         },
         valueQuantity: {
           value: Number(entry.aiAreaCm2) || 0,

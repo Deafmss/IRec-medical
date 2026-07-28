@@ -1121,7 +1121,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                     <div style={{ width: `${profileProgress}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px', transition: 'width 0.4s ease' }}></div>
                   </div>
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4', margin: 0 }}>
-                    Preencha sua ficha clínica completa para ajudar a IA e os profissionais a personalizarem suas orientações.
+                    Preencha sua ficha clínica completa para personalizar as orientações dos profissionais de saúde.
                   </p>
                 </div>
 

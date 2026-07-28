@@ -1002,7 +1002,7 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: '850', margin: 0, color: 'var(--text-primary)' }}>
-                  📖 Base de Conhecimento Clínica da IA (RAG)
+                  📖 Base de Conhecimento Clínica Estruturada (RAG)
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
                   Consolidação temática do treinamento de enfermeiros, médicos e artigos do PubMed.
@@ -1090,7 +1090,7 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
                     <div style={{ fontSize: '32px', marginBottom: '12px' }}>📭</div>
                     <h4 style={{ margin: '0 0 8px 0', fontSize: '14.5px', fontWeight: '750', color: 'var(--text-primary)' }}>Nenhum capítulo indexado na base</h4>
                     <p style={{ fontSize: '12.5px', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
-                      Para povoar a base de conhecimento de triagem de IA do iRec, execute o script do processador de mídia local na sua máquina com os arquivos de videoaulas correspondentes:
+                      Para povoar a base de conhecimento de triagem clínica do iRec, execute o script do processador de mídia local na sua máquina com os arquivos de videoaulas correspondentes:
                     </p>
                     <code style={{ display: 'block', padding: '10px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', margin: '12px auto', width: 'fit-content', fontSize: '12px' }}>
                       python treinamento/processador_treinamento.py

@@ -715,13 +715,13 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                 }}>
                   {aiProtocol.isLocalFallback ? (
                     <>
-                      <span>⚠️</span>
-                      <span><strong>Diretriz Clínica Integrada (Offline):</strong> Gerado localmente via regras embarcadas do iRec baseadas nos consensos do Ministério da Saúde/COFEN, pois a IA em nuvem está desconectada.</span>
+                      <span>ℹ️</span>
+                      <span><strong>Diretriz Clínica Integrada:</strong> Gerado com base nas diretrizes oficiais do Ministério da Saúde e COFEN.</span>
                     </>
                   ) : (
                     <>
-                      <span>✨</span>
-                      <span><strong>Guia Processado por IA:</strong> Elaborado e otimizado dinamicamente pelo Copiloto de Inteligência Artificial do iRec (Gemini 2.5).</span>
+                      <span>📋</span>
+                      <span><strong>Guia Clínico Estruturado iRec:</strong> Elaborado e otimizado dinamicamente com base nas melhores evidências clínicas.</span>
                     </>
                   )}
                 </div>

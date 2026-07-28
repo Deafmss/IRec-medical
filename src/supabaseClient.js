@@ -13,7 +13,7 @@ export const isSupabaseConfigured =
 if (!isSupabaseConfigured) {
   console.warn(
     '⚠️ [iRec] Supabase não está configurado no arquivo .env ou contém valores padrões de exemplo.\n' +
-    'A plataforma iniciará em MODO DEMONSTRAÇÃO OFFLINE (memória local do navegador).'
+    'A plataforma iniciará em MODO DE CONTINGÊNCIA LOCAL (memória local do navegador).'
   );
 }
 

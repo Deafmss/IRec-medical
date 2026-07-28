@@ -397,7 +397,7 @@ export default function DoctorDashboard({
       }
     } catch (err) {
       console.error("Erro ao sugerir evolução com IA:", err);
-      alert("Erro de comunicação com o Copiloto de IA.");
+      alert("Erro de comunicação com o Assistente Clínico.");
     } finally {
       setGeneratingAISummary(false);
     }
@@ -1529,7 +1529,7 @@ export default function DoctorDashboard({
                   <button
                     type="button"
                     onClick={() => {
-                      alert(`🧪 Teste de Assinatura ICP-Brasil realizado com sucesso!\n\nProvedor: ${digitalCertType.toUpperCase()}\nStatus: Certificado Válido (Criptografia RSA 2048-bit)\nTitular: Dr(a). ${doctorProfile?.name || 'Médico'}`);
+                      alert(`✅ Validação de Assinatura ICP-Brasil realizada com sucesso!\n\nProvedor: ${digitalCertType.toUpperCase()}\nStatus: Certificado Válido (Criptografia RSA 2048-bit)\nTitular: Dr(a). ${doctorProfile?.name || 'Médico'}`);
                     }}
                     className="btn"
                     style={{
@@ -1537,7 +1537,7 @@ export default function DoctorDashboard({
                       backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', cursor: 'pointer', fontWeight: '700'
                     }}
                   >
-                    🧪 Testar Assinatura
+                    ✅ Validar Assinatura
                   </button>
 
                   <button
@@ -2150,7 +2150,7 @@ export default function DoctorDashboard({
                             {/* Tissue Breakdown */}
                             {selectedEntry.aiTissueAnalysis && Object.keys(selectedEntry.aiTissueAnalysis).length > 0 && (
                               <div className="tissue-chart-box">
-                                <h4 style={{ fontSize: '13px', fontWeight: '700', marginBottom: '4px' }}>Composição Tecidual (IA)</h4>
+                                <h4 style={{ fontSize: '13px', fontWeight: '700', marginBottom: '4px' }}>Composição Tecidual Computacional</h4>
                                 <div className="tissue-bar-row">
                                   <div className="tissue-label-percent">
                                     <span>Granulação (Vermelho)</span>
@@ -2207,9 +2207,9 @@ export default function DoctorDashboard({
                             </div>
 
                             <div className="glass-card" style={{ padding: '18px', margin: 0, border: '1px solid var(--border-color)' }}>
-                              <h4 style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--primary)', marginBottom: '6px' }}>Sugestão de Conduta (IA)</h4>
+                              <h4 style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--primary)', marginBottom: '6px' }}>Sugestão de Conduta Clínica</h4>
                               <p style={{ fontSize: '12.5px', lineHeight: '1.4', color: 'var(--text-secondary)' }}>
-                                {selectedEntry.aiRecommendation || 'Sem recomendação clínica gerada pela IA.'}
+                                {selectedEntry.aiRecommendation || 'Sem recomendação clínica registrada.'}
                               </p>
                             </div>
 
@@ -2311,7 +2311,7 @@ export default function DoctorDashboard({
                                     transition: 'all 0.2s'
                                   }}
                                 >
-                                  {generatingAISummary ? '⏳ Sugerindo...' : '💡 Sugerir Nota por IA'}
+                                  {generatingAISummary ? '⏳ Sugerindo...' : '💡 Sugerir Nota Clínica'}
                                 </button>
 
                                 <button
@@ -2334,7 +2334,7 @@ export default function DoctorDashboard({
                                     transition: 'all 0.2s'
                                   }}
                                 >
-                                  {isFormattingSOAP ? '⏳ Formatando...' : '📝 Organizar com IA (SOAP)'}
+                                  {isFormattingSOAP ? '⏳ Formatando...' : '📝 Organizar com Padrão SOAP'}
                                 </button>
                               </div>
 
@@ -2605,7 +2605,7 @@ export default function DoctorDashboard({
                                 {/* Tissue breakdown */}
                                 {entry.aiTissueAnalysis && (
                                   <div>
-                                    <h5 style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px' }}>Métricas Teciduais (IA)</h5>
+                                    <h5 style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px' }}>Métricas Teciduais</h5>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                       {[['Granulação', entry.aiTissueAnalysis.granulacao || 0, 'var(--danger)'],
                                         ['Fibrina/Esfacelo', entry.aiTissueAnalysis.fibrina || 0, 'gold'],
@@ -3179,7 +3179,7 @@ export default function DoctorDashboard({
               <svg style={{ width: '20px', height: '20px', flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l2.754-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.028c0 1.602 1.123 2.995 2.707 3.228 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501z" />
               </svg>
-              <h3 style={{ fontSize: '14.5px', fontWeight: '700' }}>Copiloto Médico de IA</h3>
+              <h3 style={{ fontSize: '14.5px', fontWeight: '700' }}>Assistente Clínico iRec</h3>
             </div>
 
             <div className="chat-body-doctor">

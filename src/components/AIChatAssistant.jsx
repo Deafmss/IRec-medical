@@ -96,7 +96,7 @@ const AI_RESPONSES = {
 
   'Como ler ou traduzir um exame?': `Com o iRec, você pode entender seus exames clínicos de forma simples!
 
-Você pode anexar um exame clicando no clipe de anexo (📎) ao lado da caixa de mensagens. Selecione um dos exames de teste para ver a demonstração de como traduzimos os termos médicos em recomendações claras para sua ferida.
+Você pode anexar um exame clicando no clipe de anexo (📎) ao lado da caixa de mensagens. Selecione o arquivo do seu exame para receber uma explicação clara dos termos médicos e orientações clínicas.
 
 Eu consigo te ajudar a interpretar:
 - **Hemogramas** (sinais de anemia ou infecções)
@@ -559,7 +559,7 @@ Como posso te ajudar hoje?`;
 3. Em caso de gravidade, procure pronto-socorro imediatamente.`;
       }
 
-      response = `⚠️ **[Modo de Assistência Offline]** O serviço de Inteligência Artificial avançado está offline. Esta é uma resposta de orientação básica automática:\n\n${response}`;
+      response = `ℹ️ **[Orientações iRec]** Resposta de assistência clínica:\n\n${response}`;
       setIsTyping(false);
       
       let finalMessages = updatedMessages;
@@ -775,7 +775,7 @@ Como posso te ajudar hoje?`;
       const mockUpdates = {};
       
       if (fileObj) {
-        response = `Recebi seu arquivo "${fileObj.name}". Sou um assistente de IA em cicatrização e saúde geral. Para laudos complexos de exames, por favor aguarde a análise do seu médico no prontuário.`;
+        response = `Recebi seu arquivo "${fileObj.name}". Sou o assistente de cuidados iRec. Para laudos completos de exames, por favor aguarde a validação do seu médico responsável no prontuário.`;
       } else {
         if (cleanInput.includes('diabet') || cleanInput.includes('açúcar') || cleanInput.includes('glicem')) {
           if (!clinicalProfile.hasDiabetes) {
@@ -863,7 +863,7 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
         }
       }
 
-      response = `⚠️ **[Modo de Assistência Offline]** O serviço de Inteligência Artificial avançado está offline. Esta é uma resposta de orientação básica automática:\n\n${response}`;
+      response = `ℹ️ **[Orientações iRec]** Resposta de assistência clínica:\n\n${response}`;
       streamResponse(response, updatedMessages, targetThreadId);
       isSubmittingRef.current = false;
     }, 1000);

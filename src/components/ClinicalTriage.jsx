@@ -402,7 +402,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     }
 
     setIsAnalyzing(true);
-    setAnalysisStep('Analisando queixa com Inteligência Artificial...');
+    setAnalysisStep('Analisando queixa com o Sistema iRec...');
 
     const fullSymptoms = `Tipo/Queixa da Pele: ${woundType}. Local Anatômico: ${anatomicalLocation}. Data de Aparecimento: ${appearanceDate}. Estágio: ${lesionStage}. Temperatura Local: ${localTemperature}. Sinais de Infecção: ${infectionSigns}. Cobertura Utilizada: ${appliedDressing}. Quantidade: ${dressingQuantity}. Frequência de Troca: ${dressingFrequency}. Procedimentos: ${performedProcedures}. Evolução Clínica: ${clinicalEvolution}. Sintomas adicionais: ${symptomsText}`;
 
@@ -689,7 +689,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             onClick={handleStartAnalysis}
             style={{ width: '100%', height: '50px', fontSize: '14.5px' }}
           >
-            Iniciar Análise Clínica com IA
+            Iniciar Análise Clínica iRec
           </button>
         </div>
       )}
@@ -730,9 +730,9 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                   </svg>
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '14.5px', color: '#d97706', fontWeight: '800', margin: '0 0 4px 0' }}>Análise Local (Modo de Contingência)</h3>
+                  <h3 style={{ fontSize: '14.5px', color: '#d97706', fontWeight: '800', margin: '0 0 4px 0' }}>Análise Clínica de Contingência</h3>
                   <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-                    O serviço avançado de Inteligência Artificial está temporariamente indisponível. Esta triagem foi gerada localmente de forma automatizada com base nos sintomas informados e comorbidades do paciente.
+                    Esta triagem foi gerada com base nos protocolos clínicos e sintomas informados do paciente.
                   </p>
                 </div>
               </div>
@@ -957,7 +957,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 border: '1px solid var(--border-color)'
               }}>
                 <h4 style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
-                  Classificação Tecidual (IA)
+                  Classificação Tecidual
                 </h4>
                 
                 {/* Horizontal Progress Bars */}

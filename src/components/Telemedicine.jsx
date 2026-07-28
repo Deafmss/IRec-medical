@@ -1283,7 +1283,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
       // 4. Send official evolution note to chat messages
       const evolutionText = document.getElementById('ai-evolution-text')?.value || aiReport.clinicalEvolution;
-      const formattedChatMsg = `📋 **Evolução de Telemedicina (Resumo IA)**\n\n**Resumo**: ${aiReport.executiveSummary}\n\n**Evolução Clínica**: ${evolutionText}\n\n**Risco Estimado**: ${aiReport.riskLevel}`;
+      const formattedChatMsg = `📋 **Evolução de Telemedicina (Síntese Clínica)**\n\n**Resumo**: ${aiReport.executiveSummary}\n\n**Evolução Clínica**: ${evolutionText}\n\n**Risco Estimado**: ${aiReport.riskLevel}`;
       
       const sent = await sendChatMessage(currentUser.id, selectedContact.id, formattedChatMsg, null, null);
       if (sent) {
@@ -3102,7 +3102,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '16px' }}>📝</span>
-                    <span style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Copiloto IA & Transcrição</span>
+                    <span style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assistente Clínico & Transcrição</span>
                   </div>
                   <span style={{ fontSize: '10px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }}></span>
@@ -3357,7 +3357,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                     Processando Áudio da Consulta
                   </h3>
                   <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5', maxWidth: '400px' }}>
-                    A Inteligência Artificial do iRec está analisando a transcrição estruturada para triar sintomas e elaborar sugestões clínicas...
+                    O sistema iRec está processando a transcrição estruturada para triar sintomas e elaborar sugestões clínicas...
                   </p>
                 </div>
               </div>
@@ -3367,7 +3367,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                      Co-piloto Clínico iRec
+                      Assistente Clínico iRec
                     </span>
                     <span style={{ 
                       fontSize: '10px', 

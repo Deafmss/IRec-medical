@@ -467,7 +467,7 @@ export default function ClinicalHistory({ entries, clinicalProfile }) {
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                   </svg>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--primary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                    Triagem & Análise de IA iRec
+                    Triagem & Análise Clínica iRec
                   </span>
                 </div>
 

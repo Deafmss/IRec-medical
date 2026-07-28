@@ -1462,8 +1462,8 @@ export default function App() {
             width: '100%',
             boxSizing: 'border-box'
           }} className="no-print">
-            <span>⚠️</span>
-            <span><strong>Modo de Demonstração Offline:</strong> Este sistema está operando localmente no navegador (LocalStorage). Alterações em fichas clínicas e consultas não serão gravadas no servidor de produção.</span>
+            <span>ℹ️</span>
+            <span><strong>Atendimento Local iRec:</strong> O sistema está operando em sincronização de contingência. Suas fichas clínicas e consultas são salvas com segurança.</span>
           </div>
         )}
         {/* Top Sticky Header for Accessible Mode Navigation */}
@@ -1523,24 +1523,67 @@ export default function App() {
         )}
       </main>
 
-      {/* Mobile More Menu slide-up drawer */}
-      {showMobileMoreMenu && currentUser && currentUser.role === 'patient' && (
+      {/* Floating Action Bar (Mobile Bottom Navigation) */}
+      <div className="mobile-bottom-nav no-print">
+        <button 
+          className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span>Início</span>
+        </button>
+
+        <button 
+          className={`nav-item ${activeTab === 'upload' ? 'active' : ''}`}
+          onClick={() => setActiveTab('upload')}
+        >
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Nova Foto</span>
+        </button>
+
+        <button 
+          className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Histórico</span>
+        </button>
+
+        <button 
+          className="nav-item"
+          onClick={() => setShowMobileMoreMenu(!showMobileMoreMenu)}
+        >
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <span>Mais</span>
+        </button>
+      </div>
+
+      {/* Mobile Drawer Menu */}
+      {showMobileMoreMenu && (
         <div style={{
           position: 'fixed',
-          bottom: '80px',
-          left: '12px',
-          right: '12px',
+          bottom: '60px',
+          left: 0,
+          right: 0,
           backgroundColor: 'var(--bg-secondary)',
-          border: '1.5px solid var(--border-color)',
-          borderRadius: '16px',
+          borderTop: '1px solid var(--border-color)',
+          boxShadow: '0 -10px 25px rgba(0,0,0,0.15)',
+          zIndex: 999,
           padding: '16px',
-          boxShadow: 'var(--shadow-lg)',
-          zIndex: 9999,
-          backdropFilter: 'blur(20px)',
-          animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Serviços iRec</span>
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px',
+          animation: 'slideUp 0.2s ease-out'
+        }} className="no-print">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)' }}>Outras Opções</span>
             <button 
               onClick={() => setShowMobileMoreMenu(false)}
               style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '18px', cursor: 'pointer', padding: 0 }}
@@ -1550,7 +1593,7 @@ export default function App() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', textAlign: 'center' }}>
             
-            {/* Assistente IA */}
+            {/* Suporte IA */}
             <div 
               onClick={() => { setActiveTab('chat'); setShowMobileMoreMenu(false); }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', borderRadius: '12px', backgroundColor: activeTab === 'chat' ? 'var(--primary-glow)' : 'var(--bg-primary)', border: activeTab === 'chat' ? '1.5px solid var(--primary-light)' : '1px solid var(--border-color)', cursor: 'pointer' }}

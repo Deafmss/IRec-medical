@@ -390,7 +390,7 @@ export default function AccessibleDashboard({
           fontWeight: '700',
           boxShadow: '0 8px 24px rgba(2, 132, 199, 0.2)'
         }}>
-          ⏳ A Médica IA do iRec está analisando seus sintomas e salvando em seu prontuário...
+          ⏳ O Assistente Clínico iRec está analisando seus sintomas e salvando em seu prontuário...
         </div>
       )}
 
@@ -506,18 +506,18 @@ export default function AccessibleDashboard({
         </div>
       )}
 
-      {/* SYMPTOM SELECTION CARDS (INSTANT VOICE TRIGGER) */}
+      {/* QUICK SYMPTOM CATEGORIES WITH ACCESSIBLE IMAGES */}
       <div>
         <div style={{
-          backgroundColor: 'var(--bg-secondary, #1e293b)',
-          padding: '14px 20px',
-          borderRadius: '16px',
+          backgroundColor: '#1e293b',
+          padding: '16px',
+          borderRadius: '14px',
           border: '2px solid #0284c7',
           marginBottom: '16px',
           boxShadow: '0 4px 12px rgba(2, 132, 199, 0.15)'
         }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary, #ffffff)', margin: 0 }}>
-            👉 Ou toque na imagem do sintoma para consultar a IA Médica:
+            👉 Ou toque na imagem do sintoma para consultar o Assistente Clínico:
           </h2>
         </div>
 
