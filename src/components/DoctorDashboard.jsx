@@ -148,8 +148,10 @@ export default function DoctorDashboard({
   };
 
   // Load lists
-  const loadLists = async () => {
-    setLoading(true);
+  const loadLists = async (isSilent = false) => {
+    if (!isSilent) {
+      setLoading(true);
+    }
     try {
       const all = await getAllPatients();
       setPatients(all);
@@ -162,7 +164,9 @@ export default function DoctorDashboard({
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!isSilent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -189,12 +193,12 @@ export default function DoctorDashboard({
     }
   }, [initialTab]);
 
-  // Periodic polling for patient lists (every 10s)
+  // Periodic polling for patient lists (every 30s silently without triggering loading screen)
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log("[iRec] Polling doctor patients lists...");
-      loadLists();
-    }, 10000);
+      console.log("[iRec] Polling doctor patients lists silently...");
+      loadLists(true);
+    }, 30000);
     return () => clearInterval(interval);
   }, [doctorProfile]);
 
@@ -1887,22 +1891,6 @@ export default function DoctorDashboard({
                         <span className="patient-meta-text">{calculateAge(patient.birthDate)} • {patient.gender}</span>
                       </div>
                     </div>
-
-                    <button 
-                      className={`follow-icon-btn ${isFollowing(patient.id) ? 'following' : ''}`}
-                      onClick={(e) => handleToggleFollow(e, patient)}
-                      title={isFollowing(patient.id) ? "Deixar de acompanhar" : "Acompanhar este paciente"}
-                    >
-                      {isFollowing(patient.id) ? (
-                        <svg fill="currentColor" viewBox="0 0 24 24">
-                          <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499c.15-.357.502-.6.886-.6s.737.243.886.6l2.133 5.127 5.467.44c.4.03.738.297.874.673.136.376.015.8-.311 1.09l-4.185 3.585 1.278 5.334c.094.392-.047.8-.368 1.045-.32.246-.757.262-1.096.04L12.5 18.243l-4.908 3.01c-.34.221-.775.206-1.096-.04a1.002 1.002 0 0 1-.368-1.045l1.278-5.334L3.223 11.23a1.002 1.002 0 0 1-.31-1.09c.136-.376.475-.643.874-.672l5.467-.44 2.133-5.127Z" />
-                        </svg>
-                      )}
-                    </button>
                   </div>
 
                   <div className="clinical-badges">
