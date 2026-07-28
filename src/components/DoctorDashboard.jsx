@@ -895,6 +895,299 @@ export default function DoctorDashboard({
 
   return (
     <div className="doctor-dashboard-wrapper">
+      <style>{`
+        .doctor-dashboard-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          animation: fadeIn 0.4s ease forwards;
+        }
+
+        .clinician-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: var(--bg-secondary);
+          padding: 20px 24px;
+          border-radius: var(--radius-lg);
+          border: 1px solid var(--border-color);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .clinician-welcome h2 {
+          font-size: 20px;
+          font-weight: 800;
+          color: var(--text-primary);
+          letter-spacing: -0.3px;
+        }
+
+        .clinician-welcome p {
+          font-size: 13px;
+          color: var(--text-secondary);
+          margin-top: 2px;
+        }
+
+        .doctor-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          border-radius: var(--radius-sm);
+          background-color: var(--primary-glow);
+          color: var(--primary);
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .stats-strip {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 16px;
+        }
+
+        .stat-box {
+          background-color: var(--bg-secondary);
+          padding: 20px;
+          border-radius: var(--radius-lg);
+          border: 1px solid var(--border-color);
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          box-shadow: var(--shadow-sm);
+          transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-box.interactive {
+          cursor: pointer;
+        }
+
+        .stat-box.interactive:hover {
+          transform: translateY(-2px);
+          border-color: var(--primary);
+          box-shadow: var(--shadow-md);
+        }
+
+        .stat-box.interactive.active {
+          border-color: var(--primary);
+          box-shadow: 0 0 0 2px var(--primary-glow);
+          background-color: var(--primary-glow);
+        }
+
+        .stat-box .label {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-muted);
+          text-transform: uppercase;
+        }
+
+        .stat-box .value {
+          font-size: 26px;
+          font-weight: 800;
+          color: var(--text-primary);
+        }
+
+        .patients-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 20px;
+        }
+
+        .patient-card {
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-lg);
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          cursor: pointer;
+          transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .patient-card:hover {
+          transform: translateY(-3px);
+          box-shadow: var(--shadow-lg), var(--shadow-glow);
+          border-color: var(--primary-light);
+        }
+
+        .patient-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 8px;
+        }
+
+        .patient-avatar-name {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .patient-avatar {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, var(--primary), var(--primary-light));
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 16px;
+          box-shadow: var(--shadow-sm);
+          flex-shrink: 0;
+        }
+
+        .patient-name {
+          font-size: 15.5px;
+          font-weight: 700;
+          color: var(--text-primary);
+          margin: 0;
+        }
+
+        .patient-meta-text {
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+
+        .follow-icon-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--text-muted);
+          transition: var(--transition-fast);
+          padding: 4px;
+          border-radius: 50%;
+        }
+
+        .follow-icon-btn:hover {
+          color: var(--primary);
+          background-color: var(--primary-glow);
+        }
+
+        .follow-icon-btn.following {
+          color: var(--primary);
+        }
+
+        .follow-icon-btn svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        .clinical-badges {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .clinical-badge {
+          font-size: 10.5px;
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .badge-diabetes {
+          background-color: hsla(28, 92%, 50%, 0.1);
+          color: hsl(28, 92%, 50%);
+        }
+
+        .badge-hypertension {
+          background-color: hsla(210, 100%, 40%, 0.1);
+          color: var(--primary);
+        }
+
+        .badge-alert {
+          background-color: rgba(239, 68, 68, 0.15);
+          color: var(--danger);
+        }
+
+        .patient-card-footer {
+          border-top: 1px solid var(--border-color);
+          padding-top: 10px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 12px;
+          color: var(--text-secondary);
+        }
+
+        .detail-view-container {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .back-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: none;
+          border: none;
+          color: var(--primary);
+          font-weight: 700;
+          font-size: 13.5px;
+          cursor: pointer;
+          padding: 0;
+          width: fit-content;
+        }
+
+        .back-btn svg {
+          width: 18px;
+          height: 18px;
+        }
+
+        .patient-detail-card {
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-lg);
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .detail-header-strip {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 20px;
+          flex-wrap: wrap;
+          gap: 16px;
+        }
+
+        .detail-avatar-name {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .clinical-info-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 16px;
+          background-color: var(--bg-primary);
+          padding: 16px;
+          border-radius: var(--radius-md);
+          border: 1px solid var(--border-color);
+        }
+
+        .info-cell span {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-muted);
+          text-transform: uppercase;
+        }
+
+        .info-cell p {
+          font-size: 13.5px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+      `}</style>
       {/* Digital Certificate Configuration Modal (Rendered at root level for guaranteed visibility) */}
       {digitalCertModalOpen && (
         <div style={{
