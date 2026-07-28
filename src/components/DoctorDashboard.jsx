@@ -1169,7 +1169,7 @@ export default function DoctorDashboard({
           gap: 16px;
         }
 
-        .clinical-info-grid {
+        .clinical-info-grid, .detail-info-block {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
           gap: 16px;
@@ -1179,17 +1179,131 @@ export default function DoctorDashboard({
           border: 1px solid var(--border-color);
         }
 
-        .info-cell span {
+        .info-cell label, .info-cell span {
           font-size: 11px;
           font-weight: 700;
           color: var(--text-muted);
           text-transform: uppercase;
+          display: block;
+          margin-bottom: 4px;
         }
 
         .info-cell p {
           font-size: 13.5px;
           font-weight: 600;
           color: var(--text-primary);
+          margin: 0;
+        }
+
+        .clinical-chat-panel {
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-lg);
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .chat-panel-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .chat-panel-header svg {
+          width: 20px !important;
+          height: 20px !important;
+          flex-shrink: 0;
+          color: var(--primary);
+        }
+
+        .chat-body-doctor {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          padding-right: 4px;
+          max-height: 340px;
+          overflow-y: auto;
+        }
+
+        .chat-message-bubble {
+          padding: 10px 14px;
+          border-radius: 12px;
+          font-size: 12.5px;
+          line-height: 1.4;
+          max-width: 85%;
+        }
+
+        .chat-message-bubble.doctor {
+          align-self: flex-end;
+          background-color: var(--primary);
+          color: #ffffff;
+        }
+
+        .chat-message-bubble.ai {
+          align-self: flex-start;
+          background-color: var(--bg-primary);
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
+        }
+
+        .chat-input-form-doctor {
+          display: flex;
+          gap: 8px;
+          margin-top: 6px;
+        }
+
+        .chat-input-form-doctor input {
+          flex: 1;
+          padding: 8px 12px;
+          border-radius: 8px;
+          border: 1px solid var(--border-color);
+          background-color: var(--bg-primary);
+          color: var(--text-primary);
+          font-size: 12.5px;
+        }
+
+        .chat-input-form-doctor button {
+          padding: 8px 14px;
+          border-radius: 8px;
+          background-color: var(--primary);
+          color: #ffffff;
+          border: none;
+          font-weight: 700;
+          font-size: 12px;
+          cursor: pointer;
+        }
+
+        .login-tabs {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          background-color: var(--bg-primary);
+          padding: 4px;
+          border-radius: var(--radius-md);
+          border: 1px solid var(--border-color);
+        }
+
+        .login-tab-btn {
+          padding: 8px 14px;
+          border-radius: 6px;
+          border: none;
+          background: none;
+          font-size: 12.5px;
+          font-weight: 600;
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: var(--transition-fast);
+        }
+
+        .login-tab-btn.active {
+          background-color: var(--bg-secondary);
+          color: var(--primary);
+          box-shadow: var(--shadow-sm);
         }
       `}</style>
       {/* Digital Certificate Configuration Modal (Rendered at root level for guaranteed visibility) */}
@@ -1915,7 +2029,7 @@ export default function DoctorDashboard({
         <div className="detail-view-container">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <button className="back-btn no-print" onClick={() => setSelectedPatient(null)}>
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg style={{ width: '18px', height: '18px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12l7.5-7.5M21 12H3" />
               </svg>
               Voltar para a Lista de Pacientes
@@ -3266,7 +3380,7 @@ export default function DoctorDashboard({
           {/* AI Copiloto Sidebar Panel */}
           <div className="clinical-chat-panel no-print">
             <div className="chat-panel-header">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg style={{ width: '20px', height: '20px', flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l2.754-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.028c0 1.602 1.123 2.995 2.707 3.228 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501z" />
               </svg>
               <h3 style={{ fontSize: '14.5px', fontWeight: '700' }}>Copiloto Médico de IA</h3>
