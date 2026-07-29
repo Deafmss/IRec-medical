@@ -261,10 +261,8 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           setMobileView('chat');
         }
       }
-    } else if (filteredContacts.length > 0 && !selectedContact) {
-      setSelectedContact(filteredContacts[0]);
     }
-  }, [contacts, filteredContacts, targetContactId, isMobile]);
+  }, [contacts, targetContactId, isMobile]);
 
   // Synchronize internal Telemedicine state with global activeCallSession from App.jsx
   useEffect(() => {
@@ -346,22 +344,34 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         
         const counts = {};
         let newTotal = 0;
+        let readTimesUpdated = false;
         
         received.forEach(msg => {
-          // If the message is not from the active chat
-          if (!selectedContact || msg.senderId !== selectedContact.id) {
-            const lastRead = readTimes[msg.senderId] || '';
-            if (msg.createdAt > lastRead) {
-              counts[msg.senderId] = (counts[msg.senderId] || 0) + 1;
-              newTotal++;
-            }
+          // If message is from currently selected active contact, mark read
+          if (selectedContact && msg.senderId === selectedContact.id) {
+            readTimes[msg.senderId] = new Date().toISOString();
+            readTimesUpdated = true;
+            return;
+          }
+
+          const lastRead = readTimes[msg.senderId];
+          if (lastRead === undefined) {
+            // First time seeing historical message, initialize lastRead timestamp
+            readTimes[msg.senderId] = msg.createdAt;
+            readTimesUpdated = true;
+          } else if (msg.createdAt > lastRead) {
+            counts[msg.senderId] = (counts[msg.senderId] || 0) + 1;
+            newTotal++;
           }
         });
 
+        if (readTimesUpdated) {
+          localStorage.setItem('irec_chat_read_times', JSON.stringify(readTimes));
+        }
+
         setUnreadCounts(prev => {
           const prevTotal = Object.values(prev).reduce((acc, curr) => acc + curr, 0);
-          if (newTotal > prevTotal) {
-            // Play notification chime for new message in background chats
+          if (newTotal > prevTotal && newTotal > 0) {
             playNotificationSound();
           }
           return counts;
