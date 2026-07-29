@@ -161,11 +161,6 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const [muteAudio, setMuteAudio] = useState(false);
   const [hideVideo, setHideVideo] = useState(false);
 
-  // Simulated Vitals
-  const [heartRate, setHeartRate] = useState(72);
-  const [spo2, setSpo2] = useState(98);
-  const [respRate, setRespRate] = useState(16);
-
   // Media streams
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -589,11 +584,8 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       const isCaller = activeCall.callerId === currentUser.id;
       console.log(`Inicializando WebRTC P2P. Sou iniciador? ${isCaller}`);
       initializeWebRTC(activeCall.id, isCaller);
-      startECGAnimation();
-      startVitalsSimulation();
     } else if (callState === 'idle') {
       endMediaStream();
-      stopECGAnimation();
     }
   }, [callState, activeCall]);
 
@@ -762,56 +754,6 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   };
 
 
-  // Pulse oximeter heart rate beep sound
-  const playHeartBeatBeep = () => {
-    try {
-      if (!audioCtxRef.current) return;
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') ctx.resume();
-      
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
-    } catch (e) {}
-  };
-
-  // Simulated Vitals loops
-  const startVitalsSimulation = () => {
-    const vitalsInterval = setInterval(() => {
-      setHeartRate(prev => {
-        const delta = Math.floor(Math.random() * 3) - 1;
-        const next = Math.max(60, Math.min(100, prev + delta));
-        playHeartBeatBeep();
-        return next;
-      });
-      setSpo2(prev => {
-        if (Math.random() > 0.8) {
-          const delta = Math.floor(Math.random() * 3) - 1;
-          return Math.max(95, Math.min(100, prev + delta));
-        }
-        return prev;
-      });
-      setRespRate(prev => {
-        if (Math.random() > 0.9) {
-          const delta = Math.floor(Math.random() * 3) - 1;
-          return Math.max(12, Math.min(22, prev + delta));
-        }
-        return prev;
-      });
-    }, 1000);
-
-    return () => clearInterval(vitalsInterval);
-  };
-
   // Webcam streamer helper
   const startMediaStream = async () => {
     if (localStream) return localStream;
@@ -954,102 +896,6 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     setRemoteStream(null);
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
-    }
-  };
-
-  // ECG Canvas Animation
-  const startECGAnimation = () => {
-    const canvas = ecgCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    
-    let x = 0;
-    const width = canvas.width;
-    const height = canvas.height;
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 2.5;
-    
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
-
-    let points = [];
-    for (let i = 0; i < width; i++) {
-      points.push(height / 2);
-    }
-
-    let cycleCount = 0;
-    const animate = () => {
-      if (!ecgCanvasRef.current) return;
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, width, height);
-
-      ctx.strokeStyle = 'rgba(16, 185, 129, 0.08)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < width; i += 20) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, height);
-        ctx.stroke();
-      }
-      for (let i = 0; i < height; i += 20) {
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(width, i);
-        ctx.stroke();
-      }
-
-      cycleCount++;
-      let currentVal = height / 2;
-      const period = Math.floor(3600 / heartRate); 
-      const step = cycleCount % period;
-
-      if (step === 0) {
-        currentVal = height / 2;
-      } else if (step === 5) {
-        currentVal = height / 2 - 4;
-      } else if (step === 10) {
-        currentVal = height / 2;
-      } else if (step === 13) {
-        currentVal = height / 2 + 8;
-      } else if (step === 15) {
-        currentVal = height / 2 - 35;
-      } else if (step === 17) {
-        currentVal = height / 2 + 15;
-      } else if (step === 20) {
-        currentVal = height / 2;
-      } else if (step === 25) {
-        currentVal = height / 2 - 8;
-      } else if (step === 32) {
-        currentVal = height / 2;
-      }
-
-      points.push(currentVal);
-      points.shift();
-
-      ctx.strokeStyle = '#10b981';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(0, points[0]);
-      for (let i = 1; i < width; i++) {
-        ctx.lineTo(i, points[i]);
-      }
-      ctx.stroke();
-
-      ctx.fillStyle = '#34d399';
-      ctx.beginPath();
-      ctx.arc(width - 1, points[width - 1], 4, 0, Math.PI * 2);
-      ctx.fill();
-
-      ecgAnimationRef.current = requestAnimationFrame(animate);
-    };
-
-    ecgAnimationRef.current = requestAnimationFrame(animate);
-  };
-
-  const stopECGAnimation = () => {
-    if (ecgAnimationRef.current) {
-      cancelAnimationFrame(ecgAnimationRef.current);
-      ecgAnimationRef.current = null;
     }
   };
 
@@ -3155,28 +3001,38 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           </div>
 
 
-          {/* Bottom control toolbar */}
+          {/* Floating Action Glass Console Bar */}
           <div style={{
-            padding: '20px 24px',
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
             display: 'flex',
-            justifyContent: 'center',
-            gap: '16px',
-            backgroundColor: '#0f172a',
-            borderTop: '1px solid #1e293b'
+            alignItems: 'center',
+            gap: '14px',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            padding: '10px 24px',
+            borderRadius: '50px',
+            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
+            zIndex: 9999
           }}>
             <button 
               onClick={() => setMuteAudio(prev => !prev)}
               style={{
-                width: '48px',
-                height: '48px',
+                width: '46px',
+                height: '46px',
                 borderRadius: '50%',
                 border: 'none',
-                backgroundColor: muteAudio ? '#ef4444' : '#1e293b',
+                backgroundColor: muteAudio ? '#ef4444' : 'rgba(255, 255, 255, 0.1)',
                 color: '#ffffff',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
               }}
               title={muteAudio ? "Desmutar Áudio" : "Mutar Áudio"}
             >
@@ -3194,16 +3050,17 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
             <button 
               onClick={() => setHideVideo(prev => !prev)}
               style={{
-                width: '48px',
-                height: '48px',
+                width: '46px',
+                height: '46px',
                 borderRadius: '50%',
                 border: 'none',
-                backgroundColor: hideVideo ? '#ef4444' : '#1e293b',
+                backgroundColor: hideVideo ? '#ef4444' : 'rgba(255, 255, 255, 0.1)',
                 color: '#ffffff',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
               }}
               title={hideVideo ? "Ligar Câmera" : "Desligar Câmera"}
             >
@@ -3221,17 +3078,17 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
             <button 
               onClick={() => setShowExpressChat(prev => !prev)}
               style={{
-                width: '48px',
-                height: '48px',
+                width: '46px',
+                height: '46px',
                 borderRadius: '50%',
                 border: 'none',
-                backgroundColor: showExpressChat ? 'var(--primary)' : '#1e293b',
+                backgroundColor: showExpressChat ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
                 color: '#ffffff',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'background-color 0.2s ease'
+                transition: 'all 0.2s ease'
               }}
               title={showExpressChat ? "Fechar Chat Expresso" : "Abrir Chat Expresso"}
             >
@@ -3241,48 +3098,29 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
             </button>
 
             <button 
-              onClick={() => setAppActiveTab(currentUser.role === 'doctor' ? 'doctor-dashboard' : 'dashboard')}
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: '#1e293b',
-                color: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'background-color 0.2s ease'
-              }}
-              title="Minimizar Chamada (PiP)"
-            >
-              <svg style={{ width: '20px', height: '20px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 8.25V6a2.25 2.25 0 0 0-2.25-2.25H3.75A2.25 2.25 0 0 0 1.5 6v9a2.25 2.25 0 0 0 2.25 2.25h1.5m10.5-9.75h6A2.25 2.25 0 0 1 24 12v9a2.25 2.25 0 0 1-2.25 2.25h-6A2.25 2.25 0 0 1 13.5 21v-9a2.25 2.25 0 0 1 2.25-2.25Z" />
-              </svg>
-            </button>
-
-
-            <button 
               onClick={endCall}
               style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
+                padding: '0 20px',
+                height: '46px',
+                borderRadius: '50px',
                 border: 'none',
                 backgroundColor: '#ef4444',
                 color: '#ffffff',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(239,68,68,0.4)'
+                gap: '8px',
+                fontWeight: '800',
+                fontSize: '13px',
+                boxShadow: '0 4px 16px rgba(239, 68, 68, 0.4)',
+                transition: 'all 0.2s ease'
               }}
-              title="Encerrar Consulta"
+              title="Encerrar Teleconsulta"
             >
-              <svg style={{ width: '20px', height: '20px', transform: 'rotate(135deg)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75 16.5 12m0 0 2.25 2.25M16.5 12l2.25-2.25M16.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />
+              <svg style={{ width: '18px', height: '18px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
               </svg>
+              <span>Encerrar</span>
             </button>
           </div>
 
