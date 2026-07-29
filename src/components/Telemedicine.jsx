@@ -113,27 +113,6 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const [attachedFile, setAttachedFile] = useState(null);
   const [attachedFileType, setAttachedFileType] = useState(null); // 'photo' or 'document'
   
-  // Specialist Directory states
-  const [showDirectory, setShowDirectory] = useState(false);
-  const [allDoctorsList, setAllDoctorsList] = useState([]);
-  const [directorySearchQuery, setDirectorySearchQuery] = useState('');
-  const [directoryFilterSpecialty, setDirectoryFilterSpecialty] = useState('all');
-  const [selectedDirectoryDoctor, setSelectedDirectoryDoctor] = useState(null);
-
-  useEffect(() => {
-    if (currentUser?.role === 'patient') {
-      async function loadAllDoctors() {
-        try {
-          const docs = await getAllDoctors();
-          setAllDoctorsList(docs || []);
-        } catch (e) {
-          console.error('Error loading all doctors for directory:', e);
-        }
-      }
-      loadAllDoctors();
-    }
-  }, [currentUser]);
-  
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
 
   const speakMessage = (msgId, text) => {
@@ -956,6 +935,11 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     }
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
+    }
+
+    if (ringIntervalRef.current) {
+      clearInterval(ringIntervalRef.current);
+      ringIntervalRef.current = null;
     }
     
     // Clean up WebRTC peer connection
