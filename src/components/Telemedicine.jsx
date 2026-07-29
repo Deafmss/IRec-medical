@@ -1871,7 +1871,144 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       borderRadius: 0
     }}>
       
-      {/* 1. Chat Interface Area (Left/Center on Desktop) */}
+      {/* 1. Sidebar Contacts Panel (Left Side - 320px) */}
+      {(!isMobile || mobileView === 'contacts') && (
+        <div className="telemedicine-sidebar" style={{
+          width: isMobile ? '100%' : '320px',
+          borderRight: isMobile ? 'none' : '1px solid var(--border-color)',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: 'var(--bg-secondary)',
+          flexShrink: 0,
+          height: '100%'
+        }}>
+          <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border-color)' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              💬 Telemedicina & Chat
+            </h3>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+              {currentUser.role === 'doctor' ? 'Selecione um paciente para atendimento' : 'Converse com seus profissionais'}
+            </p>
+          </div>
+
+          {/* Search bar */}
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-primary)' }}>
+            <input 
+              type="text" 
+              placeholder="🔍 Buscar paciente ou médico..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '9px 14px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                fontSize: '12.5px',
+                outline: 'none'
+              }}
+            />
+          </div>
+
+          <div className="contacts-list" style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
+            {filteredContacts.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
+                Nenhum contato encontrado.
+              </div>
+            ) : (
+              filteredContacts.map(c => {
+                const active = selectedContact && selectedContact.id === c.id;
+                const contactInitials = c.name ? c.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0,2).toUpperCase() : '?';
+                
+                const isOnline = (() => {
+                  if (!c.lastSeenAt) return false;
+                  try {
+                    const lastSeen = new Date(c.lastSeenAt).getTime();
+                    const now = new Date().getTime();
+                    return (now - lastSeen) < 35000;
+                  } catch (e) {
+                    return false;
+                  }
+                })();
+
+                return (
+                  <div 
+                    key={c.id} 
+                    onClick={() => {
+                      setSelectedContact(c);
+                      if (isMobile) {
+                        setMobileView('chat');
+                      }
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      backgroundColor: active ? 'rgba(2, 132, 199, 0.08)' : 'transparent',
+                      borderLeft: active ? '4px solid #0284c7' : '4px solid transparent',
+                      borderBottom: '1px solid var(--border-color)',
+                      transition: 'all 0.15s ease'
+                    }}
+                    className="contact-item"
+                  >
+                    <div style={{ position: 'relative' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        fontWeight: '800',
+                        color: '#0284c7',
+                        overflow: 'hidden',
+                        flexShrink: 0
+                      }}>
+                        {c.avatarUrl ? (
+                          <img src={c.avatarUrl} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : contactInitials}
+                      </div>
+                      {isOnline && (
+                        <span style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          backgroundColor: '#10b981',
+                          border: '2px solid var(--bg-secondary)'
+                        }} />
+                      )}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {c.name}
+                        </span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                          {c.role === 'doctor' ? '👨‍⚕️ Médico' : (c.role === 'nurse' ? '🩺 Enfermeiro' : '👤 Paciente')}
+                        </span>
+                      </div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '11.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {c.lastMessageText || 'Clique para iniciar atendimento...'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2. Main Chat Workspace Area (Center/Right) */}
       {(!isMobile || mobileView === 'chat') && (
         <div className="telemedicine-chat-pane" style={{
           flex: 1,
@@ -1891,7 +2028,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 justifyContent: 'space-between',
                 backgroundColor: 'var(--bg-secondary)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1, gap: '12px' }}>
                   {isMobile && (
                     <button 
                       onClick={() => setMobileView('contacts')}
@@ -1899,8 +2036,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        padding: '8px 8px 8px 0',
-                        marginRight: '8px',
+                        padding: '4px',
                         color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
@@ -1913,39 +2049,55 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                       </svg>
                     </button>
                   )}
+                  <div style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                    color: '#0284c7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '800',
+                    fontSize: '16px'
+                  }}>
+                    {selectedContact.name ? selectedContact.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
                   <div style={{ minWidth: 0 }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: '800', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedContact.name}</h4>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <h4 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {selectedContact.name}
+                    </h4>
+                    <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {selectedContact.role === 'doctor' || selectedContact.crm ? (selectedContact.specialty || 'Profissional de Saúde') : 'Paciente vinculado'}
                     </p>
                   </div>
                 </div>
 
-                {/* Action buttons */}
+                {/* Video Call Trigger */}
                 <button 
                   onClick={startCall}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    backgroundColor: 'var(--primary)',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '30px',
-                    padding: '8px 16px',
-                    fontSize: '12px',
+                    padding: '10px 20px',
+                    fontSize: '13px',
                     fontWeight: '700',
                     cursor: 'pointer',
-                    boxShadow: 'var(--shadow-sm)',
+                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
                     transition: 'transform 0.15s ease',
                     flexShrink: 0
                   }}
                   className="btn-video-call"
                 >
-                  <svg style={{ width: '15px', height: '15px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <svg style={{ width: '16px', height: '16px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                   </svg>
-                  Iniciar Chamada
+                  Iniciar Teleconsulta por Vídeo
                 </button>
               </div>
 
@@ -1960,8 +2112,8 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 backgroundColor: 'var(--bg-primary)'
               }}>
                 {messages.length === 0 ? (
-                  <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', maxWidth: '300px' }}>
-                    💬 Nenhuma mensagem ainda. Inicie a conversa enviando uma mensagem ou compartilhando arquivos.
+                  <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', maxWidth: '340px' }}>
+                    💬 Nenhuma mensagem trocada ainda com {selectedContact.name}. Envie uma mensagem abaixo ou inicie a teleconsulta.
                   </div>
                 ) : (
                   messages.map(m => {
@@ -1981,7 +2133,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                         <div style={{
                           padding: '10px 14px',
                           borderRadius: isOwn ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                          backgroundColor: isOwn ? 'var(--primary)' : 'var(--bg-secondary)',
+                          backgroundColor: isOwn ? '#0284c7' : 'var(--bg-secondary)',
                           color: isOwn ? '#ffffff' : 'var(--text-primary)',
                           fontSize: '13px',
                           boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
@@ -2041,23 +2193,19 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                                 border: 'none',
                                 cursor: 'pointer',
                                 fontSize: '11px',
-                                color: speakingMessageId === m.id ? 'var(--primary)' : 'var(--text-muted)',
+                                color: speakingMessageId === m.id ? '#0284c7' : 'var(--text-muted)',
                                 padding: '2px',
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                opacity: 0.8,
-                                transition: 'opacity 0.2s'
+                                opacity: 0.8
                               }}
                               title={speakingMessageId === m.id ? "Parar leitura por voz" : "Ouvir mensagem (Acessibilidade)"}
-                              onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.8'; }}
                             >
                               {speakingMessageId === m.id ? '⏹️' : '🔊'}
                             </button>
                           )}
                         </div>
-
                       </div>
                     );
                   })
@@ -2088,16 +2236,16 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      width: '36px',
-                      height: '36px',
+                      width: '38px',
+                      height: '38px',
                       borderRadius: '50%',
-                      backgroundColor: attachedFile ? 'var(--primary-glow)' : 'var(--bg-primary)',
+                      backgroundColor: attachedFile ? 'rgba(2, 132, 199, 0.15)' : 'var(--bg-primary)',
                       border: '1px solid var(--border-color)',
                       cursor: 'pointer',
-                      color: attachedFile ? 'var(--primary)' : 'var(--text-secondary)',
+                      color: attachedFile ? '#0284c7' : 'var(--text-secondary)',
                       transition: 'all 0.2s ease'
                     }}
-                    title="Anexar foto ou PDF"
+                    title="Anexar foto de lesão ou laudo PDF"
                   >
                     <svg style={{ width: '18px', height: '18px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
@@ -2110,10 +2258,10 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                     type="text" 
                     value={newMessageText}
                     onChange={e => setNewMessageText(e.target.value)}
-                    placeholder={attachedFile ? `Arquivo selecionado: ${attachedFile.name}` : "Digite uma mensagem..."}
+                    placeholder={attachedFile ? `Anexado: ${attachedFile.name}` : "Digite uma mensagem..."}
                     style={{
                       width: '100%',
-                      padding: '10px 16px',
+                      padding: '11px 18px',
                       borderRadius: '30px',
                       border: '1px solid var(--border-color)',
                       backgroundColor: 'var(--bg-primary)',
@@ -2128,13 +2276,13 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                       onClick={() => { setAttachedFile(null); setAttachedFileType(null); }}
                       style={{
                         position: 'absolute',
-                        right: '12px',
+                        right: '14px',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: 'var(--danger)',
+                        color: '#ef4444',
                         fontSize: '16px',
                         fontWeight: 'bold'
                       }}
@@ -2150,14 +2298,14 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: '36px',
-                    height: '36px',
+                    width: '38px',
+                    height: '38px',
                     borderRadius: '50%',
-                    backgroundColor: 'var(--primary)',
+                    backgroundColor: '#0284c7',
                     color: '#ffffff',
                     border: 'none',
                     cursor: 'pointer',
-                    boxShadow: 'var(--shadow-sm)'
+                    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.3)'
                   }}
                 >
                   <svg style={{ width: '16px', height: '16px', transform: 'rotate(45deg)', marginLeft: '-2px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -2167,168 +2315,53 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               </form>
             </>
           ) : (
-            <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <svg style={{ width: '64px', height: '64px', margin: '0 auto 16px auto', display: 'block', opacity: 0.5 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-3.658A9.224 9.224 0 0 1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
-              </svg>
-              Selecione um contato para conversar.
+            <div style={{
+              margin: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              padding: '40px 24px',
+              maxWidth: '520px'
+            }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '24px',
+                background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.15), rgba(16, 185, 129, 0.15))',
+                border: '1px solid rgba(2, 132, 199, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '36px',
+                marginBottom: '20px',
+                boxShadow: '0 8px 24px rgba(2, 132, 199, 0.12)'
+              }}>
+                🩺
+              </div>
+              
+              <h3 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 8px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+                Central de Telemedicina & Chat
+              </h3>
+              
+              <p style={{ fontSize: '13.5px', lineHeight: '1.6', color: 'var(--text-secondary)', margin: '0 0 24px 0' }}>
+                Selecione um contato na lista à esquerda para iniciar o atendimento por mensagem ou realizar a consulta por vídeo em tempo real com transcrição clínica automática.
+              </p>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.1)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(2, 132, 199, 0.2)' }}>
+                  🔒 Chamada WebRTC Criptografada
+                </span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  📋 Integrado com Prontuário SOAP
+                </span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                  ⚡ Transmissão de Vídeo HD
+                </span>
+              </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* 2. Sidebar Contacts panel (Right on Desktop) */}
-      {(!isMobile || mobileView === 'contacts') && (
-        <div className="telemedicine-sidebar" style={{
-          width: isMobile ? '100%' : '300px',
-          borderLeft: isMobile ? 'none' : '1px solid var(--border-color)',
-          display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: 'var(--bg-secondary)',
-          flexShrink: 0,
-          height: '100%'
-        }}>
-          <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, fontFamily: 'var(--font-display)' }}>
-              💬 Telemedicina & Chat
-            </h3>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              {currentUser.role === 'doctor' ? 'Selecione um paciente' : 'Converse com seus clínicos'}
-            </p>
-          </div>
-
-          {/* Search bar */}
-          <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-primary)' }}>
-            <input 
-              type="text" 
-              placeholder="🔍 Buscar contatos..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color)',
-                backgroundColor: 'var(--bg-secondary)',
-                color: 'var(--text-primary)',
-                fontSize: '12px',
-                outline: 'none'
-              }}
-            />
-          </div>
-
-
-
-
-
-          <div className="contacts-list" style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
-            {filteredContacts.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
-                Nenhum contato encontrado.
-              </div>
-            ) : (
-              filteredContacts.map(c => {
-                const active = selectedContact && selectedContact.id === c.id;
-                const contactInitials = c.name ? c.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0,2).toUpperCase() : '?';
-                
-                const isOnline = (() => {
-                  if (!c.lastSeenAt) return false;
-                  try {
-                    const lastSeen = new Date(c.lastSeenAt).getTime();
-                    const now = new Date().getTime();
-                    // Consider online if active in the last 35 seconds
-                    return (now - lastSeen) < 35000;
-                  } catch (e) {
-                    return false;
-                  }
-                })();
-
-                return (
-                  <div 
-                    key={c.id} 
-                    onClick={() => {
-                      setSelectedContact(c);
-                      if (isMobile) {
-                        setMobileView('chat');
-                      }
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px 20px',
-                      cursor: 'pointer',
-                      backgroundColor: active ? 'var(--primary-glow)' : 'transparent',
-                      borderLeft: active ? '4px solid var(--primary)' : '4px solid transparent',
-                      transition: 'all 0.2s ease'
-                    }}
-                    className="contact-item"
-                  >
-                    <div style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--border-color)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12.5px',
-                      fontWeight: '700',
-                      color: 'var(--text-secondary)',
-                      overflow: 'hidden',
-                      flexShrink: 0
-                    }}>
-                      {c.avatarUrl ? (
-                        <img src={c.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : contactInitials}
-                    </div>
-                    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <p style={{ fontSize: '13px', fontWeight: '700', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {c.name}
-                          <span 
-                            style={{ 
-                              display: 'inline-block', 
-                              width: '8px', 
-                              height: '8px', 
-                              borderRadius: '50%', 
-                              backgroundColor: isOnline ? '#10b981' : '#94a3b8',
-                              boxShadow: isOnline ? '0 0 8px #10b981' : 'none',
-                              flexShrink: 0
-                            }} 
-                            title={isOnline ? "Online" : "Offline"}
-                          />
-                        </p>
-                        <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {c.role === 'doctor' || c.crm ? (c.specialty || 'Clínico iRec') : 'Paciente'}
-                        </p>
-                      </div>
-
-                      {/* Unread message badge */}
-                      {unreadCounts[c.id] > 0 && (
-                        <div style={{
-                          backgroundColor: 'var(--danger)',
-                          color: '#ffffff',
-                          fontSize: '10px',
-                          fontWeight: '800',
-                          padding: '2px 6px',
-                          borderRadius: '10px',
-                          minWidth: '18px',
-                          height: '18px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          {unreadCounts[c.id]}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
         </div>
       )}
 
