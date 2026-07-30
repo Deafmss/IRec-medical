@@ -10,7 +10,7 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
     }
   });
 
-
+  const [activeDoc, setActiveDoc] = useState(null);
 
   const handlePrescriptionCreated = (docData) => {
     const updated = [docData, ...prescriptionHistory];

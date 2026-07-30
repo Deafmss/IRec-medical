@@ -93,6 +93,7 @@ export default function Login({ onLoginSuccess }) {
   // Doctor fields
   const [crm, setCrm] = useState('');
   const [crmState, setCrmState] = useState('SP');
+  const [documentFile, setDocumentFile] = useState(null);
   const [specialty, setSpecialty] = useState('');
   const [rqe, setRqe] = useState('');
   const [specSearch, setSpecSearch] = useState('');

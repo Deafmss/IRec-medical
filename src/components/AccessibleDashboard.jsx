@@ -26,6 +26,7 @@ export default function AccessibleDashboard({
   const [triageRiskLevel, setTriageRiskLevel] = useState('Verde'); // 'Verde', 'Amarelo', 'Vermelho'
   const [loadingAi, setLoadingAi] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState('default');
+  const [selectedSymptomTitle, setSelectedSymptomTitle] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {

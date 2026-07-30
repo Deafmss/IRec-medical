@@ -181,6 +181,7 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
   const [activeTab, setActiveTab] = useState('ai-protocol');
   const [loading, setLoading] = useState(false);
   const [aiProtocol, setAiProtocol] = useState(null);
+  const [error, setError] = useState('');
   const [dbRecommendedMaterials, setDbRecommendedMaterials] = useState([]);
   const [assignedDoctors, setAssignedDoctors] = useState([]);
   const latestWoundEntry = entries && entries.length > 0 ? entries[entries.length - 1] : null;

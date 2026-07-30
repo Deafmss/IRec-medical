@@ -105,6 +105,7 @@ export default function DoctorDashboard({
   const [a1CertName, setA1CertName] = useState(() => localStorage.getItem('irec_a1_name') || '');
   const [a1CertFile, setA1CertFile] = useState(null);
   const [a1CertPassword, setA1CertPassword] = useState('');
+  const [a3TokenConnected, setA3TokenConnected] = useState(true);
   const [shouldDigitallySign, setShouldDigitallySign] = useState(true);
 
   // PEP Sync states

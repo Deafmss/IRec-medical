@@ -5,6 +5,7 @@ import DateRangePicker from './DateRangePicker';
 
 export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab, onVerificationProcessed }) {
   const activeTab = propActiveTab === 'dashboard' ? 'metrics' : propActiveTab;
+  const [stats, setStats] = useState({ patients: 0, doctors: 0, nurses: 0, triages: 0, partners: 0, calls: 0 });
   const [users, setUsers] = useState([]);
   const [logs, setLogs] = useState([]);
   const [partners, setPartners] = useState([]);
@@ -44,7 +45,8 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
   const loadData = async () => {
     setLoading(true);
     try {
-      const [usersData, logsData, partnersData, callsData, assignmentsData, woundEntriesData, trainingData] = await Promise.all([
+      const [statsData, usersData, logsData, partnersData, callsData, assignmentsData, woundEntriesData, trainingData] = await Promise.all([
+        getAdminStats(),
         getAllProfiles(),
         getAuditLogs(),
         getRecommendedMaterials(null, null), // Fetch global platform-wide partners
@@ -54,6 +56,7 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
         getTrainingKnowledgeList()
       ]);
       
+      setStats(statsData);
       setUsers(usersData);
       setLogs(logsData);
       setPartners(partnersData.filter(p => p.type === 'irec_partner'));

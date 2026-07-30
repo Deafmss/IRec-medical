@@ -1,7 +1,0 @@
-# iRec Medical Robots.txt
-User-agent: *
-Allow: /
-Disallow: /admin-
-Disallow: /scratch/
-
-Sitemap: https://i-rec-medical.vercel.app/sitemap.xml

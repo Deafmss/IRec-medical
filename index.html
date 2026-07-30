@@ -11,53 +11,7 @@
     <link rel="apple-touch-icon" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png" />
     <link rel="manifest" href="/manifest.json" />
-    <title>iRec - Plataforma Médica de Telemedicina & Tratamento de Feridas</title>
-    <meta name="description" content="Plataforma médica e de saúde iRec: Telemedicina HD criptografada, prontuário eletrônico no padrão SOAP, acompanhamento de feridas e estomaterapia, e emissão de receituários digitais." />
-    <meta name="keywords" content="telemedicina, estomaterapia, tratamento de feridas, prontuario eletrônico, receita digital, atestado medico, irec saude" />
-    <meta name="author" content="iRec Saúde Digital" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://i-rec-medical.vercel.app/" />
-
-    <!-- Open Graph / Facebook / WhatsApp Preview -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://i-rec-medical.vercel.app/" />
-    <meta property="og:title" content="iRec - Plataforma Médica de Telemedicina & Saúde Digital" />
-    <meta property="og:description" content="Telemedicina com criptografia P2P, integração ao prontuário SOAP, tratamento computadorizado de lesões e prescrição médica digital." />
-    <meta property="og:image" content="https://i-rec-medical.vercel.app/favicon.png" />
-    <meta property="og:site_name" content="iRec Saúde" />
-    <meta property="og:locale" content="pt_BR" />
-
-    <!-- Twitter Cards -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://i-rec-medical.vercel.app/" />
-    <meta name="twitter:title" content="iRec - Plataforma Médica de Telemedicina & Saúde Digital" />
-    <meta name="twitter:description" content="Telemedicina P2P criptografada, prontuário eletrônico SOAP e acompanhamento computadorizado de lesões." />
-    <meta name="twitter:image" content="https://i-rec-medical.vercel.app/favicon.png" />
-
-    <!-- Schema.org JSON-LD Structured Data for Google Medical Web Page -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "MedicalWebPage",
-        "name": "iRec - Plataforma Médica de Telemedicina & Tratamento Avançado de Feridas",
-        "url": "https://i-rec-medical.vercel.app/",
-        "description": "Sistema completo de telessaúde com prontuário eletrônico no padrão SOAP, teleconsulta por vídeo HD e prescrição digital.",
-        "inLanguage": "pt-BR",
-        "about": [
-          {
-            "@type": "MedicalCondition",
-            "name": "Feridas Crônicas, Pé Diabético e Lesões por Pressão"
-          }
-        ],
-        "publisher": {
-          "@type": "MedicalOrganization",
-          "name": "iRec Tecnologia e Saúde Digital",
-          "url": "https://i-rec-medical.vercel.app/",
-          "logo": "https://i-rec-medical.vercel.app/logo.png"
-        }
-      }
-    </script>
-
+    <title>iRec - Atendimento Inteligente e Saúde Geral</title>
     <!-- Importing modern typography (Outfit and Inter) from Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -67,18 +21,34 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // Force unregister legacy service workers and clear stale caches on startup
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          for (let registration of registrations) {
-            registration.unregister();
-          }
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            console.log('[iRec PWA] Service Worker registrado:', reg.scope);
+            
+            // Força a checagem por nova versão sempre que o app é aberto
+            reg.update();
+
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              if (installingWorker) {
+                installingWorker.onstatechange = () => {
+                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('[iRec PWA] Nova versão detectada! Atualizando app automaticamente...');
+                    window.location.reload();
+                  }
+                };
+              }
+            };
+          }).catch((err) => {
+            console.warn('[iRec PWA] Falha ao registrar Service Worker:', err);
+          });
         });
-      }
-      if ('caches' in window) {
-        caches.keys().then(names => {
-          for (let name of names) {
-            caches.delete(name);
+
+        // Checa novas versões quando o usuário volta para o app no celular
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            navigator.serviceWorker.ready.then(reg => reg.update());
           }
         });
       }

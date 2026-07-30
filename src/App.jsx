@@ -28,64 +28,6 @@ import ReportPDFGenerator from './components/ReportPDFGenerator';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
 import { generatePersonalizedProtocol } from './services/geminiService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-// Error Boundary Component to prevent white screens during network/rendering issues
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error('[iRec ErrorBoundary] Erro de renderização capturado:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '70vh',
-          padding: '24px',
-          textAlign: 'center',
-          fontFamily: 'var(--font-primary, sans-serif)',
-          color: 'var(--text-primary)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏥</div>
-          <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 8px 0' }}>Reiniciando Área de Atendimento iRec</h2>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '420px', margin: '0 0 20px 0' }}>
-            Identificamos uma oscilação na conexão. Clique abaixo para recarregar com segurança.
-          </p>
-          <button
-            onClick={() => {
-              this.setState({ hasError: false, error: null });
-              window.location.reload();
-            }}
-            style={{
-              backgroundColor: '#0284c7',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '14px 28px',
-              fontWeight: '800',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)'
-            }}
-          >
-            🔄 RECARREGAR PÁGINA AGORA
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -437,34 +379,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('irec-sidebar-collapsed', isSidebarCollapsed);
   }, [isSidebarCollapsed]);
-
-  // Update page title dynamically for SEO and Accessibility based on active tab & unread count
-  useEffect(() => {
-    const titles = {
-      dashboard: 'Painel Principal | iRec Saúde',
-      'doctor-dashboard': 'Pacientes & Prontuários | iRec Saúde',
-      'doctor-agenda': 'Agenda de Consultas | iRec Saúde',
-      'doctor-analytics': 'Analytics & Indicadores Clínicos | iRec Saúde',
-      telemedicine: 'Telemedicina & Videochamada HD | iRec Saúde',
-      prescriptions: 'Prescrições, Atestados & Receituários | iRec Saúde',
-      profile: 'Perfil & Configurações de Conta | iRec Saúde',
-      protocols: 'Guia de Protocolos de Estomaterapia | iRec Saúde',
-      doctors_directory: 'Diretório de Médicos Especialistas | iRec Saúde',
-      nurses: 'Rede de Enfermagem & Cuidados | iRec Saúde',
-      my_network: 'Minha Rede de Saúde | iRec Saúde',
-      upload: 'Triagem & Fotografia de Lesões | iRec Saúde',
-      history: 'Histórico & Prontuário Clínico | iRec Saúde',
-      documents: 'Laudos & Documentos Clínicos | iRec Saúde',
-      chat: 'Assistente Clínico iRec | iRec Saúde'
-    };
-
-    const baseTitle = titles[activeTab] || 'Plataforma Médica & Telemedicina | iRec Saúde';
-    if (unreadChatMessagesCount > 0) {
-      document.title = `(${unreadChatMessagesCount}) ${baseTitle}`;
-    } else {
-      document.title = baseTitle;
-    }
-  }, [activeTab, unreadChatMessagesCount]);
 
   // Shared patient clinical profile (loaded from Supabase/Local)
   const [clinicalProfile, setClinicalProfile] = useState({
@@ -1618,11 +1532,8 @@ export default function App() {
             </button>
           </div>
         )}
-        {(activeTab !== 'telemedicine' || (uiMode === 'accessible' && currentUser?.role === 'patient')) && (
-          <ErrorBoundary>
-            {renderContent()}
-          </ErrorBoundary>
-        )}
+
+        {(activeTab !== 'telemedicine' || (uiMode === 'accessible' && currentUser?.role === 'patient')) && renderContent()}
         {!(uiMode === 'accessible' && currentUser?.role === 'patient') && (
           <Telemedicine 
             currentUser={currentUser} 
