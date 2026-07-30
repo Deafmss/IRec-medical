@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { speakNaturalText } from '../utils/speechUtils';
 
-export default function PrescriptionGeneratorModal({ currentUser, patientProfile, onClose, onPrescriptionCreated }) {
+export default function PrescriptionGeneratorModal({ currentUser, patientProfile, onClose, onPrescriptionCreated, embeddedMode = false }) {
   const [documentType, setDocumentType] = useState('receita'); // receita, atestado, encaminhamento
   const [medications, setMedications] = useState([
     { name: '', dosage: '', frequency: '', instructions: '' }
@@ -84,37 +84,22 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
     window.print();
   };
 
-  return (
+  const innerContent = (
     <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.88)',
-      backdropFilter: 'blur(10px)',
-      zIndex: 999999,
+      width: '100%',
+      maxWidth: embeddedMode ? '100%' : (generatedDocument ? '780px' : '620px'),
+      maxHeight: embeddedMode ? 'none' : '92vh',
+      overflowY: embeddedMode ? 'visible' : 'auto',
+      backgroundColor: '#1e293b',
+      borderRadius: '24px',
+      border: '2px solid #0284c7',
+      boxShadow: embeddedMode ? 'none' : '0 25px 50px -12px rgba(2, 132, 199, 0.4)',
+      padding: '24px',
+      color: '#ffffff',
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      fontFamily: 'var(--font-primary, sans-serif)'
+      flexDirection: 'column',
+      gap: '20px'
     }}>
-      <div style={{
-        width: '100%',
-        maxWidth: generatedDocument ? '780px' : '620px',
-        maxHeight: '92vh',
-        overflowY: 'auto',
-        backgroundColor: '#1e293b',
-        borderRadius: '24px',
-        border: '2px solid #0284c7',
-        boxShadow: '0 25px 50px -12px rgba(2, 132, 199, 0.4)',
-        padding: '24px',
-        color: '#ffffff',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px'
-      }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155', paddingBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -498,6 +483,29 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
           </div>
         )}
       </div>
+  );
+
+  if (embeddedMode) {
+    return innerContent;
+  }
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.88)',
+      backdropFilter: 'blur(10px)',
+      zIndex: 999999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '16px',
+      fontFamily: 'var(--font-primary, sans-serif)'
+    }}>
+      {innerContent}
     </div>
   );
 }

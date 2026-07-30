@@ -74,7 +74,7 @@ const ALL_SPECIALTIES = [
   'Enfermagem em Infectologia'
 ];
 
-export default function UserProfileModal({ currentUser, onClose, onProfileUpdate }) {
+export default function UserProfileModal({ currentUser, onClose, onProfileUpdate, embeddedMode = false }) {
   const [activeTab, setActiveTab] = useState('pessoais');
   const [formData, setFormData] = useState({
     name: currentUser.name || '',
@@ -339,11 +339,11 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
     setFormData(prev => ({ ...prev, specialty: updated }));
   };
 
-  return (
-    <div className="profile-modal-backdrop" onClick={onClose}>
-      <div className="profile-modal-container" onClick={e => e.stopPropagation()}>
-        
-        {/* Header */}
+  const contentMarkup = (
+    <div className="profile-modal-container" style={{ maxWidth: embeddedMode ? '100%' : '780px', boxShadow: embeddedMode ? 'none' : 'var(--shadow-xl)', border: embeddedMode ? 'none' : '1px solid var(--border-color)', margin: 0 }} onClick={e => e.stopPropagation()}>
+      
+      {/* Header */}
+      {!embeddedMode && (
         <div className="profile-modal-header">
           <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0, fontFamily: 'var(--font-display)' }}>
             Editar Perfil de Usuário
@@ -360,16 +360,16 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
               justifyContent: 'center'
             }}
           >
-            <svg style={{ width: '24px', height: '24px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            <svg style={{ width: '20px', height: '20px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
+      )}
 
-        {/* Content */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-          <div className="profile-modal-content">
-            
+      {/* Content */}
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <div className="profile-modal-content">
             {/* Status alerts */}
             {errorMsg && (
               <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--danger-glow)', color: 'var(--danger)', fontSize: '13px', fontWeight: '600', marginBottom: '16px' }}>
@@ -1319,7 +1319,16 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
             to { opacity: 1; }
           }
         `}</style>
-      </div>
+    </div>
+  );
+
+  if (embeddedMode) {
+    return contentMarkup;
+  }
+
+  return (
+    <div className="profile-modal-backdrop" onClick={onClose}>
+      {contentMarkup}
     </div>
   );
 }

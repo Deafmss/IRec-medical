@@ -22,6 +22,8 @@ import { AccessibleTelemedicineView, AccessibleUploadView } from './components/A
 import SOSEmergencyModal from './components/SOSEmergencyModal';
 import PermissionsGuideModal from './components/PermissionsGuideModal';
 import PrescriptionGeneratorModal from './components/PrescriptionGeneratorModal';
+import PrescriptionPage from './components/PrescriptionPage';
+import UserProfilePage from './components/UserProfilePage';
 import ReportPDFGenerator from './components/ReportPDFGenerator';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
 import { generatePersonalizedProtocol } from './services/geminiService';
@@ -827,6 +829,28 @@ export default function App() {
             setActiveTab={setActiveTab}
           />
         );
+      case 'prescriptions':
+        return (
+          <PrescriptionPage 
+            currentUser={currentUser}
+            selectedPatient={selectedPatientForDoctor}
+            clinicalProfile={clinicalProfile}
+            setActiveTab={setActiveTab}
+          />
+        );
+      case 'profile':
+        return (
+          <UserProfilePage 
+            currentUser={currentUser}
+            onProfileUpdate={(updatedProfile) => {
+              setCurrentUser(updatedProfile);
+              if (updatedProfile.role === 'patient') {
+                setClinicalProfile(updatedProfile);
+              }
+            }}
+            setActiveTab={setActiveTab}
+          />
+        );
       default:
         if (isAdmin) {
           return <AdminDashboard />;
@@ -837,9 +861,9 @@ export default function App() {
             doctorProfile={currentUser} 
             setActiveTab={setActiveTab} 
             onProfileUpdate={setCurrentUser} 
-            onEditProfile={() => setShowProfileModal(true)} 
+            onEditProfile={() => setActiveTab('profile')} 
             onOpenChat={(patientId) => { setTelemedicineContactId(patientId); setActiveTab('telemedicine'); }}
-            onOpenPrescriptionModal={() => setShowPrescriptionModal(true)}
+            onOpenPrescriptionModal={() => setActiveTab('prescriptions')}
             selectedPatient={selectedPatientForDoctor}
             setSelectedPatient={setSelectedPatientForDoctor}
             selectedPatientEntries={selectedPatientEntriesForDoctor}
@@ -1300,7 +1324,7 @@ export default function App() {
           </button>
         </nav>
 
-        <div className="sidebar-profile" onClick={() => !isAdmin && setShowProfileModal(true)} style={{ cursor: isAdmin ? 'default' : 'pointer', transition: 'var(--transition-fast)' }}>
+        <div className="sidebar-profile" onClick={() => !isAdmin && setActiveTab('profile')} style={{ cursor: isAdmin ? 'default' : 'pointer', transition: 'var(--transition-fast)' }}>
           <div className="profile-avatar" style={{ flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {currentUser.avatarUrl ? (
               <img src={currentUser.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
