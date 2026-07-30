@@ -356,8 +356,8 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
           const lastRead = readTimes[msg.senderId];
           if (lastRead === undefined) {
-            // First time seeing historical message, initialize lastRead timestamp
-            readTimes[msg.senderId] = msg.createdAt;
+            // On initial load, set lastRead to current timestamp so old historical messages aren't counted as unread
+            readTimes[msg.senderId] = new Date().toISOString();
             readTimesUpdated = true;
           } else if (msg.createdAt > lastRead) {
             counts[msg.senderId] = (counts[msg.senderId] || 0) + 1;
