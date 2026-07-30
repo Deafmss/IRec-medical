@@ -380,6 +380,34 @@ export default function App() {
     localStorage.setItem('irec-sidebar-collapsed', isSidebarCollapsed);
   }, [isSidebarCollapsed]);
 
+  // Update page title dynamically for SEO and Accessibility based on active tab & unread count
+  useEffect(() => {
+    const titles = {
+      dashboard: 'Painel Principal | iRec Saúde',
+      'doctor-dashboard': 'Pacientes & Prontuários | iRec Saúde',
+      'doctor-agenda': 'Agenda de Consultas | iRec Saúde',
+      'doctor-analytics': 'Analytics & Indicadores Clínicos | iRec Saúde',
+      telemedicine: 'Telemedicina & Videochamada HD | iRec Saúde',
+      prescriptions: 'Prescrições, Atestados & Receituários | iRec Saúde',
+      profile: 'Perfil & Configurações de Conta | iRec Saúde',
+      protocols: 'Guia de Protocolos de Estomaterapia | iRec Saúde',
+      doctors_directory: 'Diretório de Médicos Especialistas | iRec Saúde',
+      nurses: 'Rede de Enfermagem & Cuidados | iRec Saúde',
+      my_network: 'Minha Rede de Saúde | iRec Saúde',
+      upload: 'Triagem & Fotografia de Lesões | iRec Saúde',
+      history: 'Histórico & Prontuário Clínico | iRec Saúde',
+      documents: 'Laudos & Documentos Clínicos | iRec Saúde',
+      chat: 'Assistente Clínico iRec | iRec Saúde'
+    };
+
+    const baseTitle = titles[activeTab] || 'Plataforma Médica & Telemedicina | iRec Saúde';
+    if (unreadChatMessagesCount > 0) {
+      document.title = `(${unreadChatMessagesCount}) ${baseTitle}`;
+    } else {
+      document.title = baseTitle;
+    }
+  }, [activeTab, unreadChatMessagesCount]);
+
   // Shared patient clinical profile (loaded from Supabase/Local)
   const [clinicalProfile, setClinicalProfile] = useState({
     name: 'Paciente',
