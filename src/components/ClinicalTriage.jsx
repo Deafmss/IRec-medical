@@ -313,7 +313,6 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
   const [performedProcedures, setPerformedProcedures] = useState('');
   const [clinicalEvolution, setClinicalEvolution] = useState('Estável');
   const [clinicalOutcome, setClinicalOutcome] = useState('Tratamento em andamento');
-  const [showClinicalDetails, setShowClinicalDetails] = useState(false);
   
   const attachmentsInputRef = useRef(null);
   const [attachments, setAttachments] = useState([]);

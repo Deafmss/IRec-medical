@@ -272,7 +272,6 @@ Como posso te ajudar hoje?`;
   const [showHistoryMobile, setShowHistoryMobile] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showUploadMenu, setShowUploadMenu] = useState(false);
   const messagesEndRef = useRef(null);
   const isSubmittingRef = useRef(false);
   const [selectedFile, setSelectedFile] = useState(null);

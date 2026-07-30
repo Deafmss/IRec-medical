@@ -105,9 +105,8 @@ const getDoctorPremiumDetails = (doc) => {
 export default function Telemedicine({ currentUser, activeCallSession, setActiveCallSession, targetContactId = null, isAppActiveTab, setAppActiveTab, onUnreadCountChange }) {
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
-  const [unreadCounts, setUnreadCounts] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const lastUnreadTotalRef = useRef(0);
   const [messages, setMessages] = useState([]);
   const [newMessageText, setNewMessageText] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
@@ -195,8 +194,6 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   // Audio elements for ringtones
   const audioCtxRef = useRef(null);
   const ringIntervalRef = useRef(null);
-
-  const [contactsTrigger, setContactsTrigger] = useState(0);
 
   // Initial load & Polling: Fetch Contacts for real-time presence/last_seen_at sync
   useEffect(() => {
@@ -369,13 +366,10 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           localStorage.setItem('irec_chat_read_times', JSON.stringify(readTimes));
         }
 
-        setUnreadCounts(prev => {
-          const prevTotal = Object.values(prev).reduce((acc, curr) => acc + curr, 0);
-          if (newTotal > prevTotal && newTotal > 0) {
-            playNotificationSound();
-          }
-          return counts;
-        });
+        if (newTotal > lastUnreadTotalRef.current && newTotal > 0) {
+          playNotificationSound();
+        }
+        lastUnreadTotalRef.current = newTotal;
 
         if (onUnreadCountChange) {
           onUnreadCountChange(newTotal);
