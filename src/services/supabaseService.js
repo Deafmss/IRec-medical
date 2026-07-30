@@ -2592,7 +2592,7 @@ export const getAdminStats = async () => {
       supabase.from('clinical_profile').select('id', { count: 'exact', head: true }).eq('role', 'patient'),
       supabase.from('clinical_profile').select('id', { count: 'exact', head: true }).eq('role', 'doctor'),
       supabase.from('clinical_profile').select('id', { count: 'exact', head: true }).eq('role', 'nurse'),
-      supabase.from('wound_entry').select('id', { count: 'exact', head: true }),
+      supabase.from('wound_entries').select('id', { count: 'exact', head: true }),
       supabase.from('recommended_materials').select('id', { count: 'exact', head: true }).is('patient_id', null).is('doctor_id', null),
       supabase.from('telemedicine_calls').select('id', { count: 'exact', head: true })
     ]);
