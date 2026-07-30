@@ -20,16 +20,73 @@ import PrescriptionGeneratorModal from './components/PrescriptionGeneratorModal'
 import PrescriptionPage from './components/PrescriptionPage';
 import UserProfilePage from './components/UserProfilePage';
 import ReportPDFGenerator from './components/ReportPDFGenerator';
+import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
+import { generatePersonalizedProtocol } from './services/geminiService';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
-// Heavy modules lazy loaded for fast initial paint
+// Heavy modules lazy loaded for fast initial paint (MUST be after all static imports)
 const ClinicalTriage = lazy(() => import('./components/ClinicalTriage'));
 const DoctorDashboard = lazy(() => import('./components/DoctorDashboard'));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const ProtocolGuide = lazy(() => import('./components/ProtocolGuide'));
-const AccessibleDashboard = lazy(() => import('./components/AccessibleDashboard'));
-import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
-import { generatePersonalizedProtocol } from './services/geminiService';
-import { supabase, isSupabaseConfigured } from './supabaseClient';
+// Error Boundary Component to prevent white screens during network/rendering issues
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('[iRec ErrorBoundary] Erro de renderização capturado:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '70vh',
+          padding: '24px',
+          textAlign: 'center',
+          fontFamily: 'var(--font-primary, sans-serif)',
+          color: 'var(--text-primary)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏥</div>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 8px 0' }}>Reiniciando Área de Atendimento iRec</h2>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '420px', margin: '0 0 20px 0' }}>
+            Identificamos uma oscilação na conexão. Clique abaixo para recarregar com segurança.
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.reload();
+            }}
+            style={{
+              backgroundColor: '#0284c7',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px 28px',
+              fontWeight: '800',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)'
+            }}
+          >
+            🔄 RECARREGAR PÁGINA AGORA
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -1563,14 +1620,16 @@ export default function App() {
           </div>
         )}
         {(activeTab !== 'telemedicine' || (uiMode === 'accessible' && currentUser?.role === 'patient')) && (
-          <Suspense fallback={
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '16px', color: 'var(--text-secondary)' }}>
-              <div style={{ width: '36px', height: '36px', border: '4px solid var(--border-color, #e2e8f0)', borderTop: '4px solid var(--accent, #0284c7)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              <span style={{ fontSize: '14px', fontWeight: '600' }}>Carregando iRec...</span>
-            </div>
-          }>
-            {renderContent()}
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '16px', color: 'var(--text-secondary)' }}>
+                <div style={{ width: '36px', height: '36px', border: '4px solid var(--border-color, #e2e8f0)', borderTop: '4px solid var(--accent, #0284c7)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <span style={{ fontSize: '14px', fontWeight: '600' }}>Carregando iRec...</span>
+              </div>
+            }>
+              {renderContent()}
+            </Suspense>
+          </ErrorBoundary>
         )}
         {!(uiMode === 'accessible' && currentUser?.role === 'patient') && (
           <Telemedicine 
