@@ -1,23 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import Dashboard from './components/Dashboard';
-import ClinicalTriage from './components/ClinicalTriage';
 import ClinicalHistory from './components/ClinicalHistory';
 import NursesNetwork from './components/NursesNetwork';
-import ProtocolGuide from './components/ProtocolGuide';
 import AIChatAssistant from './components/AIChatAssistant';
 import Login from './components/Login';
-import DoctorDashboard from './components/DoctorDashboard';
 import PatientDocuments from './components/PatientDocuments';
 import UserProfileModal from './components/UserProfileModal';
 import Telemedicine from './components/Telemedicine';
 import SpecialistDirectory from './components/SpecialistDirectory';
 import AdminPartners from './components/AdminPartners';
 import DoctorPartners from './components/DoctorPartners';
-import AdminDashboard from './components/AdminDashboard';
 import DoctorDashboardAnalytics from './components/DoctorDashboardAnalytics';
 import DoctorAgendaPage from './components/doctor/DoctorAgendaPage';
 import MyNetworkPortal from './components/MyNetworkPortal';
-import AccessibleDashboard from './components/AccessibleDashboard';
 import { AccessibleTelemedicineView, AccessibleUploadView } from './components/AccessibleSubViews';
 import SOSEmergencyModal from './components/SOSEmergencyModal';
 import PermissionsGuideModal from './components/PermissionsGuideModal';
@@ -25,6 +20,13 @@ import PrescriptionGeneratorModal from './components/PrescriptionGeneratorModal'
 import PrescriptionPage from './components/PrescriptionPage';
 import UserProfilePage from './components/UserProfilePage';
 import ReportPDFGenerator from './components/ReportPDFGenerator';
+
+// Heavy modules lazy loaded for fast initial paint
+const ClinicalTriage = lazy(() => import('./components/ClinicalTriage'));
+const DoctorDashboard = lazy(() => import('./components/DoctorDashboard'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const ProtocolGuide = lazy(() => import('./components/ProtocolGuide'));
+const AccessibleDashboard = lazy(() => import('./components/AccessibleDashboard'));
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
 import { generatePersonalizedProtocol } from './services/geminiService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
@@ -1560,8 +1562,16 @@ export default function App() {
             </button>
           </div>
         )}
-
-        {(activeTab !== 'telemedicine' || (uiMode === 'accessible' && currentUser?.role === 'patient')) && renderContent()}
+        {(activeTab !== 'telemedicine' || (uiMode === 'accessible' && currentUser?.role === 'patient')) && (
+          <Suspense fallback={
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '16px', color: 'var(--text-secondary)' }}>
+              <div style={{ width: '36px', height: '36px', border: '4px solid var(--border-color, #e2e8f0)', borderTop: '4px solid var(--accent, #0284c7)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ fontSize: '14px', fontWeight: '600' }}>Carregando iRec...</span>
+            </div>
+          }>
+            {renderContent()}
+          </Suspense>
+        )}
         {!(uiMode === 'accessible' && currentUser?.role === 'patient') && (
           <Telemedicine 
             currentUser={currentUser} 

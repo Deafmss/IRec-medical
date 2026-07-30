@@ -80,11 +80,45 @@ const saveLocalEntries = (userId, entries) => {
 const getLocalAssignments = () => JSON.parse(localStorage.getItem('irec_assignments') || '[]');
 const saveLocalAssignments = (assignments) => localStorage.setItem('irec_assignments', JSON.stringify(assignments));
 
-// Helper to convert File object to Base64 (for local persistence)
+// Helper to convert File object to optimized Base64 (for local persistence without QuotaExceededError)
 const fileToBase64 = (file) => new Promise((resolve, reject) => {
+  if (!file || !(file instanceof Blob)) {
+    return resolve(file);
+  }
   const reader = new FileReader();
   reader.readAsDataURL(file);
-  reader.onload = () => resolve(reader.result);
+  reader.onload = (event) => {
+    // If image, compress via Canvas to max 1024px to prevent quota overflow
+    if (file.type && file.type.startsWith('image/')) {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const maxDim = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = () => resolve(event.target.result);
+    } else {
+      resolve(event.target.result);
+    }
+  };
   reader.onerror = error => reject(error);
 });
 

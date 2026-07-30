@@ -159,6 +159,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const [callDuration, setCallDuration] = useState(0);
   const [muteAudio, setMuteAudio] = useState(false);
   const [hideVideo, setHideVideo] = useState(false);
+  const [isPipMode, setIsPipMode] = useState(false);
 
   // Media streams
   const [localStream, setLocalStream] = useState(null);
@@ -2540,19 +2541,25 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       {callState === 'active' && (
         <div style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+          top: isPipMode ? 'auto' : 0,
+          left: isPipMode ? 'auto' : 0,
+          right: isPipMode ? '24px' : 0,
+          bottom: isPipMode ? '24px' : 0,
+          width: isPipMode ? '380px' : 'auto',
+          height: isPipMode ? '260px' : 'auto',
+          borderRadius: isPipMode ? '18px' : 0,
+          boxShadow: isPipMode ? '0 20px 50px rgba(0,0,0,0.7)' : 'none',
+          overflow: 'hidden',
           backgroundColor: '#090d16',
           zIndex: 999999,
           display: 'flex',
           flexDirection: 'column',
-          fontFamily: 'var(--font-primary)'
+          fontFamily: 'var(--font-primary)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}>
           {/* Header toolbar */}
           <div style={{
-            padding: '16px 24px',
+            padding: isPipMode ? '8px 14px' : '16px 24px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -2560,14 +2567,38 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
             borderBottom: '1px solid #1e293b',
             color: '#ffffff'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', animation: 'blink 1.5s infinite' }} />
-              <span style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.5px' }}>TELECONSULTA AO VIVO</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444', animation: 'blink 1.5s infinite' }} />
+              <span style={{ fontSize: isPipMode ? '11px' : '13px', fontWeight: '800', letterSpacing: '0.5px' }}>
+                {isPipMode ? 'VÍDEO PIP' : 'TELECONSULTA AO VIVO'}
+              </span>
             </div>
             
-            <div style={{ fontSize: '13px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>Duração:</span>
-              <strong style={{ color: '#ffffff', fontFamily: 'monospace' }}>{formatTimer(callDuration)}</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ fontSize: isPipMode ? '11px' : '13px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {!isPipMode && <span>Duração:</span>}
+                <strong style={{ color: '#ffffff', fontFamily: 'monospace' }}>{formatTimer(callDuration)}</strong>
+              </div>
+
+              <button
+                onClick={() => setIsPipMode(prev => !prev)}
+                style={{
+                  backgroundColor: isPipMode ? '#0284c7' : '#334155',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: isPipMode ? '4px 8px' : '6px 12px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title={isPipMode ? 'Expandir para Tela Cheia' : 'Minimizar (Vídeo Flutuante PIP)'}
+              >
+                <span>{isPipMode ? '🔍 Exibir Tela Cheia' : '🖥️ Vídeo PIP'}</span>
+              </button>
             </div>
           </div>
 
