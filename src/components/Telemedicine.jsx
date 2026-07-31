@@ -221,8 +221,8 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     }
     loadContacts();
 
-    // Poll contacts presence every 10 seconds
-    const interval = setInterval(loadContacts, 10000);
+    // Poll contacts presence every 30 seconds
+    const interval = setInterval(loadContacts, 30000);
     return () => clearInterval(interval);
   }, [currentUser, contactsTrigger]);
 
@@ -328,7 +328,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         }
         return prev;
       });
-    }, 2000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [selectedContact, currentUser]);
@@ -386,7 +386,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     }
 
     checkUnreadMessages();
-    const interval = setInterval(checkUnreadMessages, 3000);
+    const interval = setInterval(checkUnreadMessages, 15000);
     return () => clearInterval(interval);
   }, [currentUser, selectedContact, onUnreadCountChange]);
 
@@ -521,7 +521,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           setActiveCallSession(incoming);
         }
       }
-    }, 2000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [callState, currentUser, setActiveCallSession]);
@@ -556,7 +556,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           clearInterval(interval);
         }
       }
-    }, 2000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [callState, activeCall, setActiveCallSession]);

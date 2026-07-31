@@ -676,8 +676,8 @@ export default function App() {
       }
     };
 
-    // Run every 10 seconds
-    const interval = setInterval(refreshData, 10000);
+    // Run every 30 seconds (reduced from 10s to minimize Supabase API load)
+    const interval = setInterval(refreshData, 30000);
     return () => clearInterval(interval);
   }, [currentUser, selectedPatientForDoctor]);
 

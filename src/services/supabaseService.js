@@ -88,6 +88,15 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
   reader.onerror = error => reject(error);
 });
 
+// Maximum file upload size (5MB)
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
+const validateFileSize = (file) => {
+  if (file && file.size > MAX_UPLOAD_BYTES) {
+    throw new Error(`Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Limite máximo: 5MB.`);
+  }
+};
+
 // --- EXPORTED AUTHENTICATION API ---
 
 // 1. Sign Up User (Patient or Doctor)
@@ -333,10 +342,27 @@ export const createAuditLog = async (action, targetId = null, details = {}) => {
 
 
 
+// Cached auth session to avoid repeated getSession() calls
+let _cachedSessionUserId = null;
+if (isSupabaseConfigured && supabase) {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    _cachedSessionUserId = session?.user?.id || null;
+  });
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    _cachedSessionUserId = session?.user?.id || null;
+  });
+}
+
 const getActiveUserId = async () => {
+  if (isSupabaseConfigured && _cachedSessionUserId) {
+    return _cachedSessionUserId;
+  }
   if (isSupabaseConfigured) {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session && session.user) return session.user.id;
+    if (session && session.user) {
+      _cachedSessionUserId = session.user.id;
+      return session.user.id;
+    }
   }
   const active = localStorage.getItem('irec_active_user');
   return active ? JSON.parse(active).id : null;
@@ -742,6 +768,7 @@ export const uploadAvatar = async (userId, file) => {
   }
 
   try {
+    validateFileSize(file);
     const fileExt = file.name.split('.').pop();
     const fileName = `${resolvedId}_avatar_${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
@@ -914,6 +941,7 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null, arg4 = []) => {
 
   try {
     if (photoFile) {
+      validateFileSize(photoFile);
       const fileExt = photoFile.name.split('.').pop();
       const fileName = `${Date.now()}_wound.${fileExt}`;
       const filePath = `${fileName}`;
@@ -971,11 +999,13 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null, arg4 = []) => {
     // Upload additional attachments if present
     const uploadedAttachments = [];
     if (arg4 && arg4.length > 0) {
-      for (const att of arg4) {
-        const file = att.file;
-        if (!file) continue;
-        
-        try {
+      const validAttachments = arg4.filter(att => att.file);
+      
+      // Upload all files in parallel instead of sequentially (fixes N+1 pattern)
+      const uploadResults = await Promise.allSettled(
+        validAttachments.map(async (att) => {
+          const file = att.file;
+          validateFileSize(file);
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}_att_${Math.random().toString(36).substr(2, 5)}.${fileExt}`;
           const filePath = `${fileName}`;
@@ -994,23 +1024,32 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null, arg4 = []) => {
           if (file.type.startsWith('image/')) fileType = 'image';
           else if (file.type.startsWith('video/')) fileType = 'video';
           
-          await supabase
-            .from('wound_entry_attachments')
-            .insert({
-              entry_id: data.id,
-              file_url: publicUrl,
-              file_name: file.name,
-              file_type: fileType
-            });
-            
+          return { publicUrl, fileName: file.name, fileType };
+        })
+      );
+      
+      const successfulUploads = uploadResults
+        .filter(r => r.status === 'fulfilled')
+        .map(r => r.value);
+      
+      if (successfulUploads.length > 0) {
+        // Bulk insert all attachment records at once
+        await supabase
+          .from('wound_entry_attachments')
+          .insert(successfulUploads.map(u => ({
+            entry_id: data.id,
+            file_url: u.publicUrl,
+            file_name: u.fileName,
+            file_type: u.fileType
+          })));
+        
+        successfulUploads.forEach(u => {
           uploadedAttachments.push({
-            fileUrl: publicUrl,
-            fileName: file.name,
-            fileType: fileType
+            fileUrl: u.publicUrl,
+            fileName: u.fileName,
+            fileType: u.fileType
           });
-        } catch (attErr) {
-          console.error("Falha ao fazer upload de anexo:", attErr);
-        }
+        });
       }
     }
 
@@ -1675,7 +1714,8 @@ export const getAssignedDoctor = async (patientId) => {
     const { data: assignments, error: assError } = await supabase
       .from('doctor_patient_assignment')
       .select('doctor_id')
-      .eq('patient_id', patientId);
+      .eq('patient_id', patientId)
+      .limit(1);
 
     if (assError) throw assError;
     if (assignments.length === 0) return null;
@@ -1955,7 +1995,8 @@ export const getChatMessages = async (userId, contactId) => {
       .from('chat_messages')
       .select('*')
       .or(`and(sender_id.eq.${userId},recipient_id.eq.${contactId}),and(sender_id.eq.${contactId},recipient_id.eq.${userId})`)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(200);
 
     if (error) {
       if (error.code === '42P01') throw error;
@@ -1997,7 +2038,8 @@ export const getAllReceivedMessages = async (userId) => {
       .from('chat_messages')
       .select('*')
       .eq('recipient_id', userId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(200);
 
     if (error) throw error;
 
@@ -2230,7 +2272,8 @@ export const checkIncomingCalls = async (userId) => {
       .select('*')
       .eq('receiver_id', userId)
       .eq('status', 'ringing')
-      .order('id', { ascending: false });
+      .order('id', { ascending: false })
+      .limit(1);
 
     if (error) throw error;
     if (data && data.length > 0) {
@@ -2592,7 +2635,7 @@ export const getAdminStats = async () => {
       supabase.from('clinical_profile').select('id', { count: 'exact', head: true }).eq('role', 'patient'),
       supabase.from('clinical_profile').select('id', { count: 'exact', head: true }).eq('role', 'doctor'),
       supabase.from('clinical_profile').select('id', { count: 'exact', head: true }).eq('role', 'nurse'),
-      supabase.from('wound_entry').select('id', { count: 'exact', head: true }),
+      supabase.from('wound_entries').select('id', { count: 'exact', head: true }),
       supabase.from('recommended_materials').select('id', { count: 'exact', head: true }).is('patient_id', null).is('doctor_id', null),
       supabase.from('telemedicine_calls').select('id', { count: 'exact', head: true })
     ]);
@@ -2619,7 +2662,8 @@ export const getAdminTelemedicineCalls = async () => {
     const { data, error } = await supabase
       .from('telemedicine_calls')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(100);
     if (error) throw error;
     return data;
   } catch (err) {
@@ -2635,7 +2679,8 @@ export const getAdminAssignments = async () => {
   try {
     const { data, error } = await supabase
       .from('doctor_patient_assignment')
-      .select('*');
+      .select('*')
+      .limit(500);
     if (error) throw error;
     return data;
   } catch (err) {
@@ -2651,7 +2696,8 @@ export const getAdminWoundEntries = async () => {
   try {
     const { data, error } = await supabase
       .from('wound_entries')
-      .select('type, created_at');
+      .select('type, created_at')
+      .limit(500);
     if (error) throw error;
     return data;
   } catch (err) {
