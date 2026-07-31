@@ -23,6 +23,7 @@ import SOSEmergencyModal from './components/SOSEmergencyModal';
 import PermissionsGuideModal from './components/PermissionsGuideModal';
 import PrescriptionGeneratorModal from './components/PrescriptionGeneratorModal';
 import PrescriptionPage from './components/PrescriptionPage';
+import PatientAppointmentsCalendar from './components/PatientAppointmentsCalendar';
 import UserProfilePage from './components/UserProfilePage';
 import ReportPDFGenerator from './components/ReportPDFGenerator';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
@@ -764,6 +765,15 @@ export default function App() {
         return null;
       case 'chat':
         return <AIChatAssistant clinicalProfile={clinicalProfile} setClinicalProfile={setClinicalProfile} />;
+      case 'my-appointments':
+      case 'appointments':
+        return (
+          <PatientAppointmentsCalendar 
+            currentUser={currentUser} 
+            setActiveTab={setActiveTab} 
+            setTelemedicineContactId={setTelemedicineContactId} 
+          />
+        );
       case 'my_network':
         return <MyNetworkPortal setActiveTab={setActiveTab} />;
       case 'doctors_directory':
@@ -1263,12 +1273,12 @@ export default function App() {
               <button 
                 className={`sidebar-item ${activeTab === 'my-appointments' ? 'active' : ''}`}
                 onClick={() => setActiveTab('my-appointments')}
-                title="Meus Agendamentos"
+                title="Consultas Agendadas"
               >
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
                 </svg>
-                <span className="sidebar-text">Meus Agendamentos</span>
+                <span className="sidebar-text">Consultas Agendadas</span>
               </button>
             </>
           )}

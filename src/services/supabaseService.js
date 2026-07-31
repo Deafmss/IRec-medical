@@ -1460,6 +1460,28 @@ export const getPatientAppointments = async (patientId) => {
   return localApps;
 };
 
+export const cancelAppointment = async (appointmentId) => {
+  if (!appointmentId) return false;
+  
+  if (isSupabaseConfigured) {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: 'canceled' })
+        .eq('id', appointmentId);
+        
+      if (error) console.warn('[iRec] Erro ao cancelar agendamento no Supabase:', error.message);
+    } catch (err) {
+      console.warn('[iRec] Erro ao cancelar no Supabase:', err);
+    }
+  }
+  
+  const apps = getLocalAppointments();
+  const updated = apps.map(a => a.id === appointmentId ? { ...a, status: 'canceled' } : a);
+  saveLocalAppointments(updated);
+  return true;
+};
+
 export const getDoctorAppointments = async (doctorId) => {
   const localApps = getLocalAppointments().filter(a => a.doctorId === doctorId);
 
