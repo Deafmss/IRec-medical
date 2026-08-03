@@ -319,6 +319,30 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
   const [attachments, setAttachments] = useState([]);
   const [patientComplaintType, setPatientComplaintType] = useState('vermelhidao');
 
+  // Escala de Braden States (1 a 4 para sensory, moisture, activity, mobility, nutrition; 1 a 3 para friction)
+  const [bradenSensory, setBradenSensory] = useState(4);
+  const [bradenMoisture, setBradenMoisture] = useState(4);
+  const [bradenActivity, setBradenActivity] = useState(4);
+  const [bradenMobility, setBradenMobility] = useState(4);
+  const [bradenNutrition, setBradenNutrition] = useState(3);
+  const [bradenFriction, setBradenFriction] = useState(3);
+  const [showBradenCalculator, setShowBradenCalculator] = useState(false);
+
+  const bradenTotalScore = Number(bradenSensory) + Number(bradenMoisture) + Number(bradenActivity) + Number(bradenMobility) + Number(bradenNutrition) + Number(bradenFriction);
+  
+  let bradenRiskCategory = 'Sem Risco Significativo';
+  let bradenRiskColor = '#10b981';
+  if (bradenTotalScore <= 12) {
+    bradenRiskCategory = 'Alto Risco (Risco Elevado de Lesão por Pressão)';
+    bradenRiskColor = '#ef4444';
+  } else if (bradenTotalScore <= 14) {
+    bradenRiskCategory = 'Risco Moderado';
+    bradenRiskColor = '#f59e0b';
+  } else if (bradenTotalScore <= 18) {
+    bradenRiskCategory = 'Risco Baixo';
+    bradenRiskColor = '#0284c7';
+  }
+
   // Auto-sync simple lay complaints to technical fields behind the scenes
   useEffect(() => {
     switch (patientComplaintType) {
@@ -658,6 +682,100 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 onChange={(e) => setPain(parseInt(e.target.value))}
                 style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
               />
+            </div>
+
+            {/* Braden Scale Calculator Expansion Card */}
+            <div style={{
+              backgroundColor: 'var(--bg-primary)',
+              padding: '14px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-color)',
+              marginTop: '4px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-primary)', display: 'block' }}>
+                    📊 Avaliação da Escala de Braden (Risco de Úlceras)
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Pontuação Total: <strong>{bradenTotalScore}/23</strong> — Categoria: <strong style={{ color: bradenRiskColor }}>{bradenRiskCategory}</strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBradenCalculator(!showBradenCalculator)}
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--primary)',
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {showBradenCalculator ? 'Ocultar Calculadora ▲' : 'Calcular Braden ▼'}
+                </button>
+              </div>
+
+              {showBradenCalculator && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Percepção Sensorial:</label>
+                    <select value={bradenSensory} onChange={e => setBradenSensory(Number(e.target.value))} style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                      <option value={1}>1 - Completamente limitado</option>
+                      <option value={2}>2 - Muito limitado</option>
+                      <option value={3}>3 - Ligeiramente limitado</option>
+                      <option value={4}>4 - Nenhuma limitação</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Umidade da Pele:</label>
+                    <select value={bradenMoisture} onChange={e => setBradenMoisture(Number(e.target.value))} style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                      <option value={1}>1 - Completamente molhada</option>
+                      <option value={2}>2 - Muito molhada</option>
+                      <option value={3}>3 - Ocasionalmente molhada</option>
+                      <option value={4}>4 - Raramente molhada</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Atividade Física:</label>
+                    <select value={bradenActivity} onChange={e => setBradenActivity(Number(e.target.value))} style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                      <option value={1}>1 - Acamado</option>
+                      <option value={2}>2 - Confinado à cadeira</option>
+                      <option value={3}>3 - Caminha ocasionalmente</option>
+                      <option value={4}>4 - Caminha frequentemente</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Mobilidade Corporal:</label>
+                    <select value={bradenMobility} onChange={e => setBradenMobility(Number(e.target.value))} style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                      <option value={1}>1 - Completamente imóvel</option>
+                      <option value={2}>2 - Muito limitado</option>
+                      <option value={3}>3 - Ligeiramente limitado</option>
+                      <option value={4}>4 - Sem limitações</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Nutrição:</label>
+                    <select value={bradenNutrition} onChange={e => setBradenNutrition(Number(e.target.value))} style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                      <option value={1}>1 - Muito má</option>
+                      <option value={2}>2 - Provavelmente inadequada</option>
+                      <option value={3}>3 - Adequada</option>
+                      <option value={4}>4 - Excelente</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Fricção & Cisalhamento:</label>
+                    <select value={bradenFriction} onChange={e => setBradenFriction(Number(e.target.value))} style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                      <option value={1}>1 - Problema constante</option>
+                      <option value={2}>2 - Problema potencial</option>
+                      <option value={3}>3 - Nenhum problema aparente</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', margin: '4px 0' }}>
