@@ -1,13 +1,18 @@
-# Graph Report - Irec  (2026-07-31)
+# Graph Report - Irec  (2026-07-27)
 
 ## Corpus Check
-- 76 files · ~2,280,815 words
+- 67 files · ~2,274,080 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 392 nodes · 777 edges · 38 communities (31 shown, 7 thin omitted)
+- 369 nodes · 731 edges · 36 communities (29 shown, 7 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `ef645e0a`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - supabaseService.js
@@ -16,6 +21,7 @@
 - DoctorDashboard.jsx
 - devDependencies
 - AppDelegate
+- Telemedicine.jsx
 - Dashboard.jsx
 - 🆕 Recursos Premium & Acessibilidade (Fase 10)
 - followPatient
@@ -37,10 +43,10 @@
 - followPatient
 
 ## God Nodes (most connected - your core abstractions)
-1. `DoctorDashboard()` - 18 edges
+1. `DoctorDashboard()` - 17 edges
 2. `🆕 Recursos Premium & Acessibilidade (Fase 10)` - 16 edges
-3. `Telemedicine()` - 15 edges
-4. `AdminDashboard()` - 14 edges
+3. `AdminDashboard()` - 14 edges
+4. `Telemedicine()` - 14 edges
 5. `getLocalProfile()` - 14 edges
 6. `updateClinicalProfile()` - 14 edges
 7. `getLocalUsers()` - 12 edges
@@ -63,23 +69,23 @@
 ## Import Cycles
 - None detected.
 
-## Communities (38 total, 7 thin omitted)
+## Communities (36 total, 7 thin omitted)
 
 ### Community 0 - "supabaseService.js"
-Cohesion: 0.18
-Nodes (17): Telemedicine(), checkCallStatus(), checkIncomingCalls(), fileToBase64(), getAllReceivedMessages(), getChatMessages(), getLocalCalls(), getLocalMessages() (+9 more)
+Cohesion: 0.22
+Nodes (16): Telemedicine(), checkCallStatus(), checkIncomingCalls(), getAllReceivedMessages(), getChatMessages(), getLocalCalls(), getLocalMessages(), placeTelemedicineCall() (+8 more)
 
 ### Community 1 - "App.jsx"
-Cohesion: 0.12
-Nodes (21): App(), AccessibleDashboard(), getRandomNoisePhrase(), NOISE_FALLBACK_PHRASES, AccessibleTelemedicineView(), AccessibleUploadView(), MyNetworkPortal(), PermissionsGuideModal() (+13 more)
+Cohesion: 0.15
+Nodes (16): App(), AccessibleDashboard(), getRandomNoisePhrase(), NOISE_FALLBACK_PHRASES, AccessibleTelemedicineView(), AccessibleUploadView(), MyNetworkPortal(), PermissionsGuideModal() (+8 more)
 
 ### Community 2 - "package.json"
-Cohesion: 0.08
-Nodes (24): @capacitor/android, @capacitor/core, @capacitor/ios, dependencies, @capacitor/android, @capacitor/core, @capacitor/ios, pg (+16 more)
+Cohesion: 0.09
+Nodes (22): @capacitor/android, @capacitor/core, @capacitor/ios, dependencies, @capacitor/android, @capacitor/core, @capacitor/ios, react (+14 more)
 
 ### Community 3 - "DoctorDashboard.jsx"
-Cohesion: 0.14
-Nodes (22): AI_RESPONSES, AIChatAssistant(), detectTopicFromText(), EXAM_RESPONSES, SUGGESTIONS, ClinicalTriage(), generateLocalFallbackAnalysis(), GLOSSARY_DB (+14 more)
+Cohesion: 0.17
+Nodes (17): ClinicalTriage(), generateLocalFallbackAnalysis(), GLOSSARY_DB, formatMaterialsForView(), ProtocolGuide(), analyzeTelemedicineTranscript(), analyzeWoundWithAI(), chatWithAI() (+9 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.10
@@ -89,21 +95,25 @@ Nodes (21): @capacitor/cli, eslint, @eslint/js, eslint-plugin-react-hooks, eslin
 Cohesion: 0.13
 Nodes (13): Any, Bool, Capacitor, AppDelegate, NSUserActivity, UIApplication, UIApplicationDelegate, UIKit (+5 more)
 
+### Community 6 - "Telemedicine.jsx"
+Cohesion: 0.11
+Nodes (28): AI_RESPONSES, AIChatAssistant(), detectTopicFromText(), EXAM_RESPONSES, SUGGESTIONS, ALL_SPECIALTIES, Login(), ALL_SPECIALTIES (+20 more)
+
 ### Community 7 - "Dashboard.jsx"
-Cohesion: 0.13
-Nodes (14): ClinicalHistory(), Dashboard(), generateDynamicTasks(), LocalResourcesPanel(), PatientDocuments(), deg2rad(), fetchNearbyHealthcareResources(), geocodeAddress() (+6 more)
+Cohesion: 0.15
+Nodes (11): ClinicalHistory(), Dashboard(), generateDynamicTasks(), LocalResourcesPanel(), PatientDocuments(), deg2rad(), fetchNearbyHealthcareResources(), geocodeAddress() (+3 more)
 
 ### Community 8 - "🆕 Recursos Premium & Acessibilidade (Fase 10)"
 Cohesion: 0.06
 Nodes (34): 10. Unificação da Rede de Enfermagem (`NursesNetwork.jsx` & `App.jsx`), 11. Design de Ficha Clínica Centralizada e Flutuante (`SpecialistDirectory.jsx` & `NursesNetwork.jsx`), 12. Reordenação e Agrupamento dos Diretórios (`App.jsx`), 13. Otimização do Guia de Protocolos Clínicos para Médicos (`App.jsx` & `ProtocolGuide.jsx` & `DoctorDashboard.jsx` & `geminiService.js`), 14. Otimização da Inicialização do App & Proteção Contra Loading Infinito (`App.jsx` & `supabaseService.js`), 15. Sistema de Venda e Recomendação de Insumos com Links de Afiliados (`AdminPartners.jsx` & `DoctorDashboard.jsx` & `ProtocolGuide.jsx` & `supabaseService.js`), 1. Chat Flutuante / Expresso Global (`Telemedicine.jsx`), 1. Correção do Travamento da Imagem de Análise (`ClinicalTriage.jsx`) (+26 more)
 
 ### Community 9 - "followPatient"
-Cohesion: 0.16
-Nodes (20): DoctorAgendaPage(), DoctorAgendaView(), COMMON_CID10, DoctorDashboard(), exportFHIRBundle(), exportObservationToFHIR(), exportPatientToFHIR(), addDoctorNote() (+12 more)
+Cohesion: 0.18
+Nodes (17): COMMON_CID10, DoctorDashboard(), exportFHIRBundle(), exportObservationToFHIR(), exportPatientToFHIR(), chatWithDoctorCopilot(), formatSOAPNote(), addDoctorNote() (+9 more)
 
 ### Community 10 - "DoctorDashboardAnalytics.jsx"
-Cohesion: 0.11
-Nodes (39): AdminDashboard(), AdminPartners(), AdminReports(), DateRangePicker(), DoctorDashboardAnalytics(), DoctorPartners(), ALL_SPECIALTIES, Login() (+31 more)
+Cohesion: 0.14
+Nodes (28): AdminDashboard(), AdminPartners(), AdminReports(), DateRangePicker(), DoctorDashboardAnalytics(), DoctorPartners(), addRecommendedMaterial(), checkAppointmentCollision() (+20 more)
 
 ### Community 11 - "React + Vite"
 Cohesion: 0.50
@@ -126,19 +136,19 @@ Cohesion: 0.83
 Nodes (3): gradlew script, die(), warn()
 
 ### Community 33 - "🏛️ Projetos de Referência do GitHub"
-Cohesion: 0.25
-Nodes (7): 1. Medplum (`medplum/medplum`), 2. Fasten Health (`fastenhealth/fasten-onprem`), 3. ⭐ Destaque Especial: Cal.com (`calcom/cal.com`), 📚 Guia de Estudo e Referências de Arquitetura: iRec, 🎨 Hub de Componentes de UI: 21st.dev (`21st.dev`), 💡 Pontos de Melhoria Diretos para o iRec, 🏛️ Projetos de Referência do GitHub
+Cohesion: 0.29
+Nodes (6): 1. Medplum (`medplum/medplum`), 2. Fasten Health (`fastenhealth/fasten-onprem`), 3. ⭐ Destaque Especial: Cal.com (`calcom/cal.com`), 📚 Guia de Estudo e Referências de Arquitetura: iRec, 💡 Pontos de Melhoria Diretos para o iRec, 🏛️ Projetos de Referência do GitHub
 
 ### Community 34 - "📚 Projetos do GitHub para Estudo & Aprendizado"
 Cohesion: 0.22
 Nodes (8): 1. Medplum (`medplum/medplum`), 2. TRTC Web & React Native WebRTC (`react-native-webrtc/react-native-webrtc`), 3. Novu (`novuhq/novu`), 4. Cal.com (`calcom/cal.com`), 🎯 Objetivo de Evolução, 📋 Plano de Aprendizado e Melhoria Contínua: iRec, 📚 Projetos do GitHub para Estudo & Aprendizado, 🛠️ Roteiro de Implementação Passo a Passo
 
 ### Community 35 - "followPatient"
-Cohesion: 0.13
-Nodes (18): BookingModal(), getNursePremiumDetails(), NursesNetwork(), PatientAppointmentsCalendar(), formatMaterialsForView(), ProtocolGuide(), getDoctorPremiumDetails(), SpecialistDirectory() (+10 more)
+Cohesion: 0.25
+Nodes (11): BookingModal(), getNursePremiumDetails(), NursesNetwork(), getDoctorPremiumDetails(), SpecialistDirectory(), createAppointment(), followPatient(), getAssignedDoctor() (+3 more)
 
 ## Knowledge Gaps
-- **93 isolated node(s):** `UIKit`, `Capacitor`, `PackageDescription`, `name`, `private` (+88 more)
+- **91 isolated node(s):** `UIKit`, `Capacitor`, `PackageDescription`, `name`, `private` (+86 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -147,15 +157,15 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `package.json`?**
   _High betweenness centrality (0.009) - this node is a cross-community bridge._
-- **Why does `ClinicalHistory()` connect `Dashboard.jsx` to `App.jsx`?**
-  _High betweenness centrality (0.005) - this node is a cross-community bridge._
 - **What connects `UIKit`, `Capacitor`, `PackageDescription` to the rest of the system?**
-  _93 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.12100840336134454 - nodes in this community are weakly interconnected._
+  _91 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `package.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.08 - nodes in this community are weakly interconnected._
-- **Should `DoctorDashboard.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.14461538461538462 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08695652173913043 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._
+- **Should `AppDelegate` be split into smaller, more focused modules?**
+  _Cohesion score 0.12631578947368421 - nodes in this community are weakly interconnected._
+- **Should `Telemedicine.jsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.11491935483870967 - nodes in this community are weakly interconnected._
+- **Should `🆕 Recursos Premium & Acessibilidade (Fase 10)` be split into smaller, more focused modules?**
+  _Cohesion score 0.05714285714285714 - nodes in this community are weakly interconnected._

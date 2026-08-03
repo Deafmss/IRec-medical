@@ -22,6 +22,7 @@ import {
   updateClinicalProfile
 } from '../services/supabaseService';
 import { analyzeTelemedicineTranscript } from '../services/geminiService';
+import TCLETelemedicineModal from './TCLETelemedicineModal';
 
 const getDoctorPremiumDetails = (doc) => {
   if (!doc) return null;
@@ -3466,99 +3467,23 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
       {/* Teleconsultation Legal Consent Modal */}
       {showConsentModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          zIndex: 999999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'var(--font-primary)',
-          color: '#ffffff',
-          padding: '20px'
-        }}>
-          <div className="glass-card" style={{
-            maxWidth: '500px',
-            width: '100%',
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1.5px solid var(--border-color)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: 'var(--box-shadow-premium)'
-          }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 12px 0', color: 'var(--primary)' }}>
-              Termo de Consentimento de Teleconsulta
-            </h3>
-            
-            <div style={{ 
-              maxHeight: '200px', 
-              overflowY: 'auto', 
-              fontSize: '11px', 
-              lineHeight: '1.5', 
-              color: 'var(--text-secondary)',
-              backgroundColor: 'var(--bg-primary)',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              marginBottom: '16px',
-              textAlign: 'left'
-            }}>
-              <p style={{ margin: '0 0 8px 0' }}><strong>1. Natureza do Atendimento:</strong> A teleconsulta é uma modalidade de atendimento a distância realizada por meio de tecnologias seguras de áudio e vídeo, adequada para triagem, acompanhamento e orientação clínica.</p>
-              <p style={{ margin: '0 0 8px 0' }}><strong>2. Privacidade e LGPD:</strong> Em conformidade com a Lei Geral de Proteção de Dados (Lei 13.709/2018), suas informações clínicas, imagens de sintomas e transcrições geradas são confidenciais e armazenadas com segurança no prontuário do iRec.</p>
-              <p style={{ margin: '0 0 8px 0' }}><strong>3. Gravação e Transcrição:</strong> A consulta de vídeo/áudio pode gerar uma transcrição textual em tempo real via IA para o preenchimento automático do histórico e suporte de decisão diagnóstica do clínico. Esses registros farão parte do seu prontuário clínico.</p>
-              <p style={{ margin: '0 0 0 0' }}><strong>4. Autonomia do Paciente:</strong> Você tem o direito de negar ou retirar o consentimento a qualquer momento, interrompendo a transmissão, sem prejuízo ao seu direito de atendimento presencial.</p>
-            </div>
-
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '11.5px', cursor: 'pointer', marginBottom: '20px', textAlign: 'left', color: 'var(--text-primary)' }}>
-              <input 
-                type="checkbox" 
-                checked={consentGiven} 
-                onChange={(e) => setConsentGiven(e.target.checked)} 
-                style={{ marginTop: '2px', cursor: 'pointer' }}
-              />
-              <span>Declaro que li, compreendi e concordo com os termos de privacidade, consentimento clínico e processamento de dados do iRec.</span>
-            </label>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button 
-                onClick={() => {
-                  setShowConsentModal(false);
-                  setConsentGiven(false);
-                  rejectCall();
-                }}
-                className="btn btn-secondary"
-                style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px' }}
-              >
-                Recusar
-              </button>
-              <button 
-                onClick={() => {
-                  localStorage.setItem('irec_telemedicine_consent_accepted', 'true');
-                  setConsentGiven(true);
-                  setShowConsentModal(false);
-                  acceptCall();
-                }}
-                disabled={!consentGiven}
-                className="btn btn-primary"
-                style={{ 
-                  fontSize: '12px', 
-                  padding: '8px 16px', 
-                  borderRadius: '8px',
-                  backgroundColor: consentGiven ? 'var(--primary)' : 'var(--border-color)',
-                  color: '#ffffff',
-                  cursor: consentGiven ? 'pointer' : 'not-allowed',
-                  border: 'none'
-                }}
-              >
-                Concordar e Atender
-              </button>
-            </div>
-          </div>
-        </div>
+        <TCLETelemedicineModal 
+          currentUser={currentUser}
+          onAccept={() => {
+            localStorage.setItem('irec_telemedicine_consent_accepted', 'true');
+            setConsentGiven(true);
+            setShowConsentModal(false);
+            if (activeCall && callState === 'incoming') {
+              acceptCall();
+            }
+          }}
+          onDecline={() => {
+            setShowConsentModal(false);
+            if (activeCall && callState === 'incoming') {
+              rejectCall();
+            }
+          }}
+        />
       )}
 
     </div>

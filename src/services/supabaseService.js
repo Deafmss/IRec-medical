@@ -97,6 +97,24 @@ const validateFileSize = (file) => {
   }
 };
 
+// Helper for LGPD sensitive media security (signed URLs with 15 minutes expiration)
+export const getSecureMediaUrl = async (bucket, filePath, expiresIn = 900) => {
+  if (!isSupabaseConfigured || !filePath) return filePath;
+  try {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(filePath, expiresIn);
+
+    if (!error && data?.signedUrl) {
+      return data.signedUrl;
+    }
+  } catch (e) {
+    console.warn('[iRec] Fallback para public URL:', e);
+  }
+  const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(filePath);
+  return publicUrl;
+};
+
 // --- EXPORTED AUTHENTICATION API ---
 
 // 1. Sign Up User (Patient or Doctor)

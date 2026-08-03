@@ -1,6 +1,12 @@
 # 📚 Guia de Estudo e Referências de Arquitetura: iRec
 
-Este documento mapeia os melhores projetos open-source do GitHub para servirem de referência de arquitetura, código e UX para o **iRec**.
+Este documento mapeia os melhores projetos open-source do GitHub e repositórios de UI para servirem de referência de arquitetura, código e UX para o **iRec**.
+
+---
+
+## 🎨 Hub de Componentes de UI: 21st.dev (`21st.dev`)
+* **URL:** [https://21st.dev](https://21st.dev)
+* **Aplicação no iRec:** Referência principal para componentes de interface em React + Tailwind CSS (Cards de perfil médico, tabelas de históricos clínicos, seletores de horários, modais de agendamento e micro-animações).
 
 ---
 
