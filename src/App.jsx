@@ -339,7 +339,9 @@ export default function App() {
         if (parsed && parsed.id) {
           return localStorage.getItem(`irec-theme-${parsed.id}`) || 'light';
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[iRec] Falha ao ler tema salvo:', e);
+      }
     }
     return localStorage.getItem('irec-theme-guest') || 'light';
   });
