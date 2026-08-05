@@ -1,11 +1,11 @@
-# Graph Report - Irec  (2026-08-05)
+# Graph Report - Irec  (2026-07-31)
 
 ## Corpus Check
-- 79 files · ~2,283,591 words
+- 76 files · ~2,280,815 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 400 nodes · 787 edges · 40 communities (33 shown, 7 thin omitted)
+- 392 nodes · 777 edges · 38 communities (31 shown, 7 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -46,7 +46,7 @@
 7. `getLocalUsers()` - 12 edges
 8. `getRecommendedMaterials()` - 12 edges
 9. `speakNaturalText()` - 12 edges
-10. `createAuditLog()` - 11 edges
+10. `AppDelegate` - 10 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `App()` --calls--> `checkCallStatus()`  [EXTRACTED]
@@ -63,7 +63,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (40 total, 7 thin omitted)
+## Communities (38 total, 7 thin omitted)
 
 ### Community 0 - "supabaseService.js"
 Cohesion: 0.18
@@ -74,12 +74,12 @@ Cohesion: 0.12
 Nodes (21): App(), AccessibleDashboard(), getRandomNoisePhrase(), NOISE_FALLBACK_PHRASES, AccessibleTelemedicineView(), AccessibleUploadView(), MyNetworkPortal(), PermissionsGuideModal() (+13 more)
 
 ### Community 2 - "package.json"
-Cohesion: 0.07
-Nodes (26): @capacitor/android, @capacitor/core, @capacitor/ios, dependencies, @capacitor/android, @capacitor/core, @capacitor/ios, pg (+18 more)
+Cohesion: 0.08
+Nodes (24): @capacitor/android, @capacitor/core, @capacitor/ios, dependencies, @capacitor/android, @capacitor/core, @capacitor/ios, pg (+16 more)
 
 ### Community 3 - "DoctorDashboard.jsx"
-Cohesion: 0.13
-Nodes (23): AI_RESPONSES, AIChatAssistant(), detectTopicFromText(), EXAM_RESPONSES, SUGGESTIONS, ClinicalTriage(), generateLocalFallbackAnalysis(), GLOSSARY_DB (+15 more)
+Cohesion: 0.14
+Nodes (22): AI_RESPONSES, AIChatAssistant(), detectTopicFromText(), EXAM_RESPONSES, SUGGESTIONS, ClinicalTriage(), generateLocalFallbackAnalysis(), GLOSSARY_DB (+14 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.10
@@ -90,20 +90,20 @@ Cohesion: 0.13
 Nodes (13): Any, Bool, Capacitor, AppDelegate, NSUserActivity, UIApplication, UIApplicationDelegate, UIKit (+5 more)
 
 ### Community 7 - "Dashboard.jsx"
-Cohesion: 0.12
-Nodes (16): ClinicalHistory(), Dashboard(), generateDynamicTasks(), LocalResourcesPanel(), PatientAppointmentsCalendar(), PatientDocuments(), deg2rad(), fetchNearbyHealthcareResources() (+8 more)
+Cohesion: 0.13
+Nodes (14): ClinicalHistory(), Dashboard(), generateDynamicTasks(), LocalResourcesPanel(), PatientDocuments(), deg2rad(), fetchNearbyHealthcareResources(), geocodeAddress() (+6 more)
 
 ### Community 8 - "🆕 Recursos Premium & Acessibilidade (Fase 10)"
 Cohesion: 0.06
 Nodes (34): 10. Unificação da Rede de Enfermagem (`NursesNetwork.jsx` & `App.jsx`), 11. Design de Ficha Clínica Centralizada e Flutuante (`SpecialistDirectory.jsx` & `NursesNetwork.jsx`), 12. Reordenação e Agrupamento dos Diretórios (`App.jsx`), 13. Otimização do Guia de Protocolos Clínicos para Médicos (`App.jsx` & `ProtocolGuide.jsx` & `DoctorDashboard.jsx` & `geminiService.js`), 14. Otimização da Inicialização do App & Proteção Contra Loading Infinito (`App.jsx` & `supabaseService.js`), 15. Sistema de Venda e Recomendação de Insumos com Links de Afiliados (`AdminPartners.jsx` & `DoctorDashboard.jsx` & `ProtocolGuide.jsx` & `supabaseService.js`), 1. Chat Flutuante / Expresso Global (`Telemedicine.jsx`), 1. Correção do Travamento da Imagem de Análise (`ClinicalTriage.jsx`) (+26 more)
 
 ### Community 9 - "followPatient"
-Cohesion: 0.19
-Nodes (15): DoctorAgendaPage(), DoctorAgendaView(), COMMON_CID10, DoctorDashboard(), exportFHIRBundle(), exportObservationToFHIR(), exportPatientToFHIR(), formatSOAPNote() (+7 more)
+Cohesion: 0.16
+Nodes (20): DoctorAgendaPage(), DoctorAgendaView(), COMMON_CID10, DoctorDashboard(), exportFHIRBundle(), exportObservationToFHIR(), exportPatientToFHIR(), addDoctorNote() (+12 more)
 
 ### Community 10 - "DoctorDashboardAnalytics.jsx"
-Cohesion: 0.09
-Nodes (45): AdminDashboard(), AdminPartners(), AdminReports(), DateRangePicker(), DoctorDashboardAnalytics(), DoctorPartners(), ALL_SPECIALTIES, Login() (+37 more)
+Cohesion: 0.11
+Nodes (39): AdminDashboard(), AdminPartners(), AdminReports(), DateRangePicker(), DoctorDashboardAnalytics(), DoctorPartners(), ALL_SPECIALTIES, Login() (+31 more)
 
 ### Community 11 - "React + Vite"
 Cohesion: 0.50
@@ -134,11 +134,11 @@ Cohesion: 0.22
 Nodes (8): 1. Medplum (`medplum/medplum`), 2. TRTC Web & React Native WebRTC (`react-native-webrtc/react-native-webrtc`), 3. Novu (`novuhq/novu`), 4. Cal.com (`calcom/cal.com`), 🎯 Objetivo de Evolução, 📋 Plano de Aprendizado e Melhoria Contínua: iRec, 📚 Projetos do GitHub para Estudo & Aprendizado, 🛠️ Roteiro de Implementação Passo a Passo
 
 ### Community 35 - "followPatient"
-Cohesion: 0.16
-Nodes (15): BookingModal(), getNursePremiumDetails(), NursesNetwork(), formatMaterialsForView(), ProtocolGuide(), getDoctorPremiumDetails(), SpecialistDirectory(), createAppointment() (+7 more)
+Cohesion: 0.13
+Nodes (18): BookingModal(), getNursePremiumDetails(), NursesNetwork(), PatientAppointmentsCalendar(), formatMaterialsForView(), ProtocolGuide(), getDoctorPremiumDetails(), SpecialistDirectory() (+10 more)
 
 ## Knowledge Gaps
-- **94 isolated node(s):** `UIKit`, `Capacitor`, `PackageDescription`, `name`, `private` (+89 more)
+- **93 isolated node(s):** `UIKit`, `Capacitor`, `PackageDescription`, `name`, `private` (+88 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -150,12 +150,12 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `ClinicalHistory()` connect `Dashboard.jsx` to `App.jsx`?**
   _High betweenness centrality (0.005) - this node is a cross-community bridge._
 - **What connects `UIKit`, `Capacitor`, `PackageDescription` to the rest of the system?**
-  _94 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _93 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
   _Cohesion score 0.12100840336134454 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.07407407407407407 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08 - nodes in this community are weakly interconnected._
 - **Should `DoctorDashboard.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.13227513227513227 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.14461538461538462 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._

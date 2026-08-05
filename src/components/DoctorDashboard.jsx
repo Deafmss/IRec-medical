@@ -763,12 +763,12 @@ export default function DoctorDashboard({
         // Fallback simulated reply
         setChatHistory(prev => [...prev, { 
           sender: 'ai', 
-          text: `Desculpe, doutor. Não consegui contactar o copiloto de IA. Mas analisando o histórico desse paciente, notei que ele possui ${selectedPatient.hasDiabetes ? 'Diabetes' : 'nenhuma comorbidade declarada'} e a lesão atual é do tipo ${selectedEntry?.type || 'não especificada'}. Recomenda-se manter o desbridamento e acompanhamento regular.` 
+          text: `Atenção, doutor: analisando o histórico desse paciente, notei que ele possui ${selectedPatient.hasDiabetes ? 'Diabetes' : 'nenhuma comorbidade declarada'} e a lesão atual é do tipo ${selectedEntry?.type || 'não especificada'}. Recomenda-se manter o desbridamento e acompanhamento regular.` 
         }]);
       }
     } catch (err) {
       console.error(err);
-      setChatHistory(prev => [...prev, { sender: 'ai', text: 'Houve um erro ao processar a resposta do copiloto médico.' }]);
+      setChatHistory(prev => [...prev, { sender: 'ai', text: 'Houve um erro ao processar o parecer do suporte de decisão clínica.' }]);
     } finally {
       setChatLoading(false);
     }

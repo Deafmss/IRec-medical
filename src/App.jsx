@@ -1635,7 +1635,7 @@ export default function App() {
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', borderRadius: '12px', backgroundColor: activeTab === 'chat' ? 'var(--primary-glow)' : 'var(--bg-primary)', border: activeTab === 'chat' ? '1.5px solid var(--primary-light)' : '1px solid var(--border-color)', cursor: 'pointer' }}
             >
               <span style={{ fontSize: '20px' }}>💬</span>
-              <span style={{ fontSize: '11px', fontWeight: '700', color: activeTab === 'chat' ? 'var(--primary)' : 'var(--text-primary)' }}>Suporte IA</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: activeTab === 'chat' ? 'var(--primary)' : 'var(--text-primary)' }}>Assistente</span>
             </div>
 
             {/* Médicos */}
