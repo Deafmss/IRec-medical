@@ -33,7 +33,46 @@ import { supabase, isSupabaseConfigured } from './supabaseClient';
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // Read initial tab from URL hash if available (enables native browser & mouse back/forward buttons)
+  const [activeTab, setActiveTabRaw] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hashTab = window.location.hash.replace('#', '').trim();
+      if (hashTab) return hashTab;
+    }
+    return 'dashboard';
+  });
+
+  // Function to change tab and push state to browser history stack
+  const setActiveTab = (tabName, replace = false) => {
+    if (typeof tabName !== 'string') return;
+    setActiveTabRaw(tabName);
+    if (typeof window !== 'undefined') {
+      const currentHash = window.location.hash.replace('#', '').trim();
+      if (currentHash !== tabName) {
+        if (replace) {
+          window.history.replaceState({ tab: tabName }, '', `#${tabName}`);
+        } else {
+          window.history.pushState({ tab: tabName }, '', `#${tabName}`);
+        }
+      }
+    }
+  };
+
+  // Sync with browser back/forward buttons (popstate event for mouse side buttons)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const initialTab = window.location.hash.replace('#', '').trim() || 'dashboard';
+    window.history.replaceState({ tab: initialTab }, '', `#${initialTab}`);
+
+    const handlePopState = (event) => {
+      const targetTab = event.state?.tab || window.location.hash.replace('#', '').trim() || 'dashboard';
+      setActiveTabRaw(targetTab);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showMobileMoreMenu, setShowMobileMoreMenu] = useState(false);
   const [showPermissionsGuideModal, setShowPermissionsGuideModal] = useState(false);
