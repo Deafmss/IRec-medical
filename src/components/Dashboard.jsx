@@ -602,22 +602,12 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Alergias:</span>
-                <strong style={{ color: clinicalProfile?.allergies ? '#ef4444' : 'var(--text-primary)' }}>
-                  {clinicalProfile?.allergies || 'Nenhuma alergia relatada'}
-                </strong>
+                <strong style={{ color: clinicalProfile?.allergies ? '#ef4444' : 'var(--text-primary)' }}>{clinicalProfile?.allergies || 'Nenhuma alergia relatada'}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '4px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Medicamentos:</span>
                 <strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.medications || 'Uso contínuo não informado'}</strong>
               </div>
-
-              <button
-                onClick={() => setShowFullRecordModal(true)}
-                className="btn btn-secondary"
-                style={{ width: '100%', marginTop: '6px', fontSize: '12px', padding: '8px' }}
-              >
-                🔍 Visualizar Prontuário & Ficha Completa
-              </button>
             </div>
           </div>
 
@@ -628,43 +618,68 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </h3>
 
             {assignedClinician ? (
-              <div style={{ padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', borderLeft: '4px solid #10b981', marginBottom: '14px' }}>
+              <div style={{ padding: '14px', backgroundColor: 'rgba(16, 185, 129, 0.08)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.25)', marginBottom: '14px' }}>
                 <span style={{ fontSize: '10px', fontWeight: '800', color: '#10b981', textTransform: 'uppercase' }}>
-                  {assignedClinician.role === 'nurse' || (assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN')) ? 'Enfermeiro(a) Responsável' : 'Médico(a) Assistente'}
+                  ENFERMEIRO(A) RESPONSÁVEL
                 </span>
-                <h4 style={{ fontSize: '14px', fontWeight: '800', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>
-                  {assignedClinician.role === 'nurse' || (assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN')) ? `Enf. ${assignedClinician.name}` : `Dr(a). ${assignedClinician.name}`}
+                <h4 style={{ fontSize: '14.5px', fontWeight: '800', color: 'var(--text-primary)', margin: '2px 0 0 0' }}>
+                  {assignedClinician.name}
                 </h4>
-                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                  {assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN') ? assignedClinician.crm : `CRM: ${assignedClinician.crm}`} • {assignedClinician.specialty || 'Médico(a) Especialista'}
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0 }}>
+                  {assignedClinician.registration} • {assignedClinician.specialty}
                 </p>
               </div>
-            ) : null}
+            ) : (
+              <div style={{ padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '14px' }}>
+                <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  EQUIPE MULTIDISCIPLINAR
+                </span>
+                <h4 style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)', margin: '2px 0 0 0' }}>
+                  Enfermeiro Estomaterapeuta / Médico Assistente
+                </h4>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0 }}>
+                  Atendimento integrado e acompanhamento domiciliar
+                </p>
+              </div>
+            )}
 
-            <LocalResourcesPanel clinicalProfile={clinicalProfile} compact={true} />
+            {/* Nearest ER Quick Widget */}
+            <div style={{ padding: '12px 14px', backgroundColor: 'rgba(239, 68, 68, 0.06)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '14px' }}>
+              <span style={{ fontSize: '10px', fontWeight: '800', color: '#ef4444', textTransform: 'uppercase' }}>
+                PRONTO-SOCORRO MAIS PRÓXIMO (REAL)
+              </span>
+              <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', margin: '2px 0 0 0' }}>
+                {nearestResource ? nearestResource.name : 'Carregando unidades de emergência locais...'}
+              </p>
+              {nearestResource && (
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                  📍 {nearestResource.distanceKm} km ({nearestResource.driveTimeMinutes} min de carro) • {nearestResource.vicinity}
+                </p>
+              )}
+            </div>
 
             <button
               onClick={() => setShowMapModal(true)}
               className="btn btn-secondary"
-              style={{ width: '100%', marginTop: '12px', fontSize: '12px', padding: '10px' }}
+              style={{ width: '100%', padding: '10px 14px', fontSize: '12.5px' }}
             >
               🗺️ Ver Mapa Completo de Hospitais & UPAs
             </button>
           </div>
 
-          {/* Safety & Red Flag Alert Box */}
+          {/* Red Flags / Emergency Warnings */}
           <div className="glass-card glass-card-danger-glow neon-edge-danger" style={{ margin: 0 }}>
-            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <span style={{ fontSize: '20px' }}>🚨</span>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: '#ef4444' }}>
+              <h4 style={{ fontSize: '14.5px', fontWeight: '900', color: '#ef4444', margin: 0 }}>
                 Sinais de Urgência (Red Flags)
-              </h3>
+              </h4>
             </div>
-            <p style={{ position: 'relative', zIndex: 1, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 14px 0' }}>
+            <p style={{ position: 'relative', zIndex: 1, fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 14px 0', lineHeight: '1.4' }}>
               Se notar sangramento abundante, febre superior a 38°C, calafrios ou dor intensa súbita na lesão:
             </p>
             <button
-              onClick={() => onTriggerSOS ? onTriggerSOS() : alert("Procure um pronto-socorro ou ligue SAMU 192!")}
+              onClick={() => onTriggerSOS && onTriggerSOS()}
               className="btn btn-sos"
               style={{ width: '100%', padding: '12px', fontSize: '13px' }}
             >
@@ -675,14 +690,13 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         </div>
       </div>
 
-      {/* Full Clinical Record View & Printable Modal */}
+      {/* Full Record Printable Modal Portal */}
       {showFullRecordModal && createPortal(
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.88)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(10px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -691,11 +705,11 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         }} onClick={() => setShowFullRecordModal(false)}>
           <div style={{
             backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '24px',
+            border: '1.5px solid var(--border-color)',
+            borderRadius: '20px',
             width: '100%',
-            maxWidth: '780px',
-            maxHeight: '88vh',
+            maxWidth: '860px',
+            maxHeight: '90vh',
             display: 'flex',
             flexDirection: 'column',
             boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)',
@@ -703,12 +717,12 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             margin: 0
           }} onClick={(e) => e.stopPropagation()}>
             
-            {/* Modal Header Fixo */}
+            {/* Modal Header Fixo Elegante */}
             <div style={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '20px 24px',
+              padding: '18px 24px',
               borderBottom: '1px solid var(--border-color)',
               backgroundColor: 'var(--bg-primary)'
             }}>
@@ -723,12 +737,27 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                   </p>
                 </div>
               </div>
+              
               <button 
                 onClick={() => setShowFullRecordModal(false)}
-                className="btn btn-secondary"
-                style={{ padding: '6px 14px', fontSize: '13px', borderRadius: '10px' }}
+                style={{ 
+                  width: '36px', 
+                  height: '36px', 
+                  borderRadius: '50%', 
+                  border: '1px solid var(--border-color)', 
+                  backgroundColor: 'var(--bg-secondary)', 
+                  color: 'var(--text-primary)', 
+                  fontSize: '16px', 
+                  fontWeight: '800', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }}
+                title="Fechar janela"
               >
-                ✖ Fechar
+                ✕
               </button>
             </div>
 
@@ -842,21 +871,21 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
             </div>
 
-            {/* Modal Footer Fixo */}
+            {/* Modal Footer Fixo Harmoniosamente Distribuído */}
             <div style={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'center',
               alignItems: 'center',
               padding: '18px 24px',
               borderTop: '1px solid var(--border-color)',
               backgroundColor: 'var(--bg-primary)',
-              gap: '12px',
+              gap: '14px',
               flexWrap: 'wrap'
             }}>
               <button
                 onClick={handlePrintFullRecord}
                 className="btn btn-primary"
-                style={{ padding: '12px 20px', fontSize: '13.5px' }}
+                style={{ padding: '12px 22px', fontSize: '13.5px', borderRadius: '12px' }}
               >
                 🖨️ Imprimir / Baixar Prontuário em PDF
               </button>
@@ -867,9 +896,17 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                   onOpenProfileModal ? onOpenProfileModal() : setActiveTab('profile');
                 }}
                 className="btn btn-secondary"
-                style={{ padding: '12px 20px', fontSize: '13.5px' }}
+                style={{ padding: '12px 22px', fontSize: '13.5px', borderRadius: '12px' }}
               >
-                ✏️ Editar esta Ficha Clínica
+                ✏️ Editar Ficha Clínica
+              </button>
+
+              <button
+                onClick={() => setShowFullRecordModal(false)}
+                className="btn btn-secondary"
+                style={{ padding: '12px 22px', fontSize: '13.5px', borderRadius: '12px' }}
+              >
+                ✕ Fechar
               </button>
             </div>
 
