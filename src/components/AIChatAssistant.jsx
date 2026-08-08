@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { uploadExamFileAndTriage, updateClinicalProfile, createAuditLog } from '../services/supabaseService';
-import { chatWithAI, synthesizeGoogleSpeech } from '../services/geminiService';
+import { chatWithAI } from '../services/geminiService';
 
 const SUGGESTIONS = [
   { text: 'Como higienizar a lesão em casa?', icon: '💧' },
@@ -290,7 +290,24 @@ Como posso te ajudar hoje?`;
   const fileInputRef = useRef(null);
 
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
+  const [availablePtVoices, setAvailablePtVoices] = useState([]);
   const activeAudioRef = useRef(null);
+
+  // Pre-load voices into memory on component mount (fixes Chrome async voice loading)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    const loadVoices = () => {
+      const all = window.speechSynthesis.getVoices() || [];
+      const pt = all.filter(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith('pt'));
+      setAvailablePtVoices(pt);
+    };
+
+    loadVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
 
   // Renaming chat thread states
   const [editingThreadId, setEditingThreadId] = useState(null);
@@ -349,84 +366,39 @@ Como posso te ajudar hoje?`;
 
     setSpeakingMessageId(msgId);
 
-    // 1. Try Google Cloud Text-to-Speech API (pt-BR-Neural2-A Studio Voice)
-    synthesizeGoogleSpeech(cleanText).then(audioDataUrl => {
-      if (audioDataUrl) {
-        const audio = new Audio(audioDataUrl);
-        activeAudioRef.current = audio;
-        audio.onended = () => {
-          setSpeakingMessageId(null);
-          activeAudioRef.current = null;
-        };
-        audio.onerror = () => {
-          playFallbackStream();
-        };
-        audio.play().catch(err => {
-          console.warn("[Google TTS API] Play error, recorrendo ao fluxo secundário:", err);
-          playFallbackStream();
-        });
-      } else {
-        playFallbackStream();
-      }
-    }).catch(() => {
-      playFallbackStream();
-    });
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 0.92; // Natural, calm human cadence
+    utterance.pitch = 1.0;
 
-    const playFallbackStream = () => {
-      // Split text into natural phrase chunks (max 180 chars for Google Neural Audio stream)
-      const rawChunks = cleanText.match(/[^.!?;\n]+[.!?;\n]*/g) || [cleanText];
-      const formattedChunks = [];
+    // Get current loaded voices
+    const currentVoices = availablePtVoices.length > 0 ? availablePtVoices : 
+      (window.speechSynthesis?.getVoices() || []).filter(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith('pt'));
 
-      rawChunks.forEach(chunk => {
-        let str = chunk.trim();
-        while (str.length > 170) {
-          let spaceIdx = str.lastIndexOf(' ', 170);
-          if (spaceIdx === -1) spaceIdx = 170;
-          formattedChunks.push(str.substring(0, spaceIdx));
-          str = str.substring(spaceIdx).trim();
-        }
-        if (str.length > 0) formattedChunks.push(str);
-      });
+    // Priority 1: Google official studio voice built into Chrome ("Google português do Brasil")
+    const googleVoice = currentVoices.find(v => v.name.toLowerCase().includes('google'));
+    
+    // Priority 2: Microsoft Natural / Online voice ("Microsoft Francisca Online (Natural)")
+    const msNaturalVoice = currentVoices.find(v => v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'));
 
-      let currentChunkIdx = 0;
+    // Priority 3: Named natural voices
+    const namedVoice = currentVoices.find(v => 
+      v.name.toLowerCase().includes('francisca') || 
+      v.name.toLowerCase().includes('luciana') || 
+      v.name.toLowerCase().includes('heloisa') ||
+      v.name.toLowerCase().includes('felipe')
+    );
 
-      const playNextChunk = () => {
-        if (currentChunkIdx >= formattedChunks.length) {
-          setSpeakingMessageId(null);
-          activeAudioRef.current = null;
-          return;
-        }
+    const bestVoice = googleVoice || msNaturalVoice || namedVoice || currentVoices[0];
 
-        const chunkText = formattedChunks[currentChunkIdx];
-        const googleTTSUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=pt-BR&client=tw-ob&q=${encodeURIComponent(chunkText)}`;
+    if (bestVoice) {
+      utterance.voice = bestVoice;
+    }
 
-        const audio = new Audio(googleTTSUrl);
-        activeAudioRef.current = audio;
+    utterance.onend = () => setSpeakingMessageId(null);
+    utterance.onerror = () => setSpeakingMessageId(null);
 
-        audio.onended = () => {
-          currentChunkIdx++;
-          playNextChunk();
-        };
-
-        audio.onerror = () => {
-          // Fallback to local Web Speech API if network blocks streaming
-          console.warn("[iRec Neural Audio] Recorrendo ao sintetizador local...");
-          const utterance = new SpeechSynthesisUtterance(cleanText);
-          utterance.lang = 'pt-BR';
-          utterance.rate = 0.95;
-          utterance.onend = () => setSpeakingMessageId(null);
-          utterance.onerror = () => setSpeakingMessageId(null);
-          window.speechSynthesis.speak(utterance);
-        };
-
-        audio.play().catch(err => {
-          console.warn("[iRec Neural Audio] Erro ao reproduzir audio:", err);
-          audio.onerror();
-        });
-      };
-
-      playNextChunk();
-    };
+    window.speechSynthesis.speak(utterance);
   };
 
   useEffect(() => {
