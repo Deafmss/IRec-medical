@@ -329,20 +329,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
           <button
             onClick={() => onTriggerSOS && onTriggerSOS()}
-            style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.12)',
-              color: '#ef4444',
-              border: '1px solid #ef4444',
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '900',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 0 12px rgba(239, 68, 68, 0.2)'
-            }}
+            className="btn btn-sos"
+            style={{ padding: '8px 16px', fontSize: '12px' }}
           >
             🚨 SOS 192
           </button>
@@ -455,20 +443,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
             <button
               onClick={() => setActiveTab(nextApp ? 'telemedicine' : 'my-appointments')}
-              style={{
-                position: 'relative',
-                zIndex: 1,
-                backgroundColor: 'var(--primary)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '10px 16px',
-                fontSize: '12.5px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)'
-              }}
+              className="btn btn-primary"
+              style={{ whiteSpace: 'nowrap', padding: '10px 18px', fontSize: '12.5px' }}
             >
               {nextApp ? '🎥 Acessar Sala HD' : '📅 Agendar'}
             </button>
@@ -573,25 +549,12 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
           </div>
 
-          {/* Quick Action Shortcuts */}
+          {/* Quick Action Shortcuts (Botões com Animação de Brilho & Hover Dynamic) */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <button
               onClick={() => setActiveTab('upload')}
-              style={{
-                backgroundColor: 'var(--primary)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '14px',
-                padding: '16px',
-                fontSize: '14px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 6px 20px rgba(2, 132, 199, 0.25)'
-              }}
+              className="btn btn-primary"
+              style={{ padding: '16px', fontSize: '14px' }}
             >
               <span>📷</span>
               <span>Fotografar Ferida</span>
@@ -599,21 +562,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
             <button
               onClick={() => setActiveTab('chat')}
-              style={{
-                backgroundColor: 'var(--bg-secondary)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '14px',
-                padding: '16px',
-                fontSize: '14px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
-              }}
+              className="btn btn-secondary"
+              style={{ padding: '16px', fontSize: '14px' }}
             >
               <span>💬</span>
               <span>Assistente Clínico</span>
@@ -633,16 +583,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               </h3>
               <button
                 onClick={() => onOpenProfileModal ? onOpenProfileModal() : setActiveTab('profile')}
-                style={{
-                  backgroundColor: 'transparent',
-                  color: 'var(--primary)',
-                  border: '1px solid var(--primary)',
-                  borderRadius: '8px',
-                  padding: '5px 12px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  cursor: 'pointer'
-                }}
+                className="btn btn-secondary"
+                style={{ padding: '5px 12px', fontSize: '12px' }}
               >
                 Editar Perfil ✏️
               </button>
@@ -708,22 +650,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
             <button
               onClick={() => setShowMapModal(true)}
-              style={{
-                width: '100%',
-                marginTop: '12px',
-                backgroundColor: 'var(--bg-primary)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '10px',
-                padding: '10px',
-                fontSize: '12px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
-              }}
+              className="btn btn-secondary"
+              style={{ width: '100%', marginTop: '12px', fontSize: '12px', padding: '10px' }}
             >
               🗺️ Ver Mapa Completo de Hospitais & UPAs
             </button>
@@ -742,20 +670,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </p>
             <button
               onClick={() => onTriggerSOS ? onTriggerSOS() : alert("Procure um pronto-socorro ou ligue SAMU 192!")}
-              style={{
-                position: 'relative',
-                zIndex: 1,
-                width: '100%',
-                backgroundColor: '#ef4444',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '12px',
-                fontSize: '13px',
-                fontWeight: '900',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(239, 68, 68, 0.3)'
-              }}
+              className="btn btn-sos"
+              style={{ width: '100%', padding: '12px', fontSize: '13px' }}
             >
               Relatar Sintoma Grave (SOS)
             </button>
