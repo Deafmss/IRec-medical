@@ -13,6 +13,9 @@ const detectTopicFromText = (userText, aiText = '') => {
   const userClean = (userText || '').trim();
   const combined = (userClean + ' ' + aiText).toLowerCase();
   
+  if (combined.includes('vitamina') || combined.includes('suplemento') || combined.includes('d3') || combined.includes('k2') || combined.includes('calcio')) {
+    return 'Vitaminas & Suplementação';
+  }
   if (combined.includes('pe de atleta') || combined.includes('pé de atleta') || combined.includes('frieira') || combined.includes('friera')) {
     return 'Pé de Atleta';
   }
@@ -452,10 +455,10 @@ Como posso te ajudar hoje?`;
           let finalThreads = prevThreads;
           // Auto-rename based on clinical topic detection if not manually renamed
           if (!currentActiveThread?.manuallyRenamed) {
-            const lastUserMsg = [...msgsBase].reverse().find(m => m.sender === 'user');
-            const userText = lastUserMsg ? lastUserMsg.text : '';
+            const userMsg = [...msgsBase].find(m => m.sender === 'user') || [...msgsBase].reverse().find(m => m.sender === 'user');
+            const userText = userMsg ? userMsg.text : '';
             const detected = detectTopicFromText(userText, responseText);
-            if (detected && currentActiveThread.title !== detected) {
+            if (detected) {
               finalThreads = prevThreads.map(t => 
                 t.id === threadId ? { ...t, title: detected } : t
               );
