@@ -127,7 +127,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
     {
       id: 'faint',
       title: '💫 Tontura Forte ou Desmaio',
-      color: '#8b5cf6',
+      color: '#a855f7',
       steps: [
         'Deite a pessoa de costas e eleve as pernas ligeiramente.',
         'Gire a cabeça de lado se houver risco de vômito.',
@@ -138,7 +138,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
     {
       id: 'bleeding',
       title: '🩸 Sangramento ou Corte Profundo',
-      color: '#dc2626',
+      color: '#f43f5e',
       steps: [
         'Pressione o local do sangramento com pano limpo ou gaze firmemente.',
         'Mantenha a pressão contínua sem retirar o pano para olhar.',
@@ -193,9 +193,9 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.88)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
+      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
       zIndex: 999999,
       display: 'flex',
       alignItems: 'center',
@@ -204,7 +204,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
       fontFamily: 'var(--font-primary, sans-serif)'
     }} onClick={() => { triggerVibration(); onClose(); }}>
       
-      {/* Glassmorphism Container com Luz Vazada Vermelha Neon */}
+      {/* Glassmorphism Container com Luz Vazada Vermelha Neon & Alto Contraste */}
       <div 
         className="glass-card glass-card-danger-glow neon-edge-danger" 
         style={{
@@ -212,10 +212,10 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
           maxWidth: '560px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          backgroundColor: 'rgba(15, 23, 42, 0.82)',
-          border: '1px solid rgba(239, 68, 68, 0.35)',
+          backgroundColor: '#0f172a',
+          border: '1.5px solid rgba(239, 68, 68, 0.45)',
           borderRadius: '24px',
-          boxShadow: '0 25px 60px -10px rgba(239, 68, 68, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.15)',
+          boxShadow: '0 25px 60px -10px rgba(239, 68, 68, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.2)',
           padding: '24px',
           color: '#ffffff',
           display: 'flex',
@@ -233,13 +233,12 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
               width: '46px',
               height: '46px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid #ef4444',
+              backgroundColor: '#ef4444',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '22px',
-              boxShadow: '0 0 16px rgba(239, 68, 68, 0.5)'
+              boxShadow: '0 0 18px rgba(239, 68, 68, 0.6)'
             }}>
               🚨
             </div>
@@ -247,13 +246,21 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#ffffff', fontFamily: 'var(--font-display)' }}>
                 SOCORRO & EMERGÊNCIA
               </h2>
-              <span style={{ fontSize: '12px', color: '#94a3b8' }}>Suporte à Vida 24 horas - iRec Saúde</span>
+              <span style={{ fontSize: '12.5px', color: '#cbd5e1', fontWeight: '600' }}>Suporte à Vida 24 horas - iRec Saúde</span>
             </div>
           </div>
           <button 
             onClick={() => { triggerVibration(); onClose(); }}
-            className="btn btn-secondary"
-            style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '10px' }}
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.12)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              color: '#ffffff',
+              padding: '6px 14px',
+              fontSize: '13px',
+              fontWeight: '700',
+              borderRadius: '10px',
+              cursor: 'pointer'
+            }}
           >
             ✖ Fechar
           </button>
@@ -263,14 +270,22 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
         {!notificationActivated && (
           <button
             onClick={requestNotificationPermission}
-            className="btn btn-secondary"
             style={{
               position: 'relative',
               zIndex: 1,
               width: '100%',
               padding: '12px 16px',
               fontSize: '13px',
-              justifyContent: 'center'
+              fontWeight: '700',
+              backgroundColor: 'rgba(2, 132, 199, 0.2)',
+              border: '1px solid #0284c7',
+              color: '#ffffff',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
             }}
           >
             <span>🔔</span>
@@ -283,7 +298,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
           <div style={{
             position: 'relative',
             zIndex: 1,
-            backgroundColor: 'rgba(220, 38, 38, 0.95)',
+            backgroundColor: '#dc2626',
             borderRadius: '16px',
             padding: '20px',
             textAlign: 'center',
@@ -291,8 +306,8 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             flexDirection: 'column',
             alignItems: 'center',
             gap: '12px',
-            border: '1px solid #ef4444',
-            boxShadow: '0 0 24px rgba(239, 68, 68, 0.6)'
+            border: '2px solid #ffffff',
+            boxShadow: '0 0 30px rgba(239, 68, 68, 0.8)'
           }}>
             <span style={{ fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>
               LIGANDO PARA O {pendingCall.label} ({pendingCall.number}) EM:
@@ -302,13 +317,15 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             </span>
             <button
               onClick={cancelCallCountdown}
-              className="btn"
               style={{
                 backgroundColor: '#ffffff',
                 color: '#dc2626',
                 padding: '10px 20px',
                 fontWeight: '800',
-                fontSize: '14px'
+                fontSize: '14px',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer'
               }}
             >
               ❌ CANCELAR LIGAÇÃO
@@ -329,7 +346,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             }}
           >
             <span style={{ fontSize: '26px' }}>📞 192</span>
-            <span style={{ fontSize: '13px', fontWeight: '800' }}>LIGAR SAMU</span>
+            <span style={{ fontSize: '14px', fontWeight: '900', color: '#ffffff' }}>LIGAR SAMU</span>
           </button>
 
           <button
@@ -346,7 +363,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             }}
           >
             <span style={{ fontSize: '26px' }}>🚒 193</span>
-            <span style={{ fontSize: '13px', fontWeight: '800' }}>BOMBEIROS</span>
+            <span style={{ fontSize: '14px', fontWeight: '900', color: '#ffffff' }}>BOMBEIROS</span>
           </button>
         </div>
 
@@ -359,7 +376,8 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             zIndex: 1,
             padding: '16px',
             borderRadius: '16px',
-            fontSize: '13.5px'
+            fontSize: '13.5px',
+            fontWeight: '800'
           }}
         >
           <span style={{ fontSize: '20px' }}>🏥</span>
@@ -367,37 +385,41 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
         </button>
 
         {/* Legal Disclaimer */}
-        <div style={{ position: 'relative', zIndex: 1, fontSize: '11px', color: '#94a3b8', textAlign: 'center', lineHeight: '1.5', padding: '0 8px' }}>
+        <div style={{ position: 'relative', zIndex: 1, fontSize: '11.5px', color: '#cbd5e1', textAlign: 'center', lineHeight: '1.5', padding: '0 8px' }}>
           ⚖️ <strong>Aviso Legal & Regulatório:</strong> O iRec é uma plataforma de suporte e navegação em saúde. Em situações de emergência grave, recorra imediatamente ao 192 (SAMU) ou dirija-se à unidade de saúde mais próxima.
         </div>
 
         {/* First Aid Quick Guides */}
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <h3 style={{ margin: '4px 0 2px 0', fontSize: '14px', color: 'var(--text-primary)', fontWeight: '800' }}>
+          <h3 style={{ margin: '4px 0 4px 0', fontSize: '15px', color: '#ffffff', fontWeight: '800' }}>
             💡 Guia Rápido de Primeiros Socorros:
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {firstAidGuides.map((guide) => {
               const isSelected = selectedEmergency?.id === guide.id;
               return (
                 <button
                   key={guide.id}
                   onClick={() => { triggerVibration(); setSelectedEmergency(isSelected ? null : guide); }}
-                  className="btn btn-secondary"
                   style={{
-                    padding: '12px',
+                    padding: '12px 14px',
                     borderRadius: '12px',
-                    fontSize: '12.5px',
-                    fontWeight: '700',
+                    fontSize: '13px',
+                    fontWeight: '800',
                     textAlign: 'left',
-                    justifyContent: 'flex-start',
-                    backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                    borderColor: isSelected ? guide.color : 'rgba(255, 255, 255, 0.12)',
-                    color: isSelected ? guide.color : 'var(--text-primary)'
+                    cursor: 'pointer',
+                    backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+                    border: isSelected ? `1.5px solid ${guide.color}` : '1px solid rgba(255, 255, 255, 0.25)',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s ease',
+                    boxShadow: isSelected ? `0 0 14px ${guide.color}` : 'none'
                   }}
                 >
-                  {guide.title}
+                  <span style={{ color: '#ffffff', fontWeight: '800' }}>{guide.title}</span>
                 </button>
               );
             })}
@@ -405,11 +427,11 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
 
           {selectedEmergency && (
             <div style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              backgroundColor: '#1e293b',
               borderRadius: '16px',
               padding: '16px',
               borderLeft: `4px solid ${selectedEmergency.color}`,
-              border: '1px solid var(--border-color)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               borderLeftWidth: '4px',
               marginTop: '6px',
               display: 'flex',
@@ -417,18 +439,26 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
               gap: '10px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h4 style={{ margin: 0, fontSize: '14.5px', fontWeight: '800', color: selectedEmergency.color }}>{selectedEmergency.title}</h4>
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: selectedEmergency.color }}>{selectedEmergency.title}</h4>
                 <button
                   onClick={() => speakText(`${selectedEmergency.title}. ${selectedEmergency.steps.join('. ')}`)}
-                  className="btn btn-secondary"
-                  style={{ padding: '4px 10px', fontSize: '11.5px' }}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    borderRadius: '8px',
+                    padding: '5px 12px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}
                 >
                   🔊 Ouvir Passos
                 </button>
               </div>
-              <ol style={{ margin: 0, paddingLeft: '20px', color: '#e2e8f0', fontSize: '13px', lineHeight: '1.6' }}>
+              <ol style={{ margin: 0, paddingLeft: '20px', color: '#f8fafc', fontSize: '13.5px', lineHeight: '1.6', fontWeight: '500' }}>
                 {selectedEmergency.steps.map((step, idx) => (
-                  <li key={idx} style={{ marginBottom: '4px' }}>{step}</li>
+                  <li key={idx} style={{ marginBottom: '6px' }}>{step}</li>
                 ))}
               </ol>
             </div>
