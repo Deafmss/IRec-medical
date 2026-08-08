@@ -7,7 +7,7 @@ import LocalResourcesPanel from './LocalResourcesPanel';
 const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = null) => {
   const list = [];
   
-  // 1. REAL PRESCRIBED WOUND TREATMENT PLAN & DRESSING (ONLY IF AN ACTIVE OPEN WOUND HAS AN EXPLICIT PRESCRIBED TREATMENT OR DRESSING)
+  // 1. REAL PRESCRIBED WOUND TREATMENT PLAN & DRESSING
   if (hasActiveWound && latestEntry) {
     if (latestEntry.treatmentPlan) {
       const planItems = Array.isArray(latestEntry.treatmentPlan)
@@ -276,6 +276,11 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
   // Next appointment info
   const nextApp = myAppointments.length > 0 ? myAppointments[0] : null;
+
+  // Function to print/download official medical PDF
+  const handlePrintFullRecord = () => {
+    window.print();
+  };
 
   return (
     <div className="animate-fade-in" style={{ position: 'relative', width: '100%' }}>
@@ -550,7 +555,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
           </div>
 
-          {/* Quick Action Shortcuts (Botões com Animação de Brilho & Hover Dynamic) */}
+          {/* Quick Action Shortcuts */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <button
               onClick={() => setActiveTab('upload')}
@@ -576,7 +581,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         {/* Right Column: Clinical Profile Summary, Local Health Network & Safety */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
-          {/* Clinical Profile Summary Card (Glassmorphism Consistente + Luz Vazada Azul) */}
+          {/* Clinical Profile Summary Card */}
           <div className="glass-card glass-card-cyan-glow" style={{ margin: 0 }}>
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
@@ -652,7 +657,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
           </div>
 
-          {/* Assigned Doctor & Local Health Resources (Glassmorphism Consistente + Borda Esmeralda) */}
+          {/* Assigned Doctor & Local Health Resources */}
           <div className="glass-card neon-edge-emerald" style={{ margin: 0 }}>
             <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: '0 0 14px 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               🩺 Profissional Responsável & Rede Local
@@ -677,7 +682,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </button>
           </div>
 
-          {/* Safety & Red Flag Alert Box (Glassmorphism Consistente + Luz Vazada Vermelha) */}
+          {/* Safety & Red Flag Alert Box */}
           <div className="glass-card glass-card-danger-glow neon-edge-danger" style={{ margin: 0 }}>
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span style={{ fontSize: '20px' }}>🚨</span>
@@ -700,95 +705,106 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         </div>
       </div>
 
-      {/* Full Clinical Record View Modal */}
+      {/* Full Clinical Record View & Printable Modal */}
       {showFullRecordModal && createPortal(
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.85)',
-          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.88)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 2000,
           padding: '20px'
         }} onClick={() => setShowFullRecordModal(false)}>
-          <div className="glass-card glass-card-cyan-glow" style={{
+          <div style={{
             backgroundColor: 'var(--bg-secondary)',
             border: '1px solid var(--border-color)',
-            borderRadius: '20px',
+            borderRadius: '24px',
             width: '100%',
-            maxWidth: '750px',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            padding: '28px',
+            maxWidth: '780px',
+            maxHeight: '88vh',
             display: 'flex',
             flexDirection: 'column',
-            gap: '20px',
-            boxShadow: 'var(--shadow-lg)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)',
+            overflow: 'hidden',
             margin: 0
           }} onClick={(e) => e.stopPropagation()}>
-            {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '24px' }}>📋</span>
+            
+            {/* Modal Header Fixo */}
+            <div style={{
+              display: 'flex',
+              justify: 'space-between',
+              alignItems: 'center',
+              padding: '20px 24px',
+              borderBottom: '1px solid var(--border-color)',
+              backgroundColor: 'var(--bg-primary)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '26px' }}>📋</span>
                 <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
-                    Ficha Clínica Completa
+                  <h3 style={{ fontSize: '18px', fontWeight: '900', margin: 0, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+                    Ficha Clínica & Prontuário Oficial
                   </h3>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-                    Prontuário e dados de saúde cadastrados no iRec Saúde
+                    iRec Saúde • CFM Res. 2.314/2022 & COFEN Res. 0567/2018
                   </p>
                 </div>
               </div>
               <button 
                 onClick={() => setShowFullRecordModal(false)}
                 className="btn btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '13px' }}
+                style={{ padding: '6px 14px', fontSize: '13px', borderRadius: '10px' }}
               >
                 ✖ Fechar
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {/* Modal Body Rolável (Corpo Prontuário Médico Impresso) */}
+            <div className="printable-record-content" style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
               
               {/* Section 1: Identificação & Emergência */}
-              <div style={{ padding: '16px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
+              <div style={{ padding: '18px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   👤 Identificação & Contato de Emergência
                 </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Nome:</span> <strong>{clinicalProfile?.name || 'Não informado'}</strong></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>CPF:</span> <strong>{clinicalProfile?.cpf || 'Não informado'}</strong></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Data Nasc.:</span> <strong>{clinicalProfile?.birthDate ? new Date(clinicalProfile.birthDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada'}</strong></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Sexo:</span> <strong>{clinicalProfile?.gender || 'Não informado'}</strong></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Telefone:</span> <strong>{clinicalProfile?.phone || 'Não informado'}</strong></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Cidade / UF:</span> <strong>{clinicalProfile?.city ? `${clinicalProfile.city}/${clinicalProfile.state || ''}` : 'Não informada'}</strong></div>
-                  <div style={{ gridColumn: 'span 2' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Endereço:</span> <strong>{clinicalProfile?.street ? `${clinicalProfile.street}, ${clinicalProfile.number || 'S/N'} - ${clinicalProfile.neighborhood || ''} (CEP: ${clinicalProfile.cep || ''})` : 'Não informado'}</strong>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', fontSize: '13px' }}>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Nome Completo:</span> <br /><strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.name || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>CPF:</span> <br /><strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.cpf || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Data de Nasc.:</span> <br /><strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.birthDate ? new Date(clinicalProfile.birthDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Sexo:</span> <br /><strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.gender || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Telefone:</span> <br /><strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.phone || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Cidade / UF:</span> <br /><strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.city ? `${clinicalProfile.city}/${clinicalProfile.state || ''}` : 'Não informada'}</strong></div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Endereço Residencial:</span> <br />
+                    <strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.street ? `${clinicalProfile.street}, ${clinicalProfile.number || 'S/N'} ${clinicalProfile.complement ? '- ' + clinicalProfile.complement : ''} - Bairro: ${clinicalProfile.neighborhood || ''} (CEP: ${clinicalProfile.cep || ''})` : 'Não informado'}</strong>
                   </div>
-                  <div style={{ gridColumn: 'span 2', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-color)', color: '#ef4444' }}>
-                    <span style={{ fontWeight: '700' }}>🚨 Contato de Emergência:</span> <strong>{clinicalProfile?.emergencyContactName || 'Não cadastrado'} {clinicalProfile?.emergencyContactPhone ? `(${clinicalProfile.emergencyContactPhone})` : ''}</strong>
+                  <div style={{ gridColumn: '1 / -1', marginTop: '6px', paddingTop: '10px', borderTop: '1px dashed var(--border-color)' }}>
+                    <span style={{ fontWeight: '800', color: '#ef4444' }}>🚨 Contato para Casos de Emergência:</span> <br />
+                    <strong style={{ fontSize: '13.5px', color: '#ef4444' }}>
+                      {clinicalProfile?.emergencyContactName || 'Não cadastrado'} {clinicalProfile?.emergencyContactPhone ? `(${clinicalProfile.emergencyContactPhone})` : ''}
+                    </strong>
                   </div>
                 </div>
               </div>
 
               {/* Section 2: Biometria & IMC */}
-              <div style={{ padding: '16px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
+              <div style={{ padding: '18px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   ⚖️ Dados Biométricos & Atendimento
                 </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '13px' }}>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Tipo Sanguíneo:</span> <strong style={{ color: 'var(--primary)' }}>{clinicalProfile?.bloodType || 'Não informado'}</strong></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Peso:</span> <strong>{clinicalProfile?.weight ? `${clinicalProfile.weight} kg` : 'Não informado'}</strong></div>
-                  <div><span style={{ color: 'var(--text-muted)' }}>Altura:</span> <strong>{clinicalProfile?.height ? `${clinicalProfile.height} cm` : 'Não informada'}</strong></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', fontSize: '13px' }}>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Tipo Sanguíneo:</span> <br /><strong style={{ color: 'var(--primary)', fontSize: '15px' }}>{clinicalProfile?.bloodType || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Peso Corporais:</span> <br /><strong style={{ color: 'var(--text-primary)', fontSize: '15px' }}>{clinicalProfile?.weight ? `${clinicalProfile.weight} kg` : 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Altura Tecnológica:</span> <br /><strong style={{ color: 'var(--text-primary)', fontSize: '15px' }}>{clinicalProfile?.height ? `${clinicalProfile.height} cm` : 'Não informada'}</strong></div>
                 </div>
 
                 {clinicalProfile?.weight && clinicalProfile?.height && (
-                  <div style={{ marginTop: '10px', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(2, 132, 199, 0.08)', border: '1px solid rgba(2, 132, 199, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--primary)' }}>IMC (Índice de Massa Corporal):</span>
-                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--primary)' }}>
+                  <div style={{ marginTop: '12px', padding: '12px 16px', borderRadius: '12px', backgroundColor: 'rgba(2, 132, 199, 0.08)', border: '1px solid rgba(2, 132, 199, 0.25)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)' }}>IMC (Índice de Massa Corporal):</span>
+                    <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--primary)' }}>
                       {(() => {
                         const hM = parseFloat(clinicalProfile.height) / 100;
                         const imcVal = parseFloat(clinicalProfile.weight) / (hM * hM);
@@ -805,31 +821,31 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               </div>
 
               {/* Section 3: Comorbidades & Fatores de Risco */}
-              <div style={{ padding: '16px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
-                  🩺 Comorbidades & Condições Clínicas
+              <div style={{ padding: '18px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  🩺 Comorbidades & Condições Clínicas Registradas
                 </h4>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasDiabetes ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasDiabetes ? '#ef4444' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
-                    {clinicalProfile?.hasDiabetes ? '✓ Diabetes' : '✕ Sem Diabetes'}
+                  <span style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasDiabetes ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasDiabetes ? '#ef4444' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                    {clinicalProfile?.hasDiabetes ? '✓ Diabetes Mellitus' : '✕ Sem Diabetes'}
                   </span>
-                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasHypertension ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasHypertension ? '#ef4444' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
-                    {clinicalProfile?.hasHypertension ? '✓ Hipertensão' : '✕ Sem Hipertensão'}
+                  <span style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasHypertension ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasHypertension ? '#ef4444' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                    {clinicalProfile?.hasHypertension ? '✓ Hipertensão Arterial' : '✕ Sem Hipertensão'}
                   </span>
-                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasVenousInsufficiency ? 'rgba(2, 132, 199, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasVenousInsufficiency ? 'var(--primary)' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                  <span style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasVenousInsufficiency ? 'rgba(2, 132, 199, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasVenousInsufficiency ? 'var(--primary)' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
                     {clinicalProfile?.hasVenousInsufficiency ? '✓ Insuficiência Venosa' : '✕ Sem Insuf. Venosa'}
                   </span>
-                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasPeripheralArterialDisease ? 'rgba(2, 132, 199, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasPeripheralArterialDisease ? 'var(--primary)' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                  <span style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasPeripheralArterialDisease ? 'rgba(2, 132, 199, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasPeripheralArterialDisease ? 'var(--primary)' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
                     {clinicalProfile?.hasPeripheralArterialDisease ? '✓ D. Art. Periférica' : '✕ Sem DAP'}
                   </span>
-                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.isSmoker ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.isSmoker ? '#f59e0b' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                  <span style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.isSmoker ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.isSmoker ? '#f59e0b' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
                     {clinicalProfile?.isSmoker ? '🚬 Tabagista' : '🚭 Não Tabagista'}
                   </span>
-                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.isObese ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.isObese ? '#f59e0b' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                  <span style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.isObese ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.isObese ? '#f59e0b' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
                     {clinicalProfile?.isObese ? '⚖️ Obesidade' : '⚖️ Peso Normal'}
                   </span>
                   {clinicalProfile?.hasAmputationHistory && (
-                    <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '800', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid #ef4444' }}>
+                    <span style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '800', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid #ef4444' }}>
                       ⚠️ Histórico de Amputação
                     </span>
                   )}
@@ -837,34 +853,51 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               </div>
 
               {/* Section 4: Alergias & Prescrições */}
-              <div style={{ padding: '16px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
-                  💊 Medicamentos Contínuos & Alergias
+              <div style={{ padding: '18px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  💊 Medicamentos Contínuos & Alergias Cadastradas
                 </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
-                  <div style={{ padding: '10px 14px', borderRadius: '10px', backgroundColor: clinicalProfile?.allergies ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-secondary)', border: clinicalProfile?.allergies ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                  <div style={{ padding: '12px 16px', borderRadius: '10px', backgroundColor: clinicalProfile?.allergies ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-secondary)', border: clinicalProfile?.allergies ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-color)' }}>
                     <span style={{ fontWeight: '800', color: clinicalProfile?.allergies ? '#ef4444' : 'var(--text-muted)' }}>⚠️ Alergias Conhecidas:</span>{' '}
-                    <strong style={{ color: clinicalProfile?.allergies ? '#ef4444' : 'var(--text-primary)' }}>{clinicalProfile?.allergies || 'Nenhuma alergia relatada'}</strong>
+                    <strong style={{ color: clinicalProfile?.allergies ? '#ef4444' : 'var(--text-primary)', fontSize: '14px' }}>{clinicalProfile?.allergies || 'Nenhuma alergia relatada'}</strong>
                   </div>
 
-                  <div style={{ padding: '10px 14px', borderRadius: '10px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ padding: '12px 16px', borderRadius: '10px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
                     <span style={{ fontWeight: '800', color: 'var(--primary)' }}>💊 Medicamentos de Uso Contínuo:</span>{' '}
-                    <strong>{clinicalProfile?.medications || 'Nenhum uso contínuo informado'}</strong>
+                    <strong style={{ color: 'var(--text-primary)', fontSize: '14px' }}>{clinicalProfile?.medications || 'Nenhum uso contínuo informado'}</strong>
                   </div>
                 </div>
               </div>
 
             </div>
 
-            {/* Modal Footer */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+            {/* Modal Footer Fixo */}
+            <div style={{
+              display: 'flex',
+              justify: 'space-between',
+              alignItems: 'center',
+              padding: '18px 24px',
+              borderTop: '1px solid var(--border-color)',
+              backgroundColor: 'var(--bg-primary)',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                onClick={handlePrintFullRecord}
+                className="btn btn-primary"
+                style={{ padding: '12px 20px', fontSize: '13.5px' }}
+              >
+                🖨️ Imprimir / Baixar Prontuário em PDF
+              </button>
+
               <button
                 onClick={() => {
                   setShowFullRecordModal(false);
                   onOpenProfileModal ? onOpenProfileModal() : setActiveTab('profile');
                 }}
-                className="btn btn-primary"
-                style={{ padding: '10px 20px', fontSize: '13px' }}
+                className="btn btn-secondary"
+                style={{ padding: '12px 20px', fontSize: '13.5px' }}
               >
                 ✏️ Editar esta Ficha Clínica
               </button>
