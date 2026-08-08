@@ -10,28 +10,35 @@ const SUGGESTIONS = [
 ];
 
 const detectTopicFromText = (userText, aiText = '') => {
-  const combined = (userText + ' ' + aiText).toLowerCase();
+  const userClean = (userText || '').trim();
+  const combined = (userClean + ' ' + aiText).toLowerCase();
   
-  if (combined.includes('pe de atleta') || combined.includes('pé de atleta') || combined.includes('tinea pedis') || combined.includes('frieira') || combined.includes('friera') || combined.includes('coceira no pe') || combined.includes('coceira no pé') || combined.includes('infeccao fungica') || combined.includes('infecção fúngica')) {
+  if (combined.includes('pe de atleta') || combined.includes('pé de atleta') || combined.includes('frieira') || combined.includes('friera')) {
     return 'Pé de Atleta';
   }
   if (combined.includes('cefaleia') || combined.includes('dor de cabeca') || combined.includes('dor de cabeça')) {
-    return 'Cefaleia';
+    return 'Cefaleia / Dor de Cabeça';
   }
-  if (combined.includes('gripe') || combined.includes('resfriado') || combined.includes('sintomas gripais') || combined.includes('tosse') || combined.includes('coriza')) {
+  if (combined.includes('gripe') || combined.includes('resfriado') || combined.includes('coriza')) {
     return 'Sintomas Gripais';
   }
-  if (combined.includes('diabetes') || combined.includes('diabetico') || combined.includes('diabético') || combined.includes('glicemia') || combined.includes('glicose')) {
-    return 'Diabetes';
+  if (combined.includes('diabetes') || combined.includes('diabetico') || combined.includes('glicemia') || combined.includes('glicose')) {
+    return 'Diabetes & Glicemia';
   }
-  if (combined.includes('pressao alta') || combined.includes('pressão alta') || combined.includes('hipertensao') || combined.includes('hipertensão')) {
-    return 'Hipertensão';
+  if (combined.includes('pressao alta') || combined.includes('pressão alta') || combined.includes('hipertensao')) {
+    return 'Hipertensão Arterial';
   }
   if (combined.includes('curativo') || combined.includes('cobertura') || combined.includes('hidrogel') || combined.includes('alginato')) {
-    return 'Cuidados com Feridas';
+    return 'Cuidados com Curativos';
   }
-  if (combined.includes('exame') || combined.includes('laudo') || combined.includes('sangue') || combined.includes('hemograma')) {
+  if (combined.includes('exame') || combined.includes('laudo') || combined.includes('hemograma') || combined.includes('doppler')) {
     return 'Leitura de Exame';
+  }
+
+  // If user typed a prompt, generate a clean 3-5 word title from the user's question
+  if (userClean.length > 3) {
+    const words = userClean.split(/\s+/).slice(0, 4).join(' ');
+    return words.charAt(0).toUpperCase() + words.slice(1);
   }
   return null;
 };
