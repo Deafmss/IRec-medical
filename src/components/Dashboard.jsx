@@ -185,6 +185,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   const [myAppointments, setMyAppointments] = useState([]);
   const [assignedClinician, setAssignedClinician] = useState(null);
   const [showMapModal, setShowMapModal] = useState(false);
+  const [showFullRecordModal, setShowFullRecordModal] = useState(false);
 
   // Load appointments
   useEffect(() => {
@@ -581,13 +582,24 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
                 👤 Sua Ficha Clínica
               </h3>
-              <button
-                onClick={() => onOpenProfileModal ? onOpenProfileModal() : setActiveTab('profile')}
-                className="btn btn-secondary"
-                style={{ padding: '5px 12px', fontSize: '12px' }}
-              >
-                Editar Perfil ✏️
-              </button>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  onClick={() => setShowFullRecordModal(true)}
+                  className="btn btn-secondary"
+                  style={{ padding: '5px 10px', fontSize: '11.5px' }}
+                  title="Visualizar a Ficha Clínica Completa em formato prontuário"
+                >
+                  🔍 Ver Ficha
+                </button>
+                <button
+                  onClick={() => onOpenProfileModal ? onOpenProfileModal() : setActiveTab('profile')}
+                  className="btn btn-secondary"
+                  style={{ padding: '5px 10px', fontSize: '11.5px' }}
+                  title="Editar dados da Ficha Clínica"
+                >
+                  ✏️ Editar
+                </button>
+              </div>
             </div>
 
             {/* Profile Completeness Bar */}
@@ -625,10 +637,18 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                   {clinicalProfile?.allergies || 'Nenhuma alergia relatada'}
                 </strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '4px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Medicamentos:</span>
                 <strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.medications || 'Uso contínuo não informado'}</strong>
               </div>
+
+              <button
+                onClick={() => setShowFullRecordModal(true)}
+                className="btn btn-secondary"
+                style={{ width: '100%', marginTop: '6px', fontSize: '12px', padding: '8px' }}
+              >
+                🔍 Visualizar Prontuário & Ficha Completa
+              </button>
             </div>
           </div>
 
@@ -679,6 +699,181 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
         </div>
       </div>
+
+      {/* Full Clinical Record View Modal */}
+      {showFullRecordModal && createPortal(
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          padding: '20px'
+        }} onClick={() => setShowFullRecordModal(false)}>
+          <div className="glass-card glass-card-cyan-glow" style={{
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '750px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '28px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            boxShadow: 'var(--shadow-lg)',
+            margin: 0
+          }} onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '24px' }}>📋</span>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                    Ficha Clínica Completa
+                  </h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                    Prontuário e dados de saúde cadastrados no iRec Saúde
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowFullRecordModal(false)}
+                className="btn btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '13px' }}
+              >
+                ✖ Fechar
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              
+              {/* Section 1: Identificação & Emergência */}
+              <div style={{ padding: '16px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
+                  👤 Identificação & Contato de Emergência
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Nome:</span> <strong>{clinicalProfile?.name || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>CPF:</span> <strong>{clinicalProfile?.cpf || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Data Nasc.:</span> <strong>{clinicalProfile?.birthDate ? new Date(clinicalProfile.birthDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Sexo:</span> <strong>{clinicalProfile?.gender || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Telefone:</span> <strong>{clinicalProfile?.phone || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Cidade / UF:</span> <strong>{clinicalProfile?.city ? `${clinicalProfile.city}/${clinicalProfile.state || ''}` : 'Não informada'}</strong></div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Endereço:</span> <strong>{clinicalProfile?.street ? `${clinicalProfile.street}, ${clinicalProfile.number || 'S/N'} - ${clinicalProfile.neighborhood || ''} (CEP: ${clinicalProfile.cep || ''})` : 'Não informado'}</strong>
+                  </div>
+                  <div style={{ gridColumn: 'span 2', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-color)', color: '#ef4444' }}>
+                    <span style={{ fontWeight: '700' }}>🚨 Contato de Emergência:</span> <strong>{clinicalProfile?.emergencyContactName || 'Não cadastrado'} {clinicalProfile?.emergencyContactPhone ? `(${clinicalProfile.emergencyContactPhone})` : ''}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Biometria & IMC */}
+              <div style={{ padding: '16px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
+                  ⚖️ Dados Biométricos & Atendimento
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '13px' }}>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Tipo Sanguíneo:</span> <strong style={{ color: 'var(--primary)' }}>{clinicalProfile?.bloodType || 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Peso:</span> <strong>{clinicalProfile?.weight ? `${clinicalProfile.weight} kg` : 'Não informado'}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Altura:</span> <strong>{clinicalProfile?.height ? `${clinicalProfile.height} cm` : 'Não informada'}</strong></div>
+                </div>
+
+                {clinicalProfile?.weight && clinicalProfile?.height && (
+                  <div style={{ marginTop: '10px', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(2, 132, 199, 0.08)', border: '1px solid rgba(2, 132, 199, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--primary)' }}>IMC (Índice de Massa Corporal):</span>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--primary)' }}>
+                      {(() => {
+                        const hM = parseFloat(clinicalProfile.height) / 100;
+                        const imcVal = parseFloat(clinicalProfile.weight) / (hM * hM);
+                        let category = '';
+                        if (imcVal < 18.5) category = '(Abaixo do peso)';
+                        else if (imcVal < 25) category = '(Peso normal)';
+                        else if (imcVal < 30) category = '(Sobrepeso)';
+                        else category = '(Obesidade)';
+                        return `${imcVal.toFixed(1)} ${category}`;
+                      })()}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Section 3: Comorbidades & Fatores de Risco */}
+              <div style={{ padding: '16px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
+                  🩺 Comorbidades & Condições Clínicas
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasDiabetes ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasDiabetes ? '#ef4444' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                    {clinicalProfile?.hasDiabetes ? '✓ Diabetes' : '✕ Sem Diabetes'}
+                  </span>
+                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasHypertension ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasHypertension ? '#ef4444' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                    {clinicalProfile?.hasHypertension ? '✓ Hipertensão' : '✕ Sem Hipertensão'}
+                  </span>
+                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasVenousInsufficiency ? 'rgba(2, 132, 199, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasVenousInsufficiency ? 'var(--primary)' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                    {clinicalProfile?.hasVenousInsufficiency ? '✓ Insuficiência Venosa' : '✕ Sem Insuf. Venosa'}
+                  </span>
+                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.hasPeripheralArterialDisease ? 'rgba(2, 132, 199, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.hasPeripheralArterialDisease ? 'var(--primary)' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                    {clinicalProfile?.hasPeripheralArterialDisease ? '✓ D. Art. Periférica' : '✕ Sem DAP'}
+                  </span>
+                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.isSmoker ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.isSmoker ? '#f59e0b' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                    {clinicalProfile?.isSmoker ? '🚬 Tabagista' : '🚭 Não Tabagista'}
+                  </span>
+                  <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', backgroundColor: clinicalProfile?.isObese ? 'rgba(245, 158, 11, 0.12)' : 'var(--bg-secondary)', color: clinicalProfile?.isObese ? '#f59e0b' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                    {clinicalProfile?.isObese ? '⚖️ Obesidade' : '⚖️ Peso Normal'}
+                  </span>
+                  {clinicalProfile?.hasAmputationHistory && (
+                    <span style={{ padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '800', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid #ef4444' }}>
+                      ⚠️ Histórico de Amputação
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 4: Alergias & Prescrições */}
+              <div style={{ padding: '16px', backgroundColor: 'var(--bg-primary)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
+                  💊 Medicamentos Contínuos & Alergias
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                  <div style={{ padding: '10px 14px', borderRadius: '10px', backgroundColor: clinicalProfile?.allergies ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-secondary)', border: clinicalProfile?.allergies ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-color)' }}>
+                    <span style={{ fontWeight: '800', color: clinicalProfile?.allergies ? '#ef4444' : 'var(--text-muted)' }}>⚠️ Alergias Conhecidas:</span>{' '}
+                    <strong style={{ color: clinicalProfile?.allergies ? '#ef4444' : 'var(--text-primary)' }}>{clinicalProfile?.allergies || 'Nenhuma alergia relatada'}</strong>
+                  </div>
+
+                  <div style={{ padding: '10px 14px', borderRadius: '10px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontWeight: '800', color: 'var(--primary)' }}>💊 Medicamentos de Uso Contínuo:</span>{' '}
+                    <strong>{clinicalProfile?.medications || 'Nenhum uso contínuo informado'}</strong>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+              <button
+                onClick={() => {
+                  setShowFullRecordModal(false);
+                  onOpenProfileModal ? onOpenProfileModal() : setActiveTab('profile');
+                }}
+                className="btn btn-primary"
+                style={{ padding: '10px 20px', fontSize: '13px' }}
+              >
+                ✏️ Editar esta Ficha Clínica
+              </button>
+            </div>
+
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Map Modal Portal */}
       {showMapModal && createPortal(
