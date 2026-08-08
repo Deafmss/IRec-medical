@@ -7,9 +7,9 @@ import LocalResourcesPanel from './LocalResourcesPanel';
 const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = null) => {
   const list = [];
   
-  // 1. REAL PRESCRIBED WOUND TREATMENT PLAN & DRESSING
+  // 1. REAL PRESCRIBED WOUND TREATMENT PLAN & DRESSING (ONLY IF AN ACTIVE OPEN WOUND HAS AN EXPLICIT PRESCRIBED TREATMENT OR DRESSING)
   if (hasActiveWound && latestEntry) {
-    // If clinician/triage defined a specific treatment plan array or string
+    // Check if entry has explicit prescribed treatment items
     if (latestEntry.treatmentPlan) {
       const planItems = Array.isArray(latestEntry.treatmentPlan)
         ? latestEntry.treatmentPlan
@@ -30,7 +30,7 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
       });
     }
 
-    // Specific applied dressing procedure
+    // Specific applied dressing procedure (ONLY if prescribed)
     if (latestEntry.appliedDressing) {
       const freqText = latestEntry.dressingFrequency ? ` [Frequência: ${latestEntry.dressingFrequency}]` : '';
       list.push({
@@ -38,12 +38,6 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
         text: `Aplicar cobertura prescrita: ${latestEntry.appliedDressing}${freqText}`,
         category: '📌 Curativo Prescrito',
         isPrescribed: true
-      });
-    } else {
-      list.push({ 
-        id: 'cleaning_standard', 
-        text: 'Limpar a lesão com soro fisiológico morno por irrigação (sem fricção)', 
-        category: 'Procedimento' 
       });
     }
   }
@@ -53,7 +47,7 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
     const medList = profile.medications
       .split(/[,;\n]/)
       .map(m => m.trim())
-      .filter(m => m.length > 2);
+      .filter(m => m.length > 1);
 
     if (medList.length > 0) {
       medList.forEach((med, idx) => {
@@ -65,24 +59,28 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
         });
       });
     }
-  } else {
+  }
+
+  // 3. ALLERGIES & SENSITIVITIES ALERT FROM PROFILE
+  if (profile?.allergies && profile.allergies.trim().length > 0) {
     list.push({
-      id: 'meds_generic',
-      text: 'Tomar medicamentos prescritos nos horários estipulados',
-      category: 'Medicamentos'
+      id: 'allergy_caution',
+      text: `Evitar exposição a alergênicos cadastrados na ficha: ${profile.allergies}`,
+      category: '⚠️ Alerta de Alergia',
+      isPrescribed: true
     });
   }
 
-  // 3. CLINICAL PROFILE SPECIFIC GUIDELINES (COMORBIDITIES & PREVENTION)
+  // 4. CLINICAL PROFILE COMORBIDITIES & SPECIFIC GUIDELINES
   if (profile?.hasDiabetes) {
     list.push({ 
       id: 'glucose_control', 
-      text: 'Aferir a glicemia capilar (jejum e pós-prandial) e registrar no controle', 
+      text: 'Aferir glicemia capilar (jejum e pós-prandial) e registrar no diário', 
       category: 'Controle Glicêmico' 
     });
     list.push({ 
       id: 'foot_check', 
-      text: 'Inspeção visual diária dos pés em busca de bolhas, calosidades ou rubor', 
+      text: 'Inspeção visual diária dos pés em busca de rubor, calosidades ou atrito', 
       category: 'Prevenção' 
     });
     list.push({ 
@@ -96,7 +94,7 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
     if (hasActiveWound) {
       list.push({ 
         id: 'compression', 
-        text: 'Calçar meia de compressão recomendada ou aplicar bandagem vascular', 
+        text: 'Calçar meia de compressão prescrita ou aplicar bandagem vascular', 
         category: 'Terapia Vascular' 
       });
     }
@@ -121,17 +119,30 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
       text: 'Verificar a pressão arterial sistêmica (alvo: abaixo de 140/90 mmHg)', 
       category: 'Controle Vascular' 
     });
+    list.push({ 
+      id: 'low_sodium', 
+      text: 'Manter dieta hipossódica restrita em sal para prevenção de retenção líquida', 
+      category: 'Nutrição' 
+    });
   }
 
   if (profile?.isSmoker) {
     list.push({ 
       id: 'stop_smoking', 
-      text: 'Evitar fumar hoje para conter o vasoespasmo arterial na cicatrização', 
+      text: 'Evitar fumar hoje para preservar a oxigenação arterial e capilar', 
       category: 'Hábitos' 
     });
   }
 
-  // General tissue hydration requirement
+  if (profile?.hasAmputationHistory) {
+    list.push({ 
+      id: 'amputee_check', 
+      text: 'Inspecionar a pele ao redor do coto de amputação em busca de atrito', 
+      category: 'Prevenção' 
+    });
+  }
+
+  // 5. GENERAL TISSUE HYDRATION & NUTRITION
   list.push({ 
     id: 'hydration', 
     text: 'Ingerir pelo menos 2 a 2.5 litros de água para hidratação tecidual', 
@@ -483,7 +494,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                   📋 Diário de Cuidados de Hoje
                 </h3>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                  Reflexo direto das prescrições médicas, diárias da lesão e ficha clínica
+                  Reflexo direto das prescrições médicas, alergias e ficha clínica
                 </p>
               </div>
 
