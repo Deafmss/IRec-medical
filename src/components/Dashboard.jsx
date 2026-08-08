@@ -672,7 +672,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                   {assignedClinician.role === 'nurse' || (assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN')) ? `Enf. ${assignedClinician.name}` : `Dr(a). ${assignedClinician.name}`}
                 </h4>
                 <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                  {assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN') ? assignedClinician.crm : `CRM: ${assignedClinician.crm}`} • {assignedClinician.specialty || 'Estomaterapia'}
+                  {assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN') ? assignedClinician.crm : `CRM: ${assignedClinician.crm}`} • {assignedClinician.specialty || 'Médico(a) Especialista'}
                 </p>
               </div>
             ) : null}
