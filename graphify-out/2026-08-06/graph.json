@@ -903,32 +903,10 @@
       "norm_label": "@supabase/supabase-js"
     },
     {
-      "label": "lucide-react",
-      "file_type": "code",
-      "source_file": "package.json",
-      "source_location": "L18",
-      "_origin": "ast",
-      "id": "package_dependencies_lucide_react",
-      "community": 2,
-      "community_name": "package.json",
-      "norm_label": "lucide-react"
-    },
-    {
-      "label": "lucide-react",
-      "file_type": "concept",
-      "source_file": "package.json",
-      "source_location": "L18",
-      "_origin": "ast",
-      "id": "lucide_react",
-      "community": 2,
-      "community_name": "package.json",
-      "norm_label": "lucide-react"
-    },
-    {
       "label": "pg",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L19",
+      "source_location": "L18",
       "_origin": "ast",
       "id": "package_dependencies_pg",
       "community": 2,
@@ -939,7 +917,7 @@
       "label": "pg",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L19",
+      "source_location": "L18",
       "_origin": "ast",
       "id": "pg",
       "community": 2,
@@ -950,7 +928,7 @@
       "label": "react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L19",
       "_origin": "ast",
       "id": "package_dependencies_react",
       "community": 2,
@@ -961,7 +939,7 @@
       "label": "react",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L19",
       "_origin": "ast",
       "id": "react",
       "community": 2,
@@ -972,7 +950,7 @@
       "label": "react-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L20",
       "_origin": "ast",
       "id": "package_dependencies_react_dom",
       "community": 2,
@@ -983,7 +961,7 @@
       "label": "react-dom",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L20",
       "_origin": "ast",
       "id": "react_dom",
       "community": 2,
@@ -994,7 +972,7 @@
       "label": "devDependencies",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "package_devdependencies",
       "community": 4,
@@ -1005,7 +983,7 @@
       "label": "@capacitor/cli",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "package_devdependencies_capacitor_cli",
       "community": 4,
@@ -1016,7 +994,7 @@
       "label": "@capacitor/cli",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "capacitor_cli",
       "community": 4,
@@ -1027,7 +1005,7 @@
       "label": "@eslint/js",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L24",
       "_origin": "ast",
       "id": "package_devdependencies_eslint_js",
       "community": 4,
@@ -1038,7 +1016,7 @@
       "label": "@eslint/js",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L24",
       "_origin": "ast",
       "id": "eslint_js",
       "community": 4,
@@ -1049,7 +1027,7 @@
       "label": "@types/react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "package_devdependencies_types_react",
       "community": 4,
@@ -1060,7 +1038,7 @@
       "label": "@types/react",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "types_react",
       "community": 4,
@@ -1071,7 +1049,7 @@
       "label": "@types/react-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "package_devdependencies_types_react_dom",
       "community": 4,
@@ -1082,7 +1060,7 @@
       "label": "@types/react-dom",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "types_react_dom",
       "community": 4,
@@ -1093,7 +1071,7 @@
       "label": "@vitejs/plugin-react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "package_devdependencies_vitejs_plugin_react",
       "community": 4,
@@ -1104,7 +1082,7 @@
       "label": "@vitejs/plugin-react",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "vitejs_plugin_react",
       "community": 4,
@@ -1115,7 +1093,7 @@
       "label": "eslint",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "package_devdependencies_eslint",
       "community": 4,
@@ -1126,7 +1104,7 @@
       "label": "eslint",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "eslint",
       "community": 4,
@@ -1137,7 +1115,7 @@
       "label": "eslint-plugin-react-hooks",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L29",
       "_origin": "ast",
       "id": "package_devdependencies_eslint_plugin_react_hooks",
       "community": 4,
@@ -1148,7 +1126,7 @@
       "label": "eslint-plugin-react-hooks",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L29",
       "_origin": "ast",
       "id": "eslint_plugin_react_hooks",
       "community": 4,
@@ -1159,7 +1137,7 @@
       "label": "eslint-plugin-react-refresh",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "package_devdependencies_eslint_plugin_react_refresh",
       "community": 4,
@@ -1170,7 +1148,7 @@
       "label": "eslint-plugin-react-refresh",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "eslint_plugin_react_refresh",
       "community": 4,
@@ -1181,7 +1159,7 @@
       "label": "globals",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L31",
       "_origin": "ast",
       "id": "package_devdependencies_globals",
       "community": 4,
@@ -1192,7 +1170,7 @@
       "label": "globals",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L31",
       "_origin": "ast",
       "id": "globals",
       "community": 4,
@@ -1203,7 +1181,7 @@
       "label": "vite",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "package_devdependencies_vite",
       "community": 4,
@@ -1214,7 +1192,7 @@
       "label": "vite",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "vite",
       "community": 4,
@@ -1382,8 +1360,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_app_app",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 1,
+      "community_name": "App.jsx",
       "norm_label": "app()"
     },
     {
@@ -1536,8 +1514,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_admindashboard",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "admindashboard.jsx"
     },
     {
@@ -1547,8 +1525,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_admindashboard_admindashboard",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "admindashboard()"
     },
     {
@@ -1558,8 +1536,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_adminpartners",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "adminpartners.jsx"
     },
     {
@@ -1569,8 +1547,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_adminpartners_adminpartners",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "adminpartners()"
     },
     {
@@ -1580,8 +1558,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_adminreports",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "adminreports.jsx"
     },
     {
@@ -1591,8 +1569,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "src_components_adminreports_adminreports",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "adminreports()"
     },
     {
@@ -1624,8 +1602,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_clinicalhistory",
-      "community": 1,
-      "community_name": "App.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "clinicalhistory.jsx"
     },
     {
@@ -1635,8 +1613,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "src_components_clinicalhistory_woundtissueoverlay",
-      "community": 1,
-      "community_name": "App.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "woundtissueoverlay()"
     },
     {
@@ -1646,8 +1624,8 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "src_components_clinicalhistory_clinicalhistory",
-      "community": 1,
-      "community_name": "App.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "clinicalhistory()"
     },
     {
@@ -1712,8 +1690,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_dashboard",
-      "community": 1,
-      "community_name": "App.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "dashboard.jsx"
     },
     {
@@ -1723,8 +1701,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_components_dashboard_generatedynamictasks",
-      "community": 1,
-      "community_name": "App.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "generatedynamictasks()"
     },
     {
@@ -1734,8 +1712,8 @@
       "source_location": "L202",
       "_origin": "ast",
       "id": "src_components_dashboard_dashboard",
-      "community": 1,
-      "community_name": "App.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "dashboard()"
     },
     {
@@ -1745,8 +1723,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_daterangepicker",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "daterangepicker.jsx"
     },
     {
@@ -1756,8 +1734,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "src_components_daterangepicker_daterangepicker",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "daterangepicker()"
     },
     {
@@ -1767,8 +1745,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_doctordashboard",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "doctordashboard.jsx"
     },
     {
@@ -1778,8 +1756,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_components_doctordashboard_common_cid10",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "common_cid10"
     },
     {
@@ -1789,8 +1767,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_components_doctordashboard_doctordashboard",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "doctordashboard()"
     },
     {
@@ -1800,8 +1778,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_doctordashboardanalytics",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "doctordashboardanalytics.jsx"
     },
     {
@@ -1811,8 +1789,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_doctordashboardanalytics_doctordashboardanalytics",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "doctordashboardanalytics()"
     },
     {
@@ -1822,8 +1800,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_doctorpartners",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "doctorpartners.jsx"
     },
     {
@@ -1833,31 +1811,9 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_doctorpartners_doctorpartners",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "doctorpartners()"
-    },
-    {
-      "label": "IRecConceptDesign.jsx",
-      "file_type": "code",
-      "source_file": "src/components/IRecConceptDesign.jsx",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "src_components_irecconceptdesign",
-      "community": 40,
-      "community_name": "IRecConceptDesign.jsx",
-      "norm_label": "irecconceptdesign.jsx"
-    },
-    {
-      "label": "IRecConceptDesign()",
-      "file_type": "code",
-      "source_file": "src/components/IRecConceptDesign.jsx",
-      "source_location": "L12",
-      "_origin": "ast",
-      "id": "src_components_irecconceptdesign_irecconceptdesign",
-      "community": 40,
-      "community_name": "IRecConceptDesign.jsx",
-      "norm_label": "irecconceptdesign()"
     },
     {
       "label": "LocalResourcesPanel.jsx",
@@ -1976,8 +1932,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_patientappointmentscalendar",
-      "community": 35,
-      "community_name": "followPatient",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "patientappointmentscalendar.jsx"
     },
     {
@@ -1987,8 +1943,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_patientappointmentscalendar_patientappointmentscalendar",
-      "community": 35,
-      "community_name": "followPatient",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "patientappointmentscalendar()"
     },
     {
@@ -1998,8 +1954,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_patientdocuments",
-      "community": 1,
-      "community_name": "App.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "patientdocuments.jsx"
     },
     {
@@ -2009,8 +1965,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_patientdocuments_patientdocuments",
-      "community": 1,
-      "community_name": "App.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "patientdocuments()"
     },
     {
@@ -2086,8 +2042,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_protocolguide",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 35,
+      "community_name": "followPatient",
       "norm_label": "protocolguide.jsx"
     },
     {
@@ -2097,8 +2053,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_protocolguide_generatedefaultpersonalizedprotocol",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 35,
+      "community_name": "followPatient",
       "norm_label": "generatedefaultpersonalizedprotocol()"
     },
     {
@@ -2108,8 +2064,8 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "src_components_protocolguide_formatmaterialsforview",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 35,
+      "community_name": "followPatient",
       "norm_label": "formatmaterialsforview()"
     },
     {
@@ -2119,8 +2075,8 @@
       "source_location": "L180",
       "_origin": "ast",
       "id": "src_components_protocolguide_protocolguide",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 35,
+      "community_name": "followPatient",
       "norm_label": "protocolguide()"
     },
     {
@@ -2229,8 +2185,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_telemedicine",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "telemedicine.jsx"
     },
     {
@@ -2240,8 +2196,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_components_telemedicine_getdoctorpremiumdetails",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "getdoctorpremiumdetails()"
     },
     {
@@ -2251,8 +2207,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "src_components_telemedicine_telemedicine",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "telemedicine()"
     },
     {
@@ -2361,7 +2317,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_doctor_doctoragendapage",
-      "community": 35,
+      "community": 9,
       "community_name": "followPatient",
       "norm_label": "doctoragendapage.jsx"
     },
@@ -2372,7 +2328,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_doctor_doctoragendapage_doctoragendapage",
-      "community": 35,
+      "community": 9,
       "community_name": "followPatient",
       "norm_label": "doctoragendapage()"
     },
@@ -2383,7 +2339,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_doctor_doctoragendaview",
-      "community": 35,
+      "community": 9,
       "community_name": "followPatient",
       "norm_label": "doctoragendaview.jsx"
     },
@@ -2394,7 +2350,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "src_components_doctor_doctoragendaview_doctoragendaview",
-      "community": 35,
+      "community": 9,
       "community_name": "followPatient",
       "norm_label": "doctoragendaview()"
     },
@@ -2471,8 +2427,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_telemedicine_telemedicinepage",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "telemedicinepage.jsx"
     },
     {
@@ -2482,8 +2438,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_telemedicine_telemedicinepage_telemedicinepage",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "telemedicinepage()"
     },
     {
@@ -2493,8 +2449,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_main",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 1,
+      "community_name": "App.jsx",
       "norm_label": "main.jsx"
     },
     {
@@ -2504,8 +2460,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_auditlogger",
-      "community": 35,
-      "community_name": "followPatient",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "auditlogger.js"
     },
     {
@@ -2515,8 +2471,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_services_auditlogger_createauditlog",
-      "community": 35,
-      "community_name": "followPatient",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "createauditlog()"
     },
     {
@@ -2526,8 +2482,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_services_auditlogger_getpatientauditlogs",
-      "community": 35,
-      "community_name": "followPatient",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "getpatientauditlogs()"
     },
     {
@@ -2537,8 +2493,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_fhirservice",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "fhirservice.js"
     },
     {
@@ -2548,8 +2504,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_services_fhirservice_exportpatienttofhir",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "exportpatienttofhir()"
     },
     {
@@ -2559,8 +2515,8 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "src_services_fhirservice_exportobservationtofhir",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "exportobservationtofhir()"
     },
     {
@@ -2570,8 +2526,8 @@
       "source_location": "L250",
       "_origin": "ast",
       "id": "src_services_fhirservice_exportfhirbundle",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "exportfhirbundle()"
     },
     {
@@ -2680,8 +2636,8 @@
       "source_location": "L710",
       "_origin": "ast",
       "id": "src_services_geminiservice_formatsoapnote",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "formatsoapnote()"
     },
     {
@@ -2878,8 +2834,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getlocalassignments",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 35,
+      "community_name": "followPatient",
       "norm_label": "getlocalassignments()"
     },
     {
@@ -2900,8 +2856,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_services_supabaseservice_filetobase64",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "filetobase64()"
     },
     {
@@ -2955,8 +2911,8 @@
       "source_location": "L298",
       "_origin": "ast",
       "id": "src_services_supabaseservice_signoutuser",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 1,
+      "community_name": "App.jsx",
       "norm_label": "signoutuser()"
     },
     {
@@ -3032,8 +2988,8 @@
       "source_location": "L846",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getwoundentries",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "getwoundentries()"
     },
     {
@@ -3065,8 +3021,8 @@
       "source_location": "L1185",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getallpatients",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "getallpatients()"
     },
     {
@@ -3098,8 +3054,8 @@
       "source_location": "L1350",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getlocalappointments",
-      "community": 35,
-      "community_name": "followPatient",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "getlocalappointments()"
     },
     {
@@ -3109,8 +3065,8 @@
       "source_location": "L1351",
       "_origin": "ast",
       "id": "src_services_supabaseservice_savelocalappointments",
-      "community": 35,
-      "community_name": "followPatient",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "savelocalappointments()"
     },
     {
@@ -3120,7 +3076,7 @@
       "source_location": "L1353",
       "_origin": "ast",
       "id": "src_services_supabaseservice_checkappointmentcollision",
-      "community": 35,
+      "community": 9,
       "community_name": "followPatient",
       "norm_label": "checkappointmentcollision()"
     },
@@ -3131,8 +3087,8 @@
       "source_location": "L1367",
       "_origin": "ast",
       "id": "src_services_supabaseservice_updateappointmentstatus",
-      "community": 35,
-      "community_name": "followPatient",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "updateappointmentstatus()"
     },
     {
@@ -3153,8 +3109,8 @@
       "source_location": "L1442",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getpatientappointments",
-      "community": 1,
-      "community_name": "App.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "getpatientappointments()"
     },
     {
@@ -3164,8 +3120,8 @@
       "source_location": "L1481",
       "_origin": "ast",
       "id": "src_services_supabaseservice_cancelappointment",
-      "community": 35,
-      "community_name": "followPatient",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "cancelappointment()"
     },
     {
@@ -3175,7 +3131,7 @@
       "source_location": "L1503",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getdoctorappointments",
-      "community": 35,
+      "community": 9,
       "community_name": "followPatient",
       "norm_label": "getdoctorappointments()"
     },
@@ -3208,8 +3164,8 @@
       "source_location": "L1623",
       "_origin": "ast",
       "id": "src_services_supabaseservice_unfollowpatient",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 35,
+      "community_name": "followPatient",
       "norm_label": "unfollowpatient()"
     },
     {
@@ -3230,8 +3186,8 @@
       "source_location": "L1735",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getassigneddoctor",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 35,
+      "community_name": "followPatient",
       "norm_label": "getassigneddoctor()"
     },
     {
@@ -3252,8 +3208,8 @@
       "source_location": "L1850",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getlocaldocuments",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getlocaldocuments()"
     },
     {
@@ -3263,8 +3219,8 @@
       "source_location": "L1851",
       "_origin": "ast",
       "id": "src_services_supabaseservice_savelocaldocuments",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "savelocaldocuments()"
     },
     {
@@ -3274,8 +3230,8 @@
       "source_location": "L1854",
       "_origin": "ast",
       "id": "src_services_supabaseservice_issuedocument",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 9,
+      "community_name": "followPatient",
       "norm_label": "issuedocument()"
     },
     {
@@ -3285,8 +3241,8 @@
       "source_location": "L1898",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getpatientdocuments",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 7,
+      "community_name": "Dashboard.jsx",
       "norm_label": "getpatientdocuments()"
     },
     {
@@ -3296,8 +3252,8 @@
       "source_location": "L1931",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getdoctordocuments",
-      "community": 3,
-      "community_name": "DoctorDashboard.jsx",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getdoctordocuments()"
     },
     {
@@ -3307,8 +3263,8 @@
       "source_location": "L1964",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getlocalhealthcareresources",
-      "community": 0,
-      "community_name": "supabaseService.js",
+      "community": 35,
+      "community_name": "followPatient",
       "norm_label": "getlocalhealthcareresources()"
     },
     {
@@ -3318,8 +3274,8 @@
       "source_location": "L2015",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getlocalmessages",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "getlocalmessages()"
     },
     {
@@ -3329,8 +3285,8 @@
       "source_location": "L2016",
       "_origin": "ast",
       "id": "src_services_supabaseservice_savelocalmessages",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "savelocalmessages()"
     },
     {
@@ -3340,8 +3296,8 @@
       "source_location": "L2018",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getlocalcalls",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "getlocalcalls()"
     },
     {
@@ -3351,8 +3307,8 @@
       "source_location": "L2019",
       "_origin": "ast",
       "id": "src_services_supabaseservice_savelocalcalls",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "savelocalcalls()"
     },
     {
@@ -3362,8 +3318,8 @@
       "source_location": "L2022",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getchatmessages",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "getchatmessages()"
     },
     {
@@ -3373,8 +3329,8 @@
       "source_location": "L2067",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getallreceivedmessages",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "getallreceivedmessages()"
     },
     {
@@ -3384,8 +3340,8 @@
       "source_location": "L2105",
       "_origin": "ast",
       "id": "src_services_supabaseservice_sendchatmessage",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "sendchatmessage()"
     },
     {
@@ -3395,8 +3351,8 @@
       "source_location": "L2205",
       "_origin": "ast",
       "id": "src_services_supabaseservice_placetelemedicinecall",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "placetelemedicinecall()"
     },
     {
@@ -3406,8 +3362,8 @@
       "source_location": "L2252",
       "_origin": "ast",
       "id": "src_services_supabaseservice_updatecallstatus",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "updatecallstatus()"
     },
     {
@@ -3417,8 +3373,8 @@
       "source_location": "L2295",
       "_origin": "ast",
       "id": "src_services_supabaseservice_checkincomingcalls",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "checkincomingcalls()"
     },
     {
@@ -3428,8 +3384,8 @@
       "source_location": "L2341",
       "_origin": "ast",
       "id": "src_services_supabaseservice_checkcallstatus",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "checkcallstatus()"
     },
     {
@@ -3439,8 +3395,8 @@
       "source_location": "L2383",
       "_origin": "ast",
       "id": "src_services_supabaseservice_subscribetosignalingevents",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "subscribetosignalingevents()"
     },
     {
@@ -3450,8 +3406,8 @@
       "source_location": "L2405",
       "_origin": "ast",
       "id": "src_services_supabaseservice_sendtranscriptchunk",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "sendtranscriptchunk()"
     },
     {
@@ -3461,8 +3417,8 @@
       "source_location": "L2416",
       "_origin": "ast",
       "id": "src_services_supabaseservice_updatelastseen",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 1,
+      "community_name": "App.jsx",
       "norm_label": "updatelastseen()"
     },
     {
@@ -3472,8 +3428,8 @@
       "source_location": "L2433",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getassigneddoctors",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 35,
+      "community_name": "followPatient",
       "norm_label": "getassigneddoctors()"
     },
     {
@@ -3483,8 +3439,8 @@
       "source_location": "L2492",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getrecommendedmaterials",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getrecommendedmaterials()"
     },
     {
@@ -3494,8 +3450,8 @@
       "source_location": "L2543",
       "_origin": "ast",
       "id": "src_services_supabaseservice_addrecommendedmaterial",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "addrecommendedmaterial()"
     },
     {
@@ -3505,8 +3461,8 @@
       "source_location": "L2572",
       "_origin": "ast",
       "id": "src_services_supabaseservice_deleterecommendedmaterial",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "deleterecommendedmaterial()"
     },
     {
@@ -3516,8 +3472,8 @@
       "source_location": "L2595",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getauditlogs",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getauditlogs()"
     },
     {
@@ -3527,8 +3483,8 @@
       "source_location": "L2613",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getallprofiles",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getallprofiles()"
     },
     {
@@ -3538,8 +3494,8 @@
       "source_location": "L2657",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getadminstats",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getadminstats()"
     },
     {
@@ -3549,8 +3505,8 @@
       "source_location": "L2697",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getadmintelemedicinecalls",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getadmintelemedicinecalls()"
     },
     {
@@ -3560,8 +3516,8 @@
       "source_location": "L2715",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getadminassignments",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getadminassignments()"
     },
     {
@@ -3571,8 +3527,8 @@
       "source_location": "L2732",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getadminwoundentries",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getadminwoundentries()"
     },
     {
@@ -3582,8 +3538,8 @@
       "source_location": "L2749",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getdoctorpatientswoundentries",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getdoctorpatientswoundentries()"
     },
     {
@@ -3593,8 +3549,8 @@
       "source_location": "L2781",
       "_origin": "ast",
       "id": "src_services_supabaseservice_resolvedidisvalid",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "resolvedidisvalid()"
     },
     {
@@ -3604,8 +3560,8 @@
       "source_location": "L2785",
       "_origin": "ast",
       "id": "src_services_supabaseservice_getdoctortelemedicinecalls",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "getdoctortelemedicinecalls()"
     },
     {
@@ -3615,8 +3571,8 @@
       "source_location": "L2806",
       "_origin": "ast",
       "id": "src_services_supabaseservice_sendwebrtcsignalingevent",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "sendwebrtcsignalingevent()"
     },
     {
@@ -3626,8 +3582,8 @@
       "source_location": "L2825",
       "_origin": "ast",
       "id": "src_services_supabaseservice_subscribetowebrtcsignaling",
-      "community": 10,
-      "community_name": "DoctorDashboardAnalytics.jsx",
+      "community": 0,
+      "community_name": "supabaseService.js",
       "norm_label": "subscribetowebrtcsignaling()"
     },
     {
@@ -3670,8 +3626,8 @@
       "source_location": "L2965",
       "_origin": "ast",
       "id": "src_services_supabaseservice_gettrainingknowledgelist",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "gettrainingknowledgelist()"
     },
     {
@@ -3681,8 +3637,8 @@
       "source_location": "L2983",
       "_origin": "ast",
       "id": "src_services_supabaseservice_updatetrainingknowledgechapter",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "updatetrainingknowledgechapter()"
     },
     {
@@ -3692,8 +3648,8 @@
       "source_location": "L3009",
       "_origin": "ast",
       "id": "src_services_supabaseservice_deletetrainingknowledgechapter",
-      "community": 9,
-      "community_name": "followPatient",
+      "community": 10,
+      "community_name": "DoctorDashboardAnalytics.jsx",
       "norm_label": "deletetrainingknowledgechapter()"
     },
     {
@@ -5341,7 +5297,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package",
@@ -5488,7 +5444,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_lucide_react",
+      "target": "package_dependencies_pg",
       "confidence_score": 1.0
     },
     {
@@ -5499,17 +5455,6 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_pg",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "package.json",
-      "source_location": "L20",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "package_dependencies",
       "target": "package_dependencies_react",
       "confidence_score": 1.0
     },
@@ -5517,7 +5462,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
@@ -5614,18 +5559,6 @@
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
-      "source": "package_dependencies_lucide_react",
-      "target": "lucide_react",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "confidence": "EXTRACTED",
-      "source_file": "package.json",
-      "source_location": "L19",
-      "weight": 1.0,
-      "context": "import",
-      "_origin": "ast",
       "source": "package_dependencies_pg",
       "target": "pg",
       "confidence_score": 1.0
@@ -5634,7 +5567,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L19",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5646,7 +5579,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L20",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5658,7 +5591,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5669,7 +5602,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L28",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5680,7 +5613,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L24",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5691,7 +5624,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L29",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5702,7 +5635,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5713,7 +5646,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L31",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5724,7 +5657,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5735,7 +5668,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5746,7 +5679,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5757,7 +5690,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -5768,7 +5701,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L23",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5780,7 +5713,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L24",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5792,7 +5725,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L25",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5804,7 +5737,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L26",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5816,7 +5749,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L27",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5828,7 +5761,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L28",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5840,7 +5773,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L29",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5852,7 +5785,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L30",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5864,7 +5797,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L31",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -5876,7 +5809,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L32",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -6850,7 +6783,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L348",
+      "source_location": "L309",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -6862,7 +6795,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L357",
+      "source_location": "L318",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -6874,7 +6807,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L113",
+      "source_location": "L74",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -6886,7 +6819,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L532",
+      "source_location": "L493",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -6898,7 +6831,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L698",
+      "source_location": "L659",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -6910,7 +6843,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L654",
+      "source_location": "L615",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -6922,7 +6855,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2011",
+      "source_location": "L1972",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -6934,7 +6867,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L631",
+      "source_location": "L592",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_app",
@@ -8978,17 +8911,6 @@
       "_origin": "ast",
       "source": "src_components_doctorpartners_doctorpartners",
       "target": "src_services_supabaseservice_getrecommendedmaterials"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/IRecConceptDesign.jsx",
-      "source_location": "L12",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "src_components_irecconceptdesign",
-      "target": "src_components_irecconceptdesign_irecconceptdesign",
-      "confidence_score": 1.0
     },
     {
       "relation": "contains",

@@ -1,197 +1,116 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { updateClinicalProfile, getAssignedDoctor, getPatientAppointments } from '../services/supabaseService';
+import { getAssignedDoctor, getPatientAppointments, createAuditLog } from '../services/supabaseService';
 import LocalResourcesPanel from './LocalResourcesPanel';
-import ClinicalHistory from './ClinicalHistory';
-import PatientDocuments from './PatientDocuments';
 
-
-// Helper to generate precise caret/daily tasks based on clinical history, comorbidities, and active wound status
+// Helper to generate precise care/daily tasks based on clinical history, comorbidities, and active wound status
 const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = null) => {
   const list = [];
   
-  // 1. Core wound procedures (only if patient has active wound)
   if (hasActiveWound) {
     list.push({ 
       id: 'cleaning', 
       text: 'Limpar a lesão com soro fisiológico morno por irrigação (sem fricção)', 
-      completed: false, 
       category: 'Procedimento' 
     });
   }
   
-  // 2. Wound type specific tasks
-  if (profile.hasDiabetes) {
+  if (profile?.hasDiabetes) {
     if (hasActiveWound) {
-      const freqText = latestEntry?.dressingFrequency ? ` [Frequência recomendada: ${latestEntry.dressingFrequency}]` : '';
+      const freqText = latestEntry?.dressingFrequency ? ` [Frequência: ${latestEntry.dressingFrequency}]` : '';
       const dressingText = latestEntry?.appliedDressing
         ? `Aplicar cobertura para Pé Diabético: ${latestEntry.appliedDressing}${freqText}`
-        : 'Aplicar cobertura apropriada para Pé Diabético (auxilia no controle bacteriano e umidade)';
+        : 'Aplicar cobertura apropriada para Pé Diabético (controle bacteriano e umidade)';
       list.push({ 
         id: 'dressing_diabetic', 
         text: dressingText, 
-        completed: false, 
         category: 'Procedimento' 
       });
     }
     list.push({ 
       id: 'foot_check', 
-      text: 'Realizar inspeção visual de ambos os pés buscando novas pressões, bolhas ou calosidades', 
-      completed: false, 
+      text: 'Inspeção visual diária dos pés buscando novas pressões, bolhas ou calosidades', 
       category: 'Prevenção' 
     });
     list.push({ 
       id: 'dry_toes', 
       text: 'Secar meticulosamente os espaços entre os dedos dos pés após o banho', 
-      completed: false, 
       category: 'Higiene' 
     });
     list.push({ 
       id: 'glucose_control', 
-      text: 'Aferir a glicemia capilar e registrar no controle de monitoramento (jejum e pós-prandial)', 
-      completed: false, 
+      text: 'Aferir a glicemia capilar (jejum e pós-prandial)', 
       category: 'Controle Glicêmico' 
-    });
-    list.push({ 
-      id: 'no_barefoot', 
-      text: 'Utilizar sempre meias sem costura e sapatos protetores macios (não andar descalço)', 
-      completed: false, 
-      category: 'Prevenção' 
     });
   } else {
     if (hasActiveWound) {
-      const freqText = latestEntry?.dressingFrequency ? ` [Frequência recomendada: ${latestEntry.dressingFrequency}]` : '';
+      const freqText = latestEntry?.dressingFrequency ? ` [Frequência: ${latestEntry.dressingFrequency}]` : '';
       const dressingText = latestEntry?.appliedDressing
-        ? `Aplicar a cobertura prescrita: ${latestEntry.appliedDressing}${freqText}`
-        : 'Aplicar a cobertura/curativo adaptado para lesão (gerenciamento do exsudato)';
+        ? `Aplicar cobertura prescrita: ${latestEntry.appliedDressing}${freqText}`
+        : 'Aplicar cobertura/curativo adaptado para a lesão';
       list.push({ 
         id: 'dressing_venous', 
         text: dressingText, 
-        completed: false, 
         category: 'Procedimento' 
       });
     }
   }
 
-  // Insuficiência Venosa
-  if (profile.hasVenousInsufficiency) {
+  if (profile?.hasVenousInsufficiency) {
     if (hasActiveWound) {
       list.push({ 
         id: 'compression', 
-        text: 'Calçar a meia de compressão recomendada ou aplicar a bandagem elástica antes de levantar-se', 
-        completed: false, 
+        text: 'Calçar meia de compressão ou aplicar bandagem elástica antes de levantar-se', 
         category: 'Terapia Vascular' 
       });
     }
     list.push({ 
       id: 'leg_elevation', 
-      text: 'Elevar os membros inferiores acima da linha do coração (30 minutos, 3x ao dia)', 
-      completed: false, 
+      text: 'Elevar os membros inferiores acima do nível do coração (30 min, 3x ao dia)', 
       category: 'Fisiológico' 
     });
   }
 
-  // Doença Arterial Periférica
-  if (profile.hasPeripheralArterialDisease) {
+  if (profile?.hasPeripheralArterialDisease) {
     list.push({ 
       id: 'pad_pulse', 
-      text: 'Verificar os pulsos periféricos do pé e avaliar coloração/temperatura dos dedos', 
-      completed: false, 
+      text: 'Verificar pulsos periféricos do pé e avaliar coloração/temperatura dos dedos', 
       category: 'Avaliação Arterial' 
     });
-    if (hasActiveWound) {
-      list.push({ 
-        id: 'pad_no_compression', 
-        text: 'Evitar meias apertadas ou qualquer bandagem de alta compressão (contraindicado)', 
-        completed: false, 
-        category: 'Segurança' 
-      });
-    }
   }
 
-  // 3. Comorbidity: Hypertension
-  if (profile.hasHypertension) {
+  if (profile?.hasHypertension) {
     list.push({ 
       id: 'bp_check', 
-      text: 'Verificar a pressão arterial sistêmica (alvo clínico: abaixo de 140/90 mmHg)', 
-      completed: false, 
+      text: 'Verificar a pressão arterial sistêmica (alvo: abaixo de 140/90 mmHg)', 
       category: 'Controle Vascular' 
-    });
-    list.push({ 
-      id: 'low_sodium', 
-      text: 'Seguir dieta hipossódica restrita em sal para reduzir retenção de líquidos e edemas', 
-      completed: false, 
-      category: 'Nutrição' 
     });
   }
 
-  // 4. Comorbidity: Smoking/Tabagismo
-  if (profile.isSmoker) {
+  if (profile?.isSmoker) {
     list.push({ 
       id: 'stop_smoking', 
-      text: 'Evitar fumar hoje para evitar vasoespasmos arteriais e privação de oxigênio na cicatrização', 
-      completed: false, 
+      text: 'Evitar fumar hoje para não prejudicar a oxigenação na cicatrização', 
       category: 'Hábitos' 
     });
   }
 
-  // 5. Obesidade
-  if (profile.isObese) {
-    list.push({ 
-      id: 'obesity_pressure', 
-      text: 'Mudar de posição a cada 2 horas para aliviar a pressão nas proeminências ósseas', 
-      completed: false, 
-      category: 'Prevenção' 
-    });
-  }
-
-  // 6. Histórico de Amputação
-  if (profile.hasAmputationHistory) {
-    list.push({ 
-      id: 'amputee_check', 
-      text: 'Inspecionar a pele ao redor do coto de amputação em busca de áreas avermelhadas ou atrito', 
-      completed: false, 
-      category: 'Prevenção' 
-    });
-  }
-
-  // 7. Nutritional support
   list.push({ 
     id: 'hydration', 
-    text: 'Ingerir pelo menos 2 a 2.5 litros de água para manter a hidratação sistêmica e tecidual', 
-    completed: false, 
+    text: 'Ingerir pelo menos 2 a 2.5 litros de água para hidratação tecidual', 
     category: 'Nutrição' 
   });
-  
-  if (profile.hasDiabetes) {
-    list.push({
-      id: 'protein_diabetic',
-      text: 'Manter dieta rica em proteínas magras de alto valor biológico e restrição de carboidratos simples',
-      completed: false,
-      category: 'Nutrição'
-    });
-  } else {
-    list.push({ 
-      id: 'protein_intake', 
-      text: 'Consumir alimentos ricos em proteínas e vitamina C para indução de colágeno', 
-      completed: false, 
-      category: 'Nutrição' 
-    });
-  }
 
-  // 8. Medication adherence
-  if (profile.medications) {
+  if (profile?.medications) {
     list.push({ 
       id: 'meds', 
-      text: `Tomar a medicação de uso contínuo prescrita: ${profile.medications}`, 
-      completed: false, 
+      text: `Tomar medicação contínua prescrita: ${profile.medications}`, 
       category: 'Medicamentos' 
     });
   } else {
     list.push({ 
       id: 'meds_generic', 
-      text: 'Tomar os medicamentos e analgésicos prescritos nos horários estipulados', 
-      completed: false, 
+      text: 'Tomar os medicamentos prescritos nos horários estipulados', 
       category: 'Medicamentos' 
     });
   }
@@ -199,31 +118,43 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
   return list;
 };
 
-export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalProfile, entries = [] }) {
+export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalProfile, entries = [], onTriggerSOS, onOpenProfileModal }) {
+  const patientId = clinicalProfile?.id || 'guest';
+  const todayStr = new Date().toISOString().split('T')[0];
+  const storageKey = `irec_checklist_${patientId}_${todayStr}`;
+
   const hasActiveWound = entries && entries.length > 0;
   const latestEntry = hasActiveWound ? entries[entries.length - 1] : null;
 
-  // Checklist state initialized dynamically based on the patient's profile
-  const [tasks, setTasks] = useState(() => generateDynamicTasks(clinicalProfile, hasActiveWound, latestEntry));
+  // Initialize tasks with local storage persistence by date
+  const [completedTaskIds, setCompletedTaskIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
 
-  // Keep completion status of tasks when clinical profile or wound history gets updated
-  useEffect(() => {
-    const freshTasks = generateDynamicTasks(clinicalProfile, hasActiveWound, latestEntry);
-    setTasks(prevTasks => {
-      return freshTasks.map(newTask => {
-        const matchingOld = prevTasks.find(oldTask => oldTask.id === newTask.id);
-        if (matchingOld) {
-          return { ...newTask, completed: matchingOld.completed };
-        }
-        return newTask;
-      });
+  const baseTasks = generateDynamicTasks(clinicalProfile, hasActiveWound, latestEntry);
+
+  const toggleTask = (id) => {
+    setCompletedTaskIds(prev => {
+      const next = prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id];
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch (e) {
+        console.warn('[iRec] Falha ao salvar checklist:', e);
+      }
+      return next;
     });
-  }, [clinicalProfile, entries]);
+  };
 
-  const [activeSubTab, setActiveSubTab] = useState(() => localStorage.getItem('irec_patient_sub_tab') || 'diary'); // 'diary', 'history', 'documents'
   const [myAppointments, setMyAppointments] = useState([]);
+  const [assignedClinician, setAssignedClinician] = useState(null);
+  const [showMapModal, setShowMapModal] = useState(false);
 
-  // Load patient appointments
+  // Load appointments
   useEffect(() => {
     if (clinicalProfile?.id) {
       getPatientAppointments(clinicalProfile.id).then(apps => {
@@ -232,12 +163,20 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
     }
   }, [clinicalProfile]);
 
-  // Persist patient active sub-tab
+  // Load assigned doctor
   useEffect(() => {
-    localStorage.setItem('irec_patient_sub_tab', activeSubTab);
-  }, [activeSubTab]);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
+    async function loadDoctor() {
+      if (clinicalProfile?.id) {
+        const doc = await getAssignedDoctor(clinicalProfile.id);
+        if (doc) {
+          setAssignedClinician(doc);
+        }
+      }
+    }
+    loadDoctor();
+  }, [clinicalProfile]);
 
+  // Calculate profile completeness %
   const calculateProfileProgress = (profile) => {
     if (!profile) return 0;
     let filled = 0;
@@ -262,63 +201,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   };
 
   const profileProgress = calculateProfileProgress(clinicalProfile);
-  const [profileForm, setProfileForm] = useState({ ...clinicalProfile });
 
-  // Sync profileForm state with incoming clinicalProfile changes ONLY when user is not actively editing
-  useEffect(() => {
-    if (!isEditingProfile) {
-      setProfileForm({ ...clinicalProfile });
-    }
-  }, [clinicalProfile, isEditingProfile]);
-  const [assignedClinician, setAssignedClinician] = useState(null);
-  const [showMapModal, setShowMapModal] = useState(false);
-  const [profileFormTab, setProfileFormTab] = useState('pessoais'); // 'pessoais', 'endereco', 'clinicos'
-
-  const handleCepLookup = async (cepValue) => {
-    let formatted = cepValue.replace(/\D/g, '');
-    if (formatted.length > 5) {
-      formatted = `${formatted.slice(0, 5)}-${formatted.slice(5, 8)}`;
-    }
-    
-    setProfileForm(prev => ({ ...prev, cep: formatted }));
-    
-    const cleanCep = cepValue.replace(/\D/g, '');
-    if (cleanCep.length === 8) {
-      try {
-        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
-        const data = await res.json();
-        if (!data.erro) {
-          setProfileForm(prev => ({
-            ...prev,
-            cep: formatted,
-            street: data.logradouro || '',
-            neighborhood: data.bairro || '',
-            city: data.localidade || '',
-            state: data.uf || ''
-          }));
-        }
-      } catch (err) {
-        console.error("CEP lookup failed:", err);
-      }
-    }
-  };
-
-
-
-  // Fetch assigned doctor on component mount or clinical profile update
-  useEffect(() => {
-    async function loadDoctor() {
-      if (clinicalProfile?.id) {
-        const doc = await getAssignedDoctor(clinicalProfile.id);
-        if (doc) {
-          setAssignedClinician(doc);
-        }
-      }
-    }
-    loadDoctor();
-  }, [clinicalProfile]);
-
-  // Helper for pain level label
+  // Pain label helper
   const getPainLabel = (painVal) => {
     const pain = parseInt(painVal);
     if (isNaN(pain) || pain === 0) return 'Sem dor';
@@ -327,37 +211,20 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
     return 'Forte';
   };
 
-  // Helper to parse date formats
-  const parseDate = (dateStr) => {
-    if (!dateStr) return null;
-    if (dateStr.includes('-')) {
-      const parts = dateStr.split('-');
-      if (parts.length === 3) {
-        return new Date(parts[0], parts[1] - 1, parts[2]);
-      }
-    }
-    if (dateStr.includes('/')) {
-      const parts = dateStr.split('/');
-      if (parts.length === 3) {
-        return new Date(parts[2], parts[1] - 1, parts[0]);
-      }
-    }
-    const parsed = Date.parse(dateStr);
-    return isNaN(parsed) ? null : new Date(parsed);
-  };
-
-  // Calculate days active
+  // Calculate days active in treatment
   let daysActive = 0;
   if (hasActiveWound) {
     const startDateStr = latestEntry.appearanceDate || entries[0].date;
-    const startDate = parseDate(startDateStr);
-    if (startDate) {
-      const diffTime = Math.abs(new Date() - startDate);
-      daysActive = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (startDateStr) {
+      const startDate = new Date(startDateStr);
+      if (!isNaN(startDate.getTime())) {
+        const diffTime = Math.abs(new Date() - startDate);
+        daysActive = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
     }
   }
 
-  // Calculate dynamic healing progress
+  // Calculate healing progress %
   let healingProgress = 0;
   if (hasActiveWound) {
     if (entries.length >= 2) {
@@ -372,172 +239,124 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         healingProgress = Math.min(100, epitelizacao + granulacao);
       }
     } else {
-      // 1 entry
       const epitelizacao = parseInt(latestEntry.aiTissueAnalysis?.epitelizacao) || 0;
       const granulacao = parseInt(latestEntry.aiTissueAnalysis?.granulacao) || 0;
       healingProgress = Math.min(100, epitelizacao + granulacao);
     }
   }
 
-  // Calculate daily compliance score safely
-  const completedCount = tasks.filter(t => t.completed).length;
-  const complianceScore = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+  // Compliance score
+  const complianceScore = baseTasks.length > 0
+    ? Math.round((completedTaskIds.length / baseTasks.length) * 100)
+    : 0;
 
-  const toggleTask = (id) => {
-    setTasks(prev => prev.map(t => 
-      t.id === id ? { ...t, completed: !t.completed } : t
-    ));
-  };
-
-
-
-  const handleProfileSave = async (e) => {
-    e.preventDefault();
-    const updated = await updateClinicalProfile(profileForm);
-    setClinicalProfile(updated);
-    setIsEditingProfile(false);
-  };
-
-  // Dynamic data for current active treatment based on actual entries
-  const currentTreatment = {
-    type: hasActiveWound ? latestEntry.type : 'Nenhuma lesão ativa cadastrada',
-    startDate: hasActiveWound ? (latestEntry.appearanceDate || entries[0].date) : null,
-    daysActive: daysActive,
-    nextDressing: hasActiveWound 
-      ? (latestEntry.dressingFrequency 
-          ? `Troca recomendada: ${latestEntry.dressingFrequency}` 
-          : 'Troca recomendada hoje') 
-      : 'Aguardando primeira foto',
-    healingProgress: healingProgress,
-    painLevel: hasActiveWound ? `${latestEntry.pain}/10 (${getPainLabel(latestEntry.pain)})` : 'Sem dor relatada',
-    nurseAssigned: assignedClinician 
-      ? `Dr(a). ${assignedClinician.name} (${assignedClinician.specialty || 'Clínico'})` 
-      : 'Nenhum profissional contratado'
-  };
-
-  const patientCity = (clinicalProfile?.city || '').trim().toLowerCase();
-  const patientState = (clinicalProfile?.state || '').trim().toLowerCase();
-  const docCity = (assignedClinician?.city || '').trim().toLowerCase();
-  const docState = (assignedClinician?.state || '').trim().toLowerCase();
-  const isDoctorLocal = assignedClinician && docCity === patientCity && docState === patientState;
+  // Next appointment info
+  const nextApp = myAppointments.length > 0 ? myAppointments[0] : null;
 
   return (
-    <div className="animate-fade-in" style={{ position: 'relative' }}>
+    <div className="animate-fade-in" style={{ position: 'relative', width: '100%' }}>
 
-      {/* Header Profile Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Header Profile & Welcome Banner */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Olá, {clinicalProfile.name}</p>
-          <h2 style={{ fontSize: '22px', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Seu Painel de Monitoramento</h2>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>
+            Olá, {clinicalProfile?.name || 'Paciente'} 👋
+          </span>
+          <h2 style={{ fontSize: '24px', fontFamily: 'var(--font-display)', fontWeight: '800', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>
+            Seu Painel de Monitoramento
+          </h2>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {assignedClinician ? (
-            <span className="badge badge-success">
-              <span style={{ display: 'inline-block', width: '6px', height: '6px', backgroundColor: 'var(--success-light)', borderRadius: '50%', marginRight: '4px' }}></span>
+            <span style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              color: '#10b981',
+              border: '1px solid #10b981',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '800',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{ width: '7px', height: '7px', backgroundColor: '#10b981', borderRadius: '50%' }}></span>
               Em Acompanhamento ({assignedClinician.name})
             </span>
           ) : (
-            <span className="badge" style={{ backgroundColor: 'rgba(2, 132, 199, 0.1)', color: '#0284c7', border: '1px solid #0284c7', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
-              <span style={{ display: 'inline-block', width: '6px', height: '6px', backgroundColor: '#0284c7', borderRadius: '50%', marginRight: '6px' }}></span>
-              Cadastro Novo (Sem Profissional Contratado)
+            <span style={{
+              backgroundColor: 'rgba(2, 132, 199, 0.1)',
+              color: 'var(--primary)',
+              border: '1px solid var(--primary)',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '800',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{ width: '7px', height: '7px', backgroundColor: 'var(--primary)', borderRadius: '50%' }}></span>
+              Cadastro Ativo (Aguardando Profissional)
             </span>
           )}
+
+          <button
+            onClick={() => onTriggerSOS && onTriggerSOS()}
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              color: '#ef4444',
+              border: '1px solid #ef4444',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '900',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            🚨 SOS 192
+          </button>
         </div>
       </div>
 
-      {/* Sub-tabs Selection Bar */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <button 
-          onClick={() => setActiveSubTab('diary')}
-          style={{ 
-            padding: '10px 16px', 
-            fontSize: '14px', 
-            fontWeight: '700', 
-            border: 'none', 
-            background: 'none', 
-            borderBottom: activeSubTab === 'diary' ? '3.5px solid var(--primary)' : '3.5px solid transparent',
-            color: activeSubTab === 'diary' ? 'var(--primary)' : 'var(--text-secondary)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            outline: 'none'
-          }}
-        >
-          📅 Meu Diário
-        </button>
-        <button 
-          onClick={() => setActiveSubTab('history')}
-          style={{ 
-            padding: '10px 16px', 
-            fontSize: '14px', 
-            fontWeight: '700', 
-            border: 'none', 
-            background: 'none', 
-            borderBottom: activeSubTab === 'history' ? '3.5px solid var(--primary)' : '3.5px solid transparent',
-            color: activeSubTab === 'history' ? 'var(--primary)' : 'var(--text-secondary)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            outline: 'none'
-          }}
-        >
-          📷 Fotos e Evolução
-        </button>
-        <button 
-          onClick={() => setActiveSubTab('documents')}
-          style={{ 
-            padding: '10px 16px', 
-            fontSize: '14px', 
-            fontWeight: '700', 
-            border: 'none', 
-            background: 'none', 
-            borderBottom: activeSubTab === 'documents' ? '3.5px solid var(--primary)' : '3.5px solid transparent',
-            color: activeSubTab === 'documents' ? 'var(--primary)' : 'var(--text-secondary)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            outline: 'none'
-          }}
-        >
-          📄 Receitas e Atestados
-        </button>
-      </div>
-
-      {activeSubTab === 'history' && (
-        <div className="glass-card animate-fade-in" style={{ padding: '24px', margin: '0 0 24px 0', width: '100%' }}>
-          <ClinicalHistory entries={entries} clinicalProfile={clinicalProfile} />
-        </div>
-      )}
-
-      {activeSubTab === 'documents' && (
-        <div className="glass-card animate-fade-in" style={{ padding: '24px', margin: '0 0 24px 0', width: '100%' }}>
-          <PatientDocuments clinicalProfile={clinicalProfile} />
-        </div>
-      )}
-
-      {activeSubTab === 'diary' && (
-        <div className="dashboard-grid animate-fade-in">
+      {/* Main Dashboard Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
         
-        {/* Left Column: Progress summary & Quick actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        {/* Left Column: Progress, Appointments & Care Diary */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* Main Progress Ring Card */}
-          <div className="glass-card" style={{ background: 'linear-gradient(135deg, var(--glass-bg), rgba(16, 185, 129, 0.04))', width: '100%', margin: 0 }}>
+          {/* Hero Healing Progress Ring Card */}
+          <div className="glass-card" style={{
+            background: 'linear-gradient(135deg, var(--bg-secondary), rgba(2, 132, 199, 0.05))',
+            borderRadius: '16px',
+            padding: '22px',
+            border: '1px solid var(--border-color)',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ flex: '1' }}>
-                <h3 style={{ fontSize: '16px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Evolução Geral</h3>
-                <h1 style={{ fontSize: '32px', fontFamily: 'var(--font-display)', fontWeight: '800', color: 'var(--primary)' }}>
-                  {currentTreatment.healingProgress}%
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                  EVOLUÇÃO DA LESÃO
+                </span>
+                <h1 style={{ fontSize: '36px', fontFamily: 'var(--font-display)', fontWeight: '900', color: 'var(--primary)', margin: '4px 0 2px 0' }}>
+                  {healingProgress}%
                 </h1>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  Redução de área estimada no acompanhamento com base em fotos evolutivas.
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                  Estimativa baseada na área e tecido das fotos evolutivas
                 </p>
               </div>
-              
-              {/* Circular Progress Indicator */}
-              <div style={{ position: 'relative', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg style={{ width: '80px', height: '80px', transform: 'rotate(-90deg)' }}>
-                  <circle cx="40" cy="40" r="34" stroke="var(--border-color)" strokeWidth="6" fill="transparent" />
-                  <circle cx="40" cy="40" r="34" stroke="var(--primary)" strokeWidth="6" fill="transparent" 
-                    strokeDasharray="213.6" 
-                    strokeDashoffset={213.6 - (213.6 * currentTreatment.healingProgress) / 100}
+
+              {/* Circular Progress Ring */}
+              <div style={{ position: 'relative', width: '84px', height: '84px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg style={{ width: '84px', height: '84px', transform: 'rotate(-90deg)' }}>
+                  <circle cx="42" cy="42" r="35" stroke="var(--border-color)" strokeWidth="7" fill="transparent" />
+                  <circle cx="42" cy="42" r="35" stroke="var(--primary)" strokeWidth="7" fill="transparent" 
+                    strokeDasharray="219.9" 
+                    strokeDashoffset={219.9 - (219.9 * healingProgress) / 100}
                     strokeLinecap="round"
                     style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
                   />
@@ -548,732 +367,390 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                   left: '50%', 
                   transform: 'translate(-50%, -50%)', 
                   fontFamily: 'var(--font-display)', 
-                  fontWeight: 'bold', 
+                  fontWeight: '900', 
                   fontSize: '13px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  color: 'var(--primary)'
                 }}>
                   iRec
                 </div>
               </div>
             </div>
-            
-            <div style={{ display: 'flex', borderTop: '1px solid var(--border-color)', marginTop: '16px', paddingTop: '16px', gap: '20px', flexWrap: 'wrap' }}>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', borderTop: '1px solid var(--border-color)', marginTop: '18px', paddingTop: '14px' }}>
               <div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Lesão Atual</p>
-                <p style={{ fontSize: '13.5px', fontWeight: '600' }}>{currentTreatment.type}</p>
+                <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Lesão Ativa</span>
+                <p style={{ fontSize: '13px', fontWeight: '700', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>
+                  {hasActiveWound ? latestEntry.type : 'Nenhuma'}
+                </p>
               </div>
               <div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Dor Relatada</p>
-                <p style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--accent)' }}>{currentTreatment.painLevel}</p>
+                <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Dor Relatada</span>
+                <p style={{ fontSize: '13px', fontWeight: '800', margin: '2px 0 0 0', color: hasActiveWound && latestEntry.pain > 6 ? '#ef4444' : 'var(--primary)' }}>
+                  {hasActiveWound ? `${latestEntry.pain}/10` : 'Sem dor'}
+                </p>
               </div>
               <div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Acompanhamento</p>
-                <p style={{ fontSize: '13.5px', fontWeight: '600' }}>{currentTreatment.daysActive} dias</p>
+                <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Acompanhamento</span>
+                <p style={{ fontSize: '13px', fontWeight: '700', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>
+                  {daysActive} dias
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Diário de Cuidados - Checklist */}
-          <div className="glass-card" style={{ width: '100%', margin: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Diário de Cuidados</h3>
-                <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Marque as ações realizadas hoje para manter a cicatrização no prazo</p>
+          {/* Next Appointment Feature Card */}
+          <div className="glass-card" style={{
+            backgroundColor: 'var(--bg-secondary)',
+            borderRadius: '16px',
+            padding: '20px',
+            border: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                backgroundColor: 'rgba(2, 132, 199, 0.12)',
+                color: 'var(--primary)',
+                width: '46px',
+                height: '46px',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '22px'
+              }}>
+                📅
               </div>
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', textTransform: 'uppercase' }}>
+                  PRÓXIMA CONSULTA
+                </span>
+                <h4 style={{ fontSize: '14.5px', fontWeight: '800', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>
+                  {nextApp ? `${nextApp.date} às ${nextApp.time}` : 'Nenhuma consulta agendada'}
+                </h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                  {nextApp ? `Com Dr(a). ${nextApp.doctorName || 'Especialista'}` : 'Agende sua teleconsulta para acompanhamento com a equipe'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveTab(nextApp ? 'telemedicine' : 'my-appointments')}
+              style={{
+                backgroundColor: 'var(--primary)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '10px 16px',
+                fontSize: '12.5px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {nextApp ? '🎥 Acessar Sala HD' : '📅 Agendar'}
+            </button>
+          </div>
+
+          {/* Daily Care Checklist */}
+          <div className="glass-card" style={{
+            backgroundColor: 'var(--bg-secondary)',
+            borderRadius: '16px',
+            padding: '22px',
+            border: '1px solid var(--border-color)',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                  📋 Diário de Cuidados de Hoje
+                </h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                  Marque os procedimentos conforme realizar para manter a meta de cicatrização
+                </p>
+              </div>
+
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '18px', fontWeight: '800', color: complianceScore > 60 ? 'var(--primary)' : 'var(--warning)' }}>
+                <span style={{ fontSize: '20px', fontWeight: '900', color: complianceScore > 60 ? '#10b981' : '#f59e0b' }}>
                   {complianceScore}%
                 </span>
-                <p style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Adesão</p>
+                <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>
+                  Adesão Hoje
+                </span>
               </div>
             </div>
 
-            {/* Compliance Progress Bar */}
-            <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--border-color)', borderRadius: '3px', marginBottom: '18px', overflow: 'hidden' }}>
-              <div style={{ width: `${complianceScore}%`, height: '100%', background: 'linear-gradient(to right, var(--accent), var(--primary))', borderRadius: '3px', transition: 'width 0.4s ease' }}></div>
+            {/* Compliance Bar */}
+            <div style={{ width: '100%', height: '7px', backgroundColor: 'var(--border-color)', borderRadius: '4px', marginBottom: '18px', overflow: 'hidden' }}>
+              <div style={{
+                width: `${complianceScore}%`,
+                height: '100%',
+                backgroundColor: complianceScore > 60 ? '#10b981' : '#f59e0b',
+                borderRadius: '4px',
+                transition: 'width 0.4s ease'
+              }}></div>
             </div>
 
-            {/* Task Checklist Items */}
+            {/* Checklist Tasks */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {tasks.map((task) => (
-                <label 
-                  key={task.id} 
-                  className={`premium-checkbox-label ${task.completed ? 'checked' : ''}`}
-                >
-                  <input 
-                    type="checkbox" 
-                    className="premium-checkbox-input" 
-                    checked={task.completed} 
-                    onChange={() => toggleTask(task.id)}
-                  />
-                  <div style={{ flex: '1' }}>
-                    <p style={{ fontSize: '13px', fontWeight: '600', textDecoration: task.completed ? 'line-through' : 'none', color: task.completed ? 'var(--text-muted)' : 'var(--text-primary)' }}>
-                      {task.text}
-                    </p>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                      {task.category}
-                    </span>
-                  </div>
-                </label>
-              ))}
+              {baseTasks.map(task => {
+                const isChecked = completedTaskIds.includes(task.id);
+                return (
+                  <label
+                    key={task.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '12px',
+                      borderRadius: '10px',
+                      backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.06)' : 'var(--bg-primary)',
+                      border: isChecked ? '1px solid #10b981' : '1px solid var(--border-color)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleTask(task.id)}
+                      style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer', accentColor: '#10b981' }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <p style={{
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        margin: 0,
+                        textDecoration: isChecked ? 'line-through' : 'none',
+                        color: isChecked ? 'var(--text-muted)' : 'var(--text-primary)'
+                      }}>
+                        {task.text}
+                      </p>
+                      <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        {task.category}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           </div>
 
-          {/* Quick Action Buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '4px' }}>
-            <button className="btn btn-primary" onClick={() => setActiveTab('upload')} style={{ height: '54px', fontSize: '14px' }}>
-              <svg style={{ width: '18px', height: '18px', fill: 'none', stroke: 'currentColor', strokeWidth: '2' }} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-              </svg>
-              Fotografar Ferida
+          {/* Quick Action Shortcuts */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <button
+              onClick={() => setActiveTab('upload')}
+              style={{
+                backgroundColor: 'var(--primary)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '16px',
+                fontSize: '14px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.2)'
+              }}
+            >
+              <span>📷</span>
+              <span>Fotografar Ferida</span>
             </button>
-            <button className="btn btn-secondary" onClick={() => setActiveSubTab('history')} style={{ height: '54px', fontSize: '14px' }}>
-              <svg style={{ width: '18px', height: '18px', fill: 'none', stroke: 'currentColor', strokeWidth: '2' }} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
-              Ver Histórico
+
+            <button
+              onClick={() => setActiveTab('chat')}
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '16px',
+                fontSize: '14px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>💬</span>
+              <span>Assistente Clínico</span>
             </button>
           </div>
 
         </div>
 
-        {/* Right Column: Profile details, Next Dressing & Alerts */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        {/* Right Column: Clinical Profile Summary, Local Health Network & Safety */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-          {/* Clinical Profile Card */}
-          <div className="glass-card" style={{ width: '100%', margin: 0 }}>
+          {/* Clinical Profile Summary Card (Sanitizado sem código morto) */}
+          <div className="glass-card" style={{
+            backgroundColor: 'var(--bg-secondary)',
+            borderRadius: '16px',
+            padding: '22px',
+            border: '1px solid var(--border-color)',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700' }}>Sua Ficha Clínica</h3>
-              <button 
-                onClick={() => {
-                  setIsEditingProfile(!isEditingProfile);
-                  setProfileForm({
-                    ...clinicalProfile,
-                    phone: clinicalProfile.phone || '',
-                    emergencyContactName: clinicalProfile.emergencyContactName || '',
-                    emergencyContactPhone: clinicalProfile.emergencyContactPhone || '',
-                    cep: clinicalProfile.cep || '',
-                    street: clinicalProfile.street || '',
-                    number: clinicalProfile.number || '',
-                    complement: clinicalProfile.complement || '',
-                    neighborhood: clinicalProfile.neighborhood || '',
-                    city: clinicalProfile.city || '',
-                    state: clinicalProfile.state || '',
-                    weight: clinicalProfile.weight || '',
-                    height: clinicalProfile.height || '',
-                    bloodType: clinicalProfile.bloodType || ''
-                  });
-                  setProfileFormTab('pessoais');
-                }} 
-                className="btn btn-secondary" 
-                style={{ padding: '4px 10px', fontSize: '11px', height: 'auto', borderRadius: '6px' }}
-              >
-                {isEditingProfile ? 'Cancelar' : 'Editar'}
-              </button>
-            </div>
-
-            {isEditingProfile ? (
-              <form onSubmit={handleProfileSave} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* Tabs Header */}
-                <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '8px', gap: '2px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setProfileFormTab('pessoais')}
-                    style={{
-                      flex: 1,
-                      padding: '8px 2px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      background: 'none',
-                      border: 'none',
-                      borderBottom: profileFormTab === 'pessoais' ? '2.5px solid var(--primary)' : 'none',
-                      color: profileFormTab === 'pessoais' ? 'var(--primary)' : 'var(--text-secondary)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    👤 Identificação
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setProfileFormTab('endereco')}
-                    style={{
-                      flex: 1,
-                      padding: '8px 2px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      background: 'none',
-                      border: 'none',
-                      borderBottom: profileFormTab === 'endereco' ? '2.5px solid var(--primary)' : 'none',
-                      color: profileFormTab === 'endereco' ? 'var(--primary)' : 'var(--text-secondary)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    📍 Endereço
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setProfileFormTab('clinicos')}
-                    style={{
-                      flex: 1,
-                      padding: '8px 2px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      background: 'none',
-                      border: 'none',
-                      borderBottom: profileFormTab === 'clinicos' ? '2.5px solid var(--primary)' : 'none',
-                      color: profileFormTab === 'clinicos' ? 'var(--primary)' : 'var(--text-secondary)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🩺 Saúde
-                  </button>
-                </div>
-
-                {/* Tab 1: Pessoais */}
-                {profileFormTab === 'pessoais' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Nome do Paciente</label>
-                      <input 
-                        type="text" 
-                        value={profileForm.name || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Data de Nascimento</label>
-                      <input 
-                        type="date" 
-                        value={profileForm.birthDate || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, birthDate: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Sexo</label>
-                      <select 
-                        value={profileForm.gender || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, gender: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                      >
-                        <option value="">Selecione...</option>
-                        <option value="Masculino">Masculino</option>
-                        <option value="Feminino">Feminino</option>
-                        <option value="Outro">Outro</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Telefone</label>
-                      <input 
-                        type="text" 
-                        placeholder="Ex: (11) 99999-9999"
-                        value={profileForm.phone || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Nome Contato Emergência</label>
-                        <input 
-                          type="text" 
-                          placeholder="Ex: Maria (Esposa)"
-                          value={profileForm.emergencyContactName || ''}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, emergencyContactName: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Tel. Contato Emergência</label>
-                        <input 
-                          type="text" 
-                          placeholder="Ex: (11) 98888-8888"
-                          value={profileForm.emergencyContactPhone || ''}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, emergencyContactPhone: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Tipo Sanguíneo</label>
-                      <select 
-                        value={profileForm.bloodType || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, bloodType: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                      >
-                        <option value="">Selecione...</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-
-                {/* Tab 2: Endereço */}
-                {profileFormTab === 'endereco' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>
-                        CEP (Auto-completar 🇧🇷)
-                      </label>
-                      <input 
-                        type="text" 
-                        placeholder="Digite o CEP (Ex: 01001-000)"
-                        value={profileForm.cep || ''}
-                        onChange={(e) => handleCepLookup(e.target.value)}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Rua / Logradouro</label>
-                      <input 
-                        type="text" 
-                        value={profileForm.street || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, street: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Número</label>
-                        <input 
-                          type="text" 
-                          value={profileForm.number || ''}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, number: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                        />
-                      </div>
-                      <div style={{ flex: 1.5 }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Complemento</label>
-                        <input 
-                          type="text" 
-                          placeholder="Ex: Apto 12"
-                          value={profileForm.complement || ''}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, complement: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Bairro</label>
-                      <input 
-                        type="text" 
-                        value={profileForm.neighborhood || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, neighborhood: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <div style={{ flex: 2 }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Cidade</label>
-                        <input 
-                          type="text" 
-                          value={profileForm.city || ''}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, city: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Estado</label>
-                        <input 
-                          type="text" 
-                          maxLength="2"
-                          placeholder="Ex: SP"
-                          value={profileForm.state || ''}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, state: e.target.value.toUpperCase() }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px', textTransform: 'uppercase' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Tab 3: Saúde e Histórico */}
-                {profileFormTab === 'clinicos' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Unidade de Atendimento</label>
-                      <input 
-                        type="text" 
-                        placeholder="Hospital, Clínica ou Home Care..."
-                        value={profileForm.healthUnit || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, healthUnit: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Peso (kg)</label>
-                        <input 
-                          type="number" 
-                          step="0.1"
-                          placeholder="Ex: 75.5"
-                          value={profileForm.weight || ''}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, weight: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Altura (cm)</label>
-                        <input 
-                          type="number" 
-                          placeholder="Ex: 175"
-                          value={profileForm.height || ''}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, height: e.target.value }))}
-                          style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12.5px' }}
-                        />
-                      </div>
-                    </div>
-
-                    {profileForm.weight && profileForm.height && (
-                      <div style={{ padding: '8px 12px', borderRadius: '6px', backgroundColor: 'var(--primary-glow)', border: '1px solid var(--primary-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--primary)' }}>IMC (Cálculo Automático)</span>
-                        <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)' }}>
-                          {(() => {
-                            const hM = parseFloat(profileForm.height) / 100;
-                            const imcVal = parseFloat(profileForm.weight) / (hM * hM);
-                            let category = '';
-                            if (imcVal < 18.5) category = '(Abaixo do peso)';
-                            else if (imcVal < 25) category = '(Peso normal)';
-                            else if (imcVal < 30) category = '(Sobrepeso)';
-                            else category = '(Obesidade)';
-                            return `${imcVal.toFixed(1)} ${category}`;
-                          })()}
-                        </span>
-                      </div>
-                    )}
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', margin: '4px 0' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={profileForm.hasDiabetes || false}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasDiabetes: e.target.checked }))}
-                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                        />
-                        Diabetes
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={profileForm.hasHypertension || false}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasHypertension: e.target.checked }))}
-                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                        />
-                        Hipertensão
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={profileForm.hasVenousInsufficiency || false}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasVenousInsufficiency: e.target.checked }))}
-                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                        />
-                        Insuf. Venosa
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={profileForm.hasPeripheralArterialDisease || false}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasPeripheralArterialDisease: e.target.checked }))}
-                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                        />
-                        D. Art. Periférica
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={profileForm.isSmoker || false}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, isSmoker: e.target.checked }))}
-                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                        />
-                        Tabagismo
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={profileForm.isObese || false}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, isObese: e.target.checked }))}
-                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                        />
-                        Obesidade
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', cursor: 'pointer', gridColumn: 'span 2' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={profileForm.hasAmputationHistory || false}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasAmputationHistory: e.target.checked }))}
-                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                        />
-                        Histórico de Amputação
-                      </label>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Outras Condições Clínicas</label>
-                      <input 
-                        type="text" 
-                        placeholder="Ex: Insuficiência Renal, etc."
-                        value={profileForm.otherConditions || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, otherConditions: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
-                      />
-                    </div>
-
-                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', marginBottom: '6px' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={profileForm.hasPreviousUlcers || false}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, hasPreviousUlcers: e.target.checked }))}
-                          style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
-                        />
-                        <strong>Histórico de Úlceras Anteriores?</strong>
-                      </label>
-                      
-                      {profileForm.hasPreviousUlcers && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '10px', marginTop: '6px' }}>
-                          <div>
-                            <label style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Tempo para fechar / cicatrizar</label>
-                            <input 
-                              type="text" 
-                              placeholder="Ex: 3 meses"
-                              value={profileForm.previousUlcersHealingTime || ''}
-                              onChange={(e) => setProfileForm(prev => ({ ...prev, previousUlcersHealingTime: e.target.value }))}
-                              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px' }}
-                            />
-                          </div>
-                          <div>
-                            <label style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Curativos e métodos aplicados</label>
-                            <input 
-                              type="text" 
-                              placeholder="Ex: Hidrogel, carvão ativado..."
-                              value={profileForm.previousUlcersTreatments || ''}
-                              onChange={(e) => setProfileForm(prev => ({ ...prev, previousUlcersTreatments: e.target.value }))}
-                              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px' }}
-                            />
-                          </div>
-                          <div>
-                            <label style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Onde foi feito o tratamento?</label>
-                            <select 
-                              value={profileForm.previousUlcersLocation || 'casa'} 
-                              onChange={(e) => setProfileForm(prev => ({ ...prev, previousUlcersLocation: e.target.value }))}
-                              style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '11.5px' }}
-                            >
-                              <option value="casa">Em casa (Domiciliar)</option>
-                              <option value="unidade_saude">Unidade de Saúde (SUS/Posto)</option>
-                              <option value="profissional">Profissional competente (Médico/Enfermeiro)</option>
-                            </select>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Medicamentos de Uso Contínuo</label>
-                      <input 
-                        type="text" 
-                        value={profileForm.medications || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, medications: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '2px' }}>Alergias Conhecidas</label>
-                      <input 
-                        type="text" 
-                        value={profileForm.allergies || ''}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, allergies: e.target.value }))}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', fontSize: '12px' }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <button type="submit" className="btn btn-primary" style={{ padding: '8px', fontSize: '12px', width: '100%', marginTop: '4px' }}>
-                  Salvar Ficha Clínica
-                </button>
-              </form>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
-                {/* Progress bar card */}
-                <div style={{ padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                      Completude da Ficha
-                    </span>
-                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)' }}>
-                      {profileProgress}%
-                    </span>
-                  </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden', marginBottom: '10px' }}>
-                    <div style={{ width: `${profileProgress}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px', transition: 'width 0.4s ease' }}></div>
-                  </div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4', margin: 0 }}>
-                    Preencha sua ficha clínica completa para personalizar as orientações dos profissionais de saúde.
-                  </p>
-                </div>
-
-                {/* Summary Info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Nome:</span>
-                    <strong>{clinicalProfile.name}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Nascimento:</span>
-                    <strong>{clinicalProfile.birthDate ? new Date(clinicalProfile.birthDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada'}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Cidade:</span>
-                    <strong>{clinicalProfile.city || 'Não informada'}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Alergias:</span>
-                    <strong style={{ color: clinicalProfile.allergies ? 'var(--danger)' : 'var(--text-primary)' }}>
-                      {clinicalProfile.allergies || 'Nenhuma alergia listada'}
-                    </strong>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setIsEditingProfile(true)}
-                  className="btn btn-secondary"
-                  style={{ width: '100%', fontSize: '12px', height: '36px', borderRadius: '8px', padding: '6px' }}
-                >
-                  📝 Visualizar Ficha Completa
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Next Action Box */}
-          <div className="glass-card" style={{ borderLeft: '4px solid var(--accent)', width: '100%', margin: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Próxima Visita / Ação</span>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', marginTop: '2px' }}>{hasActiveWound ? 'Troca de Curativo' : 'Primeira Avaliação Pendente'}</h3>
-                <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>{hasActiveWound ? (latestEntry.dressingFrequency || 'Recomendada hoje') : 'Aguardando envio de foto'}</p>
-              </div>
-              <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '12px' }} onClick={() => setActiveTab('protocols')}>
-                Ver Guia
-              </button>
-            </div>
-          </div>
-
-
-
-          {/* Suporte Médico & Rede Local */}
-          <div className="glass-card" style={{ width: '100%', margin: 0 }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              🩺 Suporte Médico & Rede Local
-            </h3>
-            
-            {assignedClinician ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ padding: '12px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', borderLeft: '3px solid var(--primary)' }}>
-                  <span style={{ fontSize: '9px', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Médico Responsável</span>
-                  <h4 style={{ fontSize: '13.5px', fontWeight: '700', marginTop: '2px' }}>Dr(a). {assignedClinician.name}</h4>
-                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>CRM: {assignedClinician.crm} • {assignedClinician.specialty || 'Clínico'}</p>
-                  
-                  {isDoctorLocal ? (
-                    <p style={{ fontSize: '11px', color: 'var(--success-light)', fontWeight: '600', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      📍 Disponível na sua cidade ({clinicalProfile?.city}) para visitas domiciliares e online.
-                    </p>
-                  ) : (
-                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
-                      <p style={{ fontSize: '11px', color: '#38a1db', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        💻 Disponível para Teleconsulta Online 24h
-                      </p>
-                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: '1.4' }}>
-                        Como este profissional atende remotamente, para atendimentos presenciais de urgência ou se necessitar de exames físicos imediatos, dirija-se à UPA ou Hospital mais próximo:
-                      </p>
-                      <LocalResourcesPanel clinicalProfile={clinicalProfile} compact={true} />
-                      <button 
-                        className="btn btn-secondary" 
-                        onClick={() => setShowMapModal(true)} 
-                        style={{ width: '100%', fontSize: '11.5px', padding: '8px', marginTop: '10px', borderRadius: '6px', gap: '4px', height: '36px' }}
-                      >
-                        🗺️ Abrir Mapa de Rede Local
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ 
-                  padding: '12px', 
-                  backgroundColor: 'rgba(239, 68, 68, 0.04)', 
-                  border: '1px solid rgba(239, 68, 68, 0.15)', 
+              <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                👤 Sua Ficha Clínica
+              </h3>
+              <button
+                onClick={() => onOpenProfileModal ? onOpenProfileModal() : setActiveTab('profile')}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: 'var(--primary)',
+                  border: '1px solid var(--primary)',
                   borderRadius: '8px',
-                  color: 'var(--text-primary)'
-                }}>
-                  <p style={{ fontSize: '12px', fontWeight: '600', color: 'var(--danger)', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    ⚠️ Sem Médicos Presenciais na Cidade
-                  </p>
-                  <p style={{ fontSize: '11.5px', margin: 0, lineHeight: '1.4', color: 'var(--text-secondary)' }}>
-                    Não há médicos cadastrados em <strong>{clinicalProfile?.city || 'sua localidade'}</strong> para visitas domiciliares físicas no momento.
-                  </p>
-                  <p style={{ fontSize: '11px', marginTop: '6px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                    Você pode realizar teleconsultas online com a rede iRec ou, se precisar de suporte físico de emergência, dirigir-se ao hospital público local:
-                  </p>
-                </div>
+                  padding: '5px 12px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+              >
+                Editar Perfil ✏️
+              </button>
+            </div>
 
-                <LocalResourcesPanel clinicalProfile={clinicalProfile} compact={true} />
-                 
-                <button 
-                  className="btn btn-secondary" 
-                  onClick={() => setShowMapModal(true)} 
-                  style={{ width: '100%', fontSize: '11.5px', padding: '8px', marginTop: '10px', borderRadius: '6px', gap: '4px', height: '36px' }}
-                >
-                  🗺️ Abrir Mapa de Rede Local
-                </button>
+            {/* Profile Completeness Bar */}
+            <div style={{ padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  COMPLETUDE DA FICHA
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)' }}>
+                  {profileProgress}%
+                </span>
               </div>
-            )}
+              <div style={{ width: '100%', height: '7px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: `${profileProgress}%`, height: '100%', backgroundColor: 'var(--primary)', borderRadius: '4px', transition: 'width 0.4s ease' }}></div>
+              </div>
+            </div>
+
+            {/* Key Clinical Summary Data */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Paciente:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.name || 'Não informado'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Cidade / UF:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.city ? `${clinicalProfile.city}/${clinicalProfile.state || ''}` : 'Não informada'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Tipo Sanguíneo:</span>
+                <strong style={{ color: 'var(--primary)' }}>{clinicalProfile?.bloodType || 'Não informado'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Alergias:</span>
+                <strong style={{ color: clinicalProfile?.allergies ? '#ef4444' : 'var(--text-primary)' }}>
+                  {clinicalProfile?.allergies || 'Nenhuma alergia relatada'}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Medicamentos:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.medications || 'Uso contínuo não informado'}</strong>
+              </div>
+            </div>
           </div>
 
-          {/* Emergency / Red Flag Safety Alert */}
-          <div className="glass-card" style={{ backgroundColor: 'rgba(239, 68, 68, 0.04)', borderColor: 'rgba(239, 68, 68, 0.2)', width: '100%', margin: 0 }}>
-            <h3 style={{ fontSize: '15px', color: 'var(--danger)', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <svg style={{ width: '18px', height: '18px', fill: 'none', stroke: 'currentColor', strokeWidth: '2' }} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Segurança do Paciente (Urgência)
+          {/* Assigned Doctor & Local Health Resources */}
+          <div className="glass-card" style={{
+            backgroundColor: 'var(--bg-secondary)',
+            borderRadius: '16px',
+            padding: '22px',
+            border: '1px solid var(--border-color)',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: '0 0 14px 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              🩺 Profissional Responsável & Rede Local
             </h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-              Se notar sangramento abundante, febre superior a 38°C, calafrios ou vermelhidão que se espalha rapidamente pela pele ao redor da lesão:
+
+            {assignedClinician ? (
+              <div style={{ padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', borderLeft: '4px solid #10b981', marginBottom: '14px' }}>
+                <span style={{ fontSize: '10px', fontWeight: '800', color: '#10b981', textTransform: 'uppercase' }}>Médico Assistente</span>
+                <h4 style={{ fontSize: '14px', fontWeight: '800', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>Dr(a). {assignedClinician.name}</h4>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>CRM: {assignedClinician.crm} • {assignedClinician.specialty || 'Clínica Médica'}</p>
+              </div>
+            ) : null}
+
+            <LocalResourcesPanel clinicalProfile={clinicalProfile} compact={true} />
+
+            <button
+              onClick={() => setShowMapModal(true)}
+              style={{
+                width: '100%',
+                marginTop: '12px',
+                backgroundColor: 'var(--bg-primary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                padding: '10px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}
+            >
+              🗺️ Ver Mapa Completo de Hospitais & UPAs
+            </button>
+          </div>
+
+          {/* Safety & Red Flag Alert Box */}
+          <div className="glass-card" style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            borderRadius: '16px',
+            padding: '20px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '20px' }}>🚨</span>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: '#ef4444' }}>
+                Sinais de Urgência (Red Flags)
+              </h3>
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 14px 0' }}>
+              Se notar sangramento abundante, febre superior a 38°C, calafrios ou dor intensa súbita na lesão:
             </p>
-            <button className="btn" style={{ width: '100%', backgroundColor: 'var(--danger)', color: '#fff', fontSize: '13px', padding: '10px' }} onClick={() => {
-              alert("ALERTA DE EMERGÊNCIA ENVIADO!\n\nSintomas graves relatados. Recomendamos ir imediatamente ao pronto-socorro mais próximo ou ligar para o SAMU (192)!\n\nO prontuário foi marcado com alta prioridade e a enfermeira Mariana Souza foi notificada.");
-            }}>
-              Relatar Sintoma Grave (Red Flag)
+            <button
+              onClick={() => onTriggerSOS ? onTriggerSOS() : alert("Procure um pronto-socorro ou ligue SAMU 192!")}
+              style={{
+                width: '100%',
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '12px',
+                fontSize: '13px',
+                fontWeight: '900',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)'
+              }}
+            >
+              Relatar Sintoma Grave (SOS)
             </button>
           </div>
 
         </div>
-
       </div>
-      )}
 
+      {/* Map Modal Portal */}
       {showMapModal && createPortal(
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)',
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
           backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1283,7 +760,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
           <div style={{
             backgroundColor: 'var(--bg-secondary)',
             border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
+            borderRadius: '20px',
             width: '100%',
             maxWidth: '850px',
             maxHeight: '90vh',
@@ -1300,15 +777,13 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               </h3>
               <button 
                 onClick={() => setShowMapModal(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '20px' }}
               >
-              <svg style={{ width: '24px', height: '24px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-              </svg>
+                ✖
               </button>
             </div>
             
-            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
               <LocalResourcesPanel clinicalProfile={clinicalProfile} />
             </div>
           </div>
