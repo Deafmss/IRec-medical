@@ -665,9 +665,15 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
 
             {assignedClinician ? (
               <div style={{ padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', borderLeft: '4px solid #10b981', marginBottom: '14px' }}>
-                <span style={{ fontSize: '10px', fontWeight: '800', color: '#10b981', textTransform: 'uppercase' }}>Médico Assistente</span>
-                <h4 style={{ fontSize: '14px', fontWeight: '800', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>Dr(a). {assignedClinician.name}</h4>
-                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>CRM: {assignedClinician.crm} • {assignedClinician.specialty || 'Clínica Médica'}</p>
+                <span style={{ fontSize: '10px', fontWeight: '800', color: '#10b981', textTransform: 'uppercase' }}>
+                  {assignedClinician.role === 'nurse' || (assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN')) ? 'Enfermeiro(a) Responsável' : 'Médico(a) Assistente'}
+                </span>
+                <h4 style={{ fontSize: '14px', fontWeight: '800', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>
+                  {assignedClinician.role === 'nurse' || (assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN')) ? `Enf. ${assignedClinician.name}` : `Dr(a). ${assignedClinician.name}`}
+                </h4>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                  {assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN') ? assignedClinician.crm : `CRM: ${assignedClinician.crm}`} • {assignedClinician.specialty || 'Estomaterapia'}
+                </p>
               </div>
             ) : null}
 
