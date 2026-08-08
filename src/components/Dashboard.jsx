@@ -620,48 +620,23 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             {assignedClinician ? (
               <div style={{ padding: '14px', backgroundColor: 'rgba(16, 185, 129, 0.08)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.25)', marginBottom: '14px' }}>
                 <span style={{ fontSize: '10px', fontWeight: '800', color: '#10b981', textTransform: 'uppercase' }}>
-                  ENFERMEIRO(A) RESPONSÁVEL
+                  {assignedClinician.role === 'nurse' || (assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN')) ? 'Enfermeiro(a) Responsável' : 'Médico(a) Assistente'}
                 </span>
                 <h4 style={{ fontSize: '14.5px', fontWeight: '800', color: 'var(--text-primary)', margin: '2px 0 0 0' }}>
-                  {assignedClinician.name}
+                  {assignedClinician.role === 'nurse' || (assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN')) ? `Enf. ${assignedClinician.name}` : `Dr(a). ${assignedClinician.name}`}
                 </h4>
                 <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0 }}>
-                  {assignedClinician.registration} • {assignedClinician.specialty}
+                  {assignedClinician.crm && assignedClinician.crm.toUpperCase().includes('COREN') ? assignedClinician.crm : `CRM: ${assignedClinician.crm}`} • {assignedClinician.specialty || 'Especialista'}
                 </p>
               </div>
-            ) : (
-              <div style={{ padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '14px' }}>
-                <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  EQUIPE MULTIDISCIPLINAR
-                </span>
-                <h4 style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)', margin: '2px 0 0 0' }}>
-                  Enfermeiro Estomaterapeuta / Médico Assistente
-                </h4>
-                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0 }}>
-                  Atendimento integrado e acompanhamento domiciliar
-                </p>
-              </div>
-            )}
+            ) : null}
 
-            {/* Nearest ER Quick Widget */}
-            <div style={{ padding: '12px 14px', backgroundColor: 'rgba(239, 68, 68, 0.06)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '14px' }}>
-              <span style={{ fontSize: '10px', fontWeight: '800', color: '#ef4444', textTransform: 'uppercase' }}>
-                PRONTO-SOCORRO MAIS PRÓXIMO (REAL)
-              </span>
-              <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', margin: '2px 0 0 0' }}>
-                {nearestResource ? nearestResource.name : 'Carregando unidades de emergência locais...'}
-              </p>
-              {nearestResource && (
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                  📍 {nearestResource.distanceKm} km ({nearestResource.driveTimeMinutes} min de carro) • {nearestResource.vicinity}
-                </p>
-              )}
-            </div>
+            <LocalResourcesPanel clinicalProfile={clinicalProfile} compact={true} />
 
             <button
               onClick={() => setShowMapModal(true)}
               className="btn btn-secondary"
-              style={{ width: '100%', padding: '10px 14px', fontSize: '12.5px' }}
+              style={{ width: '100%', padding: '10px 14px', fontSize: '12.5px', marginTop: '12px' }}
             >
               🗺️ Ver Mapa Completo de Hospitais & UPAs
             </button>
