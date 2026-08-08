@@ -30,10 +30,6 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
 
   const fullPhysicalAddress = [street, number, neighborhood, city, state, cep ? `CEP ${cep}` : ''].filter(Boolean).join(', ');
 
-  const googleMapsUrl = userGps 
-    ? `https://www.google.com/maps/search/hospital+pronto+socorro+upa/@${userGps.lat},${userGps.lng},15z`
-    : `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(fullPhysicalAddress || (city + ' ' + state))}`;
-
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
@@ -197,63 +193,69 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.96)',
-      backdropFilter: 'blur(12px)',
+      backgroundColor: 'rgba(15, 23, 42, 0.88)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
       zIndex: 999999,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '16px',
       fontFamily: 'var(--font-primary, sans-serif)'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '560px',
-        maxHeight: '92vh',
-        overflowY: 'auto',
-        backgroundColor: '#1e293b',
-        borderRadius: '24px',
-        border: '3px solid #ef4444',
-        boxShadow: '0 25px 50px -12px rgba(239, 68, 68, 0.4)',
-        padding: '24px',
-        color: '#ffffff',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px'
-      }}>
+    }} onClick={() => { triggerVibration(); onClose(); }}>
+      
+      {/* Glassmorphism Container com Luz Vazada Vermelha Neon */}
+      <div 
+        className="glass-card glass-card-danger-glow neon-edge-danger" 
+        style={{
+          width: '100%',
+          maxWidth: '560px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          backgroundColor: 'rgba(15, 23, 42, 0.82)',
+          border: '1px solid rgba(239, 68, 68, 0.35)',
+          borderRadius: '24px',
+          boxShadow: '0 25px 60px -10px rgba(239, 68, 68, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.15)',
+          padding: '24px',
+          color: '#ffffff',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '18px',
+          margin: 0,
+          position: 'relative'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              width: '48px',
-              height: '48px',
+              width: '46px',
+              height: '46px',
               borderRadius: '50%',
-              backgroundColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid #ef4444',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '24px',
-              animation: 'pulseSOS 1.5s infinite'
+              fontSize: '22px',
+              boxShadow: '0 0 16px rgba(239, 68, 68, 0.5)'
             }}>
               🚨
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#ffffff' }}>SOCORRO & EMERGÊNCIA</h2>
-              <span style={{ fontSize: '13px', color: '#94a3b8' }}>Suporte à Vida 24 horas - iRec</span>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '900', color: '#ffffff', fontFamily: 'var(--font-display)' }}>
+                SOCORRO & EMERGÊNCIA
+              </h2>
+              <span style={{ fontSize: '12px', color: '#94a3b8' }}>Suporte à Vida 24 horas - iRec Saúde</span>
             </div>
           </div>
           <button 
             onClick={() => { triggerVibration(); onClose(); }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#94a3b8',
-              fontSize: '28px',
-              cursor: 'pointer',
-              padding: '4px 8px'
-            }}
+            className="btn btn-secondary"
+            style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '10px' }}
           >
-            ×
+            ✖ Fechar
           </button>
         </div>
 
@@ -261,19 +263,14 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
         {!notificationActivated && (
           <button
             onClick={requestNotificationPermission}
+            className="btn btn-secondary"
             style={{
-              backgroundColor: '#334155',
-              color: '#38bdf8',
-              border: '1px solid #0284c7',
-              borderRadius: '14px',
+              position: 'relative',
+              zIndex: 1,
+              width: '100%',
               padding: '12px 16px',
-              fontWeight: '700',
-              fontSize: '13.5px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
+              fontSize: '13px',
+              justifyContent: 'center'
             }}
           >
             <span>🔔</span>
@@ -284,33 +281,34 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
         {/* Anti-Accidental Call Countdown Overlay */}
         {countdown !== null && pendingCall && (
           <div style={{
-            backgroundColor: '#dc2626',
-            borderRadius: '20px',
+            position: 'relative',
+            zIndex: 1,
+            backgroundColor: 'rgba(220, 38, 38, 0.95)',
+            borderRadius: '16px',
             padding: '20px',
             textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: '12px',
-            animation: 'pulseSOS 1s infinite'
+            border: '1px solid #ef4444',
+            boxShadow: '0 0 24px rgba(239, 68, 68, 0.6)'
           }}>
-            <span style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff' }}>
+            <span style={{ fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>
               LIGANDO PARA O {pendingCall.label} ({pendingCall.number}) EM:
             </span>
-            <span style={{ fontSize: '54px', fontWeight: '900', color: '#ffffff' }}>
+            <span style={{ fontSize: '52px', fontWeight: '900', color: '#ffffff', fontFamily: 'var(--font-display)' }}>
               {countdown}s
             </span>
             <button
               onClick={cancelCallCountdown}
+              className="btn"
               style={{
                 backgroundColor: '#ffffff',
                 color: '#dc2626',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '12px 24px',
+                padding: '10px 20px',
                 fontWeight: '800',
-                fontSize: '16px',
-                cursor: 'pointer'
+                fontSize: '14px'
               }}
             >
               ❌ CANCELAR LIGAÇÃO
@@ -319,143 +317,116 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
         )}
 
         {/* Emergency Call Buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
           <button
             onClick={() => startCallCountdown('192', 'SAMU')}
+            className="btn btn-sos"
             style={{
-              border: 'none',
-              backgroundColor: '#dc2626',
-              color: '#ffffff',
-              padding: '18px 12px',
+              padding: '18px 14px',
               borderRadius: '16px',
-              display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              fontWeight: '800',
-              fontSize: '18px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(220, 38, 38, 0.4)'
+              gap: '4px'
             }}
           >
-            <span style={{ fontSize: '28px' }}>📞 192</span>
-            <span style={{ fontSize: '13px', fontWeight: '600', opacity: 0.9 }}>LIGAR SAMU</span>
+            <span style={{ fontSize: '26px' }}>📞 192</span>
+            <span style={{ fontSize: '13px', fontWeight: '800' }}>LIGAR SAMU</span>
           </button>
 
           <button
             onClick={() => startCallCountdown('193', 'BOMBEIROS')}
+            className="btn"
             style={{
-              border: 'none',
-              backgroundColor: '#d97706',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
               color: '#ffffff',
-              padding: '18px 12px',
+              padding: '18px 14px',
               borderRadius: '16px',
-              display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              fontWeight: '800',
-              fontSize: '18px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(217, 119, 6, 0.4)'
+              gap: '4px',
+              boxShadow: '0 4px 18px -2px rgba(245, 158, 11, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.3)'
             }}
           >
-            <span style={{ fontSize: '28px' }}>🚒 193</span>
-            <span style={{ fontSize: '13px', fontWeight: '600', opacity: 0.9 }}>BOMBEIROS</span>
+            <span style={{ fontSize: '26px' }}>🚒 193</span>
+            <span style={{ fontSize: '13px', fontWeight: '800' }}>BOMBEIROS</span>
           </button>
         </div>
 
         {/* Route to nearest Hospital / UPA with Real GPS */}
         <button
           onClick={handleOpenMapsGPS}
+          className="btn btn-primary"
           style={{
-            border: 'none',
-            backgroundColor: '#0284c7',
-            color: '#ffffff',
+            position: 'relative',
+            zIndex: 1,
             padding: '16px',
             borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            fontWeight: '700',
-            fontSize: '16px',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
+            fontSize: '13.5px'
           }}
         >
-          <span style={{ fontSize: '24px' }}>🏥</span>
+          <span style={{ fontSize: '20px' }}>🏥</span>
           <span>IR PARA HOSPITAL / UPA MAIS PRÓXIMO (GPS REAL)</span>
         </button>
 
         {/* Legal Disclaimer */}
-        <div style={{ fontSize: '11.5px', color: '#94a3b8', textAlign: 'center', lineHeight: '1.5', padding: '0 8px' }}>
+        <div style={{ position: 'relative', zIndex: 1, fontSize: '11px', color: '#94a3b8', textAlign: 'center', lineHeight: '1.5', padding: '0 8px' }}>
           ⚖️ <strong>Aviso Legal & Regulatório:</strong> O iRec é uma plataforma de suporte e navegação em saúde. Em situações de emergência grave, recorra imediatamente ao 192 (SAMU) ou dirija-se à unidade de saúde mais próxima.
         </div>
 
         {/* First Aid Quick Guides */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <h3 style={{ margin: '8px 0 4px 0', fontSize: '15px', color: '#cbd5e1', fontWeight: '700' }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <h3 style={{ margin: '4px 0 2px 0', fontSize: '14px', color: 'var(--text-primary)', fontWeight: '800' }}>
             💡 Guia Rápido de Primeiros Socorros:
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            {firstAidGuides.map((guide) => (
-              <button
-                key={guide.id}
-                onClick={() => { triggerVibration(); setSelectedEmergency(guide); }}
-                style={{
-                  backgroundColor: selectedEmergency?.id === guide.id ? guide.color : '#334155',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontWeight: '700',
-                  fontSize: '14px',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {guide.title}
-              </button>
-            ))}
+            {firstAidGuides.map((guide) => {
+              const isSelected = selectedEmergency?.id === guide.id;
+              return (
+                <button
+                  key={guide.id}
+                  onClick={() => { triggerVibration(); setSelectedEmergency(isSelected ? null : guide); }}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '12px',
+                    borderRadius: '12px',
+                    fontSize: '12.5px',
+                    fontWeight: '700',
+                    textAlign: 'left',
+                    justifyContent: 'flex-start',
+                    backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    borderColor: isSelected ? guide.color : 'rgba(255, 255, 255, 0.12)',
+                    color: isSelected ? guide.color : 'var(--text-primary)'
+                  }}
+                >
+                  {guide.title}
+                </button>
+              );
+            })}
           </div>
 
           {selectedEmergency && (
             <div style={{
-              backgroundColor: '#0f172a',
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
               borderRadius: '16px',
               padding: '16px',
               borderLeft: `4px solid ${selectedEmergency.color}`,
-              marginTop: '8px',
+              border: '1px solid var(--border-color)',
+              borderLeftWidth: '4px',
+              marginTop: '6px',
               display: 'flex',
               flexDirection: 'column',
               gap: '10px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h4 style={{ margin: 0, fontSize: '16px', color: selectedEmergency.color }}>{selectedEmergency.title}</h4>
+                <h4 style={{ margin: 0, fontSize: '14.5px', fontWeight: '800', color: selectedEmergency.color }}>{selectedEmergency.title}</h4>
                 <button
                   onClick={() => speakText(`${selectedEmergency.title}. ${selectedEmergency.steps.join('. ')}`)}
-                  style={{
-                    backgroundColor: '#334155',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: '600'
-                  }}
+                  className="btn btn-secondary"
+                  style={{ padding: '4px 10px', fontSize: '11.5px' }}
                 >
                   🔊 Ouvir Passos
                 </button>
               </div>
-              <ol style={{ margin: 0, paddingLeft: '20px', color: '#e2e8f0', fontSize: '14px', lineHeight: '1.6' }}>
+              <ol style={{ margin: 0, paddingLeft: '20px', color: '#e2e8f0', fontSize: '13px', lineHeight: '1.6' }}>
                 {selectedEmergency.steps.map((step, idx) => (
                   <li key={idx} style={{ marginBottom: '4px' }}>{step}</li>
                 ))}
@@ -464,13 +435,6 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
           )}
         </div>
 
-        <style>{`
-          @keyframes pulseSOS {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1.08); box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-          }
-        `}</style>
       </div>
     </div>
   );
