@@ -128,43 +128,75 @@ const PATIENT_COMPLAINT_CARDS = [
     id: 'vermelhidao',
     icon: '🔴',
     title: 'Vermelhidão ou Inchaço',
-    desc: 'Pele avermelhada, irritada ou aquecida sem ferida aberta.'
+    desc: 'Pele avermelhada, irritada ou aquecida sem ferida aberta.',
+    advice: '💡 Dica de Cuidado: Aplique compressas frias se houver inchaço. Evite coçar ou esfregar para proteger a pele.',
+    questions: [
+      { key: 'isWarm', label: 'A região está quente ao toque?', type: 'boolean' },
+      { key: 'isItchy', label: 'Está coçando ou pinicando?', type: 'boolean' }
+    ]
   },
   {
     id: 'superficial',
     icon: '🩹',
     title: 'Machucado ou Arranhão',
-    desc: 'Corte pequeno, arranhão ou pele descascada.'
+    desc: 'Corte pequeno, arranhão ou pele descascada.',
+    advice: '💡 Dica de Cuidado: Lave com água limpa e sabão neutro. Mantenha o local seco e protegido.',
+    questions: [
+      { key: 'isRecent', label: 'Ocorreu nas últimas 48 horas?', type: 'boolean' },
+      { key: 'isPeeling', label: 'A pele está descascando?', type: 'boolean' }
+    ]
   },
   {
     id: 'profunda',
     icon: '🕳️',
     title: 'Ferida Aberta ou Corte Profundo',
-    desc: 'Ferida aberta com profundidade ou sangramento.'
+    desc: 'Ferida aberta com profundidade ou sangramento.',
+    advice: '💡 Dica de Cuidado: Pressione com pano limpo se houver sangramento ativo. Lave apenas com soro fisiológico.',
+    questions: [
+      { key: 'hasBleeding', label: 'Há sangramento ativo no momento?', type: 'boolean' },
+      { key: 'isDeep', label: 'É possível ver gordura ou tecido profundo?', type: 'boolean' }
+    ]
   },
   {
     id: 'queimadura',
     icon: '⚡',
     title: 'Queimadura ou Bolhas',
-    desc: 'Queimadura de sol, água quente, atrito ou bolhas na pele.'
+    desc: 'Queimadura de sol, água quente, atrito ou bolhas na pele.',
+    advice: '💡 Dica de Cuidado: Resfrie com água corrente em temperatura ambiente. NUNCA fure bolhas nem aplique óleo ou pasta de dente.',
+    questions: [
+      { key: 'burnCause', label: 'Causa:', type: 'select', options: ['Sol', 'Água / Líquido Quente', 'Fogo / Chama', 'Produto Químico', 'Atrito'] },
+      { key: 'hasBlisters', label: 'Existem bolhas formadas na pele?', type: 'boolean' }
+    ]
   },
   {
     id: 'pe_diabetico',
     icon: '🦶',
     title: 'Pés ou Circulação',
-    desc: 'Ferida no pé, alteração em paciente diabético ou formigamento.'
+    desc: 'Ferida no pé, alteração em paciente diabético ou formigamento.',
+    advice: '💡 Dica de Cuidado: Atenção redobrada para cuidados vasculares. Nunca caminhe descalço e inspecione a sola dos pés diariamente.',
+    questions: [
+      { key: 'hasNumbness', label: 'Sente formigamento ou perda de sensibilidade?', type: 'boolean' },
+      { key: 'hasDiabetes', label: 'Possui diagnóstico de Diabetes?', type: 'boolean' }
+    ]
   },
   {
     id: 'geral',
     icon: '🩺',
     title: 'Consulta & Acompanhamento Geral',
-    desc: 'Dores, alergias na pele ou acompanhamento com seu médico.'
+    desc: 'Dores, alergias na pele ou acompanhamento com seu médico.',
+    advice: '💡 Dica de Cuidado: Ideal para registrar a evolução de um tratamento ou anexar exames para seu médico assistente.',
+    questions: [
+      { key: 'needDoctor', label: 'Deseja agendar uma consulta com especialista?', type: 'boolean' },
+      { key: 'hasExams', label: 'Possui exames ou laudos recentes em PDF/imagem?', type: 'boolean' }
+    ]
   },
   {
     id: 'outro',
     icon: '❓',
     title: 'Outra Alteração ou Sintoma',
-    desc: 'Qualquer outra alteração de saúde que deseje registrar.'
+    desc: 'Qualquer outra alteração de saúde que deseje registrar.',
+    advice: '💡 Dica de Cuidado: Por favor, descreva em detalhes no campo abaixo o que você está sentindo para que nossa triagem avalie o seu caso com precisão.',
+    questions: []
   }
 ];
 
@@ -303,10 +335,12 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
   const [clinicalOutcome, setClinicalOutcome] = useState('Tratamento em andamento');
   
   const attachmentsInputRef = useRef(null);
+  const textareaRef = useRef(null);
   const [attachments, setAttachments] = useState([]);
   const [patientComplaintType, setPatientComplaintType] = useState('vermelhidao');
+  const [dynamicAnswers, setDynamicAnswers] = useState({});
 
-  // Escala de Braden States (Integrada diretamente sem termos academicos na UI)
+  // Escala de Braden States
   const [bradenSensory, setBradenSensory] = useState(4);
   const [bradenMoisture, setBradenMoisture] = useState(4);
   const [bradenActivity, setBradenActivity] = useState(4);
@@ -329,7 +363,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     skinProtectionColor = '#0284c7';
   }
 
-  // Auto-sync complaint type to technical fields behind the scenes
+  // Auto-sync complaint type & handle "outro" text area focus
   useEffect(() => {
     switch (patientComplaintType) {
       case 'vermelhidao':
@@ -356,11 +390,20 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
         setWoundType('Consulta & Sintoma Geral');
         setLesionStage('Estágio I');
         break;
+      case 'outro':
+        setWoundType('Outra Alteração Registrada');
+        setLesionStage('Estágio I');
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+        break;
       default:
         setWoundType('Outras Queixas');
         setLesionStage('Estágio I');
     }
   }, [patientComplaintType]);
+
+  const activeComplaintCard = PATIENT_COMPLAINT_CARDS.find(c => c.id === patientComplaintType);
 
   const [selectedHotspot, setSelectedHotspot] = useState(null);
 
@@ -410,7 +453,8 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     setIsAnalyzing(true);
     setAnalysisStep('Analisando imagem e sintomas com o Sistema iRec...');
 
-    const fullSymptoms = `Tipo/Queixa: ${woundType}. Local Anatômico: ${anatomicalLocation}. Data de Aparecimento: ${appearanceDate}. Estágio: ${lesionStage}. Temperatura Local: ${localTemperature}. Infecção: ${infectionSigns}. Cobertura: ${appliedDressing}. Quantidade: ${dressingQuantity}. Frequência: ${dressingFrequency}. Procedimentos: ${performedProcedures}. Evolução: ${clinicalEvolution}. Sintomas: ${symptomsText}`;
+    const dynamicAnswersText = Object.entries(dynamicAnswers).map(([k, v]) => `${k}: ${v}`).join(', ');
+    const fullSymptoms = `Tipo/Queixa: ${woundType}. Respostas Específicas: ${dynamicAnswersText}. Local Anatômico: ${anatomicalLocation}. Data de Aparecimento: ${appearanceDate}. Estágio: ${lesionStage}. Temperatura Local: ${localTemperature}. Infecção: ${infectionSigns}. Cobertura: ${appliedDressing}. Quantidade: ${dressingQuantity}. Frequência: ${dressingFrequency}. Procedimentos: ${performedProcedures}. Evolução: ${clinicalEvolution}. Sintomas: ${symptomsText}`;
 
     let finalResult = await analyzeWoundWithAI(photoFile, clinicalProfile, fullSymptoms);
     
@@ -482,6 +526,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     setSymptomsText('');
     setAttachments([]);
     setPatientComplaintType('vermelhidao');
+    setDynamicAnswers({});
     setWoundType('Úlcera Venosa');
     setAppearanceDate('');
     setAnatomicalLocation('');
@@ -617,7 +662,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </div>
           </div>
 
-          {/* Card 2: Sintomas Básicos em Grid Card Selecionável (Design System Glassmorphism) */}
+          {/* Card 2: Sintomas Básicos em Grid Card Selecionável com Feedback Dinâmico */}
           <div className="glass-card glass-card-cyan-glow" style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
@@ -632,7 +677,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                 gap: '12px',
-                marginBottom: '20px'
+                marginBottom: '16px'
               }}>
                 {PATIENT_COMPLAINT_CARDS.map((card) => {
                   const isSelected = patientComplaintType === card.id;
@@ -668,6 +713,94 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 })}
               </div>
 
+              {/* Dynamic Interactive Feedback Banner & Questions */}
+              {activeComplaintCard && (
+                <div className="animate-fade-in" style={{
+                  backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                  border: '1px solid rgba(2, 132, 199, 0.25)',
+                  borderRadius: '14px',
+                  padding: '14px 16px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--primary)', fontWeight: '700', lineHeight: '1.5' }}>
+                    {activeComplaintCard.advice}
+                  </p>
+
+                  {/* Specific Questions for Selected Card */}
+                  {activeComplaintCard.questions && activeComplaintCard.questions.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '8px', borderTop: '1px solid rgba(2, 132, 199, 0.15)' }}>
+                      {activeComplaintCard.questions.map((q, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                            {q.label}
+                          </label>
+
+                          {q.type === 'boolean' ? (
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button
+                                type="button"
+                                onClick={() => setDynamicAnswers(prev => ({ ...prev, [q.key]: 'Sim' }))}
+                                style={{
+                                  padding: '5px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '11.5px',
+                                  fontWeight: '800',
+                                  border: '1px solid var(--border-color)',
+                                  backgroundColor: dynamicAnswers[q.key] === 'Sim' ? '#10b981' : 'var(--bg-secondary)',
+                                  color: dynamicAnswers[q.key] === 'Sim' ? '#ffffff' : 'var(--text-primary)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Sim
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDynamicAnswers(prev => ({ ...prev, [q.key]: 'Não' }))}
+                                style={{
+                                  padding: '5px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '11.5px',
+                                  fontWeight: '800',
+                                  border: '1px solid var(--border-color)',
+                                  backgroundColor: dynamicAnswers[q.key] === 'Não' ? 'rgba(255,255,255,0.2)' : 'var(--bg-secondary)',
+                                  color: dynamicAnswers[q.key] === 'Não' ? '#ffffff' : 'var(--text-primary)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Não
+                              </button>
+                            </div>
+                          ) : q.type === 'select' ? (
+                            <select
+                              value={dynamicAnswers[q.key] || ''}
+                              onChange={(e) => setDynamicAnswers(prev => ({ ...prev, [q.key]: e.target.value }))}
+                              style={{
+                                padding: '6px 10px',
+                                fontSize: '12px',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border-color)',
+                                backgroundColor: 'var(--bg-secondary)',
+                                color: 'var(--text-primary)',
+                                fontWeight: '700',
+                                outline: 'none'
+                              }}
+                            >
+                              <option value="">Selecione...</option>
+                              {q.options.map((opt, oIdx) => (
+                                <option key={oIdx} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Pain Scale Selector */}
               <div style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -686,7 +819,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 />
               </div>
 
-              {/* Integrated Daily Mobility & Skin Protection Assessment (Sempre Visivel e em Linguagem Simples) */}
+              {/* Integrated Daily Mobility & Skin Protection Assessment */}
               <div style={{
                 backgroundColor: 'var(--bg-primary)',
                 padding: '16px',
@@ -773,10 +906,25 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                   Descrição adicional da queixa ou sintomas
                 </label>
                 <textarea
+                  ref={textareaRef}
                   value={symptomsText}
                   onChange={(e) => setSymptomsText(e.target.value)}
-                  placeholder="Ex: Sinto pontadas na perna à noite, está coçando muito, febre recente..."
-                  style={{ width: '100%', height: '80px', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px', resize: 'none', lineHeight: '1.4', outline: 'none' }}
+                  placeholder={patientComplaintType === 'outro' ? "Descreva em detalhes o seu sintoma de saúde ou alteração para o sistema avaliar..." : "Ex: Sinto pontadas na perna à noite, está coçando muito, febre recente..."}
+                  style={{
+                    width: '100%',
+                    height: '85px',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    border: patientComplaintType === 'outro' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    backgroundColor: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '13px',
+                    resize: 'none',
+                    lineHeight: '1.4',
+                    outline: 'none',
+                    boxShadow: patientComplaintType === 'outro' ? '0 0 12px var(--primary-glow)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
                 />
               </div>
             </div>
