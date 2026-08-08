@@ -164,7 +164,7 @@ const PATIENT_COMPLAINT_CARDS = [
     desc: 'Queimadura de sol, água quente, atrito ou bolhas na pele.',
     advice: '💡 Dica de Cuidado: Resfrie com água corrente em temperatura ambiente. NUNCA fure bolhas nem aplique óleo ou pasta de dente.',
     questions: [
-      { key: 'burnCause', label: 'Causa:', type: 'select', options: ['Sol', 'Água / Líquido Quente', 'Fogo / Chama', 'Produto Químico', 'Atrito'] },
+      { key: 'burnCause', label: 'Causa principal:', type: 'select', options: ['Sol ☀️', 'Líquido Quente 💧', 'Fogo / Chama 🔥', 'Produto Químico 🧪', 'Atrito / Fricção ⚡'] },
       { key: 'hasBlisters', label: 'Existem bolhas formadas na pele?', type: 'boolean' }
     ]
   },
@@ -662,7 +662,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </div>
           </div>
 
-          {/* Card 2: Sintomas Básicos em Grid Card Selecionável com Feedback Dinâmico */}
+          {/* Card 2: Sintomas Básicos em Grid Card Selecionável sem nenhum Select Nativo */}
           <div className="glass-card glass-card-cyan-glow" style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
@@ -713,7 +713,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 })}
               </div>
 
-              {/* Dynamic Interactive Feedback Banner & Questions */}
+              {/* Dynamic Interactive Feedback Banner & Custom Chip Selector Questions (Sem HTML Select) */}
               {activeComplaintCard && (
                 <div className="animate-fade-in" style={{
                   backgroundColor: 'rgba(2, 132, 199, 0.08)',
@@ -729,7 +729,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                     {activeComplaintCard.advice}
                   </p>
 
-                  {/* Specific Questions for Selected Card */}
+                  {/* Specific Custom Chip Questions for Selected Card */}
                   {activeComplaintCard.questions && activeComplaintCard.questions.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '8px', borderTop: '1px solid rgba(2, 132, 199, 0.15)' }}>
                       {activeComplaintCard.questions.map((q, idx) => (
@@ -744,14 +744,16 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                                 type="button"
                                 onClick={() => setDynamicAnswers(prev => ({ ...prev, [q.key]: 'Sim' }))}
                                 style={{
-                                  padding: '5px 12px',
-                                  borderRadius: '8px',
-                                  fontSize: '11.5px',
+                                  padding: '6px 14px',
+                                  borderRadius: '10px',
+                                  fontSize: '12px',
                                   fontWeight: '800',
-                                  border: '1px solid var(--border-color)',
+                                  border: dynamicAnswers[q.key] === 'Sim' ? '1px solid #10b981' : '1px solid var(--border-color)',
                                   backgroundColor: dynamicAnswers[q.key] === 'Sim' ? '#10b981' : 'var(--bg-secondary)',
                                   color: dynamicAnswers[q.key] === 'Sim' ? '#ffffff' : 'var(--text-primary)',
-                                  cursor: 'pointer'
+                                  cursor: 'pointer',
+                                  boxShadow: dynamicAnswers[q.key] === 'Sim' ? '0 0 10px rgba(16, 185, 129, 0.4)' : 'none',
+                                  transition: 'all 0.2s ease'
                                 }}
                               >
                                 Sim
@@ -760,39 +762,48 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                                 type="button"
                                 onClick={() => setDynamicAnswers(prev => ({ ...prev, [q.key]: 'Não' }))}
                                 style={{
-                                  padding: '5px 12px',
-                                  borderRadius: '8px',
-                                  fontSize: '11.5px',
+                                  padding: '6px 14px',
+                                  borderRadius: '10px',
+                                  fontSize: '12px',
                                   fontWeight: '800',
-                                  border: '1px solid var(--border-color)',
-                                  backgroundColor: dynamicAnswers[q.key] === 'Não' ? 'rgba(255,255,255,0.2)' : 'var(--bg-secondary)',
+                                  border: dynamicAnswers[q.key] === 'Não' ? '1px solid rgba(255,255,255,0.4)' : '1px solid var(--border-color)',
+                                  backgroundColor: dynamicAnswers[q.key] === 'Não' ? 'rgba(255,255,255,0.25)' : 'var(--bg-secondary)',
                                   color: dynamicAnswers[q.key] === 'Não' ? '#ffffff' : 'var(--text-primary)',
-                                  cursor: 'pointer'
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease'
                                 }}
                               >
                                 Não
                               </button>
                             </div>
                           ) : q.type === 'select' ? (
-                            <select
-                              value={dynamicAnswers[q.key] || ''}
-                              onChange={(e) => setDynamicAnswers(prev => ({ ...prev, [q.key]: e.target.value }))}
-                              style={{
-                                padding: '6px 10px',
-                                fontSize: '12px',
-                                borderRadius: '8px',
-                                border: '1px solid var(--border-color)',
-                                backgroundColor: 'var(--bg-secondary)',
-                                color: 'var(--text-primary)',
-                                fontWeight: '700',
-                                outline: 'none'
-                              }}
-                            >
-                              <option value="">Selecione...</option>
-                              {q.options.map((opt, oIdx) => (
-                                <option key={oIdx} value={opt}>{opt}</option>
-                              ))}
-                            </select>
+                            /* Custom Glassmorphic Chip Group (Sem HTML Select Nativo) */
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                              {q.options.map((opt, oIdx) => {
+                                const isOptSelected = dynamicAnswers[q.key] === opt;
+                                return (
+                                  <button
+                                    key={oIdx}
+                                    type="button"
+                                    onClick={() => setDynamicAnswers(prev => ({ ...prev, [q.key]: opt }))}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: '10px',
+                                      fontSize: '11.5px',
+                                      fontWeight: '800',
+                                      border: isOptSelected ? '1.5px solid var(--primary)' : '1px solid var(--border-color)',
+                                      backgroundColor: isOptSelected ? 'var(--primary)' : 'var(--bg-secondary)',
+                                      color: isOptSelected ? '#ffffff' : 'var(--text-primary)',
+                                      cursor: 'pointer',
+                                      boxShadow: isOptSelected ? '0 0 12px var(--primary-glow)' : 'none',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                  >
+                                    {opt}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           ) : null}
                         </div>
                       ))}
@@ -819,7 +830,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 />
               </div>
 
-              {/* Integrated Daily Mobility & Skin Protection Assessment */}
+              {/* Integrated Daily Mobility & Skin Protection Assessment (Sem Dropdown Nativo) */}
               <div style={{
                 backgroundColor: 'var(--bg-primary)',
                 padding: '16px',
@@ -827,7 +838,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 border: '1px solid var(--border-color)',
                 marginBottom: '16px'
               }}>
-                <div style={{ marginBottom: '12px' }}>
+                <div style={{ marginBottom: '14px' }}>
                   <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', display: 'block' }}>
                     🚶‍♂️ Mobilidade & Cuidados Diários
                   </span>
@@ -836,53 +847,145 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {/* Question 1: Sensory */}
                   <div>
-                    <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                       Sensibilidade à dor e desconforto:
                     </label>
-                    <select value={bradenSensory} onChange={e => setBradenSensory(Number(e.target.value))} style={{ width: '100%', padding: '10px', fontSize: '12.5px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
-                      <option value={4}>Sinto dor e desconforto normalmente</option>
-                      <option value={3}>Tenho pequena dificuldade em sentir/expressar dor</option>
-                      <option value={2}>Bastante dificuldade em sentir dor ou me comunicar</option>
-                      <option value={1}>Sem resposta à dor (ou acamado com limitação)</option>
-                    </select>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
+                      {[
+                        { val: 4, label: 'Sinto dor normalmente' },
+                        { val: 3, label: 'Pouca dificuldade de sentir dor' },
+                        { val: 2, label: 'Bastante dificuldade' },
+                        { val: 1, label: 'Sem resposta à dor / Acamado' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => setBradenSensory(opt.val)}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: '10px',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            textAlign: 'left',
+                            border: bradenSensory === opt.val ? '1.5px solid var(--primary)' : '1px solid var(--border-color)',
+                            backgroundColor: bradenSensory === opt.val ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                            color: bradenSensory === opt.val ? 'var(--primary)' : 'var(--text-primary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
+                  {/* Question 2: Moisture */}
                   <div>
-                    <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                       Umidade da pele no dia a dia:
                     </label>
-                    <select value={bradenMoisture} onChange={e => setBradenMoisture(Number(e.target.value))} style={{ width: '100%', padding: '10px', fontSize: '12.5px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
-                      <option value={4}>Pele quase sempre seca e bem cuidada</option>
-                      <option value={3}>Fica molhada ou suada de vez em quando</option>
-                      <option value={2}>Fica molhada com muita frequência</option>
-                      <option value={1}>Fica molhada/úmida o tempo todo (trocas constantes)</option>
-                    </select>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
+                      {[
+                        { val: 4, label: 'Pele quase sempre seca' },
+                        { val: 3, label: 'Molhada de vez em quando' },
+                        { val: 2, label: 'Molhada com muita frequência' },
+                        { val: 1, label: 'Molhada o tempo todo' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => setBradenMoisture(opt.val)}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: '10px',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            textAlign: 'left',
+                            border: bradenMoisture === opt.val ? '1.5px solid var(--primary)' : '1px solid var(--border-color)',
+                            backgroundColor: bradenMoisture === opt.val ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                            color: bradenMoisture === opt.val ? 'var(--primary)' : 'var(--text-primary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
+                  {/* Question 3: Activity */}
                   <div>
-                    <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                       Atividade física e caminhada:
                     </label>
-                    <select value={bradenActivity} onChange={e => setBradenActivity(Number(e.target.value))} style={{ width: '100%', padding: '10px', fontSize: '12.5px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
-                      <option value={4}>Caminho frequentemente (pela casa ou rua)</option>
-                      <option value={3}>Caminho curtas distâncias de vez em quando</option>
-                      <option value={2}>Fico a maior parte do tempo sentado na cadeira</option>
-                      <option value={1}>Fico o tempo todo deitado (acamado)</option>
-                    </select>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
+                      {[
+                        { val: 4, label: 'Caminho frequentemente' },
+                        { val: 3, label: 'Caminho curtas distâncias' },
+                        { val: 2, label: 'Confinado à cadeira/poltrona' },
+                        { val: 1, label: 'Totalmente deitado (acamado)' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => setBradenActivity(opt.val)}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: '10px',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            textAlign: 'left',
+                            border: bradenActivity === opt.val ? '1.5px solid var(--primary)' : '1px solid var(--border-color)',
+                            backgroundColor: bradenActivity === opt.val ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                            color: bradenActivity === opt.val ? 'var(--primary)' : 'var(--text-primary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
+                  {/* Question 4: Mobility */}
                   <div>
-                    <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                       Capacidade de mudar de posição:
                     </label>
-                    <select value={bradenMobility} onChange={e => setBradenMobility(Number(e.target.value))} style={{ width: '100%', padding: '10px', fontSize: '12.5px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
-                      <option value={4}>Mudo de posição sozinho sem ajuda</option>
-                      <option value={3}>Mudo de posição sozinho com pequena dificuldade</option>
-                      <option value={2}>Preciso de ajuda frequente para mudar de posição</option>
-                      <option value={1}>Não consigo mudar de posição sozinho (imóvel)</option>
-                    </select>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
+                      {[
+                        { val: 4, label: 'Mudo de posição sozinho' },
+                        { val: 3, label: 'Mudo com pequena ajuda' },
+                        { val: 2, label: 'Preciso de ajuda frequente' },
+                        { val: 1, label: 'Não mudo de posição (imóvel)' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => setBradenMobility(opt.val)}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: '10px',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            textAlign: 'left',
+                            border: bradenMobility === opt.val ? '1.5px solid var(--primary)' : '1px solid var(--border-color)',
+                            backgroundColor: bradenMobility === opt.val ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                            color: bradenMobility === opt.val ? 'var(--primary)' : 'var(--text-primary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
