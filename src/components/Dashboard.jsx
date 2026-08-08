@@ -448,7 +448,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
 
             <button
-              onClick={() => setActiveTab(nextApp ? 'telemedicine' : 'my-appointments')}
+              onClick={() => setActiveTab(nextApp ? 'telemedicine' : 'doctors_directory')}
               className="btn btn-primary"
               style={{ whiteSpace: 'nowrap', padding: '10px 18px', fontSize: '12.5px' }}
             >
