@@ -3,10 +3,10 @@ import { uploadExamFileAndTriage, updateClinicalProfile, createAuditLog } from '
 import { chatWithAI } from '../services/geminiService';
 
 const SUGGESTIONS = [
-  { text: 'Como higienizar a lesão?', icon: '💧' },
+  { text: 'Como higienizar a lesão em casa?', icon: '💧' },
   { text: 'O que comer para cicatrizar mais rápido?', icon: '🍎' },
-  { text: 'Como ler ou traduzir um exame?', icon: '📄' },
-  { text: 'O que significa exsudato e esfacelo?', icon: '📖' }
+  { text: 'Como entender ou enviar um exame?', icon: '📄' },
+  { text: 'O que fazer se o curativo molhar ou vazar?', icon: '🩹' }
 ];
 
 const detectTopicFromText = (userText, aiText = '') => {
@@ -80,36 +80,37 @@ O excesso de açúcar no sangue danifica a parede dos vasos e prejudica o sistem
 };
 
 const AI_RESPONSES = {
-  'Como higienizar a lesão?': `Para higienizar a sua lesão de forma segura e acelerar a cicatrização, siga estas etapas recomendadas:
+  'Como higienizar a lesão em casa?': `Para higienizar a sua lesão de forma segura e acelerar a cicatrização, siga estas etapas recomendadas:
 1. **Lave as mãos** com água e sabão antes de tocar em qualquer curativo.
-2. Use **soro fisiológico morno (0.9%)** em jato suave diretamente sobre o leito da ferida. A temperatura morna evita o choque térmico nas células que estão reconstruindo a pele.
-3. Se não tiver soro, utilize **água corrente limpa de chuveiro ou filtro**. Evite esfregar a ferida com gazes para não remover a pele nova (tecido de granulação) que está crescendo.
-4. Seque apenas a **pele saudável ao redor** (perilesão) dando batidinhas com uma toalha limpa ou gaze. O leito da ferida deve permanecer úmido para cicatrizar.`,
+2. Use **soro fisiológico morno (0.9%)** em jato suave diretamente sobre a região afetada. A temperatura morna evita o choque térmico nas células que estão reconstruindo a pele.
+3. Se não tiver soro, utilize **água corrente limpa de chuveiro ou filtro**. Evite esfregar com força para não remover a pele nova que está crescendo.
+4. Seque apenas a **pele saudável ao redor** dando batidinhas suaves com uma toalha limpa ou gaze.`,
 
-  'O que comer para cicatrizar mais rápido?': `A alimentação desempenha um papel crucial na velocidade de regeneração da sua pele. Priorize:
-- **Proteínas magras** (ovo, frango, peixe, feijão): São os "tijolos" que constroem a nova pele.
+  'O que comer para cicatrizar mais rápido?': `A alimentação desempenha um papel fundamental na regeneração da sua pele. Priorize:
+- **Proteínas magras** (ovo, frango, peixe, feijão): São os tijolos que constroem a nova pele.
 - **Vitamina C** (laranja, limão, acerola, brócolis): Essencial para a formação do colágeno.
-- **Zinco** (sementes, carnes, castanhas): Ajuda a combater infecções locais.
-- **Hidratação abundante**: Beba pelo menos 2 a 3 litros de água por dia. Tecidos desidratados não cicatrizam.
+- **Zinco** (sementes, carnes, castanhas): Ajuda a fortalecer a imunidade da pele.
+- **Hidratação abundante**: Beba pelo menos 2 a 3 litros de água por dia. Tecidos desidratados demoram mais para cicatrizar.
 
-*Atenção especial se tiver Diabetes*: Mantenha o controle estrito da glicemia, pois taxas elevadas de açúcar prejudicam a circulação e dificultam a cicatrização.`,
+*Atenção especial se tiver Diabetes*: Mantenha o controle estrito da glicemia, pois taxas elevadas de açúcar prejudicam a circulação e a cicatrização.`,
 
-  'Como ler ou traduzir um exame?': `Com o iRec, você pode entender seus exames clínicos de forma simples!
+  'Como entender ou enviar um exame?': `Com o iRec, você pode entender seus exames clínicos de forma simples!
 
 Você pode anexar um exame clicando no clipe de anexo (📎) ao lado da caixa de mensagens. Selecione o arquivo do seu exame para receber uma explicação clara dos termos médicos e orientações clínicas.
 
-Eu consigo te ajudar a interpretar:
-- **Hemogramas** (sinais de anemia ou infecções)
-- **Doppler Vascular** (circulação e varizes)
-- **Glicose e Hemoglobina Glicada** (diabetes e cicatrização)`,
+Eu consigo te ajudar a entender:
+- **Hemogramas** (sinais de anemia ou inflamação)
+- **Doppler Vascular** (circulação das pernas)
+- **Glicose e Hemoglobina Glicada** (açúcar no sangue)`,
 
-  'O que significa exsudato e esfacelo?': `Esses são termos técnicos comuns em relatórios de feridas:
-- **Exsudato**: É o líquido/secreção que sai da ferida. Em quantidade moderada, ele é benéfico pois mantém a ferida úmida e rica em fatores de crescimento. Se estiver abundante ou com pus, precisa de curativos especiais (como alginato).
-- **Esfacelo**: É aquela camada amarela ou esbranquiçada no fundo da ferida. Trata-se de células mortas e fibrina que impedem o crescimento da pele nova. Precisa ser limpo com hidrogel para que a cicatrização avance.`,
+  'O que fazer se o curativo molhar ou vazar?': `Se o seu curativo molhar acidentalmente ou começar a vazar secreção:
+1. **Troque a cobertura externa**: Um curativo úmido por fora pode atrair bactérias do ambiente para a ferida.
+2. **Higienize com soro fisiológico morno** e seque delicadamente a pele ao redor.
+3. **Aplique uma nova cobertura limpa**: Siga a orientação do seu enfermeiro assistente. Se o vazamento for muito frequente, avise a equipe para que eles indiquem um curativo de maior absorção (como alginato ou espuma).`,
 
-  'default': `Olá! Sou o assistente de cuidados do iRec. Posso tirar dúvidas sobre cicatrização de feridas, alimentação saudável para regeneração da pele, como higienizar lesões e explicar termos médicos de forma simples.
+  'default': `Olá! Sou o assistente de cuidados do iRec. Posso tirar dúvidas sobre cuidados com a pele, alimentação saudável para cicatrização e explicar os resultados de seus exames em palavras bem simples.
 
-Além disso, também posso te ajudar a **traduzir resultados de exames** (clique no botão de clipe 📎 abaixo para enviar um exame).
+Além disso, você pode anexar um exame clicando no clipe (📎) abaixo.
 
 Como posso te ajudar hoje?`
 };
