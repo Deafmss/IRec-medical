@@ -9,7 +9,6 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
   
   // 1. REAL PRESCRIBED WOUND TREATMENT PLAN & DRESSING (ONLY IF AN ACTIVE OPEN WOUND HAS AN EXPLICIT PRESCRIBED TREATMENT OR DRESSING)
   if (hasActiveWound && latestEntry) {
-    // Check if entry has explicit prescribed treatment items
     if (latestEntry.treatmentPlan) {
       const planItems = Array.isArray(latestEntry.treatmentPlan)
         ? latestEntry.treatmentPlan
@@ -30,7 +29,6 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
       });
     }
 
-    // Specific applied dressing procedure (ONLY if prescribed)
     if (latestEntry.appliedDressing) {
       const freqText = latestEntry.dressingFrequency ? ` [Frequência: ${latestEntry.dressingFrequency}]` : '';
       list.push({
@@ -282,12 +280,12 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
     <div className="animate-fade-in" style={{ position: 'relative', width: '100%' }}>
 
       {/* Header Profile & Welcome Banner */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>
             Olá, {clinicalProfile?.name || 'Paciente'} 👋
           </span>
-          <h2 style={{ fontSize: '24px', fontFamily: 'var(--font-display)', fontWeight: '800', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>
+          <h2 style={{ fontSize: '26px', fontFamily: 'var(--font-display)', fontWeight: '800', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>
             Seu Painel de Monitoramento
           </h2>
         </div>
@@ -304,7 +302,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               fontWeight: '800',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              boxShadow: '0 0 12px rgba(16, 185, 129, 0.15)'
             }}>
               <span style={{ width: '7px', height: '7px', backgroundColor: '#10b981', borderRadius: '50%' }}></span>
               Em Acompanhamento ({assignedClinician.name})
@@ -320,7 +319,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               fontWeight: '800',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              boxShadow: '0 0 12px rgba(2, 132, 199, 0.15)'
             }}>
               <span style={{ width: '7px', height: '7px', backgroundColor: 'var(--primary)', borderRadius: '50%' }}></span>
               Cadastro Ativo (Aguardando Profissional)
@@ -340,7 +340,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '6px',
+              boxShadow: '0 0 12px rgba(239, 68, 68, 0.2)'
             }}
           >
             🚨 SOS 192
@@ -349,25 +350,19 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
       </div>
 
       {/* Main Dashboard Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '22px' }}>
         
         {/* Left Column: Progress, Appointments & Care Diary */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
           
-          {/* Hero Healing Progress Ring Card */}
-          <div className="glass-card" style={{
-            background: 'linear-gradient(135deg, var(--bg-secondary), rgba(2, 132, 199, 0.05))',
-            borderRadius: '16px',
-            padding: '22px',
-            border: '1px solid var(--border-color)',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Hero Healing Progress Ring Card (Glassmorphism Consistente + Luz Vazada Esmeralda) */}
+          <div className="glass-card glass-card-emerald-glow" style={{ margin: 0 }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                   EVOLUÇÃO DA LESÃO
                 </span>
-                <h1 style={{ fontSize: '36px', fontFamily: 'var(--font-display)', fontWeight: '900', color: 'var(--primary)', margin: '4px 0 2px 0' }}>
+                <h1 style={{ fontSize: '38px', fontFamily: 'var(--font-display)', fontWeight: '900', color: 'var(--primary)', margin: '4px 0 2px 0' }}>
                   {healingProgress}%
                 </h1>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
@@ -401,7 +396,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', borderTop: '1px solid var(--border-color)', marginTop: '18px', paddingTop: '14px' }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', borderTop: '1px solid var(--border-color)', marginTop: '18px', paddingTop: '14px' }}>
               <div>
                 <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Lesão Ativa</span>
                 <p style={{ fontSize: '13px', fontWeight: '700', margin: '2px 0 0 0', color: 'var(--text-primary)' }}>
@@ -423,19 +418,15 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
           </div>
 
-          {/* Next Appointment Feature Card */}
-          <div className="glass-card" style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '16px',
-            padding: '20px',
-            border: '1px solid var(--border-color)',
+          {/* Next Appointment Card (Glassmorphism Consistente + Luz Vazada Azul) */}
+          <div className="glass-card glass-card-cyan-glow neon-edge-blue" style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '16px',
-            boxShadow: 'var(--shadow-sm)'
+            margin: 0
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '14px' }}>
               <div style={{
                 backgroundColor: 'rgba(2, 132, 199, 0.12)',
                 color: 'var(--primary)',
@@ -465,6 +456,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             <button
               onClick={() => setActiveTab(nextApp ? 'telemedicine' : 'my-appointments')}
               style={{
+                position: 'relative',
+                zIndex: 1,
                 backgroundColor: 'var(--primary)',
                 color: '#ffffff',
                 border: 'none',
@@ -473,22 +466,17 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                 fontSize: '12.5px',
                 fontWeight: '800',
                 cursor: 'pointer',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)'
               }}
             >
               {nextApp ? '🎥 Acessar Sala HD' : '📅 Agendar'}
             </button>
           </div>
 
-          {/* Daily Care Checklist — Refletindo Prescrições Reais */}
-          <div className="glass-card" style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '16px',
-            padding: '22px',
-            border: '1px solid var(--border-color)',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          {/* Daily Care Checklist (Glassmorphism Consistente + Luz Vazada Azul) */}
+          <div className="glass-card glass-card-cyan-glow" style={{ margin: 0 }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
                   📋 Diário de Cuidados de Hoje
@@ -509,7 +497,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
 
             {/* Compliance Bar */}
-            <div style={{ width: '100%', height: '7px', backgroundColor: 'var(--border-color)', borderRadius: '4px', marginBottom: '18px', overflow: 'hidden' }}>
+            <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '7px', backgroundColor: 'var(--border-color)', borderRadius: '4px', marginBottom: '18px', overflow: 'hidden' }}>
               <div style={{
                 width: `${complianceScore}%`,
                 height: '100%',
@@ -520,7 +508,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
 
             {/* Checklist Tasks */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {baseTasks.map(task => {
                 const isChecked = completedTaskIds.includes(task.id);
                 return (
@@ -530,12 +518,12 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '12px',
-                      padding: '12px',
-                      borderRadius: '10px',
+                      padding: '12px 14px',
+                      borderRadius: '12px',
                       backgroundColor: isChecked
-                        ? 'rgba(16, 185, 129, 0.06)'
+                        ? 'rgba(16, 185, 129, 0.08)'
                         : task.isPrescribed
-                          ? 'rgba(2, 132, 199, 0.04)'
+                          ? 'rgba(2, 132, 199, 0.05)'
                           : 'var(--bg-primary)',
                       border: isChecked
                         ? '1px solid #10b981'
@@ -543,7 +531,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                           ? '1px solid rgba(2, 132, 199, 0.3)'
                           : '1px solid var(--border-color)',
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease'
+                      transition: 'all 0.15s ease',
+                      boxShadow: isChecked ? '0 0 10px rgba(16, 185, 129, 0.1)' : 'none'
                     }}
                   >
                     <input
@@ -592,7 +581,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                 backgroundColor: 'var(--primary)',
                 color: '#ffffff',
                 border: 'none',
-                borderRadius: '12px',
+                borderRadius: '14px',
                 padding: '16px',
                 fontSize: '14px',
                 fontWeight: '800',
@@ -601,7 +590,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.2)'
+                boxShadow: '0 6px 20px rgba(2, 132, 199, 0.25)'
               }}
             >
               <span>📷</span>
@@ -614,7 +603,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                 backgroundColor: 'var(--bg-secondary)',
                 color: 'var(--text-primary)',
                 border: '1px solid var(--border-color)',
-                borderRadius: '12px',
+                borderRadius: '14px',
                 padding: '16px',
                 fontSize: '14px',
                 fontWeight: '800',
@@ -622,7 +611,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)'
               }}
             >
               <span>💬</span>
@@ -633,17 +623,11 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         </div>
 
         {/* Right Column: Clinical Profile Summary, Local Health Network & Safety */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
-          {/* Clinical Profile Summary Card */}
-          <div className="glass-card" style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '16px',
-            padding: '22px',
-            border: '1px solid var(--border-color)',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          {/* Clinical Profile Summary Card (Glassmorphism Consistente + Luz Vazada Azul) */}
+          <div className="glass-card glass-card-cyan-glow" style={{ margin: 0 }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
                 👤 Sua Ficha Clínica
               </h3>
@@ -665,7 +649,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
 
             {/* Profile Completeness Bar */}
-            <div style={{ padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
+            <div style={{ position: 'relative', zIndex: 1, padding: '14px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                   COMPLETUDE DA FICHA
@@ -680,7 +664,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
 
             {/* Key Clinical Summary Data */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Paciente:</span>
                 <strong style={{ color: 'var(--text-primary)' }}>{clinicalProfile?.name || 'Não informado'}</strong>
@@ -706,14 +690,8 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </div>
           </div>
 
-          {/* Assigned Doctor & Local Health Resources */}
-          <div className="glass-card" style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '16px',
-            padding: '22px',
-            border: '1px solid var(--border-color)',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
+          {/* Assigned Doctor & Local Health Resources (Glassmorphism Consistente + Borda Esmeralda) */}
+          <div className="glass-card neon-edge-emerald" style={{ margin: 0 }}>
             <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: '0 0 14px 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               🩺 Profissional Responsável & Rede Local
             </h3>
@@ -751,25 +729,22 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </button>
           </div>
 
-          {/* Safety & Red Flag Alert Box */}
-          <div className="glass-card" style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.05)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
-            borderRadius: '16px',
-            padding: '20px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          {/* Safety & Red Flag Alert Box (Glassmorphism Consistente + Luz Vazada Vermelha) */}
+          <div className="glass-card glass-card-danger-glow neon-edge-danger" style={{ margin: 0 }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span style={{ fontSize: '20px' }}>🚨</span>
               <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: '#ef4444' }}>
                 Sinais de Urgência (Red Flags)
               </h3>
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 14px 0' }}>
+            <p style={{ position: 'relative', zIndex: 1, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 14px 0' }}>
               Se notar sangramento abundante, febre superior a 38°C, calafrios ou dor intensa súbita na lesão:
             </p>
             <button
               onClick={() => onTriggerSOS ? onTriggerSOS() : alert("Procure um pronto-socorro ou ligue SAMU 192!")}
               style={{
+                position: 'relative',
+                zIndex: 1,
                 width: '100%',
                 backgroundColor: '#ef4444',
                 color: '#ffffff',
@@ -779,7 +754,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                 fontSize: '13px',
                 fontWeight: '900',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)'
+                boxShadow: '0 4px 14px rgba(239, 68, 68, 0.3)'
               }}
             >
               Relatar Sintoma Grave (SOS)

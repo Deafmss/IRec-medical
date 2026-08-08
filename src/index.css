@@ -422,23 +422,88 @@ select option {
   }
 }
 
-/* Glassmorphism Cards */
+/* Glassmorphism Cards & Soft Neon Light Leakage ("Luz Vazada") */
 .glass-card {
+  position: relative;
   background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
   margin-bottom: 18px;
+  overflow: hidden;
   transition: var(--transition-smooth);
+}
+
+:root[data-theme='dark'] .glass-card {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
 .glass-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg), var(--shadow-glow);
-  border-color: var(--primary-light);
+  box-shadow: 0 12px 40px 0 rgba(2, 132, 199, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  border-color: rgba(2, 132, 199, 0.3);
+}
+
+/* Glassmorphism Variants with Soft Ambient Light Leakage ("Luz Vazada") */
+.glass-card-cyan-glow::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(2, 132, 199, 0.18) 0%, rgba(2, 132, 199, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(20px);
+}
+
+.glass-card-emerald-glow::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(20px);
+}
+
+.glass-card-danger-glow::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  left: -50px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(20px);
+}
+
+/* Glowing Neon Edge Highlight */
+.neon-edge-blue {
+  border-left: 4px solid var(--primary) !important;
+  box-shadow: -4px 0 16px -2px rgba(2, 132, 199, 0.3) !important;
+}
+
+.neon-edge-emerald {
+  border-left: 4px solid #10b981 !important;
+  box-shadow: -4px 0 16px -2px rgba(16, 185, 129, 0.3) !important;
+}
+
+.neon-edge-danger {
+  border-left: 4px solid #ef4444 !important;
+  box-shadow: -4px 0 16px -2px rgba(239, 68, 68, 0.3) !important;
 }
 
 /* Premium Buttons */
