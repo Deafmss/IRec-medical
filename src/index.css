@@ -650,6 +650,45 @@ select option {
   100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
+/* SOS Emergency Modal High-Contrast Text & Buttons */
+.sos-guide-title {
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+
+.sos-guide-btn {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 13.5px !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  text-align: left !important;
+  width: 100% !important;
+  transition: all 0.2s ease !important;
+}
+
+.sos-guide-btn:hover {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.2) !important;
+}
+
+.sos-guide-btn.selected {
+  background-color: rgba(239, 68, 68, 0.35) !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.6) !important;
+}
+
 /* Typography styles */
 .gradient-text {
   background: linear-gradient(135deg, var(--primary), var(--accent-light));

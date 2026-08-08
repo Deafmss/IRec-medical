@@ -252,12 +252,12 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
           <button 
             onClick={() => { triggerVibration(); onClose(); }}
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.12)',
-              border: '1px solid rgba(255, 255, 255, 0.25)',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
               color: '#ffffff',
               padding: '6px 14px',
               fontSize: '13px',
-              fontWeight: '700',
+              fontWeight: '800',
               borderRadius: '10px',
               cursor: 'pointer'
             }}
@@ -276,8 +276,8 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
               width: '100%',
               padding: '12px 16px',
               fontSize: '13px',
-              fontWeight: '700',
-              backgroundColor: 'rgba(2, 132, 199, 0.2)',
+              fontWeight: '800',
+              backgroundColor: 'rgba(2, 132, 199, 0.25)',
               border: '1px solid #0284c7',
               color: '#ffffff',
               borderRadius: '12px',
@@ -391,7 +391,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
 
         {/* First Aid Quick Guides */}
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <h3 style={{ margin: '4px 0 4px 0', fontSize: '15px', color: '#ffffff', fontWeight: '800' }}>
+          <h3 className="sos-guide-title" style={{ margin: '4px 0 4px 0' }}>
             💡 Guia Rápido de Primeiros Socorros:
           </h3>
 
@@ -402,22 +402,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
                 <button
                   key={guide.id}
                   onClick={() => { triggerVibration(); setSelectedEmergency(isSelected ? null : guide); }}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: '12px',
-                    fontSize: '13px',
-                    fontWeight: '800',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.1)',
-                    border: isSelected ? `1.5px solid ${guide.color}` : '1px solid rgba(255, 255, 255, 0.25)',
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease',
-                    boxShadow: isSelected ? `0 0 14px ${guide.color}` : 'none'
-                  }}
+                  className={`sos-guide-btn ${isSelected ? 'selected' : ''}`}
                 >
                   <span style={{ color: '#ffffff', fontWeight: '800' }}>{guide.title}</span>
                 </button>
@@ -431,7 +416,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
               borderRadius: '16px',
               padding: '16px',
               borderLeft: `4px solid ${selectedEmergency.color}`,
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
               borderLeftWidth: '4px',
               marginTop: '6px',
               display: 'flex',
@@ -450,13 +435,13 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
                     padding: '5px 12px',
                     cursor: 'pointer',
                     fontSize: '12px',
-                    fontWeight: '700'
+                    fontWeight: '800'
                   }}
                 >
                   🔊 Ouvir Passos
                 </button>
               </div>
-              <ol style={{ margin: 0, paddingLeft: '20px', color: '#f8fafc', fontSize: '13.5px', lineHeight: '1.6', fontWeight: '500' }}>
+              <ol style={{ margin: 0, paddingLeft: '20px', color: '#f8fafc', fontSize: '13.5px', lineHeight: '1.6', fontWeight: '600' }}>
                 {selectedEmergency.steps.map((step, idx) => (
                   <li key={idx} style={{ marginBottom: '6px' }}>{step}</li>
                 ))}
