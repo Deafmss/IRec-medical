@@ -773,6 +773,8 @@ export default function App() {
             clinicalProfile={clinicalProfile} 
             setClinicalProfile={setClinicalProfile} 
             entries={entries}
+            onTriggerSOS={() => setShowSOSModal(true)}
+            onOpenProfileModal={() => setShowProfileModal(true)}
           />
         );
       case 'upload':

@@ -297,42 +297,6 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         </div>
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {assignedClinician ? (
-            <span style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              color: '#10b981',
-              border: '1px solid #10b981',
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '800',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 0 12px rgba(16, 185, 129, 0.15)'
-            }}>
-              <span style={{ width: '7px', height: '7px', backgroundColor: '#10b981', borderRadius: '50%' }}></span>
-              Em Acompanhamento ({assignedClinician.name})
-            </span>
-          ) : (
-            <span style={{
-              backgroundColor: 'rgba(2, 132, 199, 0.1)',
-              color: 'var(--primary)',
-              border: '1px solid var(--primary)',
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '800',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 0 12px rgba(2, 132, 199, 0.15)'
-            }}>
-              <span style={{ width: '7px', height: '7px', backgroundColor: 'var(--primary)', borderRadius: '50%' }}></span>
-              Cadastro Ativo (Aguardando Profissional)
-            </span>
-          )}
-
           <button
             onClick={() => onTriggerSOS && onTriggerSOS()}
             className="btn btn-sos"
