@@ -3,33 +3,86 @@ import { createPortal } from 'react-dom';
 import { getAssignedDoctor, getPatientAppointments, createAuditLog } from '../services/supabaseService';
 import LocalResourcesPanel from './LocalResourcesPanel';
 
-// Helper to generate precise care/daily tasks based on clinical history, comorbidities, and active wound status
+// Helper to generate REAL clinical tasks based strictly on active prescriptions, evaluation treatment plans, and profile data
 const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = null) => {
   const list = [];
   
-  if (hasActiveWound) {
-    list.push({ 
-      id: 'cleaning', 
-      text: 'Limpar a lesão com soro fisiológico morno por irrigação (sem fricção)', 
-      category: 'Procedimento' 
-    });
-  }
-  
-  if (profile?.hasDiabetes) {
-    if (hasActiveWound) {
-      const freqText = latestEntry?.dressingFrequency ? ` [Frequência: ${latestEntry.dressingFrequency}]` : '';
-      const dressingText = latestEntry?.appliedDressing
-        ? `Aplicar cobertura para Pé Diabético: ${latestEntry.appliedDressing}${freqText}`
-        : 'Aplicar cobertura apropriada para Pé Diabético (controle bacteriano e umidade)';
+  // 1. REAL PRESCRIBED WOUND TREATMENT PLAN & DRESSING
+  if (hasActiveWound && latestEntry) {
+    // If clinician/triage defined a specific treatment plan array or string
+    if (latestEntry.treatmentPlan) {
+      const planItems = Array.isArray(latestEntry.treatmentPlan)
+        ? latestEntry.treatmentPlan
+        : typeof latestEntry.treatmentPlan === 'string'
+          ? latestEntry.treatmentPlan.split('\n').filter(Boolean)
+          : [];
+
+      planItems.forEach((item, idx) => {
+        const cleanText = item.replace(/^[-*•\d.]+\s*/, '').trim();
+        if (cleanText.length > 3) {
+          list.push({
+            id: `prescribed_plan_${idx}`,
+            text: cleanText,
+            category: '📌 Prescrição da Lesão',
+            isPrescribed: true
+          });
+        }
+      });
+    }
+
+    // Specific applied dressing procedure
+    if (latestEntry.appliedDressing) {
+      const freqText = latestEntry.dressingFrequency ? ` [Frequência: ${latestEntry.dressingFrequency}]` : '';
+      list.push({
+        id: 'prescribed_dressing',
+        text: `Aplicar cobertura prescrita: ${latestEntry.appliedDressing}${freqText}`,
+        category: '📌 Curativo Prescrito',
+        isPrescribed: true
+      });
+    } else {
       list.push({ 
-        id: 'dressing_diabetic', 
-        text: dressingText, 
+        id: 'cleaning_standard', 
+        text: 'Limpar a lesão com soro fisiológico morno por irrigação (sem fricção)', 
         category: 'Procedimento' 
       });
     }
+  }
+  
+  // 2. REAL CONTINUOUS MEDICATIONS FROM CLINICAL PROFILE
+  if (profile?.medications && profile.medications.trim().length > 0) {
+    const medList = profile.medications
+      .split(/[,;\n]/)
+      .map(m => m.trim())
+      .filter(m => m.length > 2);
+
+    if (medList.length > 0) {
+      medList.forEach((med, idx) => {
+        list.push({
+          id: `real_med_${idx}`,
+          text: `Tomar medicamento de uso contínuo prescrito: ${med}`,
+          category: '💊 Medicamento Prescrito',
+          isPrescribed: true
+        });
+      });
+    }
+  } else {
+    list.push({
+      id: 'meds_generic',
+      text: 'Tomar medicamentos prescritos nos horários estipulados',
+      category: 'Medicamentos'
+    });
+  }
+
+  // 3. CLINICAL PROFILE SPECIFIC GUIDELINES (COMORBIDITIES & PREVENTION)
+  if (profile?.hasDiabetes) {
+    list.push({ 
+      id: 'glucose_control', 
+      text: 'Aferir a glicemia capilar (jejum e pós-prandial) e registrar no controle', 
+      category: 'Controle Glicêmico' 
+    });
     list.push({ 
       id: 'foot_check', 
-      text: 'Inspeção visual diária dos pés buscando novas pressões, bolhas ou calosidades', 
+      text: 'Inspeção visual diária dos pés em busca de bolhas, calosidades ou rubor', 
       category: 'Prevenção' 
     });
     list.push({ 
@@ -37,30 +90,13 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
       text: 'Secar meticulosamente os espaços entre os dedos dos pés após o banho', 
       category: 'Higiene' 
     });
-    list.push({ 
-      id: 'glucose_control', 
-      text: 'Aferir a glicemia capilar (jejum e pós-prandial)', 
-      category: 'Controle Glicêmico' 
-    });
-  } else {
-    if (hasActiveWound) {
-      const freqText = latestEntry?.dressingFrequency ? ` [Frequência: ${latestEntry.dressingFrequency}]` : '';
-      const dressingText = latestEntry?.appliedDressing
-        ? `Aplicar cobertura prescrita: ${latestEntry.appliedDressing}${freqText}`
-        : 'Aplicar cobertura/curativo adaptado para a lesão';
-      list.push({ 
-        id: 'dressing_venous', 
-        text: dressingText, 
-        category: 'Procedimento' 
-      });
-    }
   }
 
   if (profile?.hasVenousInsufficiency) {
     if (hasActiveWound) {
       list.push({ 
         id: 'compression', 
-        text: 'Calçar meia de compressão ou aplicar bandagem elástica antes de levantar-se', 
+        text: 'Calçar meia de compressão recomendada ou aplicar bandagem vascular', 
         category: 'Terapia Vascular' 
       });
     }
@@ -74,7 +110,7 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
   if (profile?.hasPeripheralArterialDisease) {
     list.push({ 
       id: 'pad_pulse', 
-      text: 'Verificar pulsos periféricos do pé e avaliar coloração/temperatura dos dedos', 
+      text: 'Verificar pulsos periféricos do pé e avaliar temperatura dos dedos', 
       category: 'Avaliação Arterial' 
     });
   }
@@ -90,30 +126,17 @@ const generateDynamicTasks = (profile, hasActiveWound = false, latestEntry = nul
   if (profile?.isSmoker) {
     list.push({ 
       id: 'stop_smoking', 
-      text: 'Evitar fumar hoje para não prejudicar a oxigenação na cicatrização', 
+      text: 'Evitar fumar hoje para conter o vasoespasmo arterial na cicatrização', 
       category: 'Hábitos' 
     });
   }
 
+  // General tissue hydration requirement
   list.push({ 
     id: 'hydration', 
     text: 'Ingerir pelo menos 2 a 2.5 litros de água para hidratação tecidual', 
     category: 'Nutrição' 
   });
-
-  if (profile?.medications) {
-    list.push({ 
-      id: 'meds', 
-      text: `Tomar medicação contínua prescrita: ${profile.medications}`, 
-      category: 'Medicamentos' 
-    });
-  } else {
-    list.push({ 
-      id: 'meds_generic', 
-      text: 'Tomar os medicamentos prescritos nos horários estipulados', 
-      category: 'Medicamentos' 
-    });
-  }
 
   return list;
 };
@@ -201,15 +224,6 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
   };
 
   const profileProgress = calculateProfileProgress(clinicalProfile);
-
-  // Pain label helper
-  const getPainLabel = (painVal) => {
-    const pain = parseInt(painVal);
-    if (isNaN(pain) || pain === 0) return 'Sem dor';
-    if (pain <= 3) return 'Leve';
-    if (pain <= 7) return 'Moderada';
-    return 'Forte';
-  };
 
   // Calculate days active in treatment
   let daysActive = 0;
@@ -455,7 +469,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
             </button>
           </div>
 
-          {/* Daily Care Checklist */}
+          {/* Daily Care Checklist — Refletindo Prescrições Reais */}
           <div className="glass-card" style={{
             backgroundColor: 'var(--bg-secondary)',
             borderRadius: '16px',
@@ -469,7 +483,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                   📋 Diário de Cuidados de Hoje
                 </h3>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                  Marque os procedimentos conforme realizar para manter a meta de cicatrização
+                  Reflexo direto das prescrições médicas, diárias da lesão e ficha clínica
                 </p>
               </div>
 
@@ -507,8 +521,16 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                       gap: '12px',
                       padding: '12px',
                       borderRadius: '10px',
-                      backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.06)' : 'var(--bg-primary)',
-                      border: isChecked ? '1px solid #10b981' : '1px solid var(--border-color)',
+                      backgroundColor: isChecked
+                        ? 'rgba(16, 185, 129, 0.06)'
+                        : task.isPrescribed
+                          ? 'rgba(2, 132, 199, 0.04)'
+                          : 'var(--bg-primary)',
+                      border: isChecked
+                        ? '1px solid #10b981'
+                        : task.isPrescribed
+                          ? '1px solid rgba(2, 132, 199, 0.3)'
+                          : '1px solid var(--border-color)',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease'
                     }}
@@ -520,6 +542,21 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                       style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer', accentColor: '#10b981' }}
                     />
                     <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          color: task.isPrescribed ? 'var(--primary)' : 'var(--text-muted)',
+                          textTransform: 'uppercase'
+                        }}>
+                          {task.category}
+                        </span>
+                        {task.isPrescribed && (
+                          <span style={{ fontSize: '9px', fontWeight: '800', backgroundColor: 'rgba(2, 132, 199, 0.15)', color: 'var(--primary)', padding: '1px 6px', borderRadius: '4px' }}>
+                            Prescrição Oficial
+                          </span>
+                        )}
+                      </div>
                       <p style={{
                         fontSize: '13px',
                         fontWeight: '600',
@@ -529,9 +566,6 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
                       }}>
                         {task.text}
                       </p>
-                      <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                        {task.category}
-                      </span>
                     </div>
                   </label>
                 );
@@ -590,7 +624,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, setClinicalPr
         {/* Right Column: Clinical Profile Summary, Local Health Network & Safety */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-          {/* Clinical Profile Summary Card (Sanitizado sem código morto) */}
+          {/* Clinical Profile Summary Card */}
           <div className="glass-card" style={{
             backgroundColor: 'var(--bg-secondary)',
             borderRadius: '16px',
