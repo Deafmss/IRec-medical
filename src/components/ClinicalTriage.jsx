@@ -306,28 +306,27 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
   const [attachments, setAttachments] = useState([]);
   const [patientComplaintType, setPatientComplaintType] = useState('vermelhidao');
 
-  // Escala de Braden States
+  // Escala de Braden States (Integrada diretamente sem termos academicos na UI)
   const [bradenSensory, setBradenSensory] = useState(4);
   const [bradenMoisture, setBradenMoisture] = useState(4);
   const [bradenActivity, setBradenActivity] = useState(4);
   const [bradenMobility, setBradenMobility] = useState(4);
-  const [bradenNutrition, setBradenNutrition] = useState(3);
-  const [bradenFriction, setBradenFriction] = useState(3);
-  const [showBradenCalculator, setShowBradenCalculator] = useState(false);
+  const [bradenNutrition] = useState(3);
+  const [bradenFriction] = useState(3);
 
   const bradenTotalScore = Number(bradenSensory) + Number(bradenMoisture) + Number(bradenActivity) + Number(bradenMobility) + Number(bradenNutrition) + Number(bradenFriction);
   
-  let bradenRiskCategory = 'Sem Risco Significativo';
-  let bradenRiskColor = '#10b981';
+  let skinProtectionText = 'Excelente (Pele Protegida)';
+  let skinProtectionColor = '#10b981';
   if (bradenTotalScore <= 12) {
-    bradenRiskCategory = 'Alto Risco (Risco Elevado de Lesão por Pressão)';
-    bradenRiskColor = '#ef4444';
+    skinProtectionText = 'Atenção Elevada (Risco de Lesão por Pressão / Necessita Mudança de Posição constante)';
+    skinProtectionColor = '#ef4444';
   } else if (bradenTotalScore <= 14) {
-    bradenRiskCategory = 'Risco Moderado';
-    bradenRiskColor = '#f59e0b';
+    skinProtectionText = 'Atenção Moderada (Necessita Hidratação e Cuidados de Posição)';
+    skinProtectionColor = '#f59e0b';
   } else if (bradenTotalScore <= 18) {
-    bradenRiskCategory = 'Risco Baixo';
-    bradenRiskColor = '#0284c7';
+    skinProtectionText = 'Bom (Cuidados Convencionais)';
+    skinProtectionColor = '#0284c7';
   }
 
   // Auto-sync complaint type to technical fields behind the scenes
@@ -628,7 +627,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 Selecione a opção que melhor descreve como está a sua pele ou o seu sintoma de saúde:
               </p>
 
-              {/* Custom Interactive Glassmorphic Card Grid (Sem HTML Dropdown) */}
+              {/* Custom Interactive Glassmorphic Card Grid */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -687,73 +686,72 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 />
               </div>
 
-              {/* Braden Scale Calculator Expansion Card */}
+              {/* Integrated Daily Mobility & Skin Protection Assessment (Sempre Visivel e em Linguagem Simples) */}
               <div style={{
                 backgroundColor: 'var(--bg-primary)',
                 padding: '16px',
                 borderRadius: '14px',
                 border: '1px solid var(--border-color)',
-                marginBottom: '14px'
+                marginBottom: '16px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ fontSize: '13.5px', fontWeight: '800', color: 'var(--text-primary)', display: 'block' }}>
-                      📊 Escala de Braden (Risco de Úlcera)
-                    </span>
-                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                      Pontuação Total: <strong>{bradenTotalScore}/23</strong> — Risco: <strong style={{ color: bradenRiskColor }}>{bradenRiskCategory}</strong>
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowBradenCalculator(!showBradenCalculator)}
-                    className="btn btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: '12px' }}
-                  >
-                    {showBradenCalculator ? 'Ocultar ▲' : 'Calcular ▼'}
-                  </button>
+                <div style={{ marginBottom: '12px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', display: 'block' }}>
+                    🚶‍♂️ Mobilidade & Cuidados Diários
+                  </span>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                    Nível de Proteção da Pele: <strong style={{ color: skinProtectionColor }}>{skinProtectionText}</strong>
+                  </span>
                 </div>
 
-                {showBradenCalculator && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--border-color)' }}>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Percepção Sensorial:</label>
-                      <select value={bradenSensory} onChange={e => setBradenSensory(Number(e.target.value))} style={{ width: '100%', padding: '8px', fontSize: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-                        <option value={1}>1 - Completamente limitado</option>
-                        <option value={2}>2 - Muito limitado</option>
-                        <option value={3}>3 - Ligeiramente limitado</option>
-                        <option value={4}>4 - Nenhuma limitação</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Umidade da Pele:</label>
-                      <select value={bradenMoisture} onChange={e => setBradenMoisture(Number(e.target.value))} style={{ width: '100%', padding: '8px', fontSize: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-                        <option value={1}>1 - Completamente molhada</option>
-                        <option value={2}>2 - Muito molhada</option>
-                        <option value={3}>3 - Ocasionalmente molhada</option>
-                        <option value={4}>4 - Raramente molhada</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Atividade Física:</label>
-                      <select value={bradenActivity} onChange={e => setBradenActivity(Number(e.target.value))} style={{ width: '100%', padding: '8px', fontSize: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-                        <option value={1}>1 - Acamado</option>
-                        <option value={2}>2 - Confinado à cadeira</option>
-                        <option value={3}>3 - Caminha ocasionalmente</option>
-                        <option value={4}>4 - Caminha frequentemente</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Mobilidade Corporal:</label>
-                      <select value={bradenMobility} onChange={e => setBradenMobility(Number(e.target.value))} style={{ width: '100%', padding: '8px', fontSize: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-                        <option value={1}>1 - Completamente imóvel</option>
-                        <option value={2}>2 - Muito limitado</option>
-                        <option value={3}>3 - Ligeiramente limitado</option>
-                        <option value={4}>4 - Sem limitações</option>
-                      </select>
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      Sensibilidade à dor e desconforto:
+                    </label>
+                    <select value={bradenSensory} onChange={e => setBradenSensory(Number(e.target.value))} style={{ width: '100%', padding: '10px', fontSize: '12.5px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
+                      <option value={4}>Sinto dor e desconforto normalmente</option>
+                      <option value={3}>Tenho pequena dificuldade em sentir/expressar dor</option>
+                      <option value={2}>Bastante dificuldade em sentir dor ou me comunicar</option>
+                      <option value={1}>Sem resposta à dor (ou acamado com limitação)</option>
+                    </select>
                   </div>
-                )}
+
+                  <div>
+                    <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      Umidade da pele no dia a dia:
+                    </label>
+                    <select value={bradenMoisture} onChange={e => setBradenMoisture(Number(e.target.value))} style={{ width: '100%', padding: '10px', fontSize: '12.5px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
+                      <option value={4}>Pele quase sempre seca e bem cuidada</option>
+                      <option value={3}>Fica molhada ou suada de vez em quando</option>
+                      <option value={2}>Fica molhada com muita frequência</option>
+                      <option value={1}>Fica molhada/úmida o tempo todo (trocas constantes)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      Atividade física e caminhada:
+                    </label>
+                    <select value={bradenActivity} onChange={e => setBradenActivity(Number(e.target.value))} style={{ width: '100%', padding: '10px', fontSize: '12.5px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
+                      <option value={4}>Caminho frequentemente (pela casa ou rua)</option>
+                      <option value={3}>Caminho curtas distâncias de vez em quando</option>
+                      <option value={2}>Fico a maior parte do tempo sentado na cadeira</option>
+                      <option value={1}>Fico o tempo todo deitado (acamado)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      Capacidade de mudar de posição:
+                    </label>
+                    <select value={bradenMobility} onChange={e => setBradenMobility(Number(e.target.value))} style={{ width: '100%', padding: '10px', fontSize: '12.5px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
+                      <option value={4}>Mudo de posição sozinho sem ajuda</option>
+                      <option value={3}>Mudo de posição sozinho com pequena dificuldade</option>
+                      <option value={2}>Preciso de ajuda frequente para mudar de posição</option>
+                      <option value={1}>Não consigo mudar de posição sozinho (imóvel)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* Odor Checkbox */}
