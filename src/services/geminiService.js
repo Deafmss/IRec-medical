@@ -1017,4 +1017,71 @@ Responda estritamente em formato JSON com o modelo exato:
   }
 };
 
+// Synthesize high-quality Brazilian Portuguese speech using Google Cloud Text-to-Speech (Neural2-A)
+export const synthesizeGoogleSpeech = async (text) => {
+  if (!text || GEMINI_KEYS.length === 0) return null;
+
+  const maxRetries = GEMINI_KEYS.length;
+  let attempts = 0;
+
+  const cleanText = text
+    .replace(/[*#_~`>]/g, '')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleanText) return null;
+  const safeText = cleanText.length > 4000 ? cleanText.substring(0, 4000) + '...' : cleanText;
+
+  while (attempts < maxRetries) {
+    if (currentKeyIndex >= GEMINI_KEYS.length) currentKeyIndex = 0;
+    const apiKey = GEMINI_KEYS[currentKeyIndex];
+    const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: { text: safeText },
+          voice: {
+            languageCode: 'pt-BR',
+            name: 'pt-BR-Neural2-A',
+            ssmlGender: 'FEMALE'
+          },
+          audioConfig: {
+            audioEncoding: 'MP3',
+            speakingRate: 0.95,
+            pitch: 0.0
+          }
+        })
+      });
+
+      if (response.status === 401 || response.status === 403 || response.status === 404) {
+        console.warn(`[Google TTS API] Key index ${currentKeyIndex} indisponível para síntese. Tentando próxima chave...`);
+        currentKeyIndex = (currentKeyIndex + 1) % GEMINI_KEYS.length;
+        attempts++;
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Google TTS status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data && data.audioContent) {
+        return `data:audio/mp3;base64,${data.audioContent}`;
+      }
+      return null;
+    } catch (err) {
+      console.warn(`[Google TTS API] Tentativa ${attempts + 1} falhou:`, err);
+      currentKeyIndex = (currentKeyIndex + 1) % GEMINI_KEYS.length;
+      attempts++;
+    }
+  }
+
+  return null;
+};
+
 

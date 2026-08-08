@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { uploadExamFileAndTriage, updateClinicalProfile, createAuditLog } from '../services/supabaseService';
-import { chatWithAI } from '../services/geminiService';
+import { chatWithAI, synthesizeGoogleSpeech } from '../services/geminiService';
 
 const SUGGESTIONS = [
   { text: 'Como higienizar a lesão em casa?', icon: '💧' },
@@ -349,59 +349,84 @@ Como posso te ajudar hoje?`;
 
     setSpeakingMessageId(msgId);
 
-    // Split text into natural phrase chunks (max 180 chars for Google Neural Audio stream)
-    const rawChunks = cleanText.match(/[^.!?;\n]+[.!?;\n]*/g) || [cleanText];
-    const formattedChunks = [];
-
-    rawChunks.forEach(chunk => {
-      let str = chunk.trim();
-      while (str.length > 170) {
-        let spaceIdx = str.lastIndexOf(' ', 170);
-        if (spaceIdx === -1) spaceIdx = 170;
-        formattedChunks.push(str.substring(0, spaceIdx));
-        str = str.substring(spaceIdx).trim();
+    // 1. Try Google Cloud Text-to-Speech API (pt-BR-Neural2-A Studio Voice)
+    synthesizeGoogleSpeech(cleanText).then(audioDataUrl => {
+      if (audioDataUrl) {
+        const audio = new Audio(audioDataUrl);
+        activeAudioRef.current = audio;
+        audio.onended = () => {
+          setSpeakingMessageId(null);
+          activeAudioRef.current = null;
+        };
+        audio.onerror = () => {
+          playFallbackStream();
+        };
+        audio.play().catch(err => {
+          console.warn("[Google TTS API] Play error, recorrendo ao fluxo secundário:", err);
+          playFallbackStream();
+        });
+      } else {
+        playFallbackStream();
       }
-      if (str.length > 0) formattedChunks.push(str);
+    }).catch(() => {
+      playFallbackStream();
     });
 
-    let currentChunkIdx = 0;
+    const playFallbackStream = () => {
+      // Split text into natural phrase chunks (max 180 chars for Google Neural Audio stream)
+      const rawChunks = cleanText.match(/[^.!?;\n]+[.!?;\n]*/g) || [cleanText];
+      const formattedChunks = [];
 
-    const playNextChunk = () => {
-      if (currentChunkIdx >= formattedChunks.length) {
-        setSpeakingMessageId(null);
-        activeAudioRef.current = null;
-        return;
-      }
-
-      const chunkText = formattedChunks[currentChunkIdx];
-      const googleTTSUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=pt-BR&client=tw-ob&q=${encodeURIComponent(chunkText)}`;
-
-      const audio = new Audio(googleTTSUrl);
-      activeAudioRef.current = audio;
-
-      audio.onended = () => {
-        currentChunkIdx++;
-        playNextChunk();
-      };
-
-      audio.onerror = () => {
-        // Fallback to local Web Speech API if network blocks streaming
-        console.warn("[iRec Neural Audio] Recorrendo ao sintetizador local...");
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = 'pt-BR';
-        utterance.rate = 0.95;
-        utterance.onend = () => setSpeakingMessageId(null);
-        utterance.onerror = () => setSpeakingMessageId(null);
-        window.speechSynthesis.speak(utterance);
-      };
-
-      audio.play().catch(err => {
-        console.warn("[iRec Neural Audio] Erro ao reproduzir audio Studio Google:", err);
-        audio.onerror();
+      rawChunks.forEach(chunk => {
+        let str = chunk.trim();
+        while (str.length > 170) {
+          let spaceIdx = str.lastIndexOf(' ', 170);
+          if (spaceIdx === -1) spaceIdx = 170;
+          formattedChunks.push(str.substring(0, spaceIdx));
+          str = str.substring(spaceIdx).trim();
+        }
+        if (str.length > 0) formattedChunks.push(str);
       });
-    };
 
-    playNextChunk();
+      let currentChunkIdx = 0;
+
+      const playNextChunk = () => {
+        if (currentChunkIdx >= formattedChunks.length) {
+          setSpeakingMessageId(null);
+          activeAudioRef.current = null;
+          return;
+        }
+
+        const chunkText = formattedChunks[currentChunkIdx];
+        const googleTTSUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=pt-BR&client=tw-ob&q=${encodeURIComponent(chunkText)}`;
+
+        const audio = new Audio(googleTTSUrl);
+        activeAudioRef.current = audio;
+
+        audio.onended = () => {
+          currentChunkIdx++;
+          playNextChunk();
+        };
+
+        audio.onerror = () => {
+          // Fallback to local Web Speech API if network blocks streaming
+          console.warn("[iRec Neural Audio] Recorrendo ao sintetizador local...");
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          utterance.lang = 'pt-BR';
+          utterance.rate = 0.95;
+          utterance.onend = () => setSpeakingMessageId(null);
+          utterance.onerror = () => setSpeakingMessageId(null);
+          window.speechSynthesis.speak(utterance);
+        };
+
+        audio.play().catch(err => {
+          console.warn("[iRec Neural Audio] Erro ao reproduzir audio:", err);
+          audio.onerror();
+        });
+      };
+
+      playNextChunk();
+    };
   };
 
   useEffect(() => {
