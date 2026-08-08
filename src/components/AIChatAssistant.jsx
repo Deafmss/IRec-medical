@@ -292,6 +292,20 @@ Como posso te ajudar hoje?`;
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const activeAudioRef = useRef(null);
 
+  // Renaming chat thread states
+  const [editingThreadId, setEditingThreadId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+
+  const handleSaveTitle = (id) => {
+    if (editingTitle.trim()) {
+      const updated = threads.map(t => 
+        t.id === id ? { ...t, title: editingTitle.trim(), manuallyRenamed: true } : t
+      );
+      saveThreads(updated);
+    }
+    setEditingThreadId(null);
+  };
+
   useEffect(() => {
     return () => {
       if (activeAudioRef.current) {
