@@ -122,6 +122,52 @@ function WoundTissueOverlay({ entry }) {
   );
 }
 
+// Lay-Friendly Complaint Options for All Patients & Medical Specialties
+const PATIENT_COMPLAINT_CARDS = [
+  {
+    id: 'vermelhidao',
+    icon: '🔴',
+    title: 'Vermelhidão ou Inchaço',
+    desc: 'Pele avermelhada, irritada ou aquecida sem ferida aberta.'
+  },
+  {
+    id: 'superficial',
+    icon: '🩹',
+    title: 'Machucado ou Arranhão',
+    desc: 'Corte pequeno, arranhão ou pele descascada.'
+  },
+  {
+    id: 'profunda',
+    icon: '🕳️',
+    title: 'Ferida Aberta ou Corte Profundo',
+    desc: 'Ferida aberta com profundidade ou sangramento.'
+  },
+  {
+    id: 'queimadura',
+    icon: '⚡',
+    title: 'Queimadura ou Bolhas',
+    desc: 'Queimadura de sol, água quente, atrito ou bolhas na pele.'
+  },
+  {
+    id: 'pe_diabetico',
+    icon: '🦶',
+    title: 'Pés ou Circulação',
+    desc: 'Ferida no pé, alteração em paciente diabético ou formigamento.'
+  },
+  {
+    id: 'geral',
+    icon: '🩺',
+    title: 'Consulta & Acompanhamento Geral',
+    desc: 'Dores, alergias na pele ou acompanhamento com seu médico.'
+  },
+  {
+    id: 'outro',
+    icon: '❓',
+    title: 'Outra Alteração ou Sintoma',
+    desc: 'Qualquer outra alteração de saúde que deseje registrar.'
+  }
+];
+
 // Patient Clinical Glossary Database
 const GLOSSARY_DB = {
   exsudato: { 
@@ -284,31 +330,35 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     bradenRiskColor = '#0284c7';
   }
 
-  // Auto-sync complaint type to technical fields
+  // Auto-sync complaint type to technical fields behind the scenes
   useEffect(() => {
     switch (patientComplaintType) {
       case 'vermelhidao':
-        setWoundType('Outras (Vermelhidão/Eritema)');
+        setWoundType('Vermelhidão / Inflamação de Pele');
         setLesionStage('Estágio I');
         break;
       case 'superficial':
         setWoundType('Ferida Superficial');
         setLesionStage('Estágio II');
         break;
-      case 'frieira':
-        setWoundType('Frieira/Micose/Coceira');
-        setLesionStage('Estágio I');
-        break;
       case 'profunda':
-        setWoundType('Ferida Profunda/Corte');
+        setWoundType('Ferida Profunda / Corte');
         setLesionStage('Estágio III');
         break;
       case 'queimadura':
-        setWoundType('Queimadura');
+        setWoundType('Queimadura / Bolha');
         setLesionStage('Estágio II');
         break;
+      case 'pe_diabetico':
+        setWoundType('Pé Diabético / Alteração Vascular');
+        setLesionStage('Estágio II');
+        break;
+      case 'geral':
+        setWoundType('Consulta & Sintoma Geral');
+        setLesionStage('Estágio I');
+        break;
       default:
-        setWoundType('Outras');
+        setWoundType('Outras Queixas');
         setLesionStage('Estágio I');
     }
   }, [patientComplaintType]);
@@ -568,44 +618,55 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </div>
           </div>
 
-          {/* Card 2: Sintomas Básicos (Glassmorphism + Luz Vazada Azul) */}
+          {/* Card 2: Sintomas Básicos em Grid Card Selecionável (Design System Glassmorphism) */}
           <div className="glass-card glass-card-cyan-glow" style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
-                🩺 Queixa & Sintomas Relatados
+                🩺 O que você deseja avaliar hoje?
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 14px 0' }}>
-                Selecione o que melhor descreve a sua pele e a dor sentida.
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '0 0 16px 0' }}>
+                Selecione a opção que melhor descreve como está a sua pele ou o seu sintoma de saúde:
               </p>
 
-              {/* Simple Lay Complaint Type Selector */}
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', marginBottom: '6px' }}>
-                  O que você está vendo ou sentindo na pele?
-                </label>
-                <select 
-                  value={patientComplaintType} 
-                  onChange={(e) => setPatientComplaintType(e.target.value)}
-                  style={{ 
-                    width: '100%', 
-                    padding: '12px', 
-                    borderRadius: '12px', 
-                    border: '1px solid var(--border-color)', 
-                    backgroundColor: 'var(--bg-primary)', 
-                    color: 'var(--text-primary)',
-                    fontSize: '13.5px',
-                    fontWeight: '700',
-                    outline: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="vermelhidao">🔴 Apenas vermelhidão ou inchaço (sem ferida aberta)</option>
-                  <option value="superficial">🩹 Ferida superficial, descascado ou ranhura na pele</option>
-                  <option value="frieira">🦠 Frieira, coceira ou descamação entre os dedos</option>
-                  <option value="profunda">🕳️ Corte profundo ou ferida aberta com profundidade</option>
-                  <option value="queimadura">⚡ Queimadura ou bolhas na pele</option>
-                  <option value="outro">❓ Outro sintoma ou alteração geral de pele</option>
-                </select>
+              {/* Custom Interactive Glassmorphic Card Grid (Sem HTML Dropdown) */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '12px',
+                marginBottom: '20px'
+              }}>
+                {PATIENT_COMPLAINT_CARDS.map((card) => {
+                  const isSelected = patientComplaintType === card.id;
+                  return (
+                    <div
+                      key={card.id}
+                      onClick={() => setPatientComplaintType(card.id)}
+                      style={{
+                        padding: '14px 16px',
+                        borderRadius: '14px',
+                        cursor: 'pointer',
+                        backgroundColor: isSelected ? 'var(--primary-glow)' : 'var(--bg-primary)',
+                        border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                        boxShadow: isSelected ? '0 0 16px var(--primary-glow)' : 'none',
+                        transform: isSelected ? 'translateY(-2px)' : 'none',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '20px' }}>{card.icon}</span>
+                        <strong style={{ fontSize: '13.5px', color: isSelected ? 'var(--primary)' : 'var(--text-primary)', fontWeight: '800' }}>
+                          {card.title}
+                        </strong>
+                      </div>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: '1.4', marginTop: '2px' }}>
+                        {card.desc}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Pain Scale Selector */}
