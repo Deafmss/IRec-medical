@@ -290,79 +290,104 @@ Como posso te ajudar hoje?`;
   const fileInputRef = useRef(null);
 
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
+  const activeAudioRef = useRef(null);
 
-  // Renaming chat thread states
-  const [editingThreadId, setEditingThreadId] = useState(null);
-  const [editingTitle, setEditingTitle] = useState('');
-
-  const handleSaveTitle = (id) => {
-    if (editingTitle.trim()) {
-      const updated = threads.map(t => 
-        t.id === id ? { ...t, title: editingTitle.trim(), manuallyRenamed: true } : t
-      );
-      saveThreads(updated);
-    }
-    setEditingThreadId(null);
-  };
-
-  // Helper to pick the most natural human voice available in the browser/OS
-  const getBestNaturalPtVoice = () => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return null;
-    const voices = window.speechSynthesis.getVoices();
-    const ptVoices = voices.filter(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith('pt'));
-    if (ptVoices.length === 0) return null;
-
-    // Priority 1: Natural / Neural online voices (Edge / Chrome)
-    const naturalVoice = ptVoices.find(v => 
-      v.name.toLowerCase().includes('natural') || 
-      v.name.toLowerCase().includes('google') ||
-      v.name.toLowerCase().includes('neural')
-    );
-    if (naturalVoice) return naturalVoice;
-
-    // Priority 2: Preferred natural sounding voices
-    const preferredVoice = ptVoices.find(v => 
-      v.name.toLowerCase().includes('francisca') || 
-      v.name.toLowerCase().includes('antonio') ||
-      v.name.toLowerCase().includes('luciana') ||
-      v.name.toLowerCase().includes('felipe')
-    );
-    if (preferredVoice) return preferredVoice;
-
-    return ptVoices[0];
-  };
+  useEffect(() => {
+    return () => {
+      if (activeAudioRef.current) {
+        activeAudioRef.current.pause();
+        activeAudioRef.current = null;
+      }
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   const speakMessage = (msgId, text) => {
+    // If currently speaking this message, stop it
     if (speakingMessageId === msgId) {
-      window.speechSynthesis.cancel();
+      if (activeAudioRef.current) {
+        activeAudioRef.current.pause();
+        activeAudioRef.current = null;
+      }
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
       setSpeakingMessageId(null);
-    } else {
-      window.speechSynthesis.cancel();
-      
-      // Clean markdown, symbols, emojis, and hashtags for natural human pronunciation
-      const cleanText = text
-        .replace(/[*#_~`>]/g, '')
-        .replace(/https?:\/\/\S+/g, '')
-        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+      return;
+    }
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 0.95; // Calmer, natural human cadence
-      utterance.pitch = 1.0;
+    // Stop any existing playback
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current = null;
+    }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-      const bestVoice = getBestNaturalPtVoice();
-      if (bestVoice) {
-        utterance.voice = bestVoice;
+    // Clean markdown, symbols, emojis, and URLs for clean human pronunciation
+    const cleanText = text
+      .replace(/[*#_~`>]/g, '')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!cleanText) return;
+
+    setSpeakingMessageId(msgId);
+
+    // Split text into natural phrase chunks (max 180 chars for Google Neural Audio stream)
+    const rawChunks = cleanText.match(/[^.!?;\n]+[.!?;\n]*/g) || [cleanText];
+    const formattedChunks = [];
+
+    rawChunks.forEach(chunk => {
+      let str = chunk.trim();
+      while (str.length > 170) {
+        let spaceIdx = str.lastIndexOf(' ', 170);
+        if (spaceIdx === -1) spaceIdx = 170;
+        formattedChunks.push(str.substring(0, spaceIdx));
+        str = str.substring(spaceIdx).trim();
+      }
+      if (str.length > 0) formattedChunks.push(str);
+    });
+
+    let currentChunkIdx = 0;
+
+    const playNextChunk = () => {
+      if (currentChunkIdx >= formattedChunks.length) {
+        setSpeakingMessageId(null);
+        activeAudioRef.current = null;
+        return;
       }
 
-      utterance.onend = () => setSpeakingMessageId(null);
-      utterance.onerror = () => setSpeakingMessageId(null);
-      
-      setSpeakingMessageId(msgId);
-      window.speechSynthesis.speak(utterance);
-    }
+      const chunkText = formattedChunks[currentChunkIdx];
+      const googleTTSUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=pt-BR&client=tw-ob&q=${encodeURIComponent(chunkText)}`;
+
+      const audio = new Audio(googleTTSUrl);
+      activeAudioRef.current = audio;
+
+      audio.onended = () => {
+        currentChunkIdx++;
+        playNextChunk();
+      };
+
+      audio.onerror = () => {
+        // Fallback to local Web Speech API if network blocks streaming
+        console.warn("[iRec Neural Audio] Recorrendo ao sintetizador local...");
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = 'pt-BR';
+        utterance.rate = 0.95;
+        utterance.onend = () => setSpeakingMessageId(null);
+        utterance.onerror = () => setSpeakingMessageId(null);
+        window.speechSynthesis.speak(utterance);
+      };
+
+      audio.play().catch(err => {
+        console.warn("[iRec Neural Audio] Erro ao reproduzir audio Studio Google:", err);
+        audio.onerror();
+      });
+    };
+
+    playNextChunk();
   };
 
   useEffect(() => {
