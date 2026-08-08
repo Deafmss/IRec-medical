@@ -284,7 +284,7 @@ Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou inf
     parts.push({ text: systemPrompt });
     parts.push({ text: `Dados adicionais digitados pelo paciente/sintomas: "${symptomsText || 'Sem queixas adicionais descritas.'}". Analise e retorne apenas o JSON.` });
 
-    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
       contents: [{ parts }],
       generationConfig: {
         responseMimeType: "application/json"
@@ -430,7 +430,7 @@ DIRETRIZES DE TOM E LINGUAGEM:
       parts: userParts
     });
 
-    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
       contents: formattedHistory,
       generationConfig: {
         responseMimeType: "application/json"
@@ -472,7 +472,7 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON pura correspondente a este for
   "safeAlternative": "Nova resposta totalmente corrigida e segura (escrita em linguagem simples para o paciente) caso a original seja insegura"
 }`;
 
-      const validationRes = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+      const validationRes = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
         contents: [{
           role: 'user',
           parts: [{ text: verificationPrompt }]
@@ -599,7 +599,7 @@ Sua resposta deve ser estritamente em formato JSON correspondente a este modelo 
       parts: [{ text: message }]
     });
 
-    const responseData = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+    const responseData = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
       contents: formattedHistory,
       generationConfig: {
         responseMimeType: "application/json"
@@ -690,7 +690,7 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código ma
   "specialistRecommendation": "Orientações sobre quando buscar avaliação com especialista (Ex: Cirurgião Vascular, Estomaterapeuta, Endocrinologista para controle glicêmico)"
 }`;
 
-    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
       contents: [{ parts: [{ text: systemPrompt }] }],
       generationConfig: {
         responseMimeType: "application/json"
@@ -753,7 +753,7 @@ INSTRUÇÕES DE FORMATAÇÃO DO SOAP:
 
 Retorne o texto formatado estritamente como um documento SOAP em português (PT-BR), legível, organizado e profissional. Use cabeçalhos claros com negrito (ex: **S - Subjetivo:**, **O - Objetivo:**, etc.) e bullets. Seja preciso e evite inventar dados que não estejam implícitos no texto ditado ou no histórico do paciente.`;
 
-    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
       contents: [
         { role: 'user', parts: [{ text: systemPrompt }] },
         { role: 'user', parts: [{ text: `Texto ditado pelo profissional: "${noteText}"` }] }
@@ -823,7 +823,7 @@ Sua resposta deve ser estritamente um objeto JSON puro, sem blocos de código \`
   "riskLevel": "Leve/Risco Moderado/Alto Risco/Crítico"
 }`;
 
-    const response = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', {
+    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
       contents: [{ parts: [{ text: systemPrompt }] }],
       generationConfig: {
         responseMimeType: "application/json"
@@ -1002,7 +1002,7 @@ Responda estritamente em formato JSON com o modelo exato:
       }
     };
 
-    const res = await fetchGeminiWithRotation('gemini-2.5-flash:generateContent', bodyData);
+    const res = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', bodyData);
     const data = await res.json();
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     
