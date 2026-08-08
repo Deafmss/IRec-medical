@@ -305,21 +305,61 @@ Como posso te ajudar hoje?`;
     setEditingThreadId(null);
   };
 
+  // Helper to pick the most natural human voice available in the browser/OS
+  const getBestNaturalPtVoice = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+    const voices = window.speechSynthesis.getVoices();
+    const ptVoices = voices.filter(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith('pt'));
+    if (ptVoices.length === 0) return null;
+
+    // Priority 1: Natural / Neural online voices (Edge / Chrome)
+    const naturalVoice = ptVoices.find(v => 
+      v.name.toLowerCase().includes('natural') || 
+      v.name.toLowerCase().includes('google') ||
+      v.name.toLowerCase().includes('neural')
+    );
+    if (naturalVoice) return naturalVoice;
+
+    // Priority 2: Preferred natural sounding voices
+    const preferredVoice = ptVoices.find(v => 
+      v.name.toLowerCase().includes('francisca') || 
+      v.name.toLowerCase().includes('antonio') ||
+      v.name.toLowerCase().includes('luciana') ||
+      v.name.toLowerCase().includes('felipe')
+    );
+    if (preferredVoice) return preferredVoice;
+
+    return ptVoices[0];
+  };
+
   const speakMessage = (msgId, text) => {
     if (speakingMessageId === msgId) {
       window.speechSynthesis.cancel();
       setSpeakingMessageId(null);
     } else {
       window.speechSynthesis.cancel();
-      const cleanText = text.replace(/[*#_~]/g, '');
+      
+      // Clean markdown, symbols, emojis, and hashtags for natural human pronunciation
+      const cleanText = text
+        .replace(/[*#_~`>]/g, '')
+        .replace(/https?:\/\/\S+/g, '')
+        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'pt-BR';
-      utterance.onend = () => {
-        setSpeakingMessageId(null);
-      };
-      utterance.onerror = () => {
-        setSpeakingMessageId(null);
-      };
+      utterance.rate = 0.95; // Calmer, natural human cadence
+      utterance.pitch = 1.0;
+
+      const bestVoice = getBestNaturalPtVoice();
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+      }
+
+      utterance.onend = () => setSpeakingMessageId(null);
+      utterance.onerror = () => setSpeakingMessageId(null);
+      
       setSpeakingMessageId(msgId);
       window.speechSynthesis.speak(utterance);
     }
