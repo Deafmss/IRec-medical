@@ -290,24 +290,9 @@ Como posso te ajudar hoje?`;
   const fileInputRef = useRef(null);
 
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
-  const [availablePtVoices, setAvailablePtVoices] = useState([]);
   const activeAudioRef = useRef(null);
-
-  // Pre-load voices into memory on component mount (fixes Chrome async voice loading)
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-
-    const loadVoices = () => {
-      const all = window.speechSynthesis.getVoices() || [];
-      const pt = all.filter(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith('pt'));
-      setAvailablePtVoices(pt);
-    };
-
-    loadVoices();
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-  }, []);
+  const ttsQueueRef = useRef([]);
+  const ttsStoppedRef = useRef(false);
 
   // Renaming chat thread states
   const [editingThreadId, setEditingThreadId] = useState(null);
@@ -323,38 +308,100 @@ Como posso te ajudar hoje?`;
     setEditingThreadId(null);
   };
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
+      ttsStoppedRef.current = true;
       if (activeAudioRef.current) {
         activeAudioRef.current.pause();
         activeAudioRef.current = null;
-      }
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
       }
     };
   }, []);
 
+  // Split text into chunks safe for Google Translate TTS (max ~200 chars each)
+  const splitTextForTTS = (text) => {
+    const maxLen = 190;
+    // Split on sentence boundaries first
+    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+    const chunks = [];
+
+    sentences.forEach(sentence => {
+      let s = sentence.trim();
+      if (!s) return;
+      // If sentence fits in one chunk, add directly
+      if (s.length <= maxLen) {
+        chunks.push(s);
+      } else {
+        // Break long sentences on commas or spaces
+        while (s.length > maxLen) {
+          let breakIdx = s.lastIndexOf(',', maxLen);
+          if (breakIdx < 40) breakIdx = s.lastIndexOf(' ', maxLen);
+          if (breakIdx < 20) breakIdx = maxLen;
+          chunks.push(s.substring(0, breakIdx + 1).trim());
+          s = s.substring(breakIdx + 1).trim();
+        }
+        if (s.length > 0) chunks.push(s);
+      }
+    });
+
+    return chunks.filter(c => c.length > 0);
+  };
+
+  // Build Google Translate TTS URL for a chunk of text
+  const buildGoogleTTSUrl = (textChunk) => {
+    return `https://translate.google.com/translate_tts?ie=UTF-8&tl=pt-BR&client=tw-ob&q=${encodeURIComponent(textChunk)}`;
+  };
+
+  // Play chunks sequentially using the Google Translate TTS endpoint (Google Assistant voice)
+  const playTTSQueue = (chunks) => {
+    if (ttsStoppedRef.current || chunks.length === 0) {
+      setSpeakingMessageId(null);
+      activeAudioRef.current = null;
+      return;
+    }
+
+    const currentChunk = chunks[0];
+    const remainingChunks = chunks.slice(1);
+    const url = buildGoogleTTSUrl(currentChunk);
+    const audio = new Audio(url);
+    activeAudioRef.current = audio;
+
+    audio.onended = () => {
+      playTTSQueue(remainingChunks);
+    };
+
+    audio.onerror = (err) => {
+      console.warn('[iRec TTS] Erro no chunk, pulando para o próximo:', err);
+      playTTSQueue(remainingChunks);
+    };
+
+    audio.play().catch((err) => {
+      console.warn('[iRec TTS] Erro ao reproduzir:', err);
+      playTTSQueue(remainingChunks);
+    });
+  };
+
   const speakMessage = (msgId, text) => {
-    // If currently speaking this message, stop it
+    // If currently speaking this message, stop it (toggle off)
     if (speakingMessageId === msgId) {
+      ttsStoppedRef.current = true;
       if (activeAudioRef.current) {
         activeAudioRef.current.pause();
         activeAudioRef.current = null;
       }
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
       setSpeakingMessageId(null);
       return;
     }
 
-    // Stop any existing playback
+    // Stop any existing playback before starting new one
+    ttsStoppedRef.current = true;
     if (activeAudioRef.current) {
       activeAudioRef.current.pause();
       activeAudioRef.current = null;
     }
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-    // Clean markdown, symbols, emojis, and URLs for clean human pronunciation
+    // Clean markdown formatting, emojis, and URLs for natural pronunciation
     const cleanText = text
       .replace(/[*#_~`>]/g, '')
       .replace(/https?:\/\/\S+/g, '')
@@ -365,47 +412,12 @@ Como posso te ajudar hoje?`;
     if (!cleanText) return;
 
     setSpeakingMessageId(msgId);
+    ttsStoppedRef.current = false;
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'pt-BR';
-    utterance.rate = 0.92; // Natural, calm human cadence
-    utterance.pitch = 1.0;
-
-    // Get current loaded voices
-    const currentVoices = availablePtVoices.length > 0 ? availablePtVoices : 
-      (window.speechSynthesis?.getVoices() || []).filter(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith('pt'));
-
-    // Priority 1: Google official studio voice built into Chrome ("Google português do Brasil")
-    const googleVoice = currentVoices.find(v => v.name.toLowerCase().includes('google'));
-    
-    // Priority 2: Microsoft Natural / Online voice ("Microsoft Francisca Online (Natural)")
-    const msNaturalVoice = currentVoices.find(v => v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'));
-
-    // Priority 3: Named natural voices
-    const namedVoice = currentVoices.find(v => 
-      v.name.toLowerCase().includes('francisca') || 
-      v.name.toLowerCase().includes('luciana') || 
-      v.name.toLowerCase().includes('heloisa') ||
-      v.name.toLowerCase().includes('felipe')
-    );
-
-    const bestVoice = googleVoice || msNaturalVoice || namedVoice || currentVoices[0];
-
-    if (bestVoice) {
-      utterance.voice = bestVoice;
-    }
-
-    utterance.onend = () => setSpeakingMessageId(null);
-    utterance.onerror = () => setSpeakingMessageId(null);
-
-    window.speechSynthesis.speak(utterance);
+    // Split into safe chunks and play sequentially with Google voice
+    const chunks = splitTextForTTS(cleanText);
+    playTTSQueue(chunks);
   };
-
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
 
 
   // Compute active thread and its messages list
