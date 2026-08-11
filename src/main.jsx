@@ -4,10 +4,10 @@ import * as Sentry from '@sentry/react';
 import './index.css';
 import App from './App.jsx';
 
-// Initialize Sentry for proactive error monitoring
-if (import.meta.env.PROD || import.meta.env.VITE_SENTRY_DSN) {
+// Initialize Sentry for proactive error monitoring only if a valid DSN is supplied
+if (import.meta.env.VITE_SENTRY_DSN && !import.meta.env.VITE_SENTRY_DSN.includes('placeholder')) {
   Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN || "https://placeholder@sentry.io/123456",
+    dsn: import.meta.env.VITE_SENTRY_DSN,
     integrations: [
       Sentry.browserTracingIntegration(),
     ],

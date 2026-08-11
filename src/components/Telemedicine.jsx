@@ -136,6 +136,37 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     }
   };
 
+  // Register global window.initiateTelemedicineCall handler for accessible mode & shortcuts (IREC-0039, IREC-0040)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    window.initiateTelemedicineCall = async (contactId) => {
+      const targetId = contactId || (selectedContact ? selectedContact.id : null);
+      if (!targetId || !currentUser?.id) {
+        alert("Nenhum profissional selecionado para a videochamada.");
+        return;
+      }
+      setCallState('outgoing');
+      try {
+        const call = await placeTelemedicineCall(currentUser.id, targetId);
+        setActiveCall(call);
+        if (setActiveCallSession) {
+          setActiveCallSession(call);
+        }
+        if (setAppActiveTab) {
+          setAppActiveTab('telemedicine');
+        }
+      } catch (err) {
+        console.error("Erro ao iniciar chamada:", err);
+        setCallState('idle');
+      }
+    };
+
+    return () => {
+      delete window.initiateTelemedicineCall;
+    };
+  }, [currentUser, selectedContact, setActiveCallSession, setAppActiveTab]);
+
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Dashboard from './components/Dashboard';
 import ClinicalTriage from './components/ClinicalTriage';
 import ClinicalHistory from './components/ClinicalHistory';
@@ -26,6 +26,8 @@ import PrescriptionPage from './components/PrescriptionPage';
 import PatientAppointmentsCalendar from './components/PatientAppointmentsCalendar';
 import UserProfilePage from './components/UserProfilePage';
 import ReportPDFGenerator from './components/ReportPDFGenerator';
+import VitalsTelemetry from './components/VitalsTelemetry';
+import WoundEvolutionComparator from './components/WoundEvolutionComparator';
 import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
 import { generatePersonalizedProtocol } from './services/geminiService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
@@ -82,7 +84,10 @@ export default function App() {
   const [selectedPatientForDoctor, setSelectedPatientForDoctor] = useState(null);
   const [selectedPatientEntriesForDoctor, setSelectedPatientEntriesForDoctor] = useState([]);
   const [pendingVerificationsCount, setPendingVerificationsCount] = useState(0);
-  const [showSOSModal, setShowSOSModal] = useState(false);
+  const [showSOSModal, setShowSOSModal] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('sos') === 'true';
+  });
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [showReportPDFModal, setShowReportPDFModal] = useState(false);
 
@@ -95,32 +100,33 @@ export default function App() {
     localStorage.setItem('irec_ui_mode', nextMode);
   };
 
-  // Check URL query params for SOS shortcut trigger
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('sos') === 'true') {
-        setShowSOSModal(true);
-      }
-    }
-  }, []);
-
   const isAdmin = currentUser && currentUser.email === 'admin@irec.com';
 
-  const fetchPendingCount = async () => {
+  const fetchPendingCount = useCallback(async () => {
     if (currentUser && currentUser.email === 'admin@irec.com') {
       try {
         const profiles = await getAllProfiles();
-        const pending = profiles.filter(p => p.role === 'doctor' && p.verificationStatus === 'pending');
-        setPendingVerificationsCount(pending.length);
+        if (profiles) {
+          const pending = profiles.filter(p => p.verification_status === 'pending');
+          setPendingVerificationsCount(pending.length);
+        }
       } catch (e) {
-        console.error("Erro ao carregar contagem de homologações:", e);
+        console.error("Erro ao buscar verificações pendentes:", e);
       }
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
-    fetchPendingCount();
+    let isMounted = true;
+    if (currentUser && currentUser.email === 'admin@irec.com') {
+      getAllProfiles().then(profiles => {
+        if (isMounted && profiles) {
+          const pending = profiles.filter(p => p.verification_status === 'pending');
+          setPendingVerificationsCount(pending.length);
+        }
+      }).catch(e => console.error("Erro ao buscar verificações pendentes:", e));
+    }
+    return () => { isMounted = false; };
   }, [currentUser, activeTab]);
 
   // Create a ref to store activeCallSession to prevent recreating the BroadcastChannel and interval on every session change
@@ -130,20 +136,21 @@ export default function App() {
   }, [activeCallSession]);
 
   const [showNotificationPromptModal, setShowNotificationPromptModal] = useState(false);
-  const [showIOSInstallBanner, setShowIOSInstallBanner] = useState(false);
+  const [showIOSInstallBanner, setShowIOSInstallBanner] = useState(() => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAppStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    return isIOS && !isAppStandalone;
+  });
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isStandalone, setIsStandalone] = useState(false);
-
-  // Detect standalone mode (app installed on home screen)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const checkStandalone = 
-        window.navigator.standalone || 
-        window.matchMedia('(display-mode: standalone)').matches ||
-        (document.referrer && document.referrer.includes('android-app://'));
-      setIsStandalone(!!checkStandalone);
-    }
-  }, []);
+  const [isStandalone] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !!(
+      window.navigator.standalone || 
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (document.referrer && document.referrer.includes('android-app://'))
+    );
+  });
 
   // Capture Android PWA install prompt
   useEffect(() => {
@@ -168,17 +175,6 @@ export default function App() {
       setShowPermissionsGuideModal(true);
     }
   };
-
-  // Auto detect iPhone / iPad in Safari browser (not installed as standalone)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const isAppStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-      if (isIOS && !isAppStandalone) {
-        setShowIOSInstallBanner(true);
-      }
-    }
-  }, []);
 
   // Persistent SOS Notification Sync on Mobile
   useEffect(() => {
@@ -442,35 +438,43 @@ export default function App() {
   // Shared state for wound entries
   const [entries, setEntries] = useState([]);
 
-  // Check auth session on component mount with 1.5s timeout guarantee and local cache restoration
-  useEffect(() => {
-    let resolved = false;
+  // Helper to validate savedTab against user role (IREC-0202)
+  const isValidTabForRole = (tab, userProfile) => {
+    if (!tab || !userProfile) return false;
+    const role = userProfile.role;
+    const isAdmin = userProfile.email === 'admin@irec.com' || role === 'admin';
+    if (isAdmin) return tab.startsWith('admin-') || tab === 'profile';
+    if (role === 'doctor' || role === 'nurse') {
+      return ['doctor-dashboard', 'telemedicine', 'patient-records', 'protocols', 'prescriptions', 'clinical-guidelines', 'doctor-agenda', 'doctor-analytics', 'doctor-partners', 'nurses-network', 'vitals', 'comparator', 'profile', 'history', 'my_network', 'doctors_directory'].includes(tab);
+    }
+    return ['dashboard', 'history', 'telemedicine', 'documents', 'protocols', 'sos', 'accessible', 'upload', 'chat', 'my-appointments', 'appointments', 'nurses', 'vitals', 'comparator', 'profile'].includes(tab);
+  };
 
-    // Timeout safety fallback: Force disable loading after 1.8 seconds maximum
+  // Check auth session on component mount with server truth validation (IREC-0001, IREC-0038, IREC-0202)
+  useEffect(() => {
+    let isComponentMounted = true;
+
+    // Timeout safety fallback: Force disable loading spinner after 1.8s (IREC-0038: does not block server auth)
     const timeoutId = setTimeout(() => {
-      if (!resolved) {
-        console.warn("⚠️ [iRec] Timeout de inicialização do Supabase atingido. Entrando em modo offline...");
+      if (isComponentMounted) {
         setLoadingAuth(false);
-        resolved = true;
       }
     }, 1800);
 
-    const resolveAuth = (userProfile) => {
-      if (resolved) return;
-      resolved = true;
-      clearTimeout(timeoutId);
+    const applyUserSession = (userProfile) => {
+      if (!isComponentMounted) return;
       
       if (userProfile) {
         setCurrentUser(userProfile);
         
-        // Restore activeTab from localStorage if it exists
+        // Restore activeTab from localStorage if valid for role (IREC-0202)
         const savedTab = localStorage.getItem('irec_active_tab');
-        if (savedTab) {
+        if (savedTab && isValidTabForRole(savedTab, userProfile)) {
           setActiveTab(savedTab);
         } else {
-          if (userProfile.email === 'admin@irec.com') {
+          if (userProfile.email === 'admin@irec.com' || userProfile.role === 'admin') {
             setActiveTab('admin-metrics');
-          } else if (userProfile.role === 'doctor') {
+          } else if (userProfile.role === 'doctor' || userProfile.role === 'nurse') {
             setActiveTab('doctor-dashboard');
           } else {
             setActiveTab('dashboard');
@@ -489,37 +493,43 @@ export default function App() {
             }
           }
         }
+      } else {
+        setCurrentUser(null);
+        localStorage.removeItem('irec_active_user');
       }
       setLoadingAuth(false);
     };
 
     async function checkSession() {
       try {
-        // 1. Try reading the last active user session from memory (0ms instant load!)
+        // 1. Instant local cache load for instant UX
         const cached = localStorage.getItem('irec_active_user');
         if (cached) {
           try {
             const parsed = JSON.parse(cached);
             if (parsed && parsed.id) {
-              console.log("Restauração rápida da sessão via cache local...");
-              resolveAuth(parsed);
+              applyUserSession(parsed);
             }
           } catch (e) {
             console.error("Erro ao ler cache de sessão:", e);
           }
         }
 
-        // 2. Fetch fresh session from Supabase
-        const user = await getCurrentUser();
-        if (user) {
-          localStorage.setItem('irec_active_user', JSON.stringify(user));
-          resolveAuth(user);
+        // 2. Always query server truth from Supabase (IREC-0001)
+        const serverUser = await getCurrentUser();
+        clearTimeout(timeoutId);
+        if (serverUser) {
+          localStorage.setItem('irec_active_user', JSON.stringify(serverUser));
+          applyUserSession(serverUser);
         } else {
-          resolveAuth(null);
+          // Server returned no user -> invalidate cache and logout (IREC-0001)
+          localStorage.removeItem('irec_active_user');
+          applyUserSession(null);
         }
       } catch (e) {
-        console.warn('Erro ao restaurar sessão:', e);
-        resolveAuth(null);
+        console.warn('Erro ao verificar sessão no servidor:', e);
+        clearTimeout(timeoutId);
+        setLoadingAuth(false);
       }
     }
     
@@ -532,12 +542,12 @@ export default function App() {
           const profile = await getClinicalProfile(session.user.id);
           if (profile) {
             localStorage.setItem('irec_active_user', JSON.stringify(profile));
-            resolveAuth(profile);
+            applyUserSession(profile);
           }
         } else if (event === 'SIGNED_OUT') {
           setCurrentUser(null);
           localStorage.removeItem('irec_active_user');
-          resolveAuth(null);
+          applyUserSession(null);
         }
       });
 
@@ -584,7 +594,7 @@ export default function App() {
             // Already cached and matching, skip background fetch
             return;
           }
-        } catch (e) {
+        } catch {
           // ignore parsing error and proceed to fetch
         }
       }
@@ -652,7 +662,9 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await signOutUser();
-    } catch (e) {}
+    } catch (err) {
+      console.warn("Erro ao encerrar sessão no Supabase:", err);
+    }
     setCurrentUser(null);
     setSelectedPatientForDoctor(null);
     setSelectedPatientEntriesForDoctor([]);
@@ -835,7 +847,7 @@ export default function App() {
           />
         );
       case 'history':
-        return <ClinicalHistory entries={entries} clinicalProfile={clinicalProfile} />;
+        return <ClinicalHistory entries={targetEntries} clinicalProfile={targetProfile} setActiveTab={setActiveTab} />;
       case 'nurses':
         return (
           <NursesNetwork 
@@ -849,7 +861,6 @@ export default function App() {
       case 'admin-metrics':
       case 'admin-reports':
       case 'admin-users':
-      case 'admin-partners':
       case 'admin-logs':
       case 'admin-curatoria':
         return (
@@ -857,6 +868,7 @@ export default function App() {
             activeTab={activeTab.replace('admin-', '')} 
             setActiveTab={(tab) => setActiveTab(`admin-${tab}`)} 
             onVerificationProcessed={fetchPendingCount}
+            pendingVerificationsCount={pendingVerificationsCount}
           />
         );
       case 'doctor-analytics':
@@ -873,6 +885,10 @@ export default function App() {
         return <AdminPartners setActiveTab={setActiveTab} />;
       case 'doctor-partners':
         return <DoctorPartners doctorProfile={currentUser} />;
+      case 'vitals':
+        return <VitalsTelemetry patientId={targetProfile?.id || currentUser?.id} isDoctorView={isClinician} />;
+      case 'comparator':
+        return <WoundEvolutionComparator woundEntries={targetEntries} patientProfile={targetProfile} />;
       case 'protocols':
         return (
           <ProtocolGuide 
@@ -906,7 +922,13 @@ export default function App() {
         );
       default:
         if (isAdmin) {
-          return <AdminDashboard />;
+          return (
+            <AdminDashboard 
+              activeTab="metrics" 
+              setActiveTab={(tab) => setActiveTab(`admin-${tab}`)} 
+              onVerificationProcessed={fetchPendingCount}
+            />
+          );
         }
         return currentUser?.role === 'doctor' ? (
           <DoctorDashboard 
@@ -1600,17 +1622,15 @@ export default function App() {
         )}
 
         {(activeTab !== 'telemedicine' || (uiMode === 'accessible' && currentUser?.role === 'patient')) && renderContent()}
-        {!(uiMode === 'accessible' && currentUser?.role === 'patient') && (
-          <Telemedicine 
-            currentUser={currentUser} 
-            activeCallSession={activeCallSession} 
-            setActiveCallSession={setActiveCallSession} 
-            targetContactId={telemedicineContactId}
-            isAppActiveTab={activeTab === 'telemedicine'}
-            setAppActiveTab={setActiveTab}
-            onUnreadCountChange={setUnreadChatMessagesCount}
-          />
-        )}
+        <Telemedicine 
+          currentUser={currentUser} 
+          activeCallSession={activeCallSession} 
+          setActiveCallSession={setActiveCallSession} 
+          targetContactId={telemedicineContactId}
+          isAppActiveTab={activeTab === 'telemedicine'}
+          setAppActiveTab={setActiveTab}
+          onUnreadCountChange={setUnreadChatMessagesCount}
+        />
       </main>
 
       {/* Floating Action Bar (Mobile Bottom Navigation) */}
