@@ -5,6 +5,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const PREFERRED_MODELS = [
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+]
+const FALLBACK_MODEL = 'gemini-2.5-flash'
+
+let cachedEdgeModel: string | null = null
+
+async function getEdgeModel(apiKey: string): Promise<string> {
+  if (cachedEdgeModel) return cachedEdgeModel
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
+    if (res.ok) {
+      const data = await res.json()
+      const available = (data.models || [])
+        .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+        .map((m: any) => m.name.replace('models/', ''))
+
+      for (const pref of PREFERRED_MODELS) {
+        if (available.includes(pref)) {
+          cachedEdgeModel = pref
+          return pref
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[Edge Function] Erro na descoberta de modelos:", e)
+  }
+  cachedEdgeModel = FALLBACK_MODEL
+  return FALLBACK_MODEL
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -87,8 +120,10 @@ Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou inf
     contents.push({ text: systemPrompt });
     contents.push({ text: `Dados adicionais/sintomas do paciente: "${symptomsText || 'Sem queixas adicionais.'}". Analise e retorne apenas o JSON.` });
 
+    const selectedModel = await getEdgeModel(GEMINI_API_KEY)
+
     // Call Gemini Model
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

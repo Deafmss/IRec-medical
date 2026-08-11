@@ -33,6 +33,119 @@ if (!isGeminiConfigured) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Dynamic Model Discovery (A-1 + A-2)
+// Preference list of stable model IDs — never use -latest aliases in clinical apps.
+// ---------------------------------------------------------------------------
+const PREFERRED_MODELS = [
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+];
+const FALLBACK_MODEL = 'gemini-2.5-flash';
+const MODEL_CACHE_KEY = 'irec_gemini_model';
+const MODEL_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+// In-memory cache for the current session
+let _activeModel = null;
+let _discoveryPromise = null;
+
+// Read cached model from localStorage (if still valid)
+const getCachedModel = () => {
+  try {
+    const raw = localStorage.getItem(MODEL_CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (Date.now() - cached.ts < MODEL_CACHE_TTL) {
+      return cached.model;
+    }
+    localStorage.removeItem(MODEL_CACHE_KEY);
+  } catch { /* ignore corrupt cache */ }
+  return null;
+};
+
+// Write model choice to localStorage
+const setCachedModel = (model) => {
+  try {
+    localStorage.setItem(MODEL_CACHE_KEY, JSON.stringify({ model, ts: Date.now() }));
+  } catch { /* localStorage full or unavailable */ }
+};
+
+// Call ListModels once per session to discover available models
+const discoverBestModel = async () => {
+  if (GEMINI_KEYS.length === 0) return null;
+
+  // Use the first available key for discovery (costs 0 RPD — ListModels is free)
+  const apiKey = GEMINI_KEYS[0];
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+    );
+    if (!res.ok) {
+      console.warn(`[iRec Model Discovery] ListModels falhou (${res.status}). Usando fallback.`);
+      return null;
+    }
+    const data = await res.json();
+    const available = (data.models || [])
+      .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
+      .map(m => m.name.replace('models/', ''));
+
+    // Pick the first preferred model that actually exists
+    for (const preferred of PREFERRED_MODELS) {
+      if (available.includes(preferred)) {
+        return preferred;
+      }
+    }
+
+    // None of our preferred models found — log and return null
+    console.warn('[iRec Model Discovery] Nenhum modelo preferido encontrado. Disponíveis:', available.filter(n => n.includes('gemini')));
+    return null;
+  } catch (err) {
+    console.warn('[iRec Model Discovery] Erro na descoberta de modelos:', err.message);
+    return null;
+  }
+};
+
+// Main entry: returns the best model to use, with discovery + cache + fallback chain
+const getActiveModel = async () => {
+  // 1. Already discovered this session
+  if (_activeModel) return _activeModel;
+
+  // 2. Deduplicate concurrent calls
+  if (_discoveryPromise) return _discoveryPromise;
+
+  _discoveryPromise = (async () => {
+    const previousModel = getCachedModel();
+
+    // 3. Try live discovery
+    const discovered = await discoverBestModel();
+    if (discovered) {
+      _activeModel = discovered;
+      setCachedModel(discovered);
+      if (previousModel && previousModel !== discovered) {
+        console.warn(`⚠️ [iRec] Modelo Gemini alterado: "${previousModel}" → "${discovered}". Mudança de modelo em app clínico registrada.`);
+      }
+      return discovered;
+    }
+
+    // 4. Fall back to localStorage cache
+    if (previousModel) {
+      console.log(`[iRec] Usando modelo cacheado: ${previousModel}`);
+      _activeModel = previousModel;
+      return previousModel;
+    }
+
+    // 5. Hard fallback
+    console.warn(`[iRec] Usando modelo fixo de emergência: ${FALLBACK_MODEL}`);
+    _activeModel = FALLBACK_MODEL;
+    return FALLBACK_MODEL;
+  })();
+
+  const result = await _discoveryPromise;
+  _discoveryPromise = null;
+  return result;
+};
+
 // Convert image File to grayscale and return a new File object
 const convertToGrayscale = (imageFile) => {
   return new Promise((resolve) => {
@@ -147,8 +260,14 @@ const fetchGeminiWithRotation = async (modelAndAction, bodyData) => {
         body: JSON.stringify(bodyData)
       });
 
-      // Permanent failures (invalid/unauthorized keys)
-      if (response.status === 401 || response.status === 403 || response.status === 404) {
+      // Model not found (404) — do NOT remove key from pool (IREC-0171)
+      if (response.status === 404) {
+        const errorBody = await response.text();
+        throw new Error(`[Gemini API] Modelo não encontrado (404). Resposta: ${errorBody.substring(0, 200)}`);
+      }
+
+      // Permanent failures for invalid/unauthorized keys (401, 403)
+      if (response.status === 401 || response.status === 403) {
         console.error(`[Gemini API] Key index ${currentKeyIndex} is invalid/unauthorized (status ${response.status}). Removing permanently from active list.`);
         GEMINI_KEYS.splice(currentKeyIndex, 1);
         if (currentKeyIndex >= GEMINI_KEYS.length) {
@@ -284,7 +403,8 @@ Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou inf
     parts.push({ text: systemPrompt });
     parts.push({ text: `Dados adicionais digitados pelo paciente/sintomas: "${symptomsText || 'Sem queixas adicionais descritas.'}". Analise e retorne apenas o JSON.` });
 
-    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
+    const activeModel = await getActiveModel();
+    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
       contents: [{ parts }],
       generationConfig: {
         responseMimeType: "application/json"
@@ -312,7 +432,12 @@ export const chatWithAI = async (message, chatHistory, clinicalProfile, attached
   }
 
   try {
-    const formattedHistory = chatHistory.slice(-6).map(msg => ({
+    // Exclude current message from history if already added by UI to prevent duplication (IREC-0401)
+    const historyToUse = (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].sender === 'user' && chatHistory[chatHistory.length - 1].text === message)
+      ? chatHistory.slice(0, -1)
+      : chatHistory;
+
+    const formattedHistory = historyToUse.slice(-6).map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'model',
       parts: [{ text: msg.text }]
     }));
@@ -430,7 +555,8 @@ DIRETRIZES DE TOM E LINGUAGEM:
       parts: userParts
     });
 
-    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
+    const activeModel = await getActiveModel();
+    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
       contents: formattedHistory,
       generationConfig: {
         responseMimeType: "application/json"
@@ -472,7 +598,8 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON pura correspondente a este for
   "safeAlternative": "Nova resposta totalmente corrigida e segura (escrita em linguagem simples para o paciente) caso a original seja insegura"
 }`;
 
-      const validationRes = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
+      const activeModel = await getActiveModel();
+      const validationRes = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
         contents: [{
           role: 'user',
           parts: [{ text: verificationPrompt }]
@@ -599,7 +726,8 @@ Sua resposta deve ser estritamente em formato JSON correspondente a este modelo 
       parts: [{ text: message }]
     });
 
-    const responseData = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
+    const activeModel = await getActiveModel();
+    const responseData = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
       contents: formattedHistory,
       generationConfig: {
         responseMimeType: "application/json"
@@ -690,7 +818,8 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código ma
   "specialistRecommendation": "Orientações sobre quando buscar avaliação com especialista (Ex: Cirurgião Vascular, Estomaterapeuta, Endocrinologista para controle glicêmico)"
 }`;
 
-    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
+    const activeModel = await getActiveModel();
+    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
       contents: [{ parts: [{ text: systemPrompt }] }],
       generationConfig: {
         responseMimeType: "application/json"
@@ -753,7 +882,8 @@ INSTRUÇÕES DE FORMATAÇÃO DO SOAP:
 
 Retorne o texto formatado estritamente como um documento SOAP em português (PT-BR), legível, organizado e profissional. Use cabeçalhos claros com negrito (ex: **S - Subjetivo:**, **O - Objetivo:**, etc.) e bullets. Seja preciso e evite inventar dados que não estejam implícitos no texto ditado ou no histórico do paciente.`;
 
-    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
+    const activeModel = await getActiveModel();
+    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
       contents: [
         { role: 'user', parts: [{ text: systemPrompt }] },
         { role: 'user', parts: [{ text: `Texto ditado pelo profissional: "${noteText}"` }] }
@@ -823,7 +953,8 @@ Sua resposta deve ser estritamente um objeto JSON puro, sem blocos de código \`
   "riskLevel": "Leve/Risco Moderado/Alto Risco/Crítico"
 }`;
 
-    const response = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', {
+    const activeModel = await getActiveModel();
+    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
       contents: [{ parts: [{ text: systemPrompt }] }],
       generationConfig: {
         responseMimeType: "application/json"
@@ -1002,7 +1133,8 @@ Responda estritamente em formato JSON com o modelo exato:
       }
     };
 
-    const res = await fetchGeminiWithRotation('gemini-1.5-flash:generateContent', bodyData);
+    const activeModel = await getActiveModel();
+    const res = await fetchGeminiWithRotation(`${activeModel}:generateContent`, bodyData);
     const data = await res.json();
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     
