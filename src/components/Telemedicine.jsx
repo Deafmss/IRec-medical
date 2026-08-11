@@ -21,7 +21,7 @@ import {
   sendTranscriptChunk,
   updateClinicalProfile
 } from '../services/supabaseService';
-import { analyzeTelemedicineTranscript } from '../services/geminiService';
+import { analyzeTelemedicineTranscript, isGeminiConfigured } from '../services/geminiService';
 import TCLETelemedicineModal from './TCLETelemedicineModal';
 
 const getDoctorPremiumDetails = (doc) => {
@@ -199,9 +199,20 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
+  const webRTCInitializedCallIdRef = useRef(null);
+  const [mediaPermissionError, setMediaPermissionError] = useState(false);
+
   const [consentGiven, setConsentGiven] = useState(() => {
-    return localStorage.getItem('irec_telemedicine_consent_accepted') === 'true';
+    if (!currentUser?.id) return false;
+    return localStorage.getItem(`irec_tcle_accepted_${currentUser.id}`) === 'true';
   });
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      setConsentGiven(localStorage.getItem(`irec_tcle_accepted_${currentUser.id}`) === 'true');
+    }
+  }, [currentUser?.id]);
+
   const [showConsentModal, setShowConsentModal] = useState(false);
   
   const messagesEndRef = useRef(null);
@@ -221,14 +232,263 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [aiReport, setAiReport] = useState(null);
   const [activeTabReports, setActiveTabReports] = useState('summary'); // 'summary', 'symptoms', 'prescription'
+  const [selectedSymptomIndices, setSelectedSymptomIndices] = useState([]);
+  const [selectedPrescriptionIndices, setSelectedPrescriptionIndices] = useState([]);
+
+  useEffect(() => {
+    if (aiReport) {
+      setSelectedSymptomIndices((aiReport.symptoms || []).map((_, i) => i));
+      setSelectedPrescriptionIndices((aiReport.suggestedPrescriptions || []).map((_, i) => i));
+    }
+  }, [aiReport]);
+
   const recognitionRef = useRef(null);
   const expressMessagesEndRef = useRef(null);
 
   // Audio elements for ringtones
   const audioCtxRef = useRef(null);
   const ringIntervalRef = useRef(null);
-
   const [contactsTrigger, setContactsTrigger] = useState(0);
+
+  // Scroll chat to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const scrollExpressToBottom = () => {
+    expressMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Ringtone synthesizer (Web Audio API)
+  const stopRingtone = () => {
+    if (ringIntervalRef.current) {
+      clearInterval(ringIntervalRef.current);
+      ringIntervalRef.current = null;
+    }
+  };
+
+  const playRingtone = () => {
+    if (ringIntervalRef.current) return; // Prevent duplicate ringtone interval stacking (IREC-0360)
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      
+      const triggerTone = () => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.setValueAtTime(554, ctx.currentTime + 0.15);
+        osc.frequency.setValueAtTime(659, ctx.currentTime + 0.3);
+        
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.7);
+      };
+
+      triggerTone();
+      ringIntervalRef.current = setInterval(triggerTone, 1500);
+    } catch (e) {
+      console.warn('Erro ao reproduzir bipe sonoro de toque:', e);
+    }
+  };
+
+  const playNotificationSound = () => {
+    try {
+      if (muteAudio) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      const ctx = audioCtxRef.current || new AudioContextClass();
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = ctx;
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+      
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.08); // A5
+      
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch (e) {
+      console.warn('Erro ao reproduzir som de notificação:', e);
+    }
+  };
+
+  // Webcam streamer helper
+  const startMediaStream = async () => {
+    if (localStream) return localStream;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: 'user' },
+        audio: true
+      });
+      setLocalStream(stream);
+      setMediaPermissionError(false);
+      return stream;
+    } catch (err) {
+      console.warn('Câmera ou Microfone não disponíveis:', err);
+      setMediaPermissionError(true);
+      return null;
+    }
+  };
+
+  const endMediaStream = () => {
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      setLocalStream(null);
+    }
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+
+    stopRingtone();
+    
+    // Clean up WebRTC peer connection
+    if (peerConnectionRef.current) {
+      const pc = peerConnectionRef.current;
+      if (pc.unsubscribeSignaling) {
+        pc.unsubscribeSignaling();
+      }
+      pc.close();
+      peerConnectionRef.current = null;
+    }
+    setRemoteStream(null);
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+  };
+
+  // WebRTC P2P Connection and Signaling
+  const initializeWebRTC = async (callId, isCaller) => {
+    try {
+      console.log("Iniciando conexão WebRTC P2P para chamada:", callId);
+      
+      // Get or request local media stream
+      const stream = await startMediaStream();
+      if (!stream) {
+        console.warn("Nenhum stream de áudio/vídeo disponível para WebRTC");
+        alert("Não foi possível acessar sua câmera/microfone. Verifique as permissões do seu navegador.");
+        return;
+      }
+
+      // STUN configuration (IREC-0027, IREC-0147)
+      const configuration = {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' }
+        ]
+      };
+      
+      const pc = new RTCPeerConnection(configuration);
+      peerConnectionRef.current = pc;
+
+      // Add tracks to PeerConnection
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+      });
+
+      // Handle remote track arriving
+      pc.ontrack = (event) => {
+        console.log("Track remota recebida com sucesso!", event.streams);
+        if (event.streams && event.streams[0]) {
+          setRemoteStream(event.streams[0]);
+        }
+      };
+
+      // Handle ICE candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          sendWebRTCSignalingEvent(callId, currentUser.id, 'candidate', event.candidate.toJSON());
+        }
+      };
+
+      // Resilient WebRTC: Auto ICE Restart on connection drop
+      pc.oniceconnectionstatechange = async () => {
+        console.log("[WebRTC ICE State]:", pc.iceConnectionState);
+        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+          console.warn("[WebRTC ICE Auto-Reconnect] Rede oscilou ou reconectou. Disparando ICE Restart...");
+          try {
+            if (pc.restartIce) {
+              pc.restartIce();
+            }
+            if (isCaller) {
+              const offer = await pc.createOffer({ iceRestart: true });
+              await pc.setLocalDescription(offer);
+              await sendWebRTCSignalingEvent(callId, currentUser.id, 'offer', offer);
+            }
+          } catch (reconnectErr) {
+            console.warn("[WebRTC ICE] Erro na reconexão automática:", reconnectErr);
+          }
+        }
+      };
+
+      // Subscribe to WebRTC signaling events
+      const unsubscribeSignaling = subscribeToWebRTCSignaling(callId, async (signal) => {
+        if (signal.sender_id === currentUser.id) return;
+        
+        try {
+          if (signal.type === 'offer') {
+            console.log("Recebida oferta SDP remota...");
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await sendWebRTCSignalingEvent(callId, currentUser.id, 'answer', answer);
+          } else if (signal.type === 'answer') {
+            console.log("Recebida resposta SDP remota...");
+            await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+          } else if (signal.type === 'candidate') {
+            console.log("Recebido candidato ICE remoto...");
+            await pc.addIceCandidate(new RTCIceCandidate(signal.payload));
+          }
+        } catch (err) {
+          console.warn("Erro ao processar sinal WebRTC:", err);
+        }
+      });
+
+      pc.unsubscribeSignaling = unsubscribeSignaling;
+
+      // Send offer if caller
+      if (isCaller) {
+        console.log("Criando oferta WebRTC como Iniciador...");
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await sendWebRTCSignalingEvent(callId, currentUser.id, 'offer', offer);
+      }
+    } catch (e) {
+      console.error("Erro ao inicializar WebRTC:", e);
+    }
+  };
+
+  // Cleanup WebRTC, media streams, speech synthesis & ringtone on unmount (IREC-0139)
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+      stopRingtone();
+      endMediaStream();
+      if (webRTCInitializedCallIdRef.current) {
+        webRTCInitializedCallIdRef.current = null;
+      }
+    };
+  }, []);
 
   // Initial load & Polling: Fetch Contacts for real-time presence/last_seen_at sync
   useEffect(() => {
@@ -238,12 +498,12 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         if (currentUser.role === 'doctor' || currentUser.role === 'nurse') {
           const assigned = await getAssignedPatients(currentUser.id);
           assigned.forEach(p => {
-            list.push({ ...p, role: 'patient', chatType: 'assigned_patient' });
+            list.push({ ...p, role: p.role || 'patient', chatType: 'assigned_patient' });
           });
         } else if (currentUser.role === 'patient') {
           const doctors = await getAssignedDoctors(currentUser.id);
           doctors.forEach(d => {
-            list.push({ ...d, role: 'doctor', chatType: 'assigned_doctor' });
+            list.push({ ...d, role: d.role || 'doctor', chatType: 'assigned_doctor' });
           });
         }
         setContacts(list);
@@ -296,11 +556,11 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     }
   }, [contacts, targetContactId, isMobile]);
 
-  // Synchronize internal Telemedicine state with global activeCallSession from App.jsx
+  // Synchronize internal Telemedicine state with global activeCallSession from App.jsx (IREC-0141, IREC-0142)
   useEffect(() => {
     if (!activeCallSession) {
       if (callState !== 'idle') {
-        endMediaStream();
+        stopRingtone();
         setCallState('idle');
         setActiveCall(null);
         setCallDuration(0);
@@ -308,11 +568,12 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     } else {
       setActiveCall(activeCallSession);
       if (activeCallSession.status === 'accepted') {
+        stopRingtone();
         if (callState !== 'active') {
           setCallState('active');
         }
       } else if (activeCallSession.status === 'ringing') {
-        if (activeCallSession.receiverId === currentUser.id) {
+        if (activeCallSession.receiverId === currentUser?.id) {
           if (callState !== 'incoming') {
             setCallState('incoming');
             playRingtone();
@@ -323,15 +584,15 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           }
         }
       } else if (activeCallSession.status === 'ended' || activeCallSession.status === 'rejected') {
+        stopRingtone();
         if (callState !== 'idle') {
-          endMediaStream();
           setCallState('idle');
           setActiveCall(null);
           setCallDuration(0);
         }
       }
     }
-  }, [activeCallSession]);
+  }, [activeCallSession, callState, currentUser]);
 
   // Load chat messages when selected contact changes
   useEffect(() => {
@@ -344,21 +605,26 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     }
     loadMessages();
 
-    // Set up polling (2 seconds interval) for real-time chat sync across devices
+    // Set up polling (15 seconds interval) for real-time chat sync across devices (IREC-0542)
     const interval = setInterval(async () => {
-      const chatHistory = await getChatMessages(currentUser.id, selectedContact.id);
+      const fetched = await getChatMessages(currentUser.id, selectedContact.id);
+      if (!fetched || fetched.length === 0) return;
+
       setMessages(prev => {
-        if (chatHistory.length !== prev.length || (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].id !== prev[prev.length - 1]?.id)) {
-          setTimeout(scrollToBottom, 100);
-          if (chatHistory.length > prev.length) {
-            const lastMsg = chatHistory[chatHistory.length - 1];
-            if (lastMsg && lastMsg.sender_id !== currentUser.id) {
-              playNotificationSound();
-            }
+        // Merge messages by ID to prevent overwriting recent optimistic sends (IREC-0358)
+        const map = new Map();
+        prev.forEach(m => map.set(m.id, m));
+        fetched.forEach(m => map.set(m.id, m));
+        const merged = Array.from(map.values()).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+        if (merged.length > prev.length) {
+          const lastMsg = merged[merged.length - 1];
+          const sender = lastMsg?.senderId || lastMsg?.sender_id;
+          if (lastMsg && sender !== currentUser.id) {
+            playNotificationSound();
           }
-          return chatHistory;
         }
-        return prev;
+        return merged;
       });
     }, 15000);
 
@@ -372,15 +638,22 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     async function checkUnreadMessages() {
       try {
         const received = await getAllReceivedMessages(currentUser.id);
-        const readTimes = JSON.parse(localStorage.getItem('irec_chat_read_times') || '{}');
+        let readTimes = {};
+        try {
+          readTimes = JSON.parse(localStorage.getItem('irec_chat_read_times') || '{}');
+        } catch (e) {
+          readTimes = {};
+        }
         
         const counts = {};
         let newTotal = 0;
         let readTimesUpdated = false;
         
+        const isTabVisible = (isAppActiveTab || showExpressChat) && (typeof document === 'undefined' || document.visibilityState === 'visible');
+
         received.forEach(msg => {
-          // If message is from currently selected active contact, mark read
-          if (selectedContact && msg.senderId === selectedContact.id) {
+          // If message is from currently selected active contact AND tab is visible, mark read (IREC-0143)
+          if (isTabVisible && selectedContact && msg.senderId === selectedContact.id) {
             readTimes[msg.senderId] = new Date().toISOString();
             readTimesUpdated = true;
             return;
@@ -388,9 +661,9 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
           const lastRead = readTimes[msg.senderId];
           if (lastRead === undefined) {
-            // On initial load, set lastRead to current timestamp so old historical messages aren't counted as unread
-            readTimes[msg.senderId] = new Date().toISOString();
-            readTimesUpdated = true;
+            // On initial load without baseline, count unread if message exists (IREC-0359)
+            counts[msg.senderId] = (counts[msg.senderId] || 0) + 1;
+            newTotal++;
           } else if (msg.createdAt > lastRead) {
             counts[msg.senderId] = (counts[msg.senderId] || 0) + 1;
             newTotal++;
@@ -420,27 +693,21 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     checkUnreadMessages();
     const interval = setInterval(checkUnreadMessages, 15000);
     return () => clearInterval(interval);
-  }, [currentUser, selectedContact, onUnreadCountChange]);
+  }, [currentUser, selectedContact, onUnreadCountChange, isAppActiveTab, showExpressChat]);
 
   // Mark all messages from the selected contact as read
   useEffect(() => {
     if (!selectedContact || !currentUser) return;
 
-    const readTimes = JSON.parse(localStorage.getItem('irec_chat_read_times') || '{}');
+    let readTimes = {};
+    try {
+      readTimes = JSON.parse(localStorage.getItem('irec_chat_read_times') || '{}');
+    } catch {
+      readTimes = {};
+    }
     readTimes[selectedContact.id] = new Date().toISOString();
     localStorage.setItem('irec_chat_read_times', JSON.stringify(readTimes));
-
-    // Clear unread counts locally immediately
-    setUnreadCounts(prev => {
-      const next = { ...prev };
-      delete next[selectedContact.id];
-      const newTotal = Object.values(next).reduce((acc, curr) => acc + curr, 0);
-      if (onUnreadCountChange) {
-        onUnreadCountChange(newTotal);
-      }
-      return next;
-    });
-  }, [selectedContact, currentUser, messages, onUnreadCountChange]);
+  }, [selectedContact, currentUser, messages]);
 
   // Subscribe to real-time local signaling channel events (same-machine inter-tab sync)
   useEffect(() => {
@@ -467,7 +734,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           }
         }
       },
-      (callId, status, duration) => {
+      (callId, status) => {
         if (activeCall && activeCall.id.toString() === callId.toString()) {
           if (status === 'accepted') {
             setCallState('active');
@@ -507,20 +774,19 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           if (currentUser.role === 'doctor' && senderRole === 'patient') {
             const lowerText = text.toLowerCase();
             const redFlags = [
-              { term: 'febre', alertText: 'Paciente mencionou febre. Monitore temperatura e sinais de infecção.' },
-              { term: 'preto', alertText: 'Mencionou ferida "preta". Risco de necrose ou isquemia.' },
-              { term: 'escuro', alertText: 'Mencionou ferida "escura". Risco de necrose ou isquemia.' },
-              { term: 'escura', alertText: 'Mencionou ferida "escura". Risco de necrose ou isquemia.' },
-              { term: 'pus', alertText: 'Mencionou presença de pus ou secreção purulenta.' },
-              { term: 'secreção amarela', alertText: 'Mencionou secreção amarelada/verde. Possível sinal de infecção.' },
-              { term: 'dor insuportável', alertText: 'Paciente queixa-se de dor extrema ou insuportável.' },
-              { term: 'dor forte', alertText: 'Paciente relatou dor forte na região.' },
-              { term: 'dor no peito', alertText: 'Mencionou dor no peito. Risco cardíaco associado.' },
-              { term: 'infecção', alertText: 'Paciente mencionou o termo "infecção". Verifique sinais flogísticos.' }
+              { regex: /\bfebre\b/i, alertText: 'Paciente mencionou febre. Monitore temperatura e sinais de infecção.' },
+              { regex: /\b(preto|preta)\b/i, alertText: 'Mencionou ferida "preta". Risco de necrose ou isquemia.' },
+              { regex: /\b(escuro|escura)\b/i, alertText: 'Mencionou ferida "escura". Risco de necrose ou isquemia.' },
+              { regex: /\bpus\b/i, alertText: 'Mencionou presença de pus ou secreção purulenta.' },
+              { regex: /secreção amarela/i, alertText: 'Mencionou secreção amarelada/verde. Possível sinal de infecção.' },
+              { regex: /dor insuportável/i, alertText: 'Paciente queixa-se de dor extrema ou insuportável.' },
+              { regex: /dor forte/i, alertText: 'Paciente relatou dor forte na região.' },
+              { regex: /dor no peito/i, alertText: 'Mencionou dor no peito. Risco cardíaco associado.' },
+              { regex: /\binfecção\b/i, alertText: 'Paciente mencionou o termo "infecção". Verifique sinais flogísticos.' }
             ];
 
             redFlags.forEach(flag => {
-              if (lowerText.includes(flag.term)) {
+              if (flag.regex.test(lowerText)) {
                 setSafetyAlerts(prev => {
                   if (prev.some(a => a.text === flag.alertText)) return prev;
                   return [...prev, {
@@ -611,7 +877,6 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       localVideoRef.current.play().catch(e => console.warn('Erro ao reproduzir vídeo local:', e));
     }
   }, [localStream, callState]);
-
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
@@ -620,16 +885,20 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     }
   }, [remoteStream, callState]);
 
-  // Hook WebRTC P2P
+  // Hook WebRTC P2P (IREC-0026)
+  const activeCallId = activeCall?.id;
+  const isCallerCall = activeCall?.callerId === currentUser?.id;
   useEffect(() => {
-    if (callState === 'active' && activeCall) {
-      const isCaller = activeCall.callerId === currentUser.id;
-      console.log(`Inicializando WebRTC P2P. Sou iniciador? ${isCaller}`);
-      initializeWebRTC(activeCall.id, isCaller);
+    if (callState === 'active' && activeCallId) {
+      if (webRTCInitializedCallIdRef.current !== activeCallId) {
+        webRTCInitializedCallIdRef.current = activeCallId;
+        console.log(`Inicializando WebRTC P2P. Sou iniciador? ${isCallerCall}`);
+        initializeWebRTC(activeCallId, isCallerCall);
+      }
     } else if (callState === 'idle') {
-      endMediaStream();
+      webRTCInitializedCallIdRef.current = null;
     }
-  }, [callState, activeCall]);
+  }, [callState, activeCallId, isCallerCall]);
 
   // Manage SpeechRecognition lifecycle based on callState
   useEffect(() => {
@@ -637,14 +906,13 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch (e) {}
+        } catch {
+          // ignore stop errors
+        }
         recognitionRef.current = null;
       }
       return;
     }
-
-    setTranscripts([]);
-    setSafetyAlerts([]);
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -686,7 +954,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       if (callState === 'active' && recognitionRef.current) {
         try {
           recognitionRef.current.start();
-        } catch (e) {
+        } catch {
           // Prevent spamming logs on manual stops
         }
       }
@@ -695,258 +963,21 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     recognitionRef.current = rec;
     try {
       rec.start();
-    } catch (e) {
-      console.warn('Error starting speech recognition:', e);
+    } catch {
+      console.warn('Error starting speech recognition.');
     }
 
     return () => {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch (e) {}
+        } catch {
+          // ignore stop errors
+        }
         recognitionRef.current = null;
       }
     };
   }, [callState, currentUser]);
-
-  // Scroll chat to bottom
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const scrollExpressToBottom = () => {
-    expressMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // Auto-scroll express chat when new messages arrive or when it is opened
-  useEffect(() => {
-    if (showExpressChat) {
-      setTimeout(scrollExpressToBottom, 100);
-    }
-  }, [showExpressChat, messages]);
-
-  // Ringtone synthesizer (Web Audio API)
-  const playRingtone = () => {
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      const ctx = audioCtxRef.current;
-      
-      const triggerTone = () => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(440, ctx.currentTime);
-        osc.frequency.setValueAtTime(554, ctx.currentTime + 0.15);
-        osc.frequency.setValueAtTime(659, ctx.currentTime + 0.3);
-        
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
-        
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.start();
-        osc.stop(ctx.currentTime + 0.7);
-      };
-
-      triggerTone();
-      ringIntervalRef.current = setInterval(triggerTone, 1500);
-    } catch (e) {
-      console.warn('Erro ao reproduzir bipe sonoro de toque:', e);
-    }
-  };
-
-  const stopRingtone = () => {
-    if (ringIntervalRef.current) {
-      clearInterval(ringIntervalRef.current);
-      ringIntervalRef.current = null;
-    }
-  };
-
-  const playNotificationSound = () => {
-    try {
-      if (muteAudio) return;
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      const ctx = audioCtxRef.current || new AudioContextClass();
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = ctx;
-      }
-      if (ctx.state === 'suspended') ctx.resume();
-      
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.08); // A5
-      
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
-    } catch (e) {
-      console.warn('Erro ao reproduzir som de notificação:', e);
-    }
-  };
-
-
-  // Webcam streamer helper
-  const startMediaStream = async () => {
-    if (localStream) return localStream;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: 'user' },
-        audio: true
-      });
-      setLocalStream(stream);
-      return stream;
-    } catch (err) {
-      console.warn('Câmera ou Microfone não disponíveis:', err);
-      return null;
-    }
-  };
-
-  // WebRTC P2P Connection and Signaling
-  const initializeWebRTC = async (callId, isCaller) => {
-    try {
-      console.log("Iniciando conexão WebRTC P2P para chamada:", callId);
-      
-      // Get or request local media stream
-      const stream = await startMediaStream();
-      if (!stream) {
-        console.warn("Nenhum stream de áudio/vídeo disponível para WebRTC");
-        return;
-      }
-
-      // STUN configuration
-      const configuration = {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19002' },
-          { urls: 'stun:stun1.l.google.com:19002' }
-        ]
-      };
-      
-      const pc = new RTCPeerConnection(configuration);
-      peerConnectionRef.current = pc;
-
-      // Add tracks to PeerConnection
-      stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
-      });
-
-      // Handle remote track arriving
-      pc.ontrack = (event) => {
-        console.log("Track remota recebida com sucesso!", event.streams);
-        if (event.streams && event.streams[0]) {
-          setRemoteStream(event.streams[0]);
-        }
-      };
-
-      // Handle ICE candidates
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          sendWebRTCSignalingEvent(callId, currentUser.id, 'candidate', event.candidate.toJSON());
-        }
-      };
-
-      // Resilient WebRTC (React Native WebRTC / TRTC): Auto ICE Restart on connection drop
-      pc.oniceconnectionstatechange = async () => {
-        console.log("[WebRTC ICE State]:", pc.iceConnectionState);
-        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-          console.warn("[WebRTC ICE Auto-Reconnect] Rede oscilou ou reconectou. Disparando ICE Restart...");
-          try {
-            if (pc.restartIce) {
-              pc.restartIce();
-            }
-            if (isCaller) {
-              const offer = await pc.createOffer({ iceRestart: true });
-              await pc.setLocalDescription(offer);
-              await sendWebRTCSignalingEvent(callId, currentUser.id, 'offer', offer);
-            }
-          } catch (reconnectErr) {
-            console.warn("[WebRTC ICE] Erro na reconexão automática:", reconnectErr);
-          }
-        }
-      };
-
-      // Subscribe to WebRTC signaling events
-      const unsubscribeSignaling = subscribeToWebRTCSignaling(callId, async (signal) => {
-        if (signal.sender_id === currentUser.id) return;
-        
-        try {
-          if (signal.type === 'offer') {
-            console.log("Recebida oferta SDP remota...");
-            await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            await sendWebRTCSignalingEvent(callId, currentUser.id, 'answer', answer);
-          } else if (signal.type === 'answer') {
-            console.log("Recebida resposta SDP remota...");
-            await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
-          } else if (signal.type === 'candidate') {
-            console.log("Recebido candidato ICE remoto...");
-            await pc.addIceCandidate(new RTCIceCandidate(signal.payload));
-          }
-        } catch (err) {
-          console.warn("Erro ao processar sinal WebRTC:", err);
-        }
-      });
-
-      pc.unsubscribeSignaling = unsubscribeSignaling;
-
-      // Send offer if caller
-      if (isCaller) {
-        console.log("Criando oferta WebRTC como Iniciador...");
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        await sendWebRTCSignalingEvent(callId, currentUser.id, 'offer', offer);
-      }
-    } catch (e) {
-      console.error("Erro ao inicializar WebRTC:", e);
-    }
-  };
-
-  const endMediaStream = () => {
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-      setLocalStream(null);
-    }
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = null;
-    }
-
-    if (ringIntervalRef.current) {
-      clearInterval(ringIntervalRef.current);
-      ringIntervalRef.current = null;
-    }
-    
-    // Clean up WebRTC peer connection
-    if (peerConnectionRef.current) {
-      const pc = peerConnectionRef.current;
-      if (pc.unsubscribeSignaling) {
-        pc.unsubscribeSignaling();
-      }
-      pc.close();
-      peerConnectionRef.current = null;
-    }
-    setRemoteStream(null);
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = null;
-    }
-  };
-
-  const fileToBase64 = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-  });
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -1038,11 +1069,26 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
   const startCall = async () => {
     if (!selectedContact) return;
+    if (!consentGiven) {
+      setShowConsentModal(true);
+      return;
+    }
     setCallState('outgoing');
-    const call = await placeTelemedicineCall(currentUser.id, selectedContact.id);
-    setActiveCall(call);
-    if (setActiveCallSession) {
-      setActiveCallSession(call);
+    try {
+      const call = await placeTelemedicineCall(currentUser.id, selectedContact.id);
+      if (!call) {
+        setCallState('idle');
+        alert("Não foi possível realizar a chamada no momento.");
+        return;
+      }
+      setActiveCall(call);
+      if (setActiveCallSession) {
+        setActiveCallSession(call);
+      }
+    } catch (err) {
+      console.error("Erro ao iniciar chamada:", err);
+      setCallState('idle');
+      alert("Erro ao estabelecer conexão para a chamada.");
     }
   };
 
@@ -1070,16 +1116,25 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const endCall = async () => {
     if (!activeCall) return;
     
-    // Stop local media streams immediately
+    // Stop local media streams immediately & reset callState to idle (IREC-0361)
     endMediaStream();
+    setCallState('idle');
     
     // Update call status in database
     await updateCallStatus(activeCall.id, 'ended', callDuration);
 
     if (currentUser.role === 'doctor' && transcripts.length > 0) {
       setShowSummaryModal(true);
-      setIsGeneratingSummary(true);
       
+      // Do not run simulated mock AI analysis if Gemini is not configured (IREC-0028)
+      if (!isGeminiConfigured) {
+        setIsGeneratingSummary(false);
+        setAiReport(null);
+        console.warn("[iRec AI] API Gemini não configurada. Análise automática de laudo suspensa.");
+        return;
+      }
+
+      setIsGeneratingSummary(true);
       try {
         const patientProfile = selectedContact;
         const transcriptText = transcripts.map(t => `${t.role === 'doctor' ? 'Médico' : 'Paciente'}: ${t.text}`).join('\n');
@@ -1092,8 +1147,6 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         setIsGeneratingSummary(false);
       }
     } else {
-      // Direct transition to idle for patients or if no speech was captured
-      setCallState('idle');
       setActiveCall(null);
       setCallDuration(0);
       if (setActiveCallSession) {
@@ -1115,14 +1168,19 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
   const saveClinicalSummary = async () => {
     try {
-      if (!selectedContact || !aiReport) return;
+      const targetContact = selectedContact || (activeCall ? contacts.find(c => c.id === (activeCall.callerId === currentUser.id ? activeCall.receiverId : activeCall.callerId)) : null);
 
-      let updatedMedications = selectedContact.medications || '';
-      let updatedConditions = selectedContact.otherConditions || '';
+      if (!targetContact || !aiReport) {
+        alert("Atenção: Nenhum contato ou laudo ativo encontrado para gravar o prontuário.");
+        return;
+      }
+
+      let updatedMedications = targetContact.medications || '';
+      let updatedConditions = targetContact.otherConditions || '';
       
-      // 1. Accumulate selected prescriptions
+      // 1. Accumulate selected prescriptions from React state (IREC-0029)
       const selectedPrescriptions = aiReport.suggestedPrescriptions
-        ?.filter((_, idx) => document.getElementById(`presc-${idx}`)?.checked)
+        ?.filter((_, idx) => selectedPrescriptionIndices.includes(idx))
         .map(p => `${p.name} (${p.dosage})`) || [];
         
       if (selectedPrescriptions.length > 0) {
@@ -1132,9 +1190,9 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           : newPrescriptionStr;
       }
 
-      // 2. Accumulate selected symptoms
+      // 2. Accumulate selected symptoms from React state (IREC-0029)
       const selectedSymptoms = aiReport.symptoms
-        ?.filter((_, idx) => document.getElementById(`symp-${idx}`)?.checked)
+        ?.filter((_, idx) => selectedSymptomIndices.includes(idx))
         .map(s => `${s.name} (${s.intensity})`) || [];
 
       if (selectedSymptoms.length > 0) {
@@ -1146,29 +1204,21 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
       // 3. Update clinical profile in database
       const updatedProfile = {
-        ...selectedContact,
+        ...targetContact,
         medications: updatedMedications,
         otherConditions: updatedConditions
       };
       
-      await updateClinicalProfile(selectedContact.id, updatedProfile);
+      await updateClinicalProfile(targetContact.id, updatedProfile);
 
       // 4. Send official evolution note to chat messages
-      const evolutionText = document.getElementById('ai-evolution-text')?.value || aiReport.clinicalEvolution;
-      const formattedChatMsg = `📋 **Evolução de Telemedicina (Síntese Clínica)**\n\n**Resumo**: ${aiReport.executiveSummary}\n\n**Evolução Clínica**: ${evolutionText}\n\n**Risco Estimado**: ${aiReport.riskLevel}`;
+      const summaryMessage = `📋 **Evolução de Telemedicina (Síntese Clínica)**\n\n**Resumo Executivo:** ${aiReport.executiveSummary}\n**Prescrições/Orientações:** ${selectedPrescriptions.join('; ') || 'Nenhuma'}\n**Sintomas Registrados:** ${selectedSymptoms.join('; ') || 'Nenhum'}\n**Nível de Risco:** ${aiReport.riskLevel}`;
       
-      const sent = await sendChatMessage(currentUser.id, selectedContact.id, formattedChatMsg, null, null);
-      if (sent) {
-        setMessages(prev => {
-          if (prev.some(m => m.id === sent.id)) return prev;
-          return [...prev, sent];
-        });
-      }
-      
-      alert('Resumo gravado com sucesso no prontuário e enviado ao histórico!');
-    } catch (e) {
-      console.error('Erro ao salvar resumo da consulta:', e);
-      alert('Erro ao gravar prontuário. A consulta foi encerrada.');
+      await sendChatMessage(currentUser.id, targetContact.id, summaryMessage);
+      alert("Resumo clínico gravado com sucesso no prontuário!");
+    } catch (err) {
+      console.error("Erro ao salvar resumo no prontuário:", err);
+      alert("Erro ao gravar síntese no prontuário.");
     } finally {
       setShowSummaryModal(false);
       setAiReport(null);
@@ -1421,7 +1471,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         </div>
       );
     }
-    const totalUnread = contacts.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+    const totalUnread = Object.values(unreadCounts).reduce((sum, c) => sum + (c || 0), 0);
 
     return (
       <div style={{
@@ -2064,6 +2114,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                                   href={m.fileUrl} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
+                                  download={m.fileName || 'Documento_Clinico.pdf'}
                                   style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -2325,7 +2376,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                     const lastSeen = new Date(c.lastSeenAt).getTime();
                     const now = new Date().getTime();
                     return (now - lastSeen) < 35000;
-                  } catch (e) {
+                  } catch {
                     return false;
                   }
                 })();

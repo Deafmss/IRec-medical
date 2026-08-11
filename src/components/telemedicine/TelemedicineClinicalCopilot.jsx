@@ -1,4 +1,3 @@
-import React from 'react';
 
 export default function TelemedicineClinicalCopilot({
   isTranscribing,
@@ -47,8 +46,8 @@ export default function TelemedicineClinicalCopilot({
             ⚠️ Alertas Clínicos Detectados
           </span>
           {safetyAlerts.map((alert, idx) => (
-            <div key={idx} style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-              • {alert}
+            <div key={alert.id || idx} style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+              • {typeof alert === 'object' ? alert.text : alert}
             </div>
           ))}
         </div>

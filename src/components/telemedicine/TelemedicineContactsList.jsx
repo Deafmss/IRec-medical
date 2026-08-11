@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 
 export default function TelemedicineContactsList({
   contacts,
@@ -10,12 +10,17 @@ export default function TelemedicineContactsList({
   setActiveFilter,
   unreadCounts = {}
 }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(timer);
+  }, []);
   const filteredContacts = contacts.filter(c => {
     const matchesSearch = !searchTerm || (c.name && c.name.toLowerCase().includes(searchTerm.toLowerCase()));
     if (!matchesSearch) return false;
     if (activeFilter === 'all') return true;
-    if (activeFilter === 'patients') return c.role === 'patient';
-    if (activeFilter === 'doctors') return c.role === 'doctor' || c.role === 'nurse';
+    if (activeFilter === 'patients') return c.role === 'patient' || c.chatType === 'patient';
+    if (activeFilter === 'doctors') return c.role === 'doctor' || c.role === 'nurse' || c.chatType === 'assigned_doctor';
     return true;
   });
 
@@ -123,7 +128,7 @@ export default function TelemedicineContactsList({
                   }}>
                     {contact.name ? contact.name.charAt(0).toUpperCase() : 'U'}
                   </div>
-                  {contact.isOnline && (
+                  {(contact.isOnline || (contact.lastSeenAt && (now - new Date(contact.lastSeenAt).getTime()) < 35000)) && (
                     <span style={{
                       position: 'absolute',
                       bottom: '0',
