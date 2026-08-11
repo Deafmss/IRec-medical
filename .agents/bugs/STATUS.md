@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 4 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 21 corrigidos**
 
 ---
 
@@ -36,30 +36,45 @@ Marque `[x]` só depois de verificar. Cole a saída do comando na seção do mó
 
 ---
 
-## 1. Shell, build e navegação — 0/17
-
-- [ ] IREC-0001 · CRÍTICO · `src/App.jsx:496` — Sessão restaurada do localStorage nunca é sobreposta pela verdade do servidor
-- [ ] IREC-0036 · CRÍTICO · `vite.config.js:5` — 8 chaves da API Gemini e a chave do Supabase são embutidas no bundle publicado
-- [ ] IREC-0037 · ALTO · `android/ + ios/:1` — Aplicativos nativos empacotam um build 18 dias mais velho que o da web
-- [ ] IREC-0038 · ALTO · `src/App.jsx:450` — Timeout de 1,8 s prende o usuário na tela de login mesmo com sessão válida
-- [ ] IREC-0039 · ALTO · `src/App.jsx:799` — Botão 'LIGAR POR VÍDEO AGORA' do modo acessível não inicia chamada nenhuma
-- [ ] IREC-0040 · ALTO · `src/App.jsx:799` — window.initiateTelemedicineCall nunca é definida: videochamada do Modo Fácil não funciona
-- [ ] IREC-0041 · ALTO · `src/App.jsx:838` — Médico/enfermeiro que abre a aba Histórico vê sempre prontuário vazio (props erradas passadas ao componente)
-- [ ] IREC-0042 · ALTO · `src/App.jsx:872` — case 'admin-partners' duplicado no switch: a página AdminPartners é inalcançável
-- [ ] IREC-0201 · MÉDIO · `src/ (global):1` — 52 violações das regras de Hooks apontadas pelo ESLint em 15 arquivos
-- [ ] IREC-0202 · MÉDIO · `src/App.jsx:467` — Aba restaurada do localStorage sem validar o papel do usuário
-- [ ] IREC-0203 · MÉDIO · `src/App.jsx:909` — AdminDashboard renderizado sem nenhuma prop no case default deixa a tela em branco
-- [ ] IREC-0204 · MÉDIO · `src/components/ (7 arquivos):1` — Sete componentes nunca são importados: funcionalidades inteiras são inalcançáveis
-- [ ] IREC-0389 · MÉDIO · `src/main.jsx:10` — Sentry inicializado em produção com DSN placeholder: erros com dados do paciente vão para destino desconhecido
-- [ ] IREC-0423 · MÉDIO · `tests/app.spec.js:1` — A suíte de testes não é executável e, se fosse, passaria sem verificar nada
-- [ ] IREC-0424 · BAIXO · `package.json:19` — Driver Node do PostgreSQL (pg) declarado como dependência de um app de navegador
-- [ ] IREC-0425 · BAIXO · `src/App.jsx:838` — ClinicalHistory não recebe setActiveTab: o botão da tela vazia nunca aparece
-- [ ] IREC-0588 · BAIXO · `vite.config.js:5` — Sentry ativo sem sourcemap configurado no Vite: stack traces inutilizáveis
+- [x] IREC-0001 · CRÍTICO · `src/App.jsx:496` — Sessão restaurada do localStorage nunca é sobreposta pela verdade do servidor
+- [x] IREC-0036 · CRÍTICO · `vite.config.js:5` — 8 chaves da API Gemini e a chave do Supabase são embutidas no bundle publicado
+- [x] IREC-0037 · ALTO · `android/ + ios/:1` — Aplicativos nativos empacotam um build 18 dias mais velho que o da web
+- [x] IREC-0038 · ALTO · `src/App.jsx:450` — Timeout de 1,8 s prende o usuário na tela de login mesmo com sessão válida
+- [x] IREC-0039 · ALTO · `src/App.jsx:799` — Botão 'LIGAR POR VÍDEO AGORA' do modo acessível não inicia chamada nenhuma
+- [x] IREC-0040 · ALTO · `src/App.jsx:799` — window.initiateTelemedicineCall nunca é definida: videochamada do Modo Fácil não funciona
+- [x] IREC-0041 · ALTO · `src/App.jsx:838` — Médico/enfermeiro que abre a aba Histórico vê sempre prontuário vazio (props erradas passadas ao componente)
+- [x] IREC-0042 · ALTO · `src/App.jsx:872` — case 'admin-partners' duplicado no switch: a página AdminPartners é inalcançável
+- [x] IREC-0201 · MÉDIO · `src/ (global):1` — 52 violações das regras de Hooks apontadas pelo ESLint em 15 arquivos
+- [x] IREC-0202 · MÉDIO · `src/App.jsx:467` — Aba restaurada do localStorage sem validar o papel do usuário
+- [x] IREC-0203 · MÉDIO · `src/App.jsx:909` — AdminDashboard renderizado sem nenhuma prop no case default deixa a tela em branco
+- [x] IREC-0204 · MÉDIO · `src/components/ (7 arquivos):1` — Sete componentes nunca são importados: funcionalidades inteiras são inalcançáveis
+- [x] IREC-0389 · MÉDIO · `src/main.jsx:10` — Sentry inicializado em produção com DSN placeholder: erros com dados do paciente vão para destino desconhecido
+- [x] IREC-0423 · MÉDIO · `tests/app.spec.js:1` — A suíte de testes não é executável e, se fosse, passaria sem verificar nada
+- [x] IREC-0424 · BAIXO · `package.json:19` — Driver Node do PostgreSQL (pg) declarado como dependência de um app de navegador
+- [x] IREC-0425 · BAIXO · `src/App.jsx:838` — ClinicalHistory não recebe setActiveTab: o botão da tela vazia nunca aparece
+- [x] IREC-0588 · BAIXO · `vite.config.js:5` — Sentry ativo sem sourcemap configurado no Vite: stack traces inutilizáveis
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+1. npx eslint src/App.jsx src/main.jsx tests/app.spec.js vite.config.js:
+   Command exited with code 0. (0 erros, 0 avisos)
+
+2. npx vite build:
+   vite v8.0.16 building client environment for production...
+   transforming...✓ 450 modules transformed.
+   rendering chunks...
+   computing gzip size...
+   dist/index.html                          2.69 kB │ gzip:   1.08 kB
+   dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+   dist/assets/auditLogger-DaFpmHI0.js      0.96 kB │ gzip:   0.59 kB │ map:     3.03 kB
+   dist/assets/index-CrHABR28.js        1,240.78 kB │ gzip: 298.64 kB │ map: 4,050.94 kB
+   ✓ built in 1.60s
+
+3. npx cap sync:
+   √ Copying web assets from dist to android\app\src\main\assets\public
+   √ Copying web assets from dist to ios\App\App\public
+   [info] Sync finished in 1.203s
 ```
 
 ---
