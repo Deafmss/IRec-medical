@@ -1077,7 +1077,7 @@ export const getPatientFirstLineTriage = async (spokenQuery, patientProfile) => 
 
   try {
     const profileName = patientProfile?.name || 'Paciente';
-    const comorbidities = [
+    const comorbidades = [
       patientProfile?.hasDiabetes ? 'Diabetes' : null,
       patientProfile?.hasHypertension ? 'Hipertensão' : null,
       patientProfile?.hasVenousInsufficiency ? 'Insuficiência Venosa' : null,
@@ -1090,7 +1090,7 @@ export const getPatientFirstLineTriage = async (spokenQuery, patientProfile) => 
 
 DADOS DO PACIENTE:
 - Nome: ${profileName}
-- Comorbidades Conhecidas: ${comorbididades}
+- Comorbidades Conhecidas: ${comorbidades}
 - Alergias: ${patientProfile?.allergies || 'Nenhuma'}
 - Medicamentos de Uso Contínuo: ${patientProfile?.medications || 'Nenhum'}
 
