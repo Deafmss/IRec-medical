@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 21 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 58 corrigidos**
 
 ---
 
@@ -79,50 +79,67 @@ Marque `[x]` só depois de verificar. Cole a saída do comando na seção do mó
 
 ---
 
-## 2. Telemedicina e chat — 0/37
+## 2. Telemedicina e chat — 37/37
 
-- [ ] IREC-0026 · CRÍTICO · `src/components/Telemedicine.jsx:592` — Efeito recria a RTCPeerConnection e vaza a anterior a cada mudança do objeto activeCall
-- [ ] IREC-0027 · CRÍTICO · `src/components/Telemedicine.jsx:799` — Porta do servidor STUN errada (19002 em vez de 19302): videochamada não conecta fora da mesma rede
-- [ ] IREC-0028 · CRÍTICO · `src/components/Telemedicine.jsx:1056` — Relatório clínico inventado pela IA é gravado no prontuário real do paciente
-- [ ] IREC-0029 · CRÍTICO · `src/components/Telemedicine.jsx:1094` — Sintomas e prescrições marcados nunca são gravados se o médico não abrir as abas do modal
-- [ ] IREC-0139 · ALTO · `src/components/Telemedicine.jsx:139` — Nenhuma limpeza de câmera, microfone, peer connection e toque no desmonte do componente
-- [ ] IREC-0140 · ALTO · `src/components/Telemedicine.jsx:171` — Consentimento TCLE é global do dispositivo e vaza entre contas
-- [ ] IREC-0141 · ALTO · `src/components/Telemedicine.jsx:279` — Aceitar a chamada pelo banner global não interrompe o toque
-- [ ] IREC-0142 · ALTO · `src/components/Telemedicine.jsx:303` — Efeito de sincronização de chamada lê callState fora das dependências: câmera pode continuar ligada
-- [ ] IREC-0143 · ALTO · `src/components/Telemedicine.jsx:352` — Mensagens do contato selecionado são marcadas como lidas mesmo com o app em outra tela
-- [ ] IREC-0144 · ALTO · `src/components/Telemedicine.jsx:584` — Vídeo e áudio do interlocutor não voltam depois de esconder/reexibir (srcObject nunca é rebindado)
-- [ ] IREC-0145 · ALTO · `src/components/Telemedicine.jsx:646` — Transcrição e alertas clínicos só funcionam entre abas do mesmo navegador
-- [ ] IREC-0146 · ALTO · `src/components/Telemedicine.jsx:778` — Permissão de câmera/microfone negada falha em silêncio e a chamada segue sem mídia
-- [ ] IREC-0147 · ALTO · `src/components/Telemedicine.jsx:797` — Nenhum servidor TURN configurado: chamadas falham atrás de NAT simétrico
-- [ ] IREC-0148 · ALTO · `src/components/Telemedicine.jsx:1008` — startCall trava permanentemente em 'chamando...' quando a criação da chamada falha
-- [ ] IREC-0149 · ALTO · `src/components/Telemedicine.jsx:1054` — Transcrição integral da consulta e ficha clínica enviadas a terceiro sem consentimento
-- [ ] IREC-0150 · ALTO · `src/components/Telemedicine.jsx:1087` — Gravação do prontuário aborta em silêncio quando não há contato selecionado
-- [ ] IREC-0151 · ALTO · `src/components/Telemedicine.jsx:1951` — Quem inicia a teleconsulta nunca vê o TCLE
-- [ ] IREC-0152 · ALTO · `src/components/Telemedicine.jsx:2591` — Botão 'Desligar Câmera' não desliga a câmera e esconde o vídeo do interlocutor
-- [ ] IREC-0153 · ALTO · `src/components/Telemedicine.jsx:3066` — Botão 'Mutar Áudio' não muta o microfone — áudio continua sendo transmitido
-- [ ] IREC-0355 · MÉDIO · `src/components/Telemedicine.jsx:215` — Enfermeiro vinculado é apresentado ao paciente como médico
-- [ ] IREC-0356 · MÉDIO · `src/components/Telemedicine.jsx:272` — Seis funções são referenciadas por efeitos antes de serem declaradas
-- [ ] IREC-0357 · MÉDIO · `src/components/Telemedicine.jsx:321` — Efeitos colaterais dentro do updater de setState duplicam o som de notificação
-- [ ] IREC-0358 · MÉDIO · `src/components/Telemedicine.jsx:328` — Polling substitui a lista de mensagens e pode apagar mensagens recém-enviadas
-- [ ] IREC-0359 · MÉDIO · `src/components/Telemedicine.jsx:359` — Mensagens recebidas antes do primeiro carregamento nunca contam como não lidas
-- [ ] IREC-0360 · MÉDIO · `src/components/Telemedicine.jsx:724` — playRingtone empilha intervalos: o toque pode nunca mais parar
-- [ ] IREC-0361 · MÉDIO · `src/components/Telemedicine.jsx:1048` — Encerrar a consulta como médico deixa o estado preso em 'active' com o microfone aberto
-- [ ] IREC-0362 · MÉDIO · `src/components/Telemedicine.jsx:1393` — Badge de mensagens não lidas do chat flutuante é sempre zero
-- [ ] IREC-0363 · MÉDIO · `src/components/Telemedicine.jsx:2033` — Anexos em PDF não abrem no modo contingência local (navegação para data: URL bloqueada)
-- [ ] IREC-0541 · BAIXO · `src/components/Telemedicine.jsx:121` — speakMessage: o onend da fala cancelada zera o estado da nova leitura
-- [ ] IREC-0542 · BAIXO · `src/components/Telemedicine.jsx:316` — Comentário promete sincronização de chat a cada 2 s, mas o intervalo real é de 15 s
-- [ ] IREC-0543 · BAIXO · `src/components/Telemedicine.jsx:324` — Som de notificação toca para as próprias mensagens (comparação em snake_case)
-- [ ] IREC-0544 · BAIXO · `src/components/Telemedicine.jsx:398` — JSON.parse sem try/catch no corpo do efeito derruba a tela inteira
-- [ ] IREC-0545 · BAIXO · `src/components/Telemedicine.jsx:483` — Alerta clínico falso positivo: 'pus' casa com o verbo pôr
-- [ ] IREC-0546 · BAIXO · `src/components/Telemedicine.jsx:2291` — Indicador de presença (online) nunca acende e usa três nomes de campo diferentes
-- [ ] IREC-0547 · BAIXO · `src/components/Telemedicine.jsx:3242` — Risco 'Alto Risco' e 'Crítico' são exibidos com a mesma cor de 'Risco Moderado'
-- [ ] IREC-0548 · BAIXO · `src/components/telemedicine/TelemedicineClinicalCopilot.jsx:51` — TelemedicineClinicalCopilot renderiza objeto como filho React e quebra a tela
-- [ ] IREC-0549 · BAIXO · `src/components/telemedicine/TelemedicineContactsList.jsx:17` — Filtros da lista modular de contatos nunca casam com os papéis reais
+- [x] IREC-0026 · CRÍTICO · `src/components/Telemedicine.jsx:592` — Efeito recria a RTCPeerConnection e vaza a anterior a cada mudança do objeto activeCall
+- [x] IREC-0027 · CRÍTICO · `src/components/Telemedicine.jsx:799` — Porta do servidor STUN errada (19002 em vez de 19302): videochamada não conecta fora da mesma rede
+- [x] IREC-0028 · CRÍTICO · `src/components/Telemedicine.jsx:1056` — Relatório clínico inventado pela IA é gravado no prontuário real do paciente
+- [x] IREC-0029 · CRÍTICO · `src/components/Telemedicine.jsx:1094` — Sintomas e prescrições marcados nunca são gravados se o médico não abrir as abas do modal
+- [x] IREC-0139 · ALTO · `src/components/Telemedicine.jsx:139` — Nenhuma limpeza de câmera, microfone, peer connection e toque no desmonte do componente
+- [x] IREC-0140 · ALTO · `src/components/Telemedicine.jsx:171` — Consentimento TCLE é global do dispositivo e vaza entre contas
+- [x] IREC-0141 · ALTO · `src/components/Telemedicine.jsx:279` — Aceitar a chamada pelo banner global não interrompe o toque
+- [x] IREC-0142 · ALTO · `src/components/Telemedicine.jsx:303` — Efeito de sincronização de chamada lê callState fora das dependências: câmera pode continuar ligada
+- [x] IREC-0143 · ALTO · `src/components/Telemedicine.jsx:352` — Mensagens do contato selecionado são marcadas como lidas mesmo com o app em outra tela
+- [x] IREC-0144 · ALTO · `src/components/Telemedicine.jsx:584` — Vídeo e áudio do interlocutor não voltam depois de esconder/reexibir (srcObject nunca é rebindado)
+- [x] IREC-0145 · ALTO · `src/components/Telemedicine.jsx:646` — Transcrição e alertas clínicos só funcionam entre abas do mesmo navegador
+- [x] IREC-0146 · ALTO · `src/components/Telemedicine.jsx:778` — Permissão de câmera/microfone negada falha em silêncio e a chamada segue sem mídia
+- [x] IREC-0147 · ALTO · `src/components/Telemedicine.jsx:797` — Nenhum servidor TURN configurado: chamadas falham atrás de NAT simétrico
+- [x] IREC-0148 · ALTO · `src/components/Telemedicine.jsx:1008` — startCall trava permanentemente em 'chamando...' quando a criação da chamada falha
+- [x] IREC-0149 · ALTO · `src/components/Telemedicine.jsx:1054` — Transcrição integral da consulta e ficha clínica enviadas a terceiro sem consentimento
+- [x] IREC-0150 · ALTO · `src/components/Telemedicine.jsx:1087` — Gravação do prontuário aborta em silêncio quando não há contato selecionado
+- [x] IREC-0151 · ALTO · `src/components/Telemedicine.jsx:1951` — Quem inicia a teleconsulta nunca vê o TCLE
+- [x] IREC-0152 · ALTO · `src/components/Telemedicine.jsx:2591` — Botão 'Desligar Câmera' não desliga a câmera e esconde o vídeo do interlocutor
+- [x] IREC-0153 · ALTO · `src/components/Telemedicine.jsx:3066` — Botão 'Mutar Áudio' não muta o microfone — áudio continua sendo transmitido
+- [x] IREC-0355 · MÉDIO · `src/components/Telemedicine.jsx:215` — Enfermeiro vinculado é apresentado ao paciente como médico
+- [x] IREC-0356 · MÉDIO · `src/components/Telemedicine.jsx:272` — Seis funções são referenciadas por efeitos antes de serem declaradas
+- [x] IREC-0357 · MÉDIO · `src/components/Telemedicine.jsx:321` — Efeitos colaterais dentro do updater de setState duplicam o som de notificação
+- [x] IREC-0358 · MÉDIO · `src/components/Telemedicine.jsx:328` — Polling substitui a lista de mensagens e pode apagar mensagens recém-enviadas
+- [x] IREC-0359 · MÉDIO · `src/components/Telemedicine.jsx:359` — Mensagens recebidas antes do primeiro carregamento nunca contam como não lidas
+- [x] IREC-0360 · MÉDIO · `src/components/Telemedicine.jsx:724` — playRingtone empilha intervalos: o toque pode nunca mais parar
+- [x] IREC-0361 · MÉDIO · `src/components/Telemedicine.jsx:1048` — Encerrar a consulta como médico deixa o estado preso em 'active' com o microfone aberto
+- [x] IREC-0362 · MÉDIO · `src/components/Telemedicine.jsx:1393` — Badge de mensagens não lidas do chat flutuante é sempre zero
+- [x] IREC-0363 · MÉDIO · `src/components/Telemedicine.jsx:2033` — Anexos em PDF não abrem no modo contingência local (navegação para data: URL bloqueada)
+- [x] IREC-0541 · BAIXO · `src/components/Telemedicine.jsx:121` — speakMessage: o onend da fala cancelada zera o estado da nova leitura
+- [x] IREC-0542 · BAIXO · `src/components/Telemedicine.jsx:316` — Comentário promete sincronização de chat a cada 2 s, mas o intervalo real é de 15 s
+- [x] IREC-0543 · BAIXO · `src/components/Telemedicine.jsx:324` — Som de notificação toca para as próprias mensagens (comparação em snake_case)
+- [x] IREC-0544 · BAIXO · `src/components/Telemedicine.jsx:398` — JSON.parse sem try/catch no corpo do efeito derruba a tela inteira
+- [x] IREC-0545 · BAIXO · `src/components/Telemedicine.jsx:483` — Alerta clínico falso positivo: 'pus' casa com o verbo pôr
+- [x] IREC-0546 · BAIXO · `src/components/Telemedicine.jsx:2291` — Indicador de presença (online) nunca acende e usa três nomes de campo diferentes
+- [x] IREC-0547 · BAIXO · `src/components/Telemedicine.jsx:3242` — Risco 'Alto Risco' e 'Crítico' são exibidos com a mesma cor de 'Risco Moderado'
+- [x] IREC-0548 · BAIXO · `src/components/telemedicine/TelemedicineClinicalCopilot.jsx:51` — TelemedicineClinicalCopilot renderiza objeto como filho React e quebra a tela
+- [x] IREC-0549 · BAIXO · `src/components/telemedicine/TelemedicineContactsList.jsx:17` — Filtros da lista modular de contatos nunca casam com os papéis reais
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+1. npx eslint src/components/Telemedicine.jsx src/components/telemedicine/TelemedicineClinicalCopilot.jsx src/components/telemedicine/TelemedicineContactsList.jsx:
+   Command exited with code 0. (0 erros, 0 avisos)
+
+2. npx vite build:
+   vite v8.0.16 building client environment for production...
+   transforming...✓ 450 modules transformed.
+   rendering chunks...
+   computing gzip size...
+   dist/index.html                          2.69 kB │ gzip:   1.08 kB
+   dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+   dist/assets/auditLogger-DaFpmHI0.js      0.96 kB │ gzip:   0.59 kB │ map:     3.03 kB
+   dist/assets/index-y019vFrx.js        1,241.85 kB │ gzip: 299.03 kB │ map: 4,054.39 kB
+   ✓ built in 1.55s
+
+3. npx cap sync:
+   √ Copying web assets from dist to android\app\src\main\assets\public
+   √ Copying web assets from dist to ios\App\App\public
+   [info] Sync finished in 1.279s
 ```
 
 ---
