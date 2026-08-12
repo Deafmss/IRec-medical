@@ -732,7 +732,9 @@ export const updateClinicalProfile = async (arg1, arg2 = null) => {
         if (activeObj.id === userId) {
           localStorage.setItem('irec_active_user', JSON.stringify(profile));
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Erro ao atualizar usuário ativo no localStorage:', e);
+      }
     }
 
     // Log audit log
@@ -749,7 +751,9 @@ export const updateClinicalProfile = async (arg1, arg2 = null) => {
         if (activeObj.id === userId) {
           localStorage.setItem('irec_active_user', JSON.stringify(profile));
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Erro ao atualizar usuário ativo no localStorage:', e);
+      }
     }
     return profile;
   }
@@ -2500,6 +2504,9 @@ export const getRecommendedMaterials = async (patientId = null, doctorId = null)
     }
     
     return list.filter(item => {
+      if (patientId && doctorId && item.type === 'doctor_partner') {
+        return item.patient_id === patientId && item.doctor_id === doctorId;
+      }
       return !item.patient_id || (patientId && item.patient_id === patientId);
     });
   }
@@ -2518,10 +2525,17 @@ export const getRecommendedMaterials = async (patientId = null, doctorId = null)
     
     if (patientId) {
       // Fetch both global platform partners (patient_id is null) AND patient-specific doctor partners
-      const { data, error } = await supabase
+      let query = supabase
         .from('recommended_materials')
-        .select('*')
-        .or(`patient_id.is.null,patient_id.eq.${patientId}`);
+        .select('*');
+        
+      if (doctorId) {
+        query = query.or(`and(patient_id.eq.${patientId},doctor_id.eq.${doctorId}),patient_id.is.null`);
+      } else {
+        query = query.or(`patient_id.is.null,patient_id.eq.${patientId}`);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     } else {
@@ -2541,13 +2555,32 @@ export const getRecommendedMaterials = async (patientId = null, doctorId = null)
 };
 
 export const addRecommendedMaterial = async (material) => {
+  // Normalize price to numeric or null to prevent database type mismatch (IREC-0103)
+  let numericPrice = null;
+  if (material.price !== null && material.price !== undefined && material.price !== '') {
+    if (typeof material.price === 'number') {
+      numericPrice = material.price;
+    } else if (typeof material.price === 'string') {
+      const cleanStr = material.price.replace(/[^\d.,]/g, '').replace(',', '.');
+      const parsed = parseFloat(cleanStr);
+      if (!isNaN(parsed)) {
+        numericPrice = parsed;
+      }
+    }
+  }
+
+  const sanitizedMaterial = {
+    ...material,
+    price: numericPrice
+  };
+
   if (!isSupabaseConfigured) {
     const data = localStorage.getItem('irec_local_recommended_materials') || '[]';
     const list = JSON.parse(data);
     const newMaterial = {
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
       created_at: new Date().toISOString(),
-      ...material
+      ...sanitizedMaterial
     };
     list.push(newMaterial);
     localStorage.setItem('irec_local_recommended_materials', JSON.stringify(list));
@@ -2557,7 +2590,7 @@ export const addRecommendedMaterial = async (material) => {
   try {
     const { data, error } = await supabase
       .from('recommended_materials')
-      .insert([material])
+      .insert([sanitizedMaterial])
       .select()
       .single();
 
@@ -2806,7 +2839,7 @@ export const getDoctorTelemedicineCalls = async (doctorId) => {
 export const sendWebRTCSignalingEvent = async (callId, senderId, type, payload) => {
   if (!isSupabaseConfigured) return null;
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('telemedicine_signaling')
       .insert({
         call_id: callId,

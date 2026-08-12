@@ -669,7 +669,7 @@ export default function App() {
     setSelectedPatientForDoctor(null);
     setSelectedPatientEntriesForDoctor([]);
     
-    // Clear localStorage navigation keys
+    // Clear localStorage navigation & auth certificate keys
     localStorage.removeItem('irec_active_user');
     localStorage.removeItem('irec_active_tab');
     localStorage.removeItem('irec_selected_patient');
@@ -677,6 +677,9 @@ export default function App() {
     localStorage.removeItem('irec_doctor_sub_tab');
     localStorage.removeItem('irec_doctor_doc_tab');
     localStorage.removeItem('irec_patient_sub_tab');
+    localStorage.removeItem('irec_cert_type');
+    localStorage.removeItem('irec_birdid_user');
+    localStorage.removeItem('irec_a1_name');
   };
 
   // Persist activeTab to localStorage

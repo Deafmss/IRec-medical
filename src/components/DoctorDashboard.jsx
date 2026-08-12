@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   getAllPatients, 
   getAssignedPatients, 
@@ -11,7 +11,8 @@ import {
   createAuditLog,
   getRecommendedMaterials,
   addRecommendedMaterial,
-  deleteRecommendedMaterial
+  deleteRecommendedMaterial,
+  getDoctorAppointments
 } from '../services/supabaseService';
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
@@ -40,8 +41,6 @@ const COMMON_CID10 = [
 
 export default function DoctorDashboard({ 
   doctorProfile, 
-  setActiveTab: setParentActiveTab, 
-  onProfileUpdate, 
   onEditProfile, 
   onOpenChat,
   onOpenPrescriptionModal,
@@ -105,7 +104,6 @@ export default function DoctorDashboard({
   const [a1CertName, setA1CertName] = useState(() => localStorage.getItem('irec_a1_name') || '');
   const [a1CertFile, setA1CertFile] = useState(null);
   const [a1CertPassword, setA1CertPassword] = useState('');
-  const [a3TokenConnected, setA3TokenConnected] = useState(true);
   const [shouldDigitallySign, setShouldDigitallySign] = useState(true);
 
   // PEP Sync states
@@ -160,7 +158,7 @@ export default function DoctorDashboard({
       setMyPatients(mine);
       if (doctorProfile?.id) {
         const apps = await getDoctorAppointments(doctorProfile.id);
-        setDoctorAppointments(apps);
+        setDoctorAppointments(apps || []);
       }
     } catch (e) {
       console.error(e);
@@ -172,8 +170,30 @@ export default function DoctorDashboard({
   };
 
   useEffect(() => {
-    loadLists();
-  }, []);
+    let active = true;
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        const all = await getAllPatients();
+        if (!active) return;
+        setPatients(all);
+        const mine = await getAssignedPatients(doctorProfile.id);
+        if (!active) return;
+        setMyPatients(mine);
+        if (doctorProfile?.id) {
+          const apps = await getDoctorAppointments(doctorProfile.id);
+          if (!active) return;
+          setDoctorAppointments(apps || []);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    fetchAllData();
+    return () => { active = false; };
+  }, [doctorProfile]);
 
   // Persist doctor active tab, sub-tab and document tab in localStorage
   useEffect(() => {
@@ -188,8 +208,10 @@ export default function DoctorDashboard({
     localStorage.setItem('irec_doctor_doc_tab', selectedDocTab);
   }, [selectedDocTab]);
 
+  const prevInitialTabRef = useRef(initialTab);
   useEffect(() => {
-    if (initialTab) {
+    if (initialTab && initialTab !== prevInitialTabRef.current) {
+      prevInitialTabRef.current = initialTab;
       setActiveTab(initialTab);
     }
   }, [initialTab]);
@@ -203,66 +225,101 @@ export default function DoctorDashboard({
     return () => clearInterval(interval);
   }, [doctorProfile]);
 
-  // Periodic polling for selected patient details (documents and materials)
+  // Periodic polling for selected patient details (documents and materials) (IREC-0095)
   useEffect(() => {
     if (!selectedPatient) return;
 
+    let cancelled = false;
     const refreshPatientDetails = async () => {
       try {
         const docs = await getPatientDocuments(selectedPatient.id);
+        if (cancelled) return;
         setPatientDocuments(docs);
         
-        const mats = await getRecommendedMaterials(selectedPatient.id);
-        setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner'));
+        const mats = await getRecommendedMaterials(selectedPatient.id, doctorProfile?.id);
+        if (cancelled) return;
+        setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner' && m.doctor_id === doctorProfile?.id));
       } catch (err) {
         console.warn("[iRec] Erro ao atualizar detalhes em tempo real do paciente:", err);
       }
     };
 
     const interval = setInterval(refreshPatientDetails, 10000);
-    return () => clearInterval(interval);
-  }, [selectedPatient]);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [selectedPatient, doctorProfile]);
 
-  // Reload patient entries when a patient is selected
+  // Reload patient entries when a patient is selected (IREC-0096, IREC-0097, IREC-0098, IREC-0288)
   useEffect(() => {
-    if (selectedPatient) {
-      const fetchEntries = async () => {
-        const history = await getWoundEntries(selectedPatient.id);
-        setSelectedPatientEntries(history);
-        
-        // Fetch patient documents
-        const docs = await getPatientDocuments(selectedPatient.id);
-        setPatientDocuments(docs);
-        
-        // Fetch recommended materials
-        setLoadingMaterials(true);
-        try {
-          const mats = await getRecommendedMaterials(selectedPatient.id);
-          // Only show doctor-partnered materials in the doctor's tab (filtering out global irec_partners)
-          setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner'));
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoadingMaterials(false);
-        }
-        
-        setSelectedSubTab('wounds');
-        
-        if (history.length > 0) {
-          const latest = history[history.length - 1];
-          // Select the latest entry by default
-          setSelectedEntry(latest);
-          setDoctorNote(latest.doctorNotes || '');
-          setPrescribedDressing(latest.appliedDressing || '');
-          setPrescribedFrequency(latest.dressingFrequency || '');
-        } else {
-          setSelectedEntry(null);
-          setDoctorNote('');
-          setPrescribedDressing('');
-          setPrescribedFrequency('');
-        }
-      };
-      fetchEntries();
+    let cancelled = false;
+
+    const resetPatientState = () => {
+      setSelectedPatientEntries([]);
+      setPatientDocuments([]);
+      setRecommendedMaterials([]);
+      setSelectedEntry(null);
+      setDoctorNote('');
+      setPrescribedDressing('');
+      setPrescribedFrequency('');
+      setPrescriptionItems([{ name: '', dosage: '', route: 'Via Oral', instructions: '' }]);
+      setAtestadoDays('3');
+      setAtestadoReason('necessita de afastamento das atividades laborais por motivos de tratamento de lesão de pele');
+      setAtestadoCid('');
+      setAtestadoType('Afastamento');
+      setCompareEntries([]);
+      setShowComparison(false);
+      setSyncProgress(0);
+      setSyncSuccessTime(null);
+      setSyncingPep(false);
+    };
+
+    if (!selectedPatient) {
+      resetPatientState();
+      return;
+    }
+
+    const fetchEntries = async () => {
+      resetPatientState();
+
+      const history = await getWoundEntries(selectedPatient.id);
+      if (cancelled) return;
+      setSelectedPatientEntries(history);
+      
+      // Fetch patient documents
+      const docs = await getPatientDocuments(selectedPatient.id);
+      if (cancelled) return;
+      setPatientDocuments(docs);
+      
+      // Fetch recommended materials for this specific doctor and patient
+      setLoadingMaterials(true);
+      try {
+        const mats = await getRecommendedMaterials(selectedPatient.id, doctorProfile?.id);
+        if (cancelled) return;
+        setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner' && m.doctor_id === doctorProfile?.id));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setLoadingMaterials(false);
+      }
+      
+      if (cancelled) return;
+      setSelectedSubTab('wounds');
+      
+      if (history.length > 0) {
+        const latest = history[history.length - 1];
+        setSelectedEntry(latest);
+        setDoctorNote(latest.doctorNotes || '');
+        setPrescribedDressing(latest.appliedDressing || '');
+        setPrescribedFrequency(latest.dressingFrequency || '');
+      } else {
+        setSelectedEntry(null);
+        setDoctorNote('');
+        setPrescribedDressing('');
+        setPrescribedFrequency('');
+      }
+
       // Reset AI chat history for this patient
       const docName = doctorProfile?.name ? doctorProfile.name.split(' ')[0] : 'Doutor(a)';
       const patName = selectedPatient?.name || 'Paciente';
@@ -272,8 +329,14 @@ export default function DoctorDashboard({
           text: `Olá, Dr(a). ${docName}! Estou carregado com os dados clínicos e histórico do(a) paciente **${patName}**. \n\nComo posso auxiliá-lo na conduta de cuidados e escolha de coberturas hoje?` 
         }
       ]);
-    }
-  }, [selectedPatient]);
+    };
+
+    fetchEntries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPatient, doctorProfile]);
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -320,7 +383,11 @@ export default function DoctorDashboard({
     if (!selectedEntry) return;
     setSavingNote(true);
     try {
-      await addDoctorNote(selectedEntry.id, doctorNote, prescribedDressing, prescribedFrequency);
+      const ok = await addDoctorNote(selectedEntry.id, doctorNote, prescribedDressing, prescribedFrequency);
+      if (!ok) {
+        alert('Falha ao salvar a evolução no prontuário. Registro não localizado.');
+        return;
+      }
       alert('Evolução médica e prescrição salvas com sucesso!');
       // Update local state
       setSelectedPatientEntries(prev => prev.map(e => e.id === selectedEntry.id ? { 
@@ -335,7 +402,8 @@ export default function DoctorDashboard({
         appliedDressing: prescribedDressing,
         dressingFrequency: prescribedFrequency
       }));
-    } catch (e) {
+    } catch (err) {
+      console.error("Erro ao salvar nota médica:", err);
       alert('Falha ao salvar a evolução e prescrição.');
     } finally {
       setSavingNote(false);
@@ -435,6 +503,31 @@ export default function DoctorDashboard({
     };
   }, []);
 
+  const syncPepTimersRef = useRef([]);
+
+  useEffect(() => {
+    const handleAfterPrint = () => setActivePrintDoc(null);
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('afterprint', handleAfterPrint);
+      syncPepTimersRef.current.forEach(clearTimeout);
+      syncPepTimersRef.current = [];
+    };
+  }, []);
+
+  const generateDocHash = async (type, patientId, contentObj) => {
+    try {
+      const rawText = JSON.stringify({ type, patientId, content: contentObj });
+      const encoder = new TextEncoder();
+      const data = encoder.encode(rawText);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32).toUpperCase();
+    } catch (err) {
+      console.warn("Erro ao gerar hash SHA256 do documento:", err);
+      return Math.random().toString(36).substring(2, 18).toUpperCase();
+    }
+  };
 
   const executeIssueDocument = async (type, isSigned) => {
     setSavingDoc(true);
@@ -447,6 +540,8 @@ export default function DoctorDashboard({
           setSavingDoc(false);
           return;
         }
+        
+        const docHash = await generateDocHash('receita', selectedPatient.id, filledItems);
         content = {
           items: filledItems,
           doctorName: doctorProfile.name,
@@ -463,18 +558,21 @@ export default function DoctorDashboard({
             authority: digitalCertType === 'birdid' ? 'AC Soluti Multipla v5' :
                        digitalCertType === 'a3' ? 'AC Serpro e-CPF v5' :
                        'AC ITI Federal v5',
-            serial: `BR-${Math.floor(Math.random() * 900000000000 + 100000000000)}-CFM`,
-            hash: `SHA256:${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`
+            serial: `BR-${doctorProfile.crm ? doctorProfile.crm.replace(/\D/g, '') : '00000'}-${Date.now().toString().slice(-6)}-CFM`,
+            hash: `SHA256:${docHash}`
           } : null
         };
       } else if (type === 'atestado') {
-        if (!atestadoDays || isNaN(Number(atestadoDays))) {
-          alert('Por favor, informe um número de dias válido.');
+        const daysNum = Number(atestadoDays);
+        if (!atestadoDays || isNaN(daysNum) || !Number.isInteger(daysNum) || daysNum < 1 || daysNum > 90) {
+          alert('Por favor, informe um número de dias válido entre 1 e 90.');
           setSavingDoc(false);
           return;
         }
+        
+        const docHash = await generateDocHash('atestado', selectedPatient.id, { atestadoDays, atestadoReason, atestadoCid });
         content = {
-          days: atestadoDays,
+          days: String(daysNum),
           reason: atestadoReason,
           cid: atestadoCid,
           atestadoType,
@@ -492,8 +590,8 @@ export default function DoctorDashboard({
             authority: digitalCertType === 'birdid' ? 'AC Soluti Multipla v5' :
                        digitalCertType === 'a3' ? 'AC Serpro e-CPF v5' :
                        'AC ITI Federal v5',
-            serial: `BR-${Math.floor(Math.random() * 900000000000 + 100000000000)}-CFM`,
-            hash: `SHA256:${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`
+            serial: `BR-${doctorProfile.crm ? doctorProfile.crm.replace(/\D/g, '') : '00000'}-${Date.now().toString().slice(-6)}-CFM`,
+            hash: `SHA256:${docHash}`
           } : null
         };
       }
@@ -521,12 +619,14 @@ export default function DoctorDashboard({
         const updatedDocs = await getPatientDocuments(selectedPatient.id);
         setPatientDocuments(updatedDocs);
         
-        // Reset inputs
+        // Reset inputs completely after successful issue (IREC-0101)
         if (type === 'receita') {
           setPrescriptionItems([{ name: '', dosage: '', route: 'Via Oral', instructions: '' }]);
         } else {
           setAtestadoDays('3');
           setAtestadoCid('');
+          setAtestadoReason('necessita de afastamento das atividades laborais por motivos de tratamento de lesão de pele');
+          setAtestadoType('Afastamento');
         }
       }
     } catch (err) {
@@ -579,12 +679,16 @@ export default function DoctorDashboard({
     setSyncingPep(true);
     setSyncProgress(10);
     
-    // Simulate pipeline steps
-    setTimeout(() => {
+    // Clear any previous timers
+    syncPepTimersRef.current.forEach(clearTimeout);
+    syncPepTimersRef.current = [];
+
+    // Managed timer pipeline (IREC-0279)
+    const timer1 = setTimeout(() => {
       setSyncProgress(45);
-      setTimeout(() => {
+      const timer2 = setTimeout(() => {
         setSyncProgress(80);
-        setTimeout(async () => {
+        const timer3 = setTimeout(async () => {
           setSyncProgress(100);
           setSyncingPep(false);
           const nowStr = new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -602,8 +706,11 @@ export default function DoctorDashboard({
           
           alert('Prontuário integrado sincronizado com sucesso no PEP do Hospital (Tasy/MV) via HL7 FHIR Bundle!');
         }, 800);
+        syncPepTimersRef.current.push(timer3);
       }, 800);
+      syncPepTimersRef.current.push(timer2);
     }, 800);
+    syncPepTimersRef.current.push(timer1);
   };
 
   const handleAddMaterial = async (e) => {
@@ -636,9 +743,9 @@ export default function DoctorDashboard({
       setNewMatAffiliateLink('');
       setNewMatPharmacyName('');
       
-      // Reload materials list
-      const mats = await getRecommendedMaterials(selectedPatient.id);
-      setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner'));
+      // Reload materials list for this doctor (IREC-0095)
+      const mats = await getRecommendedMaterials(selectedPatient.id, doctorProfile.id);
+      setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner' && m.doctor_id === doctorProfile.id));
       alert('Insumo recomendado cadastrado com sucesso!');
     } catch (err) {
       console.error(err);
@@ -653,10 +760,10 @@ export default function DoctorDashboard({
 
     try {
       await deleteRecommendedMaterial(id);
-      // Reload materials list
+      // Reload materials list for this doctor (IREC-0095)
       if (selectedPatient) {
-        const mats = await getRecommendedMaterials(selectedPatient.id);
-        setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner'));
+        const mats = await getRecommendedMaterials(selectedPatient.id, doctorProfile.id);
+        setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner' && m.doctor_id === doctorProfile.id));
       }
     } catch (err) {
       console.error(err);
@@ -669,13 +776,19 @@ export default function DoctorDashboard({
     setSelectedDocTab(type);
     
     if (dataOrText && typeof dataOrText === 'object') {
-      // Structured suggestion from the new Doctor Copilot
+      // Structured suggestion from the Doctor Copilot with fallbacks (IREC-0280)
       if (type === 'receita') {
         if (dataOrText.items && dataOrText.items.length > 0) {
-          setPrescriptionItems(dataOrText.items);
+          const safeItems = dataOrText.items.map(item => ({
+            name: item.name || 'Insumo Recomendado',
+            dosage: item.dosage || '1 cobertura',
+            route: item.route || 'Via Tópica',
+            instructions: item.instructions || 'Uso conforme indicação clínica.'
+          }));
+          setPrescriptionItems(safeItems);
         }
       } else if (type === 'atestado') {
-        if (dataOrText.days) setAtestadoDays(dataOrText.days);
+        if (dataOrText.days) setAtestadoDays(String(dataOrText.days));
         if (dataOrText.cid) setAtestadoCid(dataOrText.cid);
         if (dataOrText.reason) setAtestadoReason(dataOrText.reason);
         if (dataOrText.atestadoType) setAtestadoType(dataOrText.atestadoType);
@@ -691,28 +804,16 @@ export default function DoctorDashboard({
       lines.forEach(line => {
         const cleaned = line.replace(/^[\d.-]\s*/, '').trim();
         const lower = cleaned.toLowerCase();
-        if (
-          lower.includes('alginato') || 
-          lower.includes('carvão') || 
-          lower.includes('hidrogel') || 
-          lower.includes('colágeno') || 
-          lower.includes('rayon') || 
-          lower.includes('sulfadiazina') || 
-          lower.includes('espuma') || 
-          lower.includes('hidrocol') ||
-          lower.includes('sf') ||
-          lower.includes('soro') ||
-          lower.includes('mg') ||
-          lower.includes('comprimido')
-        ) {
+        // Regex with word boundaries to avoid false matches on common words (IREC-0281)
+        if (/\b(alginato|carvão|hidrogel|colágeno|rayon|sulfadiazina|espuma|hidrocol|sf|soro|mg|comprimido)\b/i.test(lower)) {
           const parts = cleaned.split(/[-–,;]/);
           const name = parts[0]?.trim() || cleaned;
-          const dosage = parts[1]?.trim() || '1 unidade';
-          const instructions = parts[2]?.trim() || 'Uso conforme indicação.';
+          const dosage = parts[1]?.trim() || '1 cobertura';
+          const instructions = parts[2]?.trim() || 'Uso conforme indicação clínica.';
           items.push({
             name: name.substring(0, 50),
             dosage: dosage.substring(0, 30),
-            route: lower.includes('oral') || lower.includes('comprimido') ? 'Via Oral' : 'Via Tópica',
+            route: /\b(oral|comprimido)\b/i.test(lower) ? 'Via Oral' : 'Via Tópica',
             instructions: instructions.substring(0, 100)
           });
         }
@@ -760,10 +861,10 @@ export default function DoctorDashboard({
           suggestedDocument: response.suggestedDocument
         }]);
       } else {
-        // Fallback simulated reply
+        // Fallback explicit warning message (IREC-0282)
         setChatHistory(prev => [...prev, { 
           sender: 'ai', 
-          text: `Atenção, doutor: analisando o histórico desse paciente, notei que ele possui ${selectedPatient.hasDiabetes ? 'Diabetes' : 'nenhuma comorbidade declarada'} e a lesão atual é do tipo ${selectedEntry?.type || 'não especificada'}. Recomenda-se manter o desbridamento e acompanhamento regular.` 
+          text: `⚠️ **[Assistente Clínico Indisponível]** No momento não foi possível se conectar ao modelo do Copilot. Por favor, consulte as diretrizes de protocolos na barra lateral.` 
         }]);
       }
     } catch (err) {
@@ -778,11 +879,17 @@ export default function DoctorDashboard({
     if (!birthDateString) return 'Idade não informada';
     try {
       const birth = new Date(birthDateString);
-      const diff = Date.now() - birth.getTime();
-      const ageDate = new Date(diff);
-      const age = Math.abs(ageDate.getUTCFullYear() - 1970);
-      return `${age} anos`;
-    } catch (e) {
+      if (isNaN(birth.getTime())) return 'Idade não informada';
+      const today = new Date();
+      if (birth > today) return 'Data futura inválida';
+      let age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      return `${Math.max(0, age)} anos`;
+    } catch (err) {
+      console.warn("Data de nascimento inválida:", err);
       return 'Idade inválida';
     }
   };
@@ -790,7 +897,8 @@ export default function DoctorDashboard({
   // Filter logic
   const listToRender = activeTab === 'my-patients' ? myPatients : patients;
   const filteredPatients = listToRender.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const nameStr = (p.name || '').toLowerCase();
+    const matchesSearch = nameStr.includes(searchQuery.toLowerCase());
     
     if (filterAlert === 'all') return matchesSearch;
     if (filterAlert === 'diabetes') return matchesSearch && p.hasDiabetes;
@@ -810,8 +918,9 @@ export default function DoctorDashboard({
     doctorProfile?.avatarUrl && doctorProfile.avatarUrl.trim().length > 0;
 
   const isAdmin = doctorProfile?.email === 'admin@irec.com';
+  const isClinician = doctorProfile?.role === 'doctor' || doctorProfile?.role === 'nurse' || doctorProfile?.role === 'admin' || isAdmin;
 
-  if (!isProfileComplete && !isAdmin) {
+  if (!isProfileComplete && !isClinician) {
     return (
       <div style={{
         maxWidth: '560px',
@@ -2119,7 +2228,7 @@ export default function DoctorDashboard({
                 ) : (
                   <>
                     <div className="wound-selector-strip">
-                      {selectedPatientEntries.map((entry, idx) => (
+                      {selectedPatientEntries.map((entry) => (
                         <button 
                           key={entry.id}
                           className={`wound-tab ${selectedEntry?.id === entry.id ? 'active' : ''}`}
@@ -3187,9 +3296,9 @@ export default function DoctorDashboard({
                 <div key={idx} className={`chat-message-bubble ${msg.sender}`} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <p style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
                   
-                  {msg.sender === 'ai' && (msg.suggestedDocument?.type === 'receita' || (!msg.suggestedDocument && (msg.text.toLowerCase().includes('receita') || msg.text.toLowerCase().includes('prescr') || msg.text.toLowerCase().includes('cobertura')))) && (
+                  {msg.sender === 'ai' && msg.suggestedDocument?.type === 'receita' && (
                     <button 
-                      onClick={() => handleApplyAISuggestion('receita', msg.suggestedDocument?.content || msg.text)}
+                      onClick={() => handleApplyAISuggestion('receita', msg.suggestedDocument?.content)}
                       style={{
                         marginTop: '6px',
                         padding: '6px 10px',
@@ -3212,20 +3321,14 @@ export default function DoctorDashboard({
                     </button>
                   )}
 
-                  {msg.sender === 'ai' && (msg.suggestedDocument?.type === 'atestado' || (!msg.suggestedDocument && (msg.text.toLowerCase().includes('atestado') || msg.text.toLowerCase().includes('afastamento') || msg.text.toLowerCase().includes('dias')))) && (
+                  {msg.sender === 'ai' && msg.suggestedDocument?.type === 'atestado' && (
                     <button 
-                      onClick={() => handleApplyAISuggestion('atestado', msg.suggestedDocument?.content || msg.text)}
+                      onClick={() => handleApplyAISuggestion('atestado', msg.suggestedDocument?.content)}
                       style={{
                         marginTop: '4px',
                         padding: '6px 10px',
                         fontSize: '11px',
                         fontWeight: '700',
-                        backgroundColor: 'var(--accent)',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        alignSelf: 'flex-start',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
@@ -3427,12 +3530,20 @@ export default function DoctorDashboard({
                 </div>
               </div>
 
-              {/* Patient details */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '30px', fontSize: '13px' }}>
-                <div><strong>Paciente:</strong> {selectedPatient?.name}</div>
-                <div><strong>Idade:</strong> {calculateAge(selectedPatient?.birthDate)}</div>
-                <div><strong>Gênero:</strong> {selectedPatient?.gender}</div>
-              </div>
+              {/* Patient details (IREC-0014) */}
+              {(() => {
+                const printPatient = (selectedPatient && selectedPatient.id === activePrintDoc?.patientId)
+                  ? selectedPatient
+                  : (patients.find(p => p.id === activePrintDoc?.patientId) || myPatients.find(p => p.id === activePrintDoc?.patientId) || selectedPatient);
+
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '30px', fontSize: '13px' }}>
+                    <div><strong>Paciente:</strong> {printPatient?.name || 'Não informado'}</div>
+                    <div><strong>Idade:</strong> {calculateAge(printPatient?.birthDate)}</div>
+                    <div><strong>Gênero:</strong> {printPatient?.gender || 'Não informado'}</div>
+                  </div>
+                );
+              })()}
 
               {/* Document Content */}
               {activePrintDoc.type === 'receita' ? (

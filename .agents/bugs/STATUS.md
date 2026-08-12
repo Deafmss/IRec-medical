@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 143 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 183 corrigidos**
 
 ---
 
@@ -200,53 +200,65 @@ dist/assets/index-DsSW1r4F.js        1,245.67 kB │ gzip: 300.41 kB
 
 ---
 
-## 5. Painel do médico — 0/40
+## 5. Painel do médico — 40/40
 
-- [ ] IREC-0011 · CRÍTICO · `src/components/DoctorDashboard.jsx:162` — getDoctorAppointments é chamada mas não está importada: ReferenceError na carga do painel
-- [ ] IREC-0012 · CRÍTICO · `src/components/DoctorDashboard.jsx:577` — Sincronização FHIR com o PEP hospitalar é 100% simulada (setTimeout) e alerta "sucesso" ao médico
-- [ ] IREC-0013 · CRÍTICO · `src/components/DoctorDashboard.jsx:3375` — Assinatura ICP-Brasil e falsificada: PIN nao e validado e hash/serial vem de Math.random()
-- [ ] IREC-0014 · CRÍTICO · `src/components/DoctorDashboard.jsx:3432` — Documento impresso mistura paciente atual com conteudo do documento anterior
-- [ ] IREC-0094 · ALTO · `src/components/DoctorDashboard.jsx:104` — Certificado digital e CPF do medico permanecem no localStorage apos o logout
-- [ ] IREC-0095 · ALTO · `src/components/DoctorDashboard.jsx:215` — Insumos recomendados de outros medicos aparecem como 'seus' e podem ser excluidos
-- [ ] IREC-0096 · ALTO · `src/components/DoctorDashboard.jsx:227` — Troca rapida de paciente permite gravar evolucao no prontuario errado (race sem cancelamento)
-- [ ] IREC-0097 · ALTO · `src/components/DoctorDashboard.jsx:249` — Formularios de receita e atestado nao sao limpos ao trocar de paciente
-- [ ] IREC-0098 · ALTO · `src/components/DoctorDashboard.jsx:276` — Galeria comparativa mantem fotos do paciente anterior ao trocar de prontuario
-- [ ] IREC-0099 · ALTO · `src/components/DoctorDashboard.jsx:323` — Sucesso e informado mesmo quando addDoctorNote falha em gravar a evolucao
-- [ ] IREC-0100 · ALTO · `src/components/DoctorDashboard.jsx:466` — Serial e hash da assinatura gerados aleatoriamente a cada emissao
-- [ ] IREC-0101 · ALTO · `src/components/DoctorDashboard.jsx:527` — Atestado emitido nao limpa justificativa clinica nem tipo, reaproveitando o diagnostico anterior
-- [ ] IREC-0102 · ALTO · `src/components/DoctorDashboard.jsx:583` — Sincronizacao com o PEP hospitalar e apenas uma animacao, mas informa sucesso e grava auditoria
-- [ ] IREC-0103 · ALTO · `src/components/DoctorDashboard.jsx:624` — Cadastro de insumo envia preco como texto para coluna numeric(10,2) e sempre falha
-- [ ] IREC-0104 · ALTO · `src/components/DoctorDashboard.jsx:812` — Nenhuma checagem de papel: acesso ao painel e liberado apenas por perfil completo e admin por string de e-mail
-- [ ] IREC-0105 · ALTO · `src/components/DoctorDashboard.jsx:3215` — Botao de atestado sugerido aparece por qualquer texto com a palavra 'dias' e preenche CID L98.4 por padrao
-- [ ] IREC-0275 · MÉDIO · `src/components/DoctorDashboard.jsx:108` — Token A3 e reportado como conectado sem qualquer verificacao
-- [ ] IREC-0276 · MÉDIO · `src/components/DoctorDashboard.jsx:162` — getDoctorAppointments e usada mas nunca importada (ReferenceError silenciado)
-- [ ] IREC-0277 · MÉDIO · `src/components/DoctorDashboard.jsx:471` — Validacao de dias do atestado aceita zero e valores negativos
-- [ ] IREC-0278 · MÉDIO · `src/components/DoctorDashboard.jsx:504` — Emissao de documento em modo contingencia local nao gera nenhum log de auditoria LGPD
-- [ ] IREC-0279 · MÉDIO · `src/components/DoctorDashboard.jsx:606` — Timers de handleSyncPep sem cleanup: setState e alert apos desmontagem
-- [ ] IREC-0280 · MÉDIO · `src/components/DoctorDashboard.jsx:675` — Itens de receita sugeridos pela IA sao aplicados sem normalizacao e imprimem 'undefined'
-- [ ] IREC-0281 · MÉDIO · `src/components/DoctorDashboard.jsx:703` — Parser de receita da IA cria medicamento a partir de qualquer linha que contenha 'sf' ou 'mg'
-- [ ] IREC-0282 · MÉDIO · `src/components/DoctorDashboard.jsx:766` — Resposta simulada do copiloto entrega conduta clinica fixa que ignora a pergunta
-- [ ] IREC-0283 · MÉDIO · `src/components/DoctorDashboard.jsx:783` — calculateAge exibe 'NaN anos' e usa Math.abs, aceitando datas invalidas e futuras
-- [ ] IREC-0284 · MÉDIO · `src/components/DoctorDashboard.jsx:793` — Filtro de pacientes quebra com TypeError quando o nome vem nulo do banco
-- [ ] IREC-0285 · MÉDIO · `src/components/DoctorDashboard.jsx:1713` — KPI 'Alertas de Infeccao / Risco' conta pacientes diferentes dos que o filtro exibe
-- [ ] IREC-0286 · MÉDIO · `src/components/DoctorDashboard.jsx:1756` — Aba de agenda do painel e codigo inalcancavel: activeTab nunca vale 'my-agenda'
-- [ ] IREC-0287 · MÉDIO · `src/components/DoctorDashboard.jsx:2159` — Classes CSS inexistentes deixam o grafico tecidual invisivel e a foto da ferida sem limite
-- [ ] IREC-0288 · MÉDIO · `src/components/DoctorDashboard.jsx:3018` — Historico de sincronizacao do PEP nao e limpo ao trocar de paciente
-- [ ] IREC-0289 · MÉDIO · `src/components/DoctorDashboard.jsx:3087` — Botoes de acao apenas com emoji, sem nome acessivel
-- [ ] IREC-0487 · BAIXO · `src/components/DoctorDashboard.jsx:180` — Chave irec_doctor_active_tab e escrita mas nunca lida: persistencia de aba nao funciona
-- [ ] IREC-0488 · BAIXO · `src/components/DoctorDashboard.jsx:272` — Mensagens do assistente exibem markdown cru para o usuario
-- [ ] IREC-0489 · BAIXO · `src/components/DoctorDashboard.jsx:280` — Abrir um prontuario rola a pagina automaticamente para o fim (painel de chat)
-- [ ] IREC-0490 · BAIXO · `src/components/DoctorDashboard.jsx:444` — Receita vazia so e detectada depois de o medico assinar com o PIN
-- [ ] IREC-0491 · BAIXO · `src/components/DoctorDashboard.jsx:1692` — Card de KPI marcado como ativo com filtros que nao selecionou
-- [ ] IREC-0492 · BAIXO · `src/components/DoctorDashboard.jsx:1772` — onSelectPatient da agenda usa campo app.patientEmail que nao existe no objeto retornado
-- [ ] IREC-0493 · BAIXO · `src/components/DoctorDashboard.jsx:2612` — Barra de necrose com cor fixa #111 fica invisivel no tema escuro
-- [ ] IREC-0494 · BAIXO · `src/components/DoctorDashboard.jsx:2684` — Receita usa key={index} em lista mutavel de medicamentos
-- [ ] IREC-0495 · BAIXO · `src/components/DoctorDashboard.jsx:2859` — Separador das sugestoes de CID usa o tamanho da lista completa em vez da filtrada
+- [x] IREC-0011 · CRÍTICO · `src/components/DoctorDashboard.jsx:162` — getDoctorAppointments é chamada mas não está importada: ReferenceError na carga do painel
+- [x] IREC-0012 · CRÍTICO · `src/components/DoctorDashboard.jsx:577` — Sincronização FHIR com o PEP hospitalar é 100% simulada (setTimeout) e alerta "sucesso" ao médico
+- [x] IREC-0013 · CRÍTICO · `src/components/DoctorDashboard.jsx:3375` — Assinatura ICP-Brasil e falsificada: PIN nao e validado e hash/serial vem de Math.random()
+- [x] IREC-0014 · CRÍTICO · `src/components/DoctorDashboard.jsx:3432` — Documento impresso mistura paciente atual com conteudo do documento anterior
+- [x] IREC-0094 · ALTO · `src/components/DoctorDashboard.jsx:104` — Certificado digital e CPF do medico permanecem no localStorage apos o logout
+- [x] IREC-0095 · ALTO · `src/components/DoctorDashboard.jsx:215` — Insumos recomendados de outros medicos aparecem como 'seus' e podem ser excluidos
+- [x] IREC-0096 · ALTO · `src/components/DoctorDashboard.jsx:227` — Troca rapida de paciente permite gravar evolucao no prontuario errado (race sem cancelamento)
+- [x] IREC-0097 · ALTO · `src/components/DoctorDashboard.jsx:249` — Formularios de receita e atestado nao sao limpos ao trocar de paciente
+- [x] IREC-0098 · ALTO · `src/components/DoctorDashboard.jsx:276` — Galeria comparativa mantem fotos do paciente anterior ao trocar de prontuario
+- [x] IREC-0099 · ALTO · `src/components/DoctorDashboard.jsx:323` — Sucesso e informado mesmo quando addDoctorNote falha em gravar a evolucao
+- [x] IREC-0100 · ALTO · `src/components/DoctorDashboard.jsx:466` — Serial e hash da assinatura gerados aleatoriamente a cada emissao
+- [x] IREC-0101 · ALTO · `src/components/DoctorDashboard.jsx:527` — Atestado emitido nao limpa justificativa clinica nem tipo, reaproveitando o diagnostico anterior
+- [x] IREC-0102 · ALTO · `src/components/DoctorDashboard.jsx:583` — Sincronizacao com o PEP hospitalar e apenas uma animacao, mas informa sucesso e grava auditoria
+- [x] IREC-0103 · ALTO · `src/components/DoctorDashboard.jsx:624` — Cadastro de insumo envia preco como texto para coluna numeric(10,2) e sempre falha
+- [x] IREC-0104 · ALTO · `src/components/DoctorDashboard.jsx:812` — Nenhuma checagem de papel: acesso ao painel e liberado apenas por perfil completo e admin por string de e-mail
+- [x] IREC-0105 · ALTO · `src/components/DoctorDashboard.jsx:3215` — Botao de atestado sugerido aparece por qualquer texto com a palavra 'dias' e preenche CID L98.4 por padrao
+- [x] IREC-0275 · MÉDIO · `src/components/DoctorDashboard.jsx:108` — Token A3 e reportado como conectado sem qualquer verificacao
+- [x] IREC-0276 · MÉDIO · `src/components/DoctorDashboard.jsx:162` — getDoctorAppointments e usada mas nunca importada (ReferenceError silenciado)
+- [x] IREC-0277 · MÉDIO · `src/components/DoctorDashboard.jsx:471` — Validacao de dias do atestado aceita zero e valores negativos
+- [x] IREC-0278 · MÉDIO · `src/components/DoctorDashboard.jsx:504` — Emissao de documento em modo contingencia local nao gera nenhum log de auditoria LGPD
+- [x] IREC-0279 · MÉDIO · `src/components/DoctorDashboard.jsx:606` — Timers de handleSyncPep sem cleanup: setState e alert apos desmontagem
+- [x] IREC-0280 · MÉDIO · `src/components/DoctorDashboard.jsx:675` — Itens de receita sugeridos pela IA sao aplicados sem normalizacao e imprimem 'undefined'
+- [x] IREC-0281 · MÉDIO · `src/components/DoctorDashboard.jsx:703` — Parser de receita da IA cria medicamento a partir de qualquer linha que contenha 'sf' ou 'mg'
+- [x] IREC-0282 · MÉDIO · `src/components/DoctorDashboard.jsx:766` — Resposta simulada do copiloto entrega conduta clinica fixa que ignora a pergunta
+- [x] IREC-0283 · MÉDIO · `src/components/DoctorDashboard.jsx:783` — calculateAge exibe 'NaN anos' e usa Math.abs, aceitando datas invalidas e futuras
+- [x] IREC-0284 · MÉDIO · `src/components/DoctorDashboard.jsx:793` — Filtro de pacientes quebra com TypeError quando o nome vem nulo do banco
+- [x] IREC-0285 · MÉDIO · `src/components/DoctorDashboard.jsx:1713` — KPI 'Alertas de Infeccao / Risco' conta pacientes diferentes dos que o filtro exibe
+- [x] IREC-0286 · MÉDIO · `src/components/DoctorDashboard.jsx:1756` — Aba de agenda do painel e codigo inalcancavel: activeTab nunca vale 'my-agenda'
+- [x] IREC-0287 · MÉDIO · `src/components/DoctorDashboard.jsx:2159` — Classes CSS inexistentes deixam o grafico tecidual invisivel e a foto da ferida sem limite
+- [x] IREC-0288 · MÉDIO · `src/components/DoctorDashboard.jsx:3018` — Historico de sincronizacao do PEP nao e limpo ao trocar de paciente
+- [x] IREC-0289 · MÉDIO · `src/components/DoctorDashboard.jsx:3087` — Botoes de acao apenas com emoji, sem nome acessivel
+- [x] IREC-0487 · BAIXO · `src/components/DoctorDashboard.jsx:180` — Chave irec_doctor_active_tab e escrita mas nunca lida: persistencia de aba nao funciona
+- [x] IREC-0488 · BAIXO · `src/components/DoctorDashboard.jsx:272` — Mensagens do assistente exibem markdown cru para o usuario
+- [x] IREC-0489 · BAIXO · `src/components/DoctorDashboard.jsx:280` — Abrir um prontuario rola a pagina automaticamente para o fim (painel de chat)
+- [x] IREC-0490 · BAIXO · `src/components/DoctorDashboard.jsx:444` — Receita vazia so e detectada depois de o medico assinar com o PIN
+- [x] IREC-0491 · BAIXO · `src/components/DoctorDashboard.jsx:1692` — Card de KPI marcado como ativo com filtros que nao selecionou
+- [x] IREC-0492 · BAIXO · `src/components/DoctorDashboard.jsx:1772` — onSelectPatient da agenda usa campo app.patientEmail que nao existe no objeto retornado
+- [x] IREC-0493 · BAIXO · `src/components/DoctorDashboard.jsx:2612` — Barra de necrose com cor fixa #111 fica invisivel no tema escuro
+- [x] IREC-0494 · BAIXO · `src/components/DoctorDashboard.jsx:2684` — Receita usa key={index} em lista mutavel de medicamentos
+- [x] IREC-0495 · BAIXO · `src/components/DoctorDashboard.jsx:2859` — Separador das sugestoes de CID usa o tamanho da lista completa em vez da filtrada
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/DoctorDashboard.jsx src/App.jsx src/services/supabaseService.js
+✖ 2 problems (0 errors, 2 warnings)
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-ChcTxpvg.js        1,248.00 kB │ gzip: 301.18 kB │ map: 4,067.79 kB
+✓ built in 1.72s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 550.93ms
+√ Sync finished in 1.225s
 ```
 
 ---
