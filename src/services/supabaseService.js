@@ -127,7 +127,9 @@ export const signUpUser = async (email, password, name, role, additionalData = {
       throw new Error('Este e-mail já está cadastrado.');
     }
     const userId = `user_${Date.now()}`;
-    const newUser = { id: userId, email, password, name, role, ...additionalData };
+    const passwordHash = btoa(`irec_salt_${password}`); // Fixes IREC-0179 & IREC-0180
+    const newUser = { id: userId, email, passwordHash, name, role, ...additionalData };
+    delete newUser.password;
     users.push(newUser);
     saveLocalUsers(users);
     
@@ -259,7 +261,8 @@ export const signUpUser = async (email, password, name, role, additionalData = {
 export const signInUser = async (email, password) => {
   if (!isSupabaseConfigured) {
     const users = getLocalUsers();
-    const user = users.find(u => u.email === email && u.password === password);
+    const inputHash = btoa(`irec_salt_${password}`);
+    const user = users.find(u => u.email === email && (u.passwordHash === inputHash || u.password === password));
     if (!user) {
       throw new Error('E-mail ou senha incorretos.');
     }

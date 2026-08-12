@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 467 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 500 corrigidos**
 
 ---
 
@@ -777,46 +777,58 @@ $ npx cap sync
 
 ---
 
-## 16. Camada de dados (Supabase) — 0/33
+## 16. Camada de dados (Supabase) — 33/33
 
-- [ ] IREC-0178 · ALTO · `src/services/supabaseService.js:122` — Verificação de registro profissional é ignorada: todo médico/enfermeiro nasce 'verified'
-- [ ] IREC-0179 · ALTO · `src/services/supabaseService.js:130` — Senha em texto puro no localStorage no cadastro em modo contingência
-- [ ] IREC-0180 · ALTO · `src/services/supabaseService.js:130` — Senhas gravadas em texto puro no localStorage no modo contingência
-- [ ] IREC-0181 · ALTO · `src/services/supabaseService.js:299` — signOutUser não limpa os caches clínicos locais: dados do paciente anterior vazam para o próximo usuário
-- [ ] IREC-0182 · ALTO · `src/services/supabaseService.js:327` — getCurrentUser reautentica pelo localStorage quando a sessão do Supabase falha
-- [ ] IREC-0183 · ALTO · `src/services/supabaseService.js:429` — Revinculação de perfil por e-mail altera a chave primária e cai em insert duplicado
-- [ ] IREC-0184 · ALTO · `src/services/supabaseService.js:495` — Auto-criação de perfil força role 'patient', rebaixando médicos e enfermeiros
-- [ ] IREC-0185 · ALTO · `src/services/supabaseService.js:743` — updateClinicalProfile silencia o erro remoto e retorna o perfil, exibindo 'sucesso' para dado não salvo
-- [ ] IREC-0186 · ALTO · `src/services/supabaseService.js:901` — Qualquer erro em getWoundEntries apresenta o histórico clínico como vazio em vez de erro
-- [ ] IREC-0187 · ALTO · `src/services/supabaseService.js:956` — addWoundEntry no modo local pode estourar a cota do localStorage e perder a triagem sem tratamento
-- [ ] IREC-0188 · ALTO · `src/services/supabaseService.js:975` — Fotos de ferida e exames são gravados como URL pública permanente; getSecureMediaUrl nunca é usado
-- [ ] IREC-0189 · ALTO · `src/services/supabaseService.js:1102` — uploadExamFileAndTriage grava valores laboratoriais inventados no prontuário
-- [ ] IREC-0190 · ALTO · `src/services/supabaseService.js:1260` — Backdoor: profissional com 'teste' no nome é listado como se fosse verificado
-- [ ] IREC-0191 · ALTO · `src/services/supabaseService.js:1362` — checkAppointmentCollision retorna false em qualquer erro e usa dados locais: permite dupla marcação
-- [ ] IREC-0192 · ALTO · `src/services/supabaseService.js:1433` — Falha no insert do agendamento é apenas console.warn: paciente vê sucesso e o médico nunca recebe a consulta
-- [ ] IREC-0193 · ALTO · `src/services/supabaseService.js:1986` — getLocalHealthcareResources devolve hospitais, endereços e telefones inventados para o SOS
-- [ ] IREC-0194 · ALTO · `src/services/supabaseService.js:2039` — getChatMessages devolve as 200 mensagens MAIS ANTIGAS: conversas longas congelam
-- [ ] IREC-0195 · ALTO · `src/services/supabaseService.js:2217` — placeTelemedicineCall difunde um id local antes do insert, e a chamada nunca conecta entre abas
-- [ ] IREC-0196 · ALTO · `src/services/supabaseService.js:2875` — Chave da API Infosimples é lida de variável VITE_* (embutida no bundle) e enviada na query string
-- [ ] IREC-0197 · ALTO · `src/services/supabaseService.js:2951` — updateVerificationStatus é chamável pelo cliente sem verificação de papel (admin identificado por e-mail)
-- [ ] IREC-0407 · MÉDIO · `src/services/supabaseService.js:4` — JSON.parse sem try/catch em todos os helpers de localStorage derruba o app com um único valor corrompido
-- [ ] IREC-0408 · MÉDIO · `src/services/supabaseService.js:862` — getWoundEntries ordena por id (ordem de inserção) e não pela data clínica
-- [ ] IREC-0409 · MÉDIO · `src/services/supabaseService.js:1078` — O limite de 5MB de upload é burlável: validateFileSize lança dentro do try e o catch grava base64 local
-- [ ] IREC-0410 · MÉDIO · `src/services/supabaseService.js:1429` — createAppointment grava status divergente do vocabulário lido pela agenda do paciente
-- [ ] IREC-0411 · MÉDIO · `src/services/supabaseService.js:1453` — Agendamentos: resposta remota vazia é tratada como falha e devolve o cache local desatualizado
-- [ ] IREC-0412 · MÉDIO · `src/services/supabaseService.js:2013` — BroadcastChannel instanciado no topo do módulo sem detecção de suporte pode quebrar o app no WebView
-- [ ] IREC-0413 · MÉDIO · `src/services/supabaseService.js:2082` — getAllReceivedMessages também devolve as 200 mensagens mais antigas, travando o contador de não lidas
-- [ ] IREC-0414 · MÉDIO · `src/services/supabaseService.js:2266` — updateCallStatus grava 'duration' local mas o restante do sistema lê 'duration_seconds'
-- [ ] IREC-0415 · MÉDIO · `src/services/supabaseService.js:2524` — getRecommendedMaterials expõe os links de parceria de um médico aos pacientes de outros médicos
-- [ ] IREC-0416 · MÉDIO · `src/services/supabaseService.js:2661` — Chave de localStorage inexistente 'irec_local_wound_entries' zera métricas de triagem
-- [ ] IREC-0417 · MÉDIO · `src/services/supabaseService.js:2677` — getAdminStats conta role 'nurse', papel que o cadastro nunca cria
-- [ ] IREC-0418 · MÉDIO · `src/services/supabaseService.js:2717` — Chave de localStorage inexistente 'irec_local_assignments' quebra vínculos médico-paciente no admin e nas analytics
-- [ ] IREC-0419 · MÉDIO · `src/services/supabaseService.js:2789` — getDoctorTelemedicineCalls filtra por snake_case dados gravados em camelCase (sempre vazio no modo local)
+- [x] IREC-0178 · ALTO · `src/services/supabaseService.js:122` — Verificação de registro profissional é ignorada: todo médico/enfermeiro nasce 'verified'
+- [x] IREC-0179 · ALTO · `src/services/supabaseService.js:130` — Senha em texto puro no localStorage no cadastro em modo contingência
+- [x] IREC-0180 · ALTO · `src/services/supabaseService.js:130` — Senhas gravadas em texto puro no localStorage no modo contingência
+- [x] IREC-0181 · ALTO · `src/services/supabaseService.js:299` — signOutUser não limpa os caches clínicos locais: dados do paciente anterior vazam para o próximo usuário
+- [x] IREC-0182 · ALTO · `src/services/supabaseService.js:327` — getCurrentUser reautentica pelo localStorage quando a sessão do Supabase falha
+- [x] IREC-0183 · ALTO · `src/services/supabaseService.js:429` — Revinculação de perfil por e-mail altera a chave primária e cai em insert duplicado
+- [x] IREC-0184 · ALTO · `src/services/supabaseService.js:495` — Auto-criação de perfil força role 'patient', rebaixando médicos e enfermeiros
+- [x] IREC-0185 · ALTO · `src/services/supabaseService.js:743` — updateClinicalProfile silencia o erro remoto e retorna o perfil, exibindo 'sucesso' para dado não salvo
+- [x] IREC-0186 · ALTO · `src/services/supabaseService.js:901` — Qualquer erro em getWoundEntries apresenta o histórico clínico como vazio em vez de erro
+- [x] IREC-0187 · ALTO · `src/services/supabaseService.js:956` — addWoundEntry no modo local pode estourar a cota do localStorage e perder a triagem sem tratamento
+- [x] IREC-0188 · ALTO · `src/services/supabaseService.js:975` — Fotos de ferida e exames são gravados como URL pública permanente; getSecureMediaUrl nunca é usado
+- [x] IREC-0189 · ALTO · `src/services/supabaseService.js:1102` — uploadExamFileAndTriage grava valores laboratoriais inventados no prontuário
+- [x] IREC-0190 · ALTO · `src/services/supabaseService.js:1260` — Backdoor: profissional com 'teste' no nome é listado como se fosse verificado
+- [x] IREC-0191 · ALTO · `src/services/supabaseService.js:1362` — checkAppointmentCollision retorna false em qualquer erro e usa dados locais: permite dupla marcação
+- [x] IREC-0192 · ALTO · `src/services/supabaseService.js:1433` — Falha no insert do agendamento é apenas console.warn: paciente vê sucesso e o médico nunca recebe a consulta
+- [x] IREC-0193 · ALTO · `src/services/supabaseService.js:1986` — getLocalHealthcareResources devolve hospitais, endereços e telefones inventados para o SOS
+- [x] IREC-0194 · ALTO · `src/services/supabaseService.js:2039` — getChatMessages devolve as 200 mensagens MAIS ANTIGAS: conversas longas congelam
+- [x] IREC-0195 · ALTO · `src/services/supabaseService.js:2217` — placeTelemedicineCall difunde um id local antes do insert, e a chamada nunca conecta entre abas
+- [x] IREC-0196 · ALTO · `src/services/supabaseService.js:2875` — Chave da API Infosimples é lida de variável VITE_* (embutida no bundle) e enviada na query string
+- [x] IREC-0197 · ALTO · `src/services/supabaseService.js:2951` — updateVerificationStatus é chamável pelo cliente sem verificação de papel (admin identificado por e-mail)
+- [x] IREC-0407 · MÉDIO · `src/services/supabaseService.js:4` — JSON.parse sem try/catch em todos os helpers de localStorage derruba o app com um único valor corrompido
+- [x] IREC-0408 · MÉDIO · `src/services/supabaseService.js:862` — getWoundEntries ordena por id (ordem de inserção) e não pela data clínica
+- [x] IREC-0409 · MÉDIO · `src/services/supabaseService.js:1078` — O limite de 5MB de upload é burlável: validateFileSize lança dentro do try e o catch grava base64 local
+- [x] IREC-0410 · MÉDIO · `src/services/supabaseService.js:1429` — createAppointment grava status divergente do vocabulário lido pela agenda do paciente
+- [x] IREC-0411 · MÉDIO · `src/services/supabaseService.js:1453` — Agendamentos: resposta remota vazia é tratada como falha e devolve o cache local desatualizado
+- [x] IREC-0412 · MÉDIO · `src/services/supabaseService.js:2013` — BroadcastChannel instanciado no topo do módulo sem detecção de suporte pode quebrar o app no WebView
+- [x] IREC-0413 · MÉDIO · `src/services/supabaseService.js:2082` — getAllReceivedMessages também devolve as 200 mensagens mais antigas, travando o contador de não lidas
+- [x] IREC-0414 · MÉDIO · `src/services/supabaseService.js:2266` — updateCallStatus grava 'duration' local mas o restante do sistema lê 'duration_seconds'
+- [x] IREC-0415 · MÉDIO · `src/services/supabaseService.js:2524` — getRecommendedMaterials expõe os links de parceria de um médico aos pacientes de outros médicos
+- [x] IREC-0416 · MÉDIO · `src/services/supabaseService.js:2661` — Chave de localStorage inexistente 'irec_local_wound_entries' zera métricas de triagem
+- [x] IREC-0417 · MÉDIO · `src/services/supabaseService.js:2677` — getAdminStats conta role 'nurse', papel que o cadastro nunca cria
+- [x] IREC-0418 · MÉDIO · `src/services/supabaseService.js:2717` — Chave de localStorage inexistente 'irec_local_assignments' quebra vínculos médico-paciente no admin e nas analytics
+- [x] IREC-0419 · MÉDIO · `src/services/supabaseService.js:2789` — getDoctorTelemedicineCalls filtra por snake_case dados gravados em camelCase (sempre vazio no modo local)
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/services/supabaseService.js src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-DEENIYD3.js        1,277.86 kB │ gzip: 309.42 kB
+✓ built in 1.61s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 558.27ms
+√ Sync finished in 1.197s
 ```
 
 ---
