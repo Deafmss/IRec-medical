@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 58 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 143 corrigidos**
 
 ---
 
@@ -132,64 +132,62 @@ Marque `[x]` só depois de verificar. Cole a saída do comando na seção do mó
    computing gzip size...
    dist/index.html                          2.69 kB │ gzip:   1.08 kB
    dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
-   dist/assets/auditLogger-DaFpmHI0.js      0.96 kB │ gzip:   0.59 kB │ map:     3.03 kB
-   dist/assets/index-y019vFrx.js        1,241.85 kB │ gzip: 299.03 kB │ map: 4,054.39 kB
-   ✓ built in 1.55s
+   dist/assets/auditLogger-DaFpmHI0.js      0## 4. Assistente de IA — 39/39
 
-3. npx cap sync:
-   √ Copying web assets from dist to android\app\src\main\assets\public
-   √ Copying web assets from dist to ios\App\App\public
-   [info] Sync finished in 1.279s
-```
-
----
+- [x] IREC-0031 · CRÍTICO · `src/services/geminiService.js:3` — Ate 20 chaves de API do Gemini sao embutidas no bundle publico via VITE_*
+- [x] IREC-0032 · CRÍTICO · `src/services/geminiService.js:609` — chatWithDoctorCopilot usa o objeto Response como se fosse JSON e falha sempre
+- [x] IREC-0033 · CRÍTICO · `src/services/geminiService.js:962` — Variavel inexistente 'comorbididades' quebra toda a triagem por voz do paciente
+- [x] IREC-0034 · CRÍTICO · `src/services/geminiService.js:962` — Variável inexistente 'comorbididades' derruba a triagem por voz: a IA nunca responde no modo acessível
+- [x] IREC-0035 · CRÍTICO · `src/services/geminiService.js:962` — Variável 'comorbididades' (erro de digitação) não existe: derruba a triagem por voz
+- [x] IREC-0058 · ALTO · `src/components/AIChatAssistant.jsx:142` — Conversa clinica gravada na chave 'guest' do localStorage e nunca limpa no logout
+- [x] IREC-0059 · ALTO · `src/components/AIChatAssistant.jsx:519` — streamResponse quebra em loop infinito quando a resposta da IA vem sem texto
+- [x] IREC-0060 · ALTO · `src/components/AIChatAssistant.jsx:613` — applyProfileUpdates grava null no clinicalProfile global quando o save falha
+- [x] IREC-0171 · ALTO · `src/services/geminiService.js:151` — Erro 404 de modelo remove permanentemente todas as chaves validas do rodizio
+- [x] IREC-0172 · ALTO · `src/services/geminiService.js:244` — Prompt de triagem corrompido: campo de Alergias foi fundido com o cabeçalho e ha bloco JSON duplicado
+- [x] IREC-0173 · ALTO · `src/services/geminiService.js:441` — Resposta bloqueada pelo filtro de seguranca do Gemini derruba o chat para respostas prontas sem avisar
+- [x] IREC-0174 · ALTO · `src/services/geminiService.js:496` — Guardrail clinico de seguranca falha em aberto e entrega a resposta nao validada
+- [x] IREC-0175 · ALTO · `src/services/geminiService.js:775` — analyzeTelemedicineTranscript devolve laudo clinico FALSO fixo quando o Gemini nao esta configurado
+- [x] IREC-0198 · ALTO · `supabase/functions/gemini-analysis/index.ts:3` — Edge Function com CORS aberto e sem checagem de autorizacao ou limite de uso
+- [x] IREC-0199 · ALTO · `supabase/functions/gemini-analysis/index.ts:51` — Guarda de imagem invalida (isValidWound) nao existe no caminho da Edge Function
+- [x] IREC-0200 · ALTO · `supabase/functions/gemini-analysis/index.ts:109` — Edge Function acessa result.candidates[0] sem validar bloqueio ou resposta vazia
+- [x] IREC-0223 · MÉDIO · `src/components/AIChatAssistant.jsx:49` — Feature 'Leitor de Exames' prometida ao paciente nunca e executada no fallback
+- [x] IREC-0224 · MÉDIO · `src/components/AIChatAssistant.jsx:135` — DEFAULT_WELCOME acessa clinicalProfile.attachedExams sem protecao de null
+- [x] IREC-0225 · MÉDIO · `src/components/AIChatAssistant.jsx:184` — Migracao 'legacy' copia o historico global de conversas para dentro do usuario logado
+- [x] IREC-0226 · MÉDIO · `src/components/AIChatAssistant.jsx:379` — Playback de TTS antigo pode ressuscitar e tocar sobreposto ao novo
+- [x] IREC-0227 · MÉDIO · `src/components/AIChatAssistant.jsx:493` — Auto-scroll suave disparado a cada 8 ms durante o streaming trava a rolagem
+- [x] IREC-0228 · MÉDIO · `src/components/AIChatAssistant.jsx:513` — streamResponse e handleSendMessage operam sobre um snapshot antigo de 'threads'
+- [x] IREC-0229 · MÉDIO · `src/components/AIChatAssistant.jsx:518` — Intervalo de streaming sem cleanup no unmount continua escrevendo no localStorage
+- [x] IREC-0230 · MÉDIO · `src/components/AIChatAssistant.jsx:713` — Editar/Reprocessar mensagem nao respeita a trava isSubmittingRef e permite streams concorrentes
+- [x] IREC-0231 · MÉDIO · `src/components/AIChatAssistant.jsx:747` — Autocorrecao troca a preposicao 'com' por 'Como', corrompendo o relato do paciente
+- [x] IREC-0232 · MÉDIO · `src/components/AIChatAssistant.jsx:855` — IDs de mensagem gerados com Date.now() e Date.now()+1 podem colidir
+- [x] IREC-0233 · MÉDIO · `src/components/AIChatAssistant.jsx:1312` — Nome do arquivo anexado com cor branca fixa fica invisivel no tema claro
+- [x] IREC-0234 · MÉDIO · `src/components/AIChatAssistant.jsx:1369` — Input aceita .doc/.docx/.txt que o modelo nao processa, e a falha e mascarada
+- [x] IREC-0400 · MÉDIO · `src/services/geminiService.js:160` — Rodizio de chaves em 429 pode manter o chat em 'digitando...' por dezenas de segundos
+- [x] IREC-0401 · MÉDIO · `src/services/geminiService.js:428` — Mensagem do usuario e enviada duas vezes ao modelo em cada turno do chat
+- [x] IREC-0402 · MÉDIO · `src/services/geminiService.js:491` — Guardrail substitui a resposta por safeAlternative sem verificar se ela existe
+- [x] IREC-0403 · MÉDIO · `src/services/geminiService.js:897` — Texto do paciente interpolado direto no filtro .or() do PostgREST
+- [x] IREC-0442 · BAIXO · `src/components/AIChatAssistant.jsx:149` — Inicializador de estado faz JSON.parse do localStorage sem validar que e um array
+- [x] IREC-0443 · BAIXO · `src/components/AIChatAssistant.jsx:286` — Estado showUploadMenu declarado e nunca lido nem atualizado
+- [x] IREC-0444 · BAIXO · `src/components/AIChatAssistant.jsx:546` — Titulo da conversa e derivado da PRIMEIRA mensagem do usuario, nao da atual
+- [x] IREC-0445 · BAIXO · `src/components/AIChatAssistant.jsx:1072` — Renderizacao chama msg.text.startsWith sem verificar se text existe
+- [x] IREC-0446 · BAIXO · `src/components/AIChatAssistant.jsx:1073` — Ramo de estilo isUserFile e inalcancavel: anexos nunca recebem o visual de documento
+- [x] IREC-0578 · BAIXO · `src/services/geminiService.js:716` — formatSOAPNote itera woundEntries e le patientProfile.name sem protecao
+- [x] IREC-0578 · BAIXO · `supabase/functions/gemini-analysis/index.ts:29` — Edge Function nao valida o corpo e envia 'Nome: undefined' no prompt clinico
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
-```
+$ npx eslint src/services/geminiService.js src/components/AIChatAssistant.jsx
+✔ 0 errors
 
----
-
-## 4. Assistente de IA — 0/39
-
-- [ ] IREC-0031 · CRÍTICO · `src/services/geminiService.js:3` — Ate 20 chaves de API do Gemini sao embutidas no bundle publico via VITE_*
-- [ ] IREC-0032 · CRÍTICO · `src/services/geminiService.js:609` — chatWithDoctorCopilot usa o objeto Response como se fosse JSON e falha sempre
-- [ ] IREC-0033 · CRÍTICO · `src/services/geminiService.js:962` — Variavel inexistente 'comorbididades' quebra toda a triagem por voz do paciente
-- [ ] IREC-0034 · CRÍTICO · `src/services/geminiService.js:962` — Variável inexistente 'comorbididades' derruba a triagem por voz: a IA nunca responde no modo acessível
-- [ ] IREC-0035 · CRÍTICO · `src/services/geminiService.js:962` — Variável 'comorbididades' (erro de digitação) não existe: derruba a triagem por voz
-- [ ] IREC-0058 · ALTO · `src/components/AIChatAssistant.jsx:142` — Conversa clinica gravada na chave 'guest' do localStorage e nunca limpa no logout
-- [ ] IREC-0059 · ALTO · `src/components/AIChatAssistant.jsx:519` — streamResponse quebra em loop infinito quando a resposta da IA vem sem texto
-- [ ] IREC-0060 · ALTO · `src/components/AIChatAssistant.jsx:613` — applyProfileUpdates grava null no clinicalProfile global quando o save falha
-- [ ] IREC-0171 · ALTO · `src/services/geminiService.js:151` — Erro 404 de modelo remove permanentemente todas as chaves validas do rodizio
-- [ ] IREC-0172 · ALTO · `src/services/geminiService.js:244` — Prompt de triagem corrompido: campo de Alergias foi fundido com o cabeçalho e ha bloco JSON duplicado
-- [ ] IREC-0173 · ALTO · `src/services/geminiService.js:441` — Resposta bloqueada pelo filtro de seguranca do Gemini derruba o chat para respostas prontas sem avisar
-- [ ] IREC-0174 · ALTO · `src/services/geminiService.js:496` — Guardrail clinico de seguranca falha em aberto e entrega a resposta nao validada
-- [ ] IREC-0175 · ALTO · `src/services/geminiService.js:775` — analyzeTelemedicineTranscript devolve laudo clinico FALSO fixo quando o Gemini nao esta configurado
-- [ ] IREC-0198 · ALTO · `supabase/functions/gemini-analysis/index.ts:3` — Edge Function com CORS aberto e sem checagem de autorizacao ou limite de uso
-- [ ] IREC-0199 · ALTO · `supabase/functions/gemini-analysis/index.ts:51` — Guarda de imagem invalida (isValidWound) nao existe no caminho da Edge Function
-- [ ] IREC-0200 · ALTO · `supabase/functions/gemini-analysis/index.ts:109` — Edge Function acessa result.candidates[0] sem validar bloqueio ou resposta vazia
-- [ ] IREC-0223 · MÉDIO · `src/components/AIChatAssistant.jsx:49` — Feature 'Leitor de Exames' prometida ao paciente nunca e executada no fallback
-- [ ] IREC-0224 · MÉDIO · `src/components/AIChatAssistant.jsx:135` — DEFAULT_WELCOME acessa clinicalProfile.attachedExams sem protecao de null
-- [ ] IREC-0225 · MÉDIO · `src/components/AIChatAssistant.jsx:184` — Migracao 'legacy' copia o historico global de conversas para dentro do usuario logado
-- [ ] IREC-0226 · MÉDIO · `src/components/AIChatAssistant.jsx:379` — Playback de TTS antigo pode ressuscitar e tocar sobreposto ao novo
-- [ ] IREC-0227 · MÉDIO · `src/components/AIChatAssistant.jsx:493` — Auto-scroll suave disparado a cada 8 ms durante o streaming trava a rolagem
-- [ ] IREC-0228 · MÉDIO · `src/components/AIChatAssistant.jsx:513` — streamResponse e handleSendMessage operam sobre um snapshot antigo de 'threads'
-- [ ] IREC-0229 · MÉDIO · `src/components/AIChatAssistant.jsx:518` — Intervalo de streaming sem cleanup no unmount continua escrevendo no localStorage
-- [ ] IREC-0230 · MÉDIO · `src/components/AIChatAssistant.jsx:713` — Editar/Reprocessar mensagem nao respeita a trava isSubmittingRef e permite streams concorrentes
-- [ ] IREC-0231 · MÉDIO · `src/components/AIChatAssistant.jsx:747` — Autocorrecao troca a preposicao 'com' por 'Como', corrompendo o relato do paciente
-- [ ] IREC-0232 · MÉDIO · `src/components/AIChatAssistant.jsx:855` — IDs de mensagem gerados com Date.now() e Date.now()+1 podem colidir
-- [ ] IREC-0233 · MÉDIO · `src/components/AIChatAssistant.jsx:1312` — Nome do arquivo anexado com cor branca fixa fica invisivel no tema claro
-- [ ] IREC-0234 · MÉDIO · `src/components/AIChatAssistant.jsx:1369` — Input aceita .doc/.docx/.txt que o modelo nao processa, e a falha e mascarada
-- [ ] IREC-0400 · MÉDIO · `src/services/geminiService.js:160` — Rodizio de chaves em 429 pode manter o chat em 'digitando...' por dezenas de segundos
-- [ ] IREC-0401 · MÉDIO · `src/services/geminiService.js:428` — Mensagem do usuario e enviada duas vezes ao modelo em cada turno do chat
-- [ ] IREC-0402 · MÉDIO · `src/services/geminiService.js:491` — Guardrail substitui a resposta por safeAlternative sem verificar se ela existe
-- [ ] IREC-0403 · MÉDIO · `src/services/geminiService.js:897` — Texto do paciente interpolado direto no filtro .or() do PostgREST
-- [ ] IREC-0442 · BAIXO · `src/components/AIChatAssistant.jsx:149` — Inicializador de estado faz JSON.parse do localStorage sem validar que e um array
-- [ ] IREC-0443 · BAIXO · `src/components/AIChatAssistant.jsx:286` — Estado showUploadMenu declarado e nunca lido nem atualizado
-- [ ] IREC-0444 · BAIXO · `src/components/AIChatAssistant.jsx:546` — Titulo da conversa e derivado da PRIMEIRA mensagem do usuario, nao da atual
-- [ ] IREC-0445 · BAIXO · `src/components/AIChatAssistant.jsx:1072` — Renderizacao chama msg.text.startsWith sem verificar se text existe
+$ npx vite build
+vite v8.0.16 building client environment for production...
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-DsSW1r4F.js        1,245.67 kB │ gzip: 300.41 kB
+✓ built in 1.62s
+```omponents/AIChatAssistant.jsx:1072` — Renderizacao chama msg.text.startsWith sem verificar se text existe
 - [ ] IREC-0446 · BAIXO · `src/components/AIChatAssistant.jsx:1073` — Ramo de estilo isUserFile e inalcancavel: anexos nunca recebem o visual de documento
 - [ ] IREC-0578 · BAIXO · `src/services/geminiService.js:716` — formatSOAPNote itera woundEntries e le patientProfile.name sem protecao
 - [ ] IREC-0587 · BAIXO · `supabase/functions/gemini-analysis/index.ts:29` — Edge Function nao valida o corpo e envia 'Nome: undefined' no prompt clinico

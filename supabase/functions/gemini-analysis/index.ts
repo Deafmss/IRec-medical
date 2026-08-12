@@ -45,44 +45,53 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      console.warn("[Edge Function] Chamada sem cabeçalho de autorização. Continuando com apikey/client-info CORS.")
+    }
+
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY")
     if (!GEMINI_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "Chave do Gemini nao configurada no backend do Supabase." }),
+        JSON.stringify({ error: "Chave do Gemini não configurada no backend do Supabase." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       )
     }
 
     const { clinicalProfile, symptomsText, filePart } = await req.json()
+    const profile = clinicalProfile || {}
 
-    // Build the system prompt
+    // Build the system prompt with isValidWound and invalidReason (IREC-0199)
     const systemPrompt = `Você é um motor de triagem e análise clínica médica de alta precisão, responsável por dar suporte de apoio à decisão clínica e triagem geral de sintomas para qualquer especialidade da medicina.
 Analise a queixa, os sintomas informados e a imagem/documento anexado (que pode ser uma lesão cutânea, uma mancha, um exame médico, receita ou queixa visível).
 Considere obrigatoriamente a Ficha Clínica do paciente:
-- Nome: ${clinicalProfile.name}
-- Data de Nascimento: ${clinicalProfile.birthDate || 'Não informada'}
-- Sexo: ${clinicalProfile.gender || 'Não informado'}
-- Unidade de Saúde: ${clinicalProfile.healthUnit || 'Não informada'}
-- Diabetes: ${clinicalProfile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão Arterial: ${clinicalProfile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${clinicalProfile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${clinicalProfile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-- Tabagismo: ${clinicalProfile.isSmoker ? 'Sim (Fumante)' : 'Não'}
-- Obesidade: ${clinicalProfile.isObese ? 'Sim' : 'Não'}
-- Histórico de Amputação: ${clinicalProfile.hasAmputationHistory ? 'Sim' : 'Não'}
-- Outras Condições: ${clinicalProfile.otherConditions || 'Nenhuma'}
-- Medicamentos Ativos: ${clinicalProfile.medications || 'Nenhum'}
-- Alergias Conhecidas: ${clinicalProfile.allergies || 'Nenhuma'}
+- Nome: ${profile.name || 'Paciente'}
+- Data de Nascimento: ${profile.birthDate || 'Não informada'}
+- Sexo: ${profile.gender || 'Não informado'}
+- Unidade de Saúde: ${profile.healthUnit || 'Não informada'}
+- Diabetes: ${profile.hasDiabetes ? 'Sim' : 'Não'}
+- Hipertensão Arterial: ${profile.hasHypertension ? 'Sim' : 'Não'}
+- Insuficiência Venosa: ${profile.hasVenousInsufficiency ? 'Sim' : 'Não'}
+- Doença Arterial Periférica: ${profile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
+- Tabagismo: ${profile.isSmoker ? 'Sim (Fumante)' : 'Não'}
+- Obesidade: ${profile.isObese ? 'Sim' : 'Não'}
+- Histórico de Amputação: ${profile.hasAmputationHistory ? 'Sim' : 'Não'}
+- Outras Condições: ${profile.otherConditions || 'Nenhuma'}
+- Medicamentos Ativos: ${profile.medications || 'Nenhum'}
+- Alergias Conhecidas: ${profile.allergies || 'Nenhuma'}
 
 DIRETRIZES GERAIS DE TRIAGEM E RECOMENDAÇÃO:
-1. Caso a queixa ou imagem envolva uma ferida/lesão cutânea ativa, analise a composição de tecidos (necrose, fibrina, granulação e epitelização) e sugira as condutas e coberturas adequadas (ex: hidrogel, alginato de cálcio, hidrocoloide ou carvão ativado com prata).
-2. Caso a queixa seja de natureza geral (ex: febre, dor no peito, falta de ar, manchas, exames laboratoriais, tosse, tontura), avalie a gravidade clínica do quadro, as comorbidades do paciente e a interação com seus medicamentos ativos e alergias.
+0. VALIDAÇÃO RIGOROSA DA IMAGEM: Verifique a imagem anexada. Se a imagem NÃO for uma foto real de pele humana, ferida, lesão, queimadura, erupção cutânea ou exame médico (ex: se for print de celular, meme, carro, objeto ou paisagem), defina "isValidWound": false e explicite em "invalidReason" que a foto não é de uma lesão de pele.
+1. Caso a queixa ou imagem envolva uma ferida/lesão cutânea ativa, analise a composição de tecidos (necrose, fibrina, granulação e epitelização) e sugira as condutas e coberturas adequadas.
+2. Caso a queixa seja de natureza geral, avalie a gravidade clínica do quadro, as comorbidades do paciente e a interação com seus medicamentos ativos e alergias.
 3. Classifique o risco geral como Leve, Moderado, Alto Risco ou Crítico.
 4. Identifique Sinais de Alerta (Red Flags) que exijam encaminhamento urgente para o pronto-socorro.
 
 Sua tarefa é retornar ESTRITAMENTE um objeto JSON puro, correspondente a este formato exato:
 {
-  "type": "Tipo da Queixa ou Especialidade Principal (Ex: Clínico Geral, Dermatologia, Cardiologia, Pneumologia, Pé Diabético, Úlcera Venosa, Outros)",
+  "isValidWound": true,
+  "invalidReason": "",
+  "type": "Tipo da Queixa ou Especialidade Principal (Ex: Clínico Geral, Dermatologia, Pé Diabético, Úlcera Venosa, Outros)",
   "lesionStage": "Nível de Gravidade/Estágio (Ex: Leve, Moderado, Avançado, Estágio I, Estágio II, Não Classificável)",
   "severity": "Classificação da gravidade (Ex: Leve, Risco Moderado, Alto Risco, Crítico)",
   "isRedirect": false,
@@ -141,6 +150,12 @@ Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou inf
     }
 
     const result = await response.json();
+    // Validate candidates and promptFeedback safely (IREC-0200)
+    if (!result.candidates || result.candidates.length === 0 || result.promptFeedback?.blockReason) {
+      console.error("[Edge Function] Resposta bloqueada ou sem candidatos:", result);
+      throw new Error(`Resposta do Gemini bloqueada: ${result.promptFeedback?.blockReason || 'CANDIDATOS_AUSENTES'}`);
+    }
+
     const jsonText = result.candidates[0].content.parts[0].text;
 
     return new Response(

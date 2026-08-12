@@ -23,6 +23,12 @@ jobs:
     - name: Install Dependencies
       run: npm ci
 
+    # Falha apenas nos erros que quebram em runtime (ReferenceError, case
+    # duplicado, hook condicional). O `vite build` não pega nenhum deles.
+    # Regras verificadas: scripts/ci-lint-gate.mjs
+    - name: Verificar Erros de Runtime (ESLint)
+      run: npm run lint:ci
+
     - name: Execute Production Build Verification
       run: npm run build
 

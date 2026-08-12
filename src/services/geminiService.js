@@ -360,7 +360,9 @@ Considere obrigatoriamente a Ficha Clínica do paciente:
 - Histórico de Amputação: ${profile.hasAmputationHistory ? 'Sim' : 'Não'}
 - Outras Condições: ${profile.otherConditions || 'Nenhuma'}
 - Medicamentos Ativos: ${profile.medications || 'Nenhum'}
-- Alergias CDIRETRIZES GERAIS DE TRIAGEM E RECOMENDAÇÃO:
+- Alergias Conhecidas: ${profile.allergies || 'Nenhuma'}
+
+DIRETRIZES GERAIS DE TRIAGEM E RECOMENDAÇÃO:
 0. VALIDAÇÃO RIGOROSA DA IMAGEM: Verifique a imagem anexada. Se a imagem NÃO for uma foto real de pele humana, ferida, lesão, queimadura, erupção cutânea ou exame médico (ex: se for um print de tela de celular, imagem de texto, meme, carro, objeto, documento ou paisagem), defina "isValidWound": false e explicite em "invalidReason" que a foto não é de uma lesão de pele.
 1. Caso a imagem seja de uma ferida/lesão cutânea ativa, analise a composição de tecidos (necrose, fibrina, granulação e epitelização) e sugira as condutas e coberturas adequadas.
 2. Classifique o risco geral como Leve, Moderado, Alto Risco ou Crítico.
@@ -368,12 +370,12 @@ Considere obrigatoriamente a Ficha Clínica do paciente:
 
 Sua tarefa é analisar os sintomas, estimar dados clínicos pertinentes ao tipo de queixa e retornar ESTRITAMENTE um objeto JSON puro (sem formatação markdown), correspondente a este formato exato:
 {
-  "isValidWound": true, -- false se a imagem for um print, meme, documento ou foto aleatoria que nao seja uma lesao de pele
-  "invalidReason": "", -- Mensagem de erro caso isValidWound seja false (ex: "A imagem anexada é um print de tela e não uma foto de lesão de pele. Envie uma foto nítida da ferida.")
+  "isValidWound": true,
+  "invalidReason": "",
   "type": "Tipo da Queixa ou Especialidade Principal (Ex: Clínico Geral, Dermatologia, Pé Diabético, Úlcera Venosa, Outros)",
   "lesionStage": "Nível de Gravidade/Estágio (Ex: Leve, Moderado, Avançado, Estágio I, Estágio II, Não Classificável)",
   "severity": "Classificação da gravidade (Ex: Leve, Risco Moderado, Alto Risco, Crítico)",
-  "isRedirect": false, -- true se houver sinais de perigo clínico (Red Flags) que exijam atendimento médico imediato.
+  "isRedirect": false,
   "specialist": "Especialidade recomendada caso isRedirect seja true, senão string vazia",
   "reason": "Explicação curta e simples do motivo do encaminhamento se isRedirect for true, senão string vazia",
   "geminiSummary": "Resumo em linguagem muito simples da queixa e sintomas relatados pelo paciente",
@@ -394,8 +396,6 @@ Sua tarefa é analisar os sintomas, estimar dados clínicos pertinentes ao tipo 
   },
   "aiRecommendation": "Recomendação clínica detalhada e indicação de condutas.",
   "clinicalEvolution": "Estável"
-}endação clínica detalhada e indicação de condutas de enfermagem ou suporte médico baseado nos sintomas informados.",
-  "clinicalEvolution": "Estável" -- Comparativo do estado geral ("Melhorou", "Estável" ou "Piorou")
 }
 
 Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou infecção sistêmica, marque isRedirect como true. Seja sempre conservador com pacientes diabéticos, obesos ou com doença arterial periférica. Se houver suspeita de infecção plantar ou isquemia de membro, marque isRedirect como true.`;
@@ -608,20 +608,23 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON pura correspondente a este for
           responseMimeType: "application/json"
         }
       });
-      
+
       const validationData = await validationRes.json();
       const validationText = validationData.candidates[0].content.parts[0].text;
       const validationResult = JSON.parse(validationText.trim());
-      
+
       if (validationResult && validationResult.isSafe === false) {
         console.warn("⚠️ [Safety Guardrail] Bloqueada resposta potencialmente insegura. Justificativa:", validationResult.justification);
-        resultObj.reply = validationResult.safeAlternative;
+        resultObj.reply = validationResult.safeAlternative || "Não foi possível validar a segurança desta resposta no momento. Por favor, consulte o seu profissional de saúde responsável.";
         if (!resultObj.profileUpdates) resultObj.profileUpdates = {};
         if (!resultObj.profileUpdates.triageAlerts) resultObj.profileUpdates.triageAlerts = [];
         resultObj.profileUpdates.triageAlerts.push("Risco clínico mitigado pelo validador: " + validationResult.justification);
       }
     } catch (vErr) {
       console.error("Erro no guardrail de validação silenciosa:", vErr);
+      if (!resultObj.reply) {
+        resultObj.reply = "Não foi possível validar a segurança desta resposta no momento. Por favor, consulte o seu profissional de saúde responsável.";
+      }
     }
 
     return resultObj;
@@ -694,10 +697,8 @@ Sua resposta deve ser estritamente em formato JSON correspondente a este modelo 
 {
   "reply": "Seu parecer clínico detalhado, laudo de evolução da lesão e justificativa em markdown formal.",
   "suggestedDocument": {
-    // Opcional. Inclua apenas se for sugerida uma receita ou atestado.
     "type": "receita" ou "atestado",
     "content": {
-      // Se for "receita":
       "items": [
         {
           "name": "Nome da Cobertura ou Medicamento",
@@ -706,7 +707,6 @@ Sua resposta deve ser estritamente em formato JSON correspondente a este modelo 
           "instructions": "Instruções claras de aplicação/uso (ex: Aplicar no leito da ferida a cada 48h)"
         }
       ],
-      // Se for "atestado":
       "days": "Número de dias de afastamento sugerido (ex: 5)",
       "atestadoType": "Afastamento" ou "Comparecimento" ou "Aptidão",
       "reason": "Justificativa médica formatada para atestado (ex: necessita de repouso devido ao tratamento de úlcera venosa ativa em MID)",
@@ -727,12 +727,14 @@ Sua resposta deve ser estritamente em formato JSON correspondente a este modelo 
     });
 
     const activeModel = await getActiveModel();
-    const responseData = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
+    const rawResponse = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
       contents: formattedHistory,
       generationConfig: {
         responseMimeType: "application/json"
       }
     });
+
+    const responseData = await rawResponse.json();
 
     if (!responseData || !responseData.candidates || !responseData.candidates[0]) {
       throw new Error(`Falha no chat do Copiloto Gemini`);
@@ -799,23 +801,19 @@ Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código ma
   "description": "Explicação clínica personalizada relacionando a lesão às comorbidades do paciente e os cuidados sistêmicos (ex: controle da glicose, repouso com pernas elevadas, etc.)",
   "steps": [
     {
-      "title": "Título do Passo 1 (Ex: ${isClinician ? 'Avaliação Exsudativa e Limpeza do Leito' : 'Higienização da Lesão'})",
-      "desc": "Instruções detalhadas em português de como executar esse passo (ex: ${isClinician ? 'Avaliar volume e aspecto do exsudato. Irrigar leito com PHMB sob pressão controlada...' : 'Lavar o Leito com soro fisiológico morno por irrigação...'})"
-    },
-    {
-      "title": "Título do Passo 2...",
-      "desc": "..."
+      "title": "Título do Passo 1",
+      "desc": "Instruções detalhadas em português de como executar esse passo"
     }
   ],
   "materials": [
     {
-      "name": "Nome exato da cobertura/produto recomendado (Ex: Hidrogel com Alginato 85g)",
-      "price": "${isClinician ? 'Instrução de Troca (Ex: Aplicar a cada 48h-72h)' : 'Preço aproximado em R$ (Ex: R$ 42,90)'}",
-      "brand": "${isClinician ? 'Mecanismo de Ação Sugerido (Ex: Promove desbridamento autolítico e mantém umidade)' : 'Exemplo de marca de referência confiável (Ex: Curatec)'}"
+      "name": "Nome exato da cobertura/produto recomendado",
+      "price": "Instrução de uso ou preço",
+      "brand": "Mecanismo de ação ou marca sugerida"
     }
   ],
-  "scientificBacking": "Citações e referências oficiais de diretrizes clínicas que respaldam estas condutas (Ex: Resolução COFEN 567/2018 e Manual de Feridas do Ministério da Saúde/2016)",
-  "specialistRecommendation": "Orientações sobre quando buscar avaliação com especialista (Ex: Cirurgião Vascular, Estomaterapeuta, Endocrinologista para controle glicêmico)"
+  "scientificBacking": "Citações e referências oficiais de diretrizes clínicas que respaldam estas condutas",
+  "specialistRecommendation": "Orientações sobre quando buscar avaliação com especialista"
 }`;
 
     const activeModel = await getActiveModel();
@@ -902,19 +900,7 @@ Retorne o texto formatado estritamente como um documento SOAP em português (PT-
 export const analyzeTelemedicineTranscript = async (transcriptText, clinicalProfile = {}) => {
   const profile = clinicalProfile || {};
   if (!isGeminiConfigured) {
-    return {
-      executiveSummary: "Consulta por telemedicina realizada com sucesso. Paciente relata dor controlada e melhora gradual, mas com secreção leve. Orientado a manter limpeza diária.",
-      symptoms: [
-        { name: "Dor", intensity: "Leve", isWorsening: false },
-        { name: "Secreção", intensity: "Leve", isWorsening: false }
-      ],
-      suggestedPrescriptions: [
-        { name: "Soro Fisiológico 0.9%", dosage: "Limpeza diária", category: "Insumo" },
-        { name: "Hidrogel Amorfo", dosage: "Aplicar fina camada no leito da ferida", category: "Medicamento" }
-      ],
-      clinicalEvolution: "Evolução clínica favorável com tecido de granulação ativo. Presença de esfacelo moderado, sem febre ou sinais inflamatórios extensos.",
-      riskLevel: "Risco Moderado"
-    };
+    return null;
   }
 
   try {

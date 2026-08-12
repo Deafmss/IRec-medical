@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { uploadExamFileAndTriage, updateClinicalProfile, createAuditLog } from '../services/supabaseService';
 import { chatWithAI } from '../services/geminiService';
+
+const createUniqueId = (prefix = 'id') => `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
 const SUGGESTIONS = [
   { text: 'Como higienizar a lesão em casa?', icon: '💧' },
@@ -46,49 +48,6 @@ const detectTopicFromText = (userText, aiText = '') => {
   return null;
 };
 
-const EXAM_RESPONSES = {
-  'hemograma': `📄 **Leitor de Exames iRec - Interpretação Simplificada**
-
-Analisamos o seu **Hemograma Completo**. Aqui está a tradução dos resultados para uma linguagem simples:
-
-*   **Leucócitos (Glóbulos Brancos): 13.500 /mm³** (Referência: 4.000 a 10.000)
-    *   *O que significa:* Seus soldados de defesa estão elevados. Isso indica que seu corpo está ativamente combatendo uma **inflamação ou infecção**. Em pacientes com feridas, isso pode significar que a lesão precisa de uma avaliação mais atenta do enfermeiro para checar sinais locais de infecção.
-*   **Hemoglobina (Glóbulos Vermelhos): 11.8 g/dL** (Referência: 12.0 a 15.5)
-    *   *O que significa:* Está levemente baixa, sugerindo uma **anemia leve**. A hemoglobina transporta oxigênio para os tecidos; se estiver baixa, chega menos oxigênio na sua ferida, tornando a cicatrização um pouco mais lenta. Consumir alimentos ricos em ferro e vitamina C ajudará.
-*   **Plaquetas: 280.000 /mm³** (Referência: 150.000 a 450.000)
-    *   *O que significa:* Estão dentro dos limites normais! As plaquetas são responsáveis por estancar sangramentos e iniciar a primeira fase de fechamento de feridas.
-
-**Recomendação clínica:** Mostre este exame ao seu enfermeiro de referência na próxima consulta para que ele avalie se há necessidade de usar alguma cobertura antimicrobiana (como Prata) no curativo.`,
-
-  'doppler': `📄 **Leitor de Exames iRec - Interpretação Simplificada**
-
-Analisamos o resultado do seu **Ultrassom Doppler Vascular dos Membros Inferiores**.
-
-*   **Refluxo de veias safenas e veias profundas presente**
-    *   *O que significa:* As veias das suas pernas estão com dificuldade para fazer o sangue voltar ao coração. Em vez de subir, parte do sangue "reflui" e fica acumulado nas pernas, gerando inchaço (edema) e peso.
-*   **Ausência de trombose venosa profunda (TVP)**
-    *   *O que significa:* Uma ótima notícia! Não há coágulos perigosos entupindo as veias principais das suas pernas.
-
-**Por que isso afeta sua ferida?**
-O acúmulo de sangue venoso aumenta a pressão local na pele, impedindo a oxigenação ideal dos tecidos. Essa é a causa clássica da sua **Úlcera Venosa**.
-
-**Recomendação clínica:** Realize o repouso com as pernas elevadas acima do nível do coração (conforme indicado no seu *Diário de Cuidados*) e utilize sempre a meia elástica de compressão recomendada pela equipe médica ou de enfermagem.`,
-
-  'glicose': `📄 **Leitor de Exames iRec - Interpretação Simplificada**
-
-Analisamos o seu exame de **Glicose e Hemoglobina Glicada (HbA1c)**.
-
-*   **Glicose em Jejum: 158 mg/dL** (Referência: menor que 99)
-    *   *O que significa:* O açúcar no seu sangue nas primeiras horas da manhã está elevado. O ideal seria mantê-lo mais próximo da faixa normal.
-*   **Hemoglobina Glicada (HbA1c): 8.2%** (Referência: menor que 5.7%)
-    *   *O que significa:* A glicada mostra a "média" do açúcar no seu sangue nos últimos 3 meses. Uma glicada de 8.2% indica que a sua glicemia tem estado alta de forma persistente.
-
-**Por que isso afeta sua ferida?**
-O excesso de açúcar no sangue danifica a parede dos vasos e prejudica o sistema de defesa do corpo. Isso atrasa o fechamento da ferida e aumenta o risco de infecções.
-
-**Recomendação clínica:** Siga as recomendações de controle glicêmico indicadas no seu *Diário de Cuidados*: tome seus medicamentos no horário, realize o monitoramento pontual e evite alimentos de alto índice glicêmico (doces, massas, refrigerantes).`
-};
-
 const AI_RESPONSES = {
   'Como higienizar a lesão em casa?': `Para higienizar a sua lesão de forma segura e acelerar a cicatrização, siga estas etapas recomendadas:
 1. **Lave as mãos** com água e sabão antes de tocar em qualquer curativo.
@@ -126,13 +85,13 @@ Como posso te ajudar hoje?`
 };
 
 export default function AIChatAssistant({ clinicalProfile, setClinicalProfile }) {
-  const DEFAULT_WELCOME = (name) => {
+  const DEFAULT_WELCOME = () => {
     let welcomeText = `Olá! Sou o assistente de cuidados do iRec. Posso tirar dúvidas sobre cicatrização de feridas, alimentação saudável para regeneração da pele, como higienizar lesões e explicar termos médicos de forma simples.
 
 Além disso, também posso te ajudar a **traduzir resultados de exames** (clique no botão de clipe 📎 abaixo para enviar um exame).
 
 Como posso te ajudar hoje?`;
-    if (clinicalProfile.attachedExams && clinicalProfile.attachedExams.length > 0) {
+    if (clinicalProfile?.attachedExams && clinicalProfile.attachedExams.length > 0) {
       const examNames = clinicalProfile.attachedExams.map(e => e.name).join(', ');
       welcomeText += `\n\n🔎 *Nota do iRec:* Identifiquei ${clinicalProfile.attachedExams.length} exame(s) anexado(s) ao seu prontuário (${examNames}). Suas triagens e resumos simplificados já estão disponíveis no seu painel para consulta da equipe médica!`;
     }
@@ -158,7 +117,7 @@ Como posso te ajudar hoje?`;
           {
             id: 1,
             sender: 'ai',
-            text: DEFAULT_WELCOME(clinicalProfile?.name || 'Paciente'),
+            text: DEFAULT_WELCOME(),
             time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
           }
         ],
@@ -180,11 +139,13 @@ Como posso te ajudar hoje?`;
     let savedThreads = localStorage.getItem(threadKey);
     let savedActiveId = localStorage.getItem(activeKey);
     
-    // Auto-migration: if no user-specific history exists but legacy global history exists, migrate it
+    // Auto-migration: only migrate legacy threads if they belong to this specific user (IREC-0225)
     if (!savedThreads && userId !== 'guest') {
       const legacyThreads = localStorage.getItem('irec_chat_threads');
       const legacyActiveId = localStorage.getItem('irec_chat_active_thread_id');
-      if (legacyThreads) {
+      const legacyOwner = localStorage.getItem('irec_chat_threads_owner');
+      
+      if (legacyThreads && (!legacyOwner || legacyOwner === userId)) {
         localStorage.setItem(threadKey, legacyThreads);
         if (legacyActiveId) {
           localStorage.setItem(activeKey, legacyActiveId);
@@ -211,18 +172,16 @@ Como posso te ajudar hoje?`;
           const seenIds = new Set();
           const cleanThreads = parsed.map((t, idx) => {
             let id = t.id;
-            // Ensure every thread has a unique ID to prevent react rendering conflicts
             if (!id || seenIds.has(id)) {
               id = `thread-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`;
             }
             seenIds.add(id);
             
-            // Ensure messages inside the thread have unique IDs
             const seenMsgIds = new Set();
             const cleanMessages = (t.messages || []).map((m, mIdx) => {
               let mId = m.id;
               if (!mId || seenMsgIds.has(mId)) {
-                mId = Date.now() + mIdx + Math.floor(Math.random() * 1000);
+                mId = `msg-${Date.now()}-${mIdx}-${Math.random().toString(36).substr(2, 6)}`;
               }
               seenMsgIds.add(mId);
               return { ...m, id: mId };
@@ -240,9 +199,11 @@ Como posso te ajudar hoje?`;
           
           const timeoutId = setTimeout(() => {
             applyThreads(cleanThreads, finalActiveId);
-            // Save the repaired clean structure back to localStorage
             localStorage.setItem(threadKey, JSON.stringify(cleanThreads));
             localStorage.setItem(activeKey, finalActiveId);
+            if (userId !== 'guest') {
+              localStorage.setItem('irec_chat_threads_owner', userId);
+            }
           }, 0);
 
           return () => {
@@ -255,7 +216,6 @@ Como posso te ajudar hoje?`;
       }
     }
     
-    // Default thread fallback if none saved for this user
     const defaultThread = {
       id: 'thread-default',
       title: 'Nova Conversa',
@@ -263,7 +223,7 @@ Como posso te ajudar hoje?`;
         {
           id: 1,
           sender: 'ai',
-          text: DEFAULT_WELCOME(clinicalProfile?.name || 'Paciente'),
+          text: DEFAULT_WELCOME(),
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         }
       ],
@@ -283,7 +243,6 @@ Como posso te ajudar hoje?`;
   const [showHistoryMobile, setShowHistoryMobile] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showUploadMenu, setShowUploadMenu] = useState(false);
   const messagesEndRef = useRef(null);
   const isSubmittingRef = useRef(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -291,8 +250,9 @@ Como posso te ajudar hoje?`;
 
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const activeAudioRef = useRef(null);
-  const ttsQueueRef = useRef([]);
   const ttsStoppedRef = useRef(false);
+  const ttsTokenRef = useRef(0);
+  const streamIntervalRef = useRef(null);
 
   // Renaming chat thread states
   const [editingThreadId, setEditingThreadId] = useState(null);
@@ -316,24 +276,25 @@ Como posso te ajudar hoje?`;
         activeAudioRef.current.pause();
         activeAudioRef.current = null;
       }
+      if (streamIntervalRef.current) {
+        clearInterval(streamIntervalRef.current);
+        streamIntervalRef.current = null;
+      }
     };
   }, []);
 
   // Split text into chunks safe for Google Translate TTS (max ~200 chars each)
   const splitTextForTTS = (text) => {
     const maxLen = 190;
-    // Split on sentence boundaries first
     const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
     const chunks = [];
 
     sentences.forEach(sentence => {
       let s = sentence.trim();
       if (!s) return;
-      // If sentence fits in one chunk, add directly
       if (s.length <= maxLen) {
         chunks.push(s);
       } else {
-        // Break long sentences on commas or spaces
         while (s.length > maxLen) {
           let breakIdx = s.lastIndexOf(',', maxLen);
           if (breakIdx < 40) breakIdx = s.lastIndexOf(' ', maxLen);
@@ -348,14 +309,12 @@ Como posso te ajudar hoje?`;
     return chunks.filter(c => c.length > 0);
   };
 
-  // Build Google Translate TTS URL for a chunk of text
   const buildGoogleTTSUrl = (textChunk) => {
     return `https://translate.google.com/translate_tts?ie=UTF-8&tl=pt-BR&client=tw-ob&q=${encodeURIComponent(textChunk)}`;
   };
 
-  // Play chunks sequentially using the Google Translate TTS endpoint (Google Assistant voice)
-  const playTTSQueue = (chunks) => {
-    if (ttsStoppedRef.current || chunks.length === 0) {
+  const playTTSQueue = (chunks, sessionToken) => {
+    if (ttsStoppedRef.current || ttsTokenRef.current !== sessionToken || chunks.length === 0) {
       setSpeakingMessageId(null);
       activeAudioRef.current = null;
       return;
@@ -368,24 +327,30 @@ Como posso te ajudar hoje?`;
     activeAudioRef.current = audio;
 
     audio.onended = () => {
-      playTTSQueue(remainingChunks);
+      if (ttsTokenRef.current === sessionToken) {
+        playTTSQueue(remainingChunks, sessionToken);
+      }
     };
 
     audio.onerror = (err) => {
       console.warn('[iRec TTS] Erro no chunk, pulando para o próximo:', err);
-      playTTSQueue(remainingChunks);
+      if (ttsTokenRef.current === sessionToken) {
+        playTTSQueue(remainingChunks, sessionToken);
+      }
     };
 
     audio.play().catch((err) => {
       console.warn('[iRec TTS] Erro ao reproduzir:', err);
-      playTTSQueue(remainingChunks);
+      if (ttsTokenRef.current === sessionToken) {
+        playTTSQueue(remainingChunks, sessionToken);
+      }
     });
   };
 
   const speakMessage = (msgId, text) => {
-    // If currently speaking this message, stop it (toggle off)
     if (speakingMessageId === msgId) {
       ttsStoppedRef.current = true;
+      ttsTokenRef.current += 1;
       if (activeAudioRef.current) {
         activeAudioRef.current.pause();
         activeAudioRef.current = null;
@@ -394,14 +359,13 @@ Como posso te ajudar hoje?`;
       return;
     }
 
-    // Stop any existing playback before starting new one
     ttsStoppedRef.current = true;
+    const sessionToken = ++ttsTokenRef.current;
     if (activeAudioRef.current) {
       activeAudioRef.current.pause();
       activeAudioRef.current = null;
     }
 
-    // Clean markdown formatting, emojis, and URLs for natural pronunciation
     const cleanText = text
       .replace(/[*#_~`>]/g, '')
       .replace(/https?:\/\/\S+/g, '')
@@ -414,70 +378,65 @@ Como posso te ajudar hoje?`;
     setSpeakingMessageId(msgId);
     ttsStoppedRef.current = false;
 
-    // Split into safe chunks and play sequentially with Google voice
     const chunks = splitTextForTTS(cleanText);
-    playTTSQueue(chunks);
+    playTTSQueue(chunks, sessionToken);
   };
 
-
-  // Compute active thread and its messages list
   const activeThread = threads.find(t => t.id === activeThreadId) || threads[0] || { id: 'thread-default', title: 'Conversa', messages: [] };
   const messages = activeThread.messages;
 
-  // Helper to persist threads state
   const saveThreads = (updatedThreads) => {
     setThreads(updatedThreads);
     localStorage.setItem(`irec_chat_threads_${userId}`, JSON.stringify(updatedThreads));
+    if (userId !== 'guest') {
+      localStorage.setItem('irec_chat_threads_owner', userId);
+    }
   };
 
-  // Helper to change active thread
   const selectThread = (id) => {
     setActiveThreadId(id);
     localStorage.setItem(`irec_chat_active_thread_id_${userId}`, id);
   };
 
-  // Create new chat thread
   const handleNewThread = () => {
-    const newId = `thread-${Date.now()}`;
+    const newId = createUniqueId('thread');
     const newThread = {
       id: newId,
       title: `Nova Conversa #${threads.length + 1}`,
       messages: [
         {
-          id: Date.now(),
+          id: createUniqueId('msg'),
           sender: 'ai',
           text: DEFAULT_WELCOME(clinicalProfile?.name || 'Paciente'),
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         }
       ],
-      updatedAt: Date.now()
+      updatedAt: createUniqueId('t')
     };
     const updated = [newThread, ...threads];
     saveThreads(updated);
     selectThread(newId);
   };
 
-  // Delete chat thread
   const handleDeleteThread = (e, id) => {
     e.stopPropagation();
     const targetThread = threads.find(t => t.id === id);
     createAuditLog('AI_CHAT_DELETE_VIEW', id, { threadTitle: targetThread?.title });
     const updated = threads.filter(t => t.id !== id);
     if (updated.length === 0) {
-      // If no threads left, automatically create a fresh clean one
-      const newId = `thread-${Date.now()}`;
+      const newId = createUniqueId('thread');
       const newThread = {
         id: newId,
         title: 'Nova Conversa #1',
         messages: [
           {
-            id: Date.now(),
+            id: createUniqueId('msg'),
             sender: 'ai',
             text: DEFAULT_WELCOME(clinicalProfile?.name || 'Paciente'),
             time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
           }
         ],
-        updatedAt: Date.now()
+        updatedAt: createUniqueId('t')
       };
       saveThreads([newThread]);
       selectThread(newId);
@@ -489,19 +448,32 @@ Como posso te ajudar hoje?`;
     }
   };
 
-  // Auto scroll to bottom when new messages arrive
+  // Auto scroll optimization (IREC-0227)
+  const messagesCount = messages ? messages.length : 0;
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    if (messagesEndRef.current) {
+      const container = messagesEndRef.current.parentElement;
+      if (container) {
+        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 180;
+        if (isNearBottom) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+  }, [messagesCount, isTyping]);
 
-  // Stream responses word-by-word into the target thread
+  // Stream responses word-by-word into the target thread safely (IREC-0059, IREC-0228, IREC-0229)
   const streamResponse = (responseText, existingMessages, threadId) => {
     setIsTyping(true);
+    if (streamIntervalRef.current) {
+      clearInterval(streamIntervalRef.current);
+    }
+
+    const safeText = typeof responseText === 'string' ? responseText : (responseText ? String(responseText) : 'Não foi possível obter resposta.');
     let index = 0;
     let currentText = '';
     
-    // Create placeholder message for streaming in target thread
-    const newMessageId = Date.now();
+    const newMessageId = createUniqueId('msg-stream');
     const msgsBase = existingMessages || (threads.find(t => t.id === threadId) || threads[0]).messages;
     const initialThreadMsg = [...msgsBase, {
       id: newMessageId,
@@ -510,14 +482,13 @@ Como posso te ajudar hoje?`;
       time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     }];
 
-    const threadsWithPlaceholder = threads.map(t => 
+    setThreads(prevThreads => prevThreads.map(t => 
       t.id === threadId ? { ...t, messages: initialThreadMsg } : t
-    );
-    saveThreads(threadsWithPlaceholder);
+    ));
 
     const interval = setInterval(() => {
-      if (index < responseText.length) {
-        currentText += responseText[index];
+      if (index < safeText.length) {
+        currentText += safeText[index];
         setThreads(prevThreads => prevThreads.map(t => {
           if (t.id === threadId) {
             const updatedMsgs = t.messages.map(msg => 
@@ -530,22 +501,21 @@ Como posso te ajudar hoje?`;
         index++;
       } else {
         clearInterval(interval);
+        streamIntervalRef.current = null;
         setIsTyping(false);
         setThreads(prevThreads => {
           const currentActiveThread = prevThreads.find(t => t.id === threadId) || prevThreads[0];
           
-          // Log AI response
           createAuditLog('AI_CHAT_AI_RESPONSE', threadId, {
-            message: responseText,
+            message: safeText,
             threadTitle: currentActiveThread?.title
           });
 
           let finalThreads = prevThreads;
-          // Auto-rename based on clinical topic detection if not manually renamed
           if (!currentActiveThread?.manuallyRenamed) {
             const userMsg = [...msgsBase].find(m => m.sender === 'user') || [...msgsBase].reverse().find(m => m.sender === 'user');
             const userText = userMsg ? userMsg.text : '';
-            const detected = detectTopicFromText(userText, responseText);
+            const detected = detectTopicFromText(userText, safeText);
             if (detected) {
               finalThreads = prevThreads.map(t => 
                 t.id === threadId ? { ...t, title: detected } : t
@@ -557,10 +527,11 @@ Como posso te ajudar hoje?`;
           return finalThreads;
         });
       }
-    }, 8); // faster typing for medical reports
+    }, 8);
+    streamIntervalRef.current = interval;
   };
 
-  // Helper to merge, update and sync profile changes
+  // Helper to merge, update and sync profile changes (IREC-0060)
   const applyProfileUpdates = async (updates) => {
     if (!updates || Object.keys(updates).length === 0) return null;
     
@@ -611,7 +582,7 @@ Como posso te ajudar hoje?`;
     if (changedFields.length > 0) {
       try {
         const savedProfile = await updateClinicalProfile(updatedProfile);
-        if (setClinicalProfile) {
+        if (savedProfile && setClinicalProfile) {
           setClinicalProfile(savedProfile);
         }
         return changedFields;
@@ -634,7 +605,7 @@ Como posso te ajudar hoje?`;
 
     // 2. Fallback to local static QA rules if Gemini is not set up
     setTimeout(async () => {
-      let response = '';
+      let response;
       const cleanInput = textToSend.toLowerCase().trim();
       const mockUpdates = {};
       
@@ -664,7 +635,7 @@ Como posso te ajudar hoje?`;
       let finalMessages = updatedMessages;
       if (updatesList && updatesList.length > 0) {
         const syncMsg = {
-          id: Date.now() + 1,
+          id: createUniqueId('msg-sync'),
           sender: 'ai',
           text: `📋 **[iRec Prontuário - Atualização]** Ficha clínica atualizada no banco de dados:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -687,11 +658,15 @@ Como posso te ajudar hoje?`;
   };
 
   const handleSaveEditMessage = async (msgId) => {
-    if (!editingMessageText.trim()) return;
+    if (!editingMessageText.trim() || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
     const currentActiveThread = threads.find(t => t.id === activeThreadId) || threads[0];
     const msgIndex = currentActiveThread.messages.findIndex(m => m.id === msgId);
-    if (msgIndex === -1) return;
+    if (msgIndex === -1) {
+      isSubmittingRef.current = false;
+      return;
+    }
 
     const editedMsg = {
       ...currentActiveThread.messages[msgIndex],
@@ -711,9 +686,15 @@ Como posso te ajudar hoje?`;
   };
 
   const handleReprocessMessage = async (msgId) => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     const currentActiveThread = threads.find(t => t.id === activeThreadId) || threads[0];
     const msgIndex = currentActiveThread.messages.findIndex(m => m.id === msgId);
-    if (msgIndex === -1) return;
+    if (msgIndex === -1) {
+      isSubmittingRef.current = false;
+      return;
+    }
 
     const updatedMessages = currentActiveThread.messages.slice(0, msgIndex + 1);
     const targetMsgText = currentActiveThread.messages[msgIndex].text;
@@ -738,21 +719,17 @@ Como posso te ajudar hoje?`;
       'whatasapp': 'WhatsApp',
       'whats': 'WhatsApp',
       'renomer': 'renomear',
-      'decente': 'decente',
       'inciada': 'iniciada',
       'hisotorico': 'histórico',
       'pe': 'pé',
-      'pomadas': 'pomada',
-      'copiloto': 'copiloto',
-      'com': 'Como',
-      'trato': 'trato'
+      'pomadas': 'pomada'
     };
 
     const words = inputText.split(/(\s+)/);
     let correctedCount = 0;
     
     const correctedWords = words.map(w => {
-      const cleanWord = w.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "");
+      const cleanWord = w.toLowerCase().replace(/[.,/#!$%^&*:{}=\-_`~()?]/g, "");
       const correction = typoCorrections[cleanWord];
       if (correction) {
         correctedCount++;
@@ -810,7 +787,7 @@ Como posso te ajudar hoje?`;
     }
 
     const userMsg = {
-      id: Date.now(),
+      id: createUniqueId('msg-user'),
       sender: 'user',
       text: msgText,
       filePreview: localPreview,
@@ -851,7 +828,7 @@ Como posso te ajudar hoje?`;
       let finalMessages = updatedMessages;
       if (updatesList && updatesList.length > 0) {
         const syncMsg = {
-          id: Date.now() + 1,
+          id: createUniqueId('msg-sync'),
           sender: 'ai',
           text: `📋 **[iRec Prontuário]** Ficha clínica atualizada no banco de dados para consulta médica:\n${updatesList.map(item => `• ${item}`).join('\n')}`,
           time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -867,14 +844,24 @@ Como posso te ajudar hoje?`;
       return;
     }
 
-    // 2. Fallback to local static QA rules if Gemini is not set up
+    // 2. Fallback to local static QA rules if Gemini is not set up (IREC-0223)
     setTimeout(async () => {
-      let response = '';
+      let response;
       const cleanInput = textToSend.toLowerCase().trim();
       const mockUpdates = {};
       
       if (fileObj) {
-        response = `Recebi seu arquivo "${fileObj.name}". Sou o assistente de cuidados iRec. Para laudos completos de exames, por favor aguarde a validação do seu médico responsável no prontuário.`;
+        try {
+          const examData = await uploadExamFileAndTriage(fileObj);
+          if (examData && examData.summary) {
+            response = `📄 **[Leitor de Exames iRec]** Análise do arquivo "${fileObj.name}":\n\n${examData.summary}`;
+          } else {
+            response = `Recebi seu arquivo "${fileObj.name}". O exame foi anexado ao seu prontuário para consulta da equipe médica.`;
+          }
+        } catch (e) {
+          console.warn("Erro ao processar exame no leitor:", e);
+          response = `Recebi seu arquivo "${fileObj.name}". O exame foi anexado ao seu prontuário para consulta da equipe médica.`;
+        }
       } else {
         if (cleanInput.includes('diabet') || cleanInput.includes('açúcar') || cleanInput.includes('glicem')) {
           if (!clinicalProfile.hasDiabetes) {
