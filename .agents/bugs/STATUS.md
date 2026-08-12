@@ -144,55 +144,6 @@ Marque `[x]` só depois de verificar. Cole a saída do comando na seção do mó
 
 ---
 
-## 3. Protocolos, receitas e laudos — 0/46
-
-- [ ] IREC-0018 · CRÍTICO · `src/components/PrescriptionGeneratorModal.jsx:16` — Qualquer papel diferente de 'doctor' é rotulado como Enfermeiro(a) Estomaterapeuta e pode emitir receituário
-- [ ] IREC-0019 · CRÍTICO · `src/components/PrescriptionGeneratorModal.jsx:18` — Receita/atestado oficial é impressa com registro profissional falso '123456-SP'
-- [ ] IREC-0020 · CRÍTICO · `src/components/PrescriptionGeneratorModal.jsx:469` — Botão 'ASSINAR (ICP-BRASIL)' exibe assinatura digital falsa e não altera o documento
-- [ ] IREC-0021 · CRÍTICO · `src/components/PrescriptionPage.jsx:4` — Tela de prescrições não tem nenhuma verificação de papel e é alcançável por paciente
-- [ ] IREC-0022 · CRÍTICO · `src/components/PrescriptionPage.jsx:18` — Histórico de receitas fica em chave global do localStorage, sem vínculo com usuário e sem limpeza no logout
-- [ ] IREC-0023 · CRÍTICO · `src/components/ReportPDFGenerator.jsx:20` — Relatório de evolução exibe percentual de cicatrização inventado (56%) quando há menos de 2 registros
-- [ ] IREC-0024 · CRÍTICO · `src/components/ReportPDFGenerator.jsx:26` — Cálculo de cicatrização usa campos inexistentes e cai em fallback 10/4, resultando em 60% fixo para todo paciente
-- [ ] IREC-0025 · CRÍTICO · `src/components/ReportPDFGenerator.jsx:176` — Laudo sem registros imprime uma linha clínica totalmente fictícia
-- [ ] IREC-0122 · ALTO · `src/components/PrescriptionGeneratorModal.jsx:52` — QR Code de validação da receita aponta para uma rota que o app não implementa
-- [ ] IREC-0123 · ALTO · `src/components/PrescriptionGeneratorModal.jsx:77` — Documentos emitidos pelo modal do painel médico nunca são persistidos (onPrescriptionCreated não é passado)
-- [ ] IREC-0124 · ALTO · `src/components/PrescriptionGeneratorModal.jsx:84` — window.print() da receita imprime o app inteiro e trunca a prescrição fora da área visível
-- [ ] IREC-0125 · ALTO · `src/components/ProtocolGuide.jsx:126` — Protocolo local recomenda terapia compressiva sem checar doença arterial periférica (contraindicação)
-- [ ] IREC-0126 · ALTO · `src/components/ProtocolGuide.jsx:147` — Protocolo local ignora completamente alergias e medicamentos do paciente
-- [ ] IREC-0127 · ALTO · `src/components/ProtocolGuide.jsx:188` — Enfermeiro recebe a visão de paciente do protocolo e fica sem tela quando não há paciente ativo
-- [ ] IREC-0128 · ALTO · `src/components/ProtocolGuide.jsx:231` — Redirecionamento automático por window.open após 3s é bloqueado por popup blocker e usa link '#'
-- [ ] IREC-0129 · ALTO · `src/components/ProtocolGuide.jsx:294` — Protocolo clínico com nome do paciente fica em cache no localStorage e nunca é apagado no logout
-- [ ] IREC-0130 · ALTO · `src/components/ReportPDFGenerator.jsx:9` — 'Código de Autenticidade' e QR Code do laudo não validam nada (URL ?validar= não é tratada em nenhum lugar)
-- [ ] IREC-0131 · ALTO · `src/components/ReportPDFGenerator.jsx:47` — window.print() no laudo imprime todo o app e corta o conteúdo que está fora da área de scroll
-- [ ] IREC-0132 · ALTO · `src/components/ReportPDFGenerator.jsx:169` — Tabela do laudo mostra tipo de lesão fixo 'Lesão com Eritema' porque o campo entry.tissue_type não existe
-- [ ] IREC-0133 · ALTO · `src/components/ReportPDFGenerator.jsx:170` — Nível de dor no laudo é sempre 3/10 (campo errado + falsy bug com dor zero)
-- [ ] IREC-0134 · ALTO · `src/components/ReportPDFGenerator.jsx:171` — Coluna 'Aspecto do Tecido' do laudo imprime texto clínico inventado para todos os registros
-- [ ] IREC-0333 · MÉDIO · `src/components/PrescriptionGeneratorModal.jsx:60` — CPF do paciente é coletado e persistido, mas nunca aparece no documento oficial
-- [ ] IREC-0334 · MÉDIO · `src/components/PrescriptionGeneratorModal.jsx:65` — Emissão de documento sem nenhuma validação: receita vazia, atestado sem dias e encaminhamento em branco
-- [ ] IREC-0335 · MÉDIO · `src/components/PrescriptionGeneratorModal.jsx:116` — Modais não fecham com Esc, não têm role=dialog nem nome acessível no botão de fechar
-- [ ] IREC-0336 · MÉDIO · `src/components/PrescriptionGeneratorModal.jsx:264` — Atestado aceita zero, valor negativo e campo vazio de dias de afastamento
-- [ ] IREC-0337 · MÉDIO · `src/components/PrescriptionPage.jsx:127` — Clique em item do histórico de documentos não faz nada (activeDoc nunca é renderizado)
-- [ ] IREC-0338 · MÉDIO · `src/components/ProtocolGuide.jsx:135` — Numeração dos passos do guia do paciente se repete e conflita com o contador exibido
-- [ ] IREC-0339 · MÉDIO · `src/components/ProtocolGuide.jsx:142` — Preços e marcas de insumos são hardcoded e apresentados como referência real de compra
-- [ ] IREC-0340 · MÉDIO · `src/components/ProtocolGuide.jsx:169` — formatMaterialsForView assume que price e brand são strings e quebra com JSON numérico da IA
-- [ ] IREC-0341 · MÉDIO · `src/components/ProtocolGuide.jsx:174` — Heurística de palavras-chave descarta a indicação clínica e a frequência de troca geradas pela IA
-- [ ] IREC-0342 · MÉDIO · `src/components/ProtocolGuide.jsx:268` — Estado 'loading' nunca é ativado: skeleton é código morto e o usuário vê mensagem de erro durante o carregamento
-- [ ] IREC-0343 · MÉDIO · `src/components/ProtocolGuide.jsx:272` — Efeito de geração do protocolo não é cancelado: troca de paciente pode exibir o guia clínico do paciente anterior
-- [ ] IREC-0344 · MÉDIO · `src/components/ProtocolGuide.jsx:325` — Insumo sem nome derruba a tela inteira em itemName.toLowerCase()
-- [ ] IREC-0345 · MÉDIO · `src/components/ProtocolGuide.jsx:400` — Classificação de tarja/necessidade de prescrição é inventada por substring do nome do produto
-- [ ] IREC-0346 · MÉDIO · `src/components/ProtocolGuide.jsx:719` — Selo de transparência afirma diretriz oficial justamente quando o protocolo é o fallback estático
-- [ ] IREC-0347 · MÉDIO · `src/components/ProtocolGuide.jsx:1174` — Link de afiliado do parceiro é usado em href/window.open sem validação de esquema
-- [ ] IREC-0348 · MÉDIO · `src/components/ReportPDFGenerator.jsx:30` — Piora da lesão é mascarada como 'Estável' no laudo
-- [ ] IREC-0528 · BAIXO · `src/components/PrescriptionGeneratorModal.jsx:32` — Mutação direta do state de medicamentos em handleMedicationChange
-- [ ] IREC-0529 · BAIXO · `src/components/PrescriptionGeneratorModal.jsx:75` — Nome do paciente é falado em voz alta pela síntese de voz ao emitir documento
-- [ ] IREC-0530 · BAIXO · `src/components/PrescriptionGeneratorModal.jsx:216` — Lista de medicamentos usa key={idx} em lista mutável com remoção
-- [ ] IREC-0531 · BAIXO · `src/components/PrescriptionPage.jsx:90` — Botão de fechar (×) do formulário embutido de prescrição é um no-op
-- [ ] IREC-0532 · BAIXO · `src/components/ProtocolGuide.jsx:184` — Falhas de geração do protocolo são silenciadas: state 'error' declarado e nunca usado
-- [ ] IREC-0533 · BAIXO · `src/components/ProtocolGuide.jsx:308` — Carregamento de insumos do banco sem cancelamento: setState após desmontar e mistura de pacientes
-- [ ] IREC-0534 · BAIXO · `src/components/ProtocolGuide.jsx:504` — Parceiros iRec do insumo são calculados e descartados: botão de compra nunca aparece para eles
-- [ ] IREC-0535 · BAIXO · `src/components/ProtocolGuide.jsx:554` — Link geral da farmácia do médico é repetido em todos os cards de insumo
-- [ ] IREC-0536 · BAIXO · `src/components/ProtocolGuide.jsx:618` — Markdown literal exibido na tela: '**Lista de Pacientes**'
-
 **Verificação do módulo:**
 
 ```
