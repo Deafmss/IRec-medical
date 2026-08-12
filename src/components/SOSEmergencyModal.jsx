@@ -1,25 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
   const [selectedEmergency, setSelectedEmergency] = useState(null);
   const [countdown, setCountdown] = useState(null);
   const [pendingCall, setPendingCall] = useState(null); // { number: '192', label: 'SAMU' }
   const [notificationActivated, setNotificationActivated] = useState(false);
-  const [userGps, setUserGps] = useState(null);
-
-  useEffect(() => {
-    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        },
-        (err) => {
-          console.warn("GPS de emergência não capturado:", err);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    }
-  }, []);
 
   const street = clinicalProfile?.street || '';
   const number = clinicalProfile?.number || '';
@@ -33,7 +18,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
-        setNotificationActivated(true);
+        Promise.resolve().then(() => setNotificationActivated(true));
       }
     }
   }, []);
@@ -44,7 +29,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
     }
   };
 
-  const requestNotificationPermission = async () => {
+  const handleActivatePersistentNotification = async () => {
     triggerVibration();
     if (typeof window === 'undefined' || !('Notification' in window)) {
       alert("Seu navegador não suporta notificações de celular.");
@@ -61,7 +46,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             body: 'Toque para socorro imediato, ligar 192 ou rota da UPA mais próxima.',
             icon: '/favicon.png',
             badge: '/favicon.png',
-            tag: 'irec-sos-persistent',
+            tag: 'irec-sos-persistent-fixed',
             requireInteraction: true
           });
         }
@@ -75,9 +60,9 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
   };
 
   // Anti-accidental click countdown for emergency call
-  const startCallCountdown = (number, label) => {
+  const startCallCountdown = (num, label) => {
     triggerVibration();
-    setPendingCall({ number, label });
+    setPendingCall({ number: num, label });
     setCountdown(3);
   };
 
@@ -88,10 +73,12 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
         setCountdown(prev => prev - 1);
       }, 1000);
     } else if (countdown === 0 && pendingCall) {
-      // Execute the phone call
-      window.location.href = `tel:${pendingCall.number}`;
-      setCountdown(null);
-      setPendingCall(null);
+      const targetNumber = pendingCall.number;
+      timer = setTimeout(() => {
+        setCountdown(null);
+        setPendingCall(null);
+        window.location.href = `tel:${targetNumber}`;
+      }, 0);
     }
     return () => clearTimeout(timer);
   }, [countdown, pendingCall]);
@@ -163,26 +150,32 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
     e.preventDefault();
     triggerVibration();
 
+    // Fixes IREC-0136: Open window synchronously to avoid popup blocker
+    const win = window.open('about:blank', '_blank');
+
     if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const directMapsUrl = `https://www.google.com/maps/search/hospital+pronto+socorro+upa/@${lat},${lng},15z`;
-          window.open(directMapsUrl, '_blank');
+          if (win) win.location.href = directMapsUrl;
+          else window.location.href = directMapsUrl;
         },
         (err) => {
           console.warn("[iRec] Usando fallback de cidade/estado do cadastro:", err);
           const cityQuery = (city || state) ? `${city} ${state}`.trim() : '';
           const fallbackUrl = `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(cityQuery)}`;
-          window.open(fallbackUrl, '_blank');
+          if (win) win.location.href = fallbackUrl;
+          else window.location.href = fallbackUrl;
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
     } else {
       const cityQuery = (city || state) ? `${city} ${state}`.trim() : '';
       const fallbackUrl = `https://www.google.com/maps/search/hospital+pronto+socorro+upa+${encodeURIComponent(cityQuery)}`;
-      window.open(fallbackUrl, '_blank');
+      if (win) win.location.href = fallbackUrl;
+      else window.location.href = fallbackUrl;
     }
   };
 
@@ -269,7 +262,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
         {/* Mobile Persistent Notification Activator Button */}
         {!notificationActivated && (
           <button
-            onClick={requestNotificationPermission}
+            onClick={handleActivatePersistentNotification}
             style={{
               position: 'relative',
               zIndex: 1,
@@ -291,6 +284,12 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
             <span>🔔</span>
             <span>Ativar Notificação Fixa de SOS no Celular</span>
           </button>
+        )}
+
+        {fullPhysicalAddress && (
+          <div style={{ position: 'relative', zIndex: 1, fontSize: '12px', color: '#cbd5e1', textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: '10px' }}>
+            📍 <strong>Endereço de Resgate:</strong> {fullPhysicalAddress}
+          </div>
         )}
 
         {/* Anti-Accidental Call Countdown Overlay */}

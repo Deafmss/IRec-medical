@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { speakNaturalText } from '../utils/speechUtils';
 
 export default function PermissionsGuideModal({ onClose }) {

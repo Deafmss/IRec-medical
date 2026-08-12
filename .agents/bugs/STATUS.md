@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 500 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 530 corrigidos**
 
 ---
 
@@ -833,43 +833,55 @@ $ npx cap sync
 
 ---
 
-## 17. SOS e emergência — 0/30
+## 17. SOS e emergência — 30/30
 
-- [ ] IREC-0135 · ALTO · `src/components/SOSEmergencyModal.jsx:64` — Notificação "fixa" de SOS usa tag divergente da esperada pelo service worker e não é recriada ao ser dispensada
-- [ ] IREC-0136 · ALTO · `src/components/SOSEmergencyModal.jsx:167` — Botão principal "IR PARA HOSPITAL / UPA MAIS PRÓXIMO" abre o mapa dentro de callback assíncrono do GPS e é bloqueado pelo navegador
-- [ ] IREC-0176 · ALTO · `src/services/locationService.js:140` — Estabelecimentos de saúde com nome, endereço e TELEFONE hardcoded no código são injetados e exibidos como resultado real de busca
-- [ ] IREC-0177 · ALTO · `src/services/locationService.js:440` — Resultado vazio (falha total de rede/API) é gravado no cache por 3 horas, deixando o paciente sem hospitais mesmo após a conectividade voltar
-- [ ] IREC-0297 · MÉDIO · `src/components/LocalResourcesPanel.jsx:21` — Nenhum dos dois efeitos tem cancelamento: resposta lenta sobrescreve estado mais novo e há setState após unmount
-- [ ] IREC-0298 · MÉDIO · `src/components/LocalResourcesPanel.jsx:32` — Coleta automática de GPS no mount, duplicada por StrictMode e por duas instâncias simultâneas do painel
-- [ ] IREC-0299 · MÉDIO · `src/components/LocalResourcesPanel.jsx:84` — Listas de hospitais e farmácias não são limpas ao mudar a localização: distâncias exibidas referem-se ao local antigo
-- [ ] IREC-0332 · MÉDIO · `src/components/PermissionsGuideModal.jsx:175` — Guia Android instrui a tocar no botão de instalar que acabou de falhar — o modal só abre quando esse caminho é impossível
-- [ ] IREC-0349 · MÉDIO · `src/components/SOSEmergencyModal.jsx:8` — GPS de emergência é capturado no mount e nunca utilizado; o app pede a localização duas vezes
-- [ ] IREC-0350 · MÉDIO · `src/components/SOSEmergencyModal.jsx:31` — Endereço físico completo do paciente é montado para a emergência e nunca renderizado
-- [ ] IREC-0351 · MÉDIO · `src/components/SOSEmergencyModal.jsx:60` — Notificação de SOS do modal é criada sem `actions`, prometendo botões "ligar 192" e "rota da UPA" que não existem
-- [ ] IREC-0352 · MÉDIO · `src/components/SOSEmergencyModal.jsx:176` — Fallback do mapa gera URL de busca sem local quando o perfil não tem cidade/estado
-- [ ] IREC-0353 · MÉDIO · `src/components/SOSEmergencyModal.jsx:205` — Qualquer toque fora do card fecha o modal SOS e cancela silenciosamente a contagem de 3s para a ligação
-- [ ] IREC-0404 · MÉDIO · `src/services/locationService.js:43` — Endereço e coordenadas do paciente ficam no localStorage sem expiração e não são apagados no logout
-- [ ] IREC-0405 · MÉDIO · `src/services/locationService.js:235` — Abort do cliente em 3s é menor que o timeout de 8s declarado na própria query Overpass
-- [ ] IREC-0406 · MÉDIO · `src/services/locationService.js:305` — Telefone ausente é substituído pela string "192 / Não informado", exibida como número do hospital
-- [ ] IREC-0505 · BAIXO · `src/components/LocalResourcesPanel.jsx:136` — No modo compacto o erro é engolido e a falha de localização aparece como "nenhum hospital encontrado"
-- [ ] IREC-0506 · BAIXO · `src/components/LocalResourcesPanel.jsx:280` — Coordenadas precisas do paciente são enviadas ao Google em query string, via iframe e links, sem consentimento
-- [ ] IREC-0507 · BAIXO · `src/components/LocalResourcesPanel.jsx:300` — Bloco `<style>` com keyframes `spin` é código morto injetado em escopo global a cada mount
-- [ ] IREC-0526 · BAIXO · `src/components/PermissionsGuideModal.jsx:5` — Detecção de iOS por user agent falha em iPad (iPadOS 13+) e abre o guia na aba errada
-- [ ] IREC-0527 · BAIXO · `src/components/PermissionsGuideModal.jsx:65` — Botão de fechar do guia de permissões não tem nome acessível e o diálogo não tem role, foco ou Esc
-- [ ] IREC-0537 · BAIXO · `src/components/SOSEmergencyModal.jsx:57` — Ativação da notificação pode travar para sempre em `serviceWorker.ready`, escondendo o botão sem criar notificação alguma
-- [ ] IREC-0538 · BAIXO · `src/components/SOSEmergencyModal.jsx:172` — `window.open('_blank')` sem `noopener` dá referência `window.opener` à página aberta
-- [ ] IREC-0539 · BAIXO · `src/components/SOSEmergencyModal.jsx:190` — Modal SOS não é anunciado como diálogo, não fecha com Esc e o backdrop é uma div clicável sem role/foco
-- [ ] IREC-0579 · BAIXO · `src/services/locationService.js:17` — Arredondamento dentro de `getDistance` inviabiliza o limiar de deduplicação de 50 metros
-- [ ] IREC-0580 · BAIXO · `src/services/locationService.js:35` — Geocodificação retorna null quando o perfil tem cidade mas não tem estado
-- [ ] IREC-0581 · BAIXO · `src/services/locationService.js:59` — Geocodificação não verifica `res.ok`; resposta 429/403 lança exceção e pula o fallback cidade/estado
-- [ ] IREC-0582 · BAIXO · `src/services/locationService.js:117` — Chave de cache com 4 casas decimais cria entrada nova a cada leitura de GPS e nada expurga as vencidas
-- [ ] IREC-0583 · BAIXO · `src/services/locationService.js:294` — `el.tags.amenity` sem guarda: um elemento sem `tags` derruba toda a busca de recursos
-- [ ] IREC-0584 · BAIXO · `src/services/locationService.js:309` — `id: el.id` sem o tipo do elemento OSM gera keys React duplicadas na lista de resultados
+- [x] IREC-0135 · ALTO · `src/components/SOSEmergencyModal.jsx:64` — Notificação "fixa" de SOS usa tag divergente da esperada pelo service worker e não é recriada ao ser dispensada
+- [x] IREC-0136 · ALTO · `src/components/SOSEmergencyModal.jsx:167` — Botão principal "IR PARA HOSPITAL / UPA MAIS PRÓXIMO" abre o mapa dentro de callback assíncrono do GPS e é bloqueado pelo navegador
+- [x] IREC-0176 · ALTO · `src/services/locationService.js:140` — Estabelecimentos de saúde com nome, endereço e TELEFONE hardcoded no código são injetados e exibidos como resultado real de busca
+- [x] IREC-0177 · ALTO · `src/services/locationService.js:440` — Resultado vazio (falha total de rede/API) é gravado no cache por 3 horas, deixando o paciente sem hospitais mesmo após a conectividade voltar
+- [x] IREC-0297 · MÉDIO · `src/components/LocalResourcesPanel.jsx:21` — Nenhum dos dois efeitos tem cancelamento: resposta lenta sobrescreve estado mais novo e há setState após unmount
+- [x] IREC-0298 · MÉDIO · `src/components/LocalResourcesPanel.jsx:32` — Coleta automática de GPS no mount, duplicada por StrictMode e por duas instâncias simultâneas do painel
+- [x] IREC-0299 · MÉDIO · `src/components/LocalResourcesPanel.jsx:84` — Listas de hospitais e farmácias não são limpas ao mudar a localização: distâncias exibidas referem-se ao local antigo
+- [x] IREC-0332 · MÉDIO · `src/components/PermissionsGuideModal.jsx:175` — Guia Android instrui a tocar no botão de instalar que acabou de falhar — o modal só abre quando esse caminho é impossível
+- [x] IREC-0349 · MÉDIO · `src/components/SOSEmergencyModal.jsx:8` — GPS de emergência é capturado no mount e nunca utilizado; o app pede a localização duas vezes
+- [x] IREC-0350 · MÉDIO · `src/components/SOSEmergencyModal.jsx:31` — Endereço físico completo do paciente é montado para a emergência e nunca renderizado
+- [x] IREC-0351 · MÉDIO · `src/components/SOSEmergencyModal.jsx:60` — Notificação de SOS do modal é criada sem `actions`, prometendo botões "ligar 192" e "rota da UPA" que não existem
+- [x] IREC-0352 · MÉDIO · `src/components/SOSEmergencyModal.jsx:176` — Fallback do mapa gera URL de busca sem local quando o perfil não tem cidade/estado
+- [x] IREC-0353 · MÉDIO · `src/components/SOSEmergencyModal.jsx:205` — Qualquer toque fora do card fecha o modal SOS e cancela silenciosamente a contagem de 3s para a ligação
+- [x] IREC-0404 · MÉDIO · `src/services/locationService.js:43` — Endereço e coordenadas do paciente ficam no localStorage sem expiração e não são apagados no logout
+- [x] IREC-0405 · MÉDIO · `src/services/locationService.js:235` — Abort do cliente em 3s é menor que o timeout de 8s declarado na própria query Overpass
+- [x] IREC-0406 · MÉDIO · `src/services/locationService.js:305` — Telefone ausente é substituído pela string "192 / Não informado", exibida como número do hospital
+- [x] IREC-0505 · BAIXO · `src/components/LocalResourcesPanel.jsx:136` — No modo compacto o erro é engolido e a falha de localização aparece como "nenhum hospital encontrado"
+- [x] IREC-0506 · BAIXO · `src/components/LocalResourcesPanel.jsx:280` — Coordenadas precisas do paciente são enviadas ao Google em query string, via iframe e links, sem consentimento
+- [x] IREC-0507 · BAIXO · `src/components/LocalResourcesPanel.jsx:300` — Bloco `<style>` com keyframes `spin` é código morto injetado em escopo global a cada mount
+- [x] IREC-0526 · BAIXO · `src/components/PermissionsGuideModal.jsx:5` — Detecção de iOS por user agent falha em iPad (iPadOS 13+) e abre o guia na aba errada
+- [x] IREC-0527 · BAIXO · `src/components/PermissionsGuideModal.jsx:65` — Botão de fechar do guia de permissões não tem nome acessível e o diálogo não tem role, foco ou Esc
+- [x] IREC-0537 · BAIXO · `src/components/SOSEmergencyModal.jsx:57` — Ativação da notificação pode travar para sempre em `serviceWorker.ready`, escondendo o botão sem criar notificação alguma
+- [x] IREC-0538 · BAIXO · `src/components/SOSEmergencyModal.jsx:172` — `window.open('_blank')` sem `noopener` dá referência `window.opener` à página aberta
+- [x] IREC-0539 · BAIXO · `src/components/SOSEmergencyModal.jsx:190` — Modal SOS não é anunciado como diálogo, não fecha com Esc e o backdrop é uma div clicável sem role/foco
+- [x] IREC-0579 · BAIXO · `src/services/locationService.js:17` — Arredondamento dentro de `getDistance` inviabiliza o limiar de deduplicação de 50 metros
+- [x] IREC-0580 · BAIXO · `src/services/locationService.js:35` — Geocodificação retorna null quando o perfil tem cidade mas não tem estado
+- [x] IREC-0581 · BAIXO · `src/services/locationService.js:59` — Geocodificação não verifica `res.ok`; resposta 429/403 lança exceção e pula o fallback cidade/estado
+- [x] IREC-0582 · BAIXO · `src/services/locationService.js:117` — Chave de cache com 4 casas decimais cria entrada nova a cada leitura de GPS e nada expurga as vencidas
+- [x] IREC-0583 · BAIXO · `src/services/locationService.js:294` — `el.tags.amenity` sem guarda: um elemento sem `tags` derruba toda a busca de recursos
+- [x] IREC-0584 · BAIXO · `src/services/locationService.js:309` — `id: el.id` sem o tipo do elemento OSM gera keys React duplicadas na lista de resultados
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/SOSEmergencyModal.jsx src/components/LocalResourcesPanel.jsx src/components/PermissionsGuideModal.jsx src/services/locationService.js src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-BVg6G20A.js        1,278.00 kB │ gzip: 309.46 kB
+✓ built in 1.55s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 532.65ms
+√ Sync finished in 1.15s
 ```
 
 ---
