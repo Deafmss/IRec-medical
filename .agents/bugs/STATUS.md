@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 272 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 292 corrigidos**
 
 ---
 
@@ -421,33 +421,45 @@ $ npx cap sync
 
 ---
 
-## 9. Dashboard do paciente — 0/20
+## 9. Dashboard do paciente — 20/20
 
-- [ ] IREC-0009 · CRÍTICO · `src/components/Dashboard.jsx:256` — Evolução da lesão salta para 100% quando o registro mais recente não tem área medida pela IA
-- [ ] IREC-0081 · ALTO · `src/components/Dashboard.jsx:155` — Chave do checklist usa data UTC: o diário reseta às 21h no horário de Brasília
-- [ ] IREC-0082 · ALTO · `src/components/Dashboard.jsx:162` — Checklist diário nunca é restaurado após recarregar a página (chave criada com id 'guest')
-- [ ] IREC-0083 · ALTO · `src/components/Dashboard.jsx:241` — Dias de acompanhamento calculados a partir de data pt-BR interpretada como MM/DD (ou inválida)
-- [ ] IREC-0084 · ALTO · `src/components/Dashboard.jsx:406` — Card 'PRÓXIMA CONSULTA' exibe 'undefined às undefined' (nomes de campo divergentes do serviço)
-- [ ] IREC-0085 · ALTO · `src/components/Dashboard.jsx:623` — Enfermeiro responsável é exibido como 'Dr(a).' e com 'CRM:' vazio (role e COREN inexistentes)
-- [ ] IREC-0086 · ALTO · `src/components/Dashboard.jsx:784` — IMC do prontuário exibe 'NaN' ou 'Infinity' e classifica como Obesidade
-- [ ] IREC-0087 · ALTO · `src/components/Dashboard.jsx:804` — Prontuário afirma ausência de comorbidades quando os campos apenas não foram preenchidos
-- [ ] IREC-0263 · MÉDIO · `src/components/Dashboard.jsx:12` — Tarefas 'Prescrição da Lesão' nunca aparecem: campo treatmentPlan não existe nas entries
-- [ ] IREC-0264 · MÉDIO · `src/components/Dashboard.jsx:197` — useEffects do Dashboard dependem do objeto clinicalProfile e refazem as consultas a cada 30 segundos, sem cancelamento
-- [ ] IREC-0265 · MÉDIO · `src/components/Dashboard.jsx:204` — Profissional responsável desatribuído continua exibido para sempre (falta ramo else)
-- [ ] IREC-0266 · MÉDIO · `src/components/Dashboard.jsx:263` — Percentual de cicatrização alterna entre duas fórmulas incompatíveis e soma percentuais de tecido
-- [ ] IREC-0267 · MÉDIO · `src/components/Dashboard.jsx:273` — Escore de adesão pode passar de 100% porque ids concluídos obsoletos não são depurados
-- [ ] IREC-0268 · MÉDIO · `src/components/Dashboard.jsx:278` — 'Próxima consulta' usa o agendamento mais recém-criado, incluindo consultas passadas e canceladas
-- [ ] IREC-0269 · MÉDIO · `src/components/Dashboard.jsx:282` — Impressão do prontuário usa window.print() sem CSS de impressão: imprime o app inteiro e corta o conteúdo rolável
-- [ ] IREC-0467 · BAIXO · `src/components/Dashboard.jsx:3` — Abertura do prontuário completo não gera log de auditoria LGPD (createAuditLog importado e nunca chamado)
-- [ ] IREC-0468 · BAIXO · `src/components/Dashboard.jsx:154` — Checklist gravado sob a chave 'guest' vaza entre usuários do mesmo dispositivo e não é limpo no logout
-- [ ] IREC-0469 · BAIXO · `src/components/Dashboard.jsx:193` — Promise de agendamentos sem .catch() (rejeição não tratada e lista silenciosamente vazia)
-- [ ] IREC-0470 · BAIXO · `src/components/Dashboard.jsx:670` — Modais do prontuário e do mapa sem semântica de diálogo, sem tecla Esc e sem travar o scroll de fundo
-- [ ] IREC-0471 · BAIXO · `src/components/Dashboard.jsx:933` — Duas instâncias de LocalResourcesPanel ativas ao mesmo tempo duplicam GPS e buscas de rede
+- [x] IREC-0009 · CRÍTICO · `src/components/Dashboard.jsx:256` — Evolução da lesão salta para 100% quando o registro mais recente não tem área medida pela IA
+- [x] IREC-0081 · ALTO · `src/components/Dashboard.jsx:155` — Chave do checklist usa data UTC: o diário reseta às 21h no horário de Brasília
+- [x] IREC-0082 · ALTO · `src/components/Dashboard.jsx:162` — Checklist diário nunca é restaurado após recarregar a página (chave criada com id 'guest')
+- [x] IREC-0083 · ALTO · `src/components/Dashboard.jsx:241` — Dias de acompanhamento calculados a partir de data pt-BR interpretada como MM/DD (ou inválida)
+- [x] IREC-0084 · ALTO · `src/components/Dashboard.jsx:406` — Card 'PRÓXIMA CONSULTA' exibe 'undefined às undefined' (nomes de campo divergentes do serviço)
+- [x] IREC-0085 · ALTO · `src/components/Dashboard.jsx:623` — Enfermeiro responsável é exibido como 'Dr(a).' e com 'CRM:' vazio (role e COREN inexistentes)
+- [x] IREC-0086 · ALTO · `src/components/Dashboard.jsx:784` — IMC do prontuário exibe 'NaN' ou 'Infinity' e classifica como Obesidade
+- [x] IREC-0087 · ALTO · `src/components/Dashboard.jsx:804` — Prontuário afirma ausência de comorbidades quando os campos apenas não foram preenchidos
+- [x] IREC-0263 · MÉDIO · `src/components/Dashboard.jsx:12` — Tarefas 'Prescrição da Lesão' nunca aparecem: campo treatmentPlan não existe nas entries
+- [x] IREC-0264 · MÉDIO · `src/components/Dashboard.jsx:197` — useEffects do Dashboard dependem do objeto clinicalProfile e refazem as consultas a cada 30 segundos, sem cancelamento
+- [x] IREC-0265 · MÉDIO · `src/components/Dashboard.jsx:204` — Profissional responsável desatribuído continua exibido para sempre (falta ramo else)
+- [x] IREC-0266 · MÉDIO · `src/components/Dashboard.jsx:263` — Percentual de cicatrização alterna entre duas fórmulas incompatíveis e soma percentuais de tecido
+- [x] IREC-0267 · MÉDIO · `src/components/Dashboard.jsx:273` — Escore de adesão pode passar de 100% porque ids concluídos obsoletos não são depurados
+- [x] IREC-0268 · MÉDIO · `src/components/Dashboard.jsx:278` — 'Próxima consulta' usa o agendamento mais recém-criado, incluindo consultas passadas e canceladas
+- [x] IREC-0269 · MÉDIO · `src/components/Dashboard.jsx:282` — Impressão do prontuário usa window.print() sem CSS de impressão: imprime o app inteiro e corta o conteúdo rolável
+- [x] IREC-0467 · BAIXO · `src/components/Dashboard.jsx:3` — Abertura do prontuário completo não gera log de auditoria LGPD (createAuditLog importado e nunca chamado)
+- [x] IREC-0468 · BAIXO · `src/components/Dashboard.jsx:154` — Checklist gravado sob a chave 'guest' vaza entre usuários do mesmo dispositivo e não é limpo no logout
+- [x] IREC-0469 · BAIXO · `src/components/Dashboard.jsx:193` — Promise de agendamentos sem .catch() (rejeição não tratada e lista silenciosamente vazia)
+- [x] IREC-0470 · BAIXO · `src/components/Dashboard.jsx:670` — Modais do prontuário e do mapa sem semântica de diálogo, sem tecla Esc e sem travar o scroll de fundo
+- [x] IREC-0471 · BAIXO · `src/components/Dashboard.jsx:933` — Duas instâncias de LocalResourcesPanel ativas ao mesmo tempo duplicam GPS e buscas de rede
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/Dashboard.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-CMLdTqbr.js        1,269.96 kB │ gzip: 307.13 kB
+✓ built in 1.64s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 532.41ms
+√ Sync finished in 1.193s
 ```
 
 ---
