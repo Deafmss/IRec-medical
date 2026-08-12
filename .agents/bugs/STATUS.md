@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 183 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 214 corrigidos**
 
 ---
 
@@ -263,44 +263,56 @@ $ npx cap sync
 
 ---
 
-## 6. Triagem clínica — 0/31
+## 6. Triagem clínica — 31/31
 
-- [ ] IREC-0007 · CRÍTICO · `src/components/ClinicalTriage.jsx:263` — Dimensoes da lesao sao geradas por Math.random() e gravadas no prontuario
-- [ ] IREC-0008 · CRÍTICO · `src/components/ClinicalTriage.jsx:507` — Enfermeiro/medico sem paciente selecionado grava a ferida no proprio prontuario
-- [ ] IREC-0071 · ALTO · `src/components/ClinicalTriage.jsx:367` — Respostas do cartao de queixa anterior continuam sendo enviadas para a IA
-- [ ] IREC-0072 · ALTO · `src/components/ClinicalTriage.jsx:469` — Algoritmo de contingencia ignora dor, odor, sinais de infeccao e respostas do questionario
-- [ ] IREC-0073 · ALTO · `src/components/ClinicalTriage.jsx:486` — Estagio da lesao gravado no prontuario e o valor anterior a analise (state stale)
-- [ ] IREC-0074 · ALTO · `src/components/ClinicalTriage.jsx:488` — Dez campos clinicos sao gravados no prontuario com valores default que nunca foram perguntados
-- [ ] IREC-0075 · ALTO · `src/components/ClinicalTriage.jsx:508` — Entrada null retornada pelo servico e inserida na lista de registros e quebra o prontuario
-- [ ] IREC-0076 · ALTO · `src/components/ClinicalTriage.jsx:509` — Falha ao salvar no prontuario e silenciada e o usuario ve tela de sucesso
-- [ ] IREC-0077 · ALTO · `src/components/ClinicalTriage.jsx:530` — Botao 'Nova Triagem' desincroniza o tipo de ferida do cartao selecionado
-- [ ] IREC-0078 · ALTO · `src/components/ClinicalTriage.jsx:1088` — Paciente recebe 'Baixo risco imediato' mesmo quando a gravidade e Critica
-- [ ] IREC-0079 · ALTO · `src/components/ClinicalTriage.jsx:1239` — Percentual de necrose nunca e exibido no resultado da triagem
-- [ ] IREC-0080 · ALTO · `src/components/ClinicalTriage.jsx:1318` — Tela de resultado quebra quando a IA nao retorna treatmentPlan
-- [ ] IREC-0251 · MÉDIO · `src/components/ClinicalTriage.jsx:6` — Componente WoundTissueOverlay e codigo morto: o grafico de tecidos nunca e renderizado
-- [ ] IREC-0252 · MÉDIO · `src/components/ClinicalTriage.jsx:279` — Busca por palavras-chave no fallback nao casa com acentos e casa com o verbo 'pus'
-- [ ] IREC-0253 · MÉDIO · `src/components/ClinicalTriage.jsx:348` — Escala de Braden calculada com dois dominios travados em 3, resultado clinico sempre incorreto
-- [ ] IREC-0254 · MÉDIO · `src/components/ClinicalTriage.jsx:351` — Avaliacao de mobilidade/Braden e coletada e descartada: nao vai para o prontuario nem para a IA
-- [ ] IREC-0255 · MÉDIO · `src/components/ClinicalTriage.jsx:414` — URLs de objeto (blob:) nunca sao revogadas - vazamento de memoria por foto
-- [ ] IREC-0256 · MÉDIO · `src/components/ClinicalTriage.jsx:448` — Analise prossegue sem nenhuma imagem quando so ha PDF anexado
-- [ ] IREC-0257 · MÉDIO · `src/components/ClinicalTriage.jsx:488` — Excecao em handleStartAnalysis deixa a tela travada no spinner para sempre
-- [ ] IREC-0258 · MÉDIO · `src/components/ClinicalTriage.jsx:517` — Escala de Braden e respostas do questionario nao sao limpas em 'Nova Triagem'
-- [ ] IREC-0259 · MÉDIO · `src/components/ClinicalTriage.jsx:583` — Controles principais sao <div> com onClick, inacessiveis por teclado
-- [ ] IREC-0260 · MÉDIO · `src/components/ClinicalTriage.jsx:770` — Botao 'Nao' selecionado fica com texto branco sobre fundo branco translucido
-- [ ] IREC-0261 · MÉDIO · `src/components/ClinicalTriage.jsx:1093` — Cabecalho de encaminhamento e sempre 'CASO CRITICO', mesmo em risco moderado
-- [ ] IREC-0262 · MÉDIO · `src/components/ClinicalTriage.jsx:1242` — Percentuais de tecido hardcoded (70/20/10) apresentados como analise da foto
-- [ ] IREC-0460 · BAIXO · `src/components/ClinicalTriage.jsx:417` — setImage/setPhotoFile chamados dentro do updater de setAttachments (funcao impura)
-- [ ] IREC-0461 · BAIXO · `src/components/ClinicalTriage.jsx:476` — Spinner de carregamento e tela de resultado sao renderizados ao mesmo tempo
-- [ ] IREC-0462 · BAIXO · `src/components/ClinicalTriage.jsx:487` — Ramo morto: finalResult.painLevel nunca existe no contrato da IA
-- [ ] IREC-0463 · BAIXO · `src/components/ClinicalTriage.jsx:618` — Lista mutavel de anexos usa key={idx}
-- [ ] IREC-0464 · BAIXO · `src/components/ClinicalTriage.jsx:634` — Botao de remover anexo sem nome acessivel
-- [ ] IREC-0465 · BAIXO · `src/components/ClinicalTriage.jsx:819` — Cor e rotulo da intensidade da dor usam limites diferentes
-- [ ] IREC-0466 · BAIXO · `src/components/ClinicalTriage.jsx:1008` — Rotulos de formulario sem associacao com os campos
+- [x] IREC-0007 · CRÍTICO · `src/components/ClinicalTriage.jsx:263` — Dimensoes da lesao sao geradas por Math.random() e gravadas no prontuario
+- [x] IREC-0008 · CRÍTICO · `src/components/ClinicalTriage.jsx:507` — Enfermeiro/medico sem paciente selecionado grava a ferida no proprio prontuario
+- [x] IREC-0071 · ALTO · `src/components/ClinicalTriage.jsx:367` — Respostas do cartao de queixa anterior continuam sendo enviadas para a IA
+- [x] IREC-0072 · ALTO · `src/components/ClinicalTriage.jsx:469` — Algoritmo de contingencia ignora dor, odor, sinais de infeccao e respostas do questionario
+- [x] IREC-0073 · ALTO · `src/components/ClinicalTriage.jsx:486` — Estagio da lesao gravado no prontuario e o valor anterior a analise (state stale)
+- [x] IREC-0074 · ALTO · `src/components/ClinicalTriage.jsx:488` — Dez campos clinicos sao gravados no prontuario com valores default que nunca foram perguntados
+- [x] IREC-0075 · ALTO · `src/components/ClinicalTriage.jsx:508` — Entrada null retornada pelo servico e inserida na lista de registros e quebra o prontuario
+- [x] IREC-0076 · ALTO · `src/components/ClinicalTriage.jsx:509` — Falha ao salvar no prontuario e silenciada e o usuario ve tela de sucesso
+- [x] IREC-0077 · ALTO · `src/components/ClinicalTriage.jsx:530` — Botao 'Nova Triagem' desincroniza o tipo de ferida do cartao selecionado
+- [x] IREC-0078 · ALTO · `src/components/ClinicalTriage.jsx:1088` — Paciente recebe 'Baixo risco imediato' mesmo quando a gravidade e Critica
+- [x] IREC-0079 · ALTO · `src/components/ClinicalTriage.jsx:1239` — Percentual de necrose nunca e exibido no resultado da triagem
+- [x] IREC-0080 · ALTO · `src/components/ClinicalTriage.jsx:1318` — Tela de resultado quebra quando a IA nao retorna treatmentPlan
+- [x] IREC-0251 · MÉDIO · `src/components/ClinicalTriage.jsx:6` — Componente WoundTissueOverlay e codigo morto: o grafico de tecidos nunca e renderizado
+- [x] IREC-0252 · MÉDIO · `src/components/ClinicalTriage.jsx:279` — Busca por palavras-chave no fallback nao casa com acentos e casa com o verbo 'pus'
+- [x] IREC-0253 · MÉDIO · `src/components/ClinicalTriage.jsx:348` — Escala de Braden calculada com dois dominios travados em 3, resultado clinico sempre incorreto
+- [x] IREC-0254 · MÉDIO · `src/components/ClinicalTriage.jsx:351` — Avaliacao de mobilidade/Braden e coletada e descartada: nao vai para o prontuario nem para a IA
+- [x] IREC-0255 · MÉDIO · `src/components/ClinicalTriage.jsx:414` — URLs de objeto (blob:) nunca sao revogadas - vazamento de memoria por foto
+- [x] IREC-0256 · MÉDIO · `src/components/ClinicalTriage.jsx:448` — Analise prossegue sem nenhuma imagem quando so ha PDF anexado
+- [x] IREC-0257 · MÉDIO · `src/components/ClinicalTriage.jsx:488` — Excecao em handleStartAnalysis deixa a tela travada no spinner para sempre
+- [x] IREC-0258 · MÉDIO · `src/components/ClinicalTriage.jsx:517` — Escala de Braden e respostas do questionario nao sao limpas em 'Nova Triagem'
+- [x] IREC-0259 · MÉDIO · `src/components/ClinicalTriage.jsx:583` — Controles principais sao <div> com onClick, inacessiveis por teclado
+- [x] IREC-0260 · MÉDIO · `src/components/ClinicalTriage.jsx:770` — Botao 'Nao' selecionado fica com texto branco sobre fundo branco translucido
+- [x] IREC-0261 · MÉDIO · `src/components/ClinicalTriage.jsx:1093` — Cabecalho de encaminhamento e sempre 'CASO CRITICO', mesmo em risco moderado
+- [x] IREC-0262 · MÉDIO · `src/components/ClinicalTriage.jsx:1242` — Percentuais de tecido hardcoded (70/20/10) apresentados como analise da foto
+- [x] IREC-0460 · BAIXO · `src/components/ClinicalTriage.jsx:417` — setImage/setPhotoFile chamados dentro do updater de setAttachments (funcao impura)
+- [x] IREC-0461 · BAIXO · `src/components/ClinicalTriage.jsx:476` — Spinner de carregamento e tela de resultado sao renderizados ao mesmo tempo
+- [x] IREC-0462 · BAIXO · `src/components/ClinicalTriage.jsx:487` — Ramo morto: finalResult.painLevel nunca existe no contrato da IA
+- [x] IREC-0463 · BAIXO · `src/components/ClinicalTriage.jsx:618` — Lista mutavel de anexos usa key={idx}
+- [x] IREC-0464 · BAIXO · `src/components/ClinicalTriage.jsx:634` — Botao de remover anexo sem nome acessivel
+- [x] IREC-0465 · BAIXO · `src/components/ClinicalTriage.jsx:819` — Cor e rotulo da intensidade da dor usam limites diferentes
+- [x] IREC-0466 · BAIXO · `src/components/ClinicalTriage.jsx:1008` — Rotulos de formulario sem associacao com os campos
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/ClinicalTriage.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-DoLL_9Jy.js        1,257.50 kB │ gzip: 303.48 kB
+✓ built in 1.62s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 546.69ms
+√ Sync finished in 1.387s
 ```
 
 ---

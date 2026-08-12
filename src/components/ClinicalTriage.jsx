@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { addWoundEntry as addWoundEntryService } from '../services/supabaseService';
-import { analyzeWoundWithAI, isGeminiConfigured } from '../services/geminiService';
+import { analyzeWoundWithAI } from '../services/geminiService';
 
 // Interactive Tissue Overlay Canvas for Segmented Wound Areas
 function WoundTissueOverlay({ entry }) {
@@ -11,25 +11,27 @@ function WoundTissueOverlay({ entry }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, 120, 120);
+    ctx.clearRect(0, 0, 140, 140);
 
-    const necrose = parseFloat(entry.aiTissueAnalysis?.necrose || 0);
-    const fibrina = parseFloat(entry.aiTissueAnalysis?.fibrina || 0);
-    const granulacao = parseFloat(entry.aiTissueAnalysis?.granulacao || 0);
-    const total = necrose + fibrina + granulacao;
+    const necrose = parseFloat(entry?.aiTissueAnalysis?.necrose || 0);
+    const fibrina = parseFloat(entry?.aiTissueAnalysis?.fibrina || 0);
+    const granulacao = parseFloat(entry?.aiTissueAnalysis?.granulacao || 0);
+    const epitelizacao = parseFloat(entry?.aiTissueAnalysis?.epitelizacao || 0);
+    const total = necrose + fibrina + granulacao + epitelizacao;
 
     if (total === 0) return;
 
-    const centerX = 60;
-    const centerY = 60;
-    const radius = 35;
+    const centerX = 70;
+    const centerY = 70;
+    const radius = 45;
 
     let startAngle = -0.5 * Math.PI;
 
     const tissues = [
-      { name: 'Necrose', value: necrose, color: 'rgba(15, 23, 42, 0.75)' },
-      { name: 'Esfacelo / Fibrina', value: fibrina, color: 'rgba(245, 158, 11, 0.75)' },
-      { name: 'Granulação', value: granulacao, color: 'rgba(239, 68, 68, 0.75)' }
+      { name: 'Necrose', value: necrose, color: 'rgba(15, 23, 42, 0.85)' },
+      { name: 'Esfacelo / Fibrina', value: fibrina, color: 'rgba(245, 158, 11, 0.85)' },
+      { name: 'Granulação', value: granulacao, color: 'rgba(239, 68, 68, 0.85)' },
+      { name: 'Epitelização', value: epitelizacao, color: 'rgba(16, 185, 129, 0.85)' }
     ].filter(t => t.value > 0);
 
     tissues.forEach(t => {
@@ -40,7 +42,7 @@ function WoundTissueOverlay({ entry }) {
       ctx.closePath();
       ctx.fillStyle = t.color;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
@@ -61,22 +63,24 @@ function WoundTissueOverlay({ entry }) {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const dist = Math.sqrt((x - 60) * (x - 60) + (y - 60) * (y - 60));
-    if (dist <= 35) {
-      const angle = Math.atan2(y - 60, x - 60);
+    const dist = Math.sqrt((x - 70) * (x - 70) + (y - 70) * (y - 70));
+    if (dist <= 45) {
+      const angle = Math.atan2(y - 70, x - 70);
       let normalizedAngle = angle + 0.5 * Math.PI;
       if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
 
-      const necrose = parseFloat(entry.aiTissueAnalysis?.necrose || 0);
-      const fibrina = parseFloat(entry.aiTissueAnalysis?.fibrina || 0);
-      const granulacao = parseFloat(entry.aiTissueAnalysis?.granulacao || 0);
-      const total = necrose + fibrina + granulacao;
+      const necrose = parseFloat(entry?.aiTissueAnalysis?.necrose || 0);
+      const fibrina = parseFloat(entry?.aiTissueAnalysis?.fibrina || 0);
+      const granulacao = parseFloat(entry?.aiTissueAnalysis?.granulacao || 0);
+      const epitelizacao = parseFloat(entry?.aiTissueAnalysis?.epitelizacao || 0);
+      const total = necrose + fibrina + granulacao + epitelizacao;
 
       let currentAngle = 0;
       const tissues = [
         { name: 'Necrose', value: necrose },
         { name: 'Esfacelo / Fibrina', value: fibrina },
-        { name: 'Granulação', value: granulacao }
+        { name: 'Granulação', value: granulacao },
+        { name: 'Epitelização', value: epitelizacao }
       ].filter(t => t.value > 0);
 
       let found = null;
@@ -88,15 +92,15 @@ function WoundTissueOverlay({ entry }) {
         currentAngle += sliceAngle;
       });
 
-      setHoveredTissue(found || 'Lesão Segmentada');
+      setHoveredTissue(found || 'Segmentação de Tecidos');
     } else {
       setHoveredTissue(null);
     }
   };
 
   return (
-    <div style={{ position: 'absolute', top: 0, left: 0, width: '120px', height: '120px', cursor: 'crosshair' }}>
-      <canvas ref={canvasRef} width={120} height={120} onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredTissue(null)} />
+    <div style={{ position: 'relative', width: '140px', height: '140px', cursor: 'crosshair', margin: '0 auto' }}>
+      <canvas ref={canvasRef} width={140} height={140} onMouseMove={handleMouseMove} onMouseLeave={() => setHoveredTissue(null)} />
       {hoveredTissue && (
         <div style={{
           position: 'absolute',
@@ -200,36 +204,8 @@ const PATIENT_COMPLAINT_CARDS = [
   }
 ];
 
-// Patient Clinical Glossary Database
-const GLOSSARY_DB = {
-  exsudato: { 
-    term: 'Exsudato', 
-    def: 'Secreção ou líquido natural liberado no leito da ferida. Essencial para o transporte de células de cura, mas que precisa ser controlado para não drenar em excesso.' 
-  },
-  granulacao: { 
-    term: 'Tecido de Granulação', 
-    def: 'Pele nova, rica em capilares sanguíneos, avermelhada e brilhante. É o sinal mais forte de cicatrização saudável.' 
-  },
-  esfacelos: { 
-    term: 'Esfacelo', 
-    def: 'Massa amarelada ou esbranquiçada de tecido morto sem circulação. Impede a cicatrização e deve ser removida com curativo adequado.' 
-  },
-  perilesao: { 
-    term: 'Pele Perilesional', 
-    def: 'A pele íntegra que circunda a lesão. Deve ser mantida limpa e protegida com cremes barreira contra a maceração por umidade.' 
-  },
-  desbridamento: { 
-    term: 'Desbridamento Autolítico', 
-    def: 'Limpeza natural onde pomadas como Hidrogel ou Papaína amolecem o tecido morto para remoção sem dor.' 
-  },
-  necrose: { 
-    term: 'Necrose', 
-    def: 'Tecido escuro/preto endurecido desprovido de oxigenação. Exige avaliação especializada para desbridamento instrumental ou químico.' 
-  }
-};
-
-// Fallback algorithm for contingency mode
-const generateLocalFallbackAnalysis = (woundType, lesionStage, clinicalProfile, symptomsText) => {
+// Fallback algorithm for contingency mode (IREC-0007, IREC-0072, IREC-0252)
+const generateLocalFallbackAnalysis = (woundType, lesionStage, clinicalProfile, symptomsText, pain, odor, infectionSigns, fullSymptoms) => {
   const isDiabetes = clinicalProfile?.hasDiabetes;
   const isHypertension = clinicalProfile?.hasHypertension;
   const isPeripheralArterial = clinicalProfile?.hasPeripheralArterialDisease;
@@ -241,42 +217,40 @@ const generateLocalFallbackAnalysis = (woundType, lesionStage, clinicalProfile, 
   let specialist = "";
   let reason = "";
 
-  if (isPeripheralArterial || (isDiabetes && hasAmputationHistory)) {
+  const text = ((symptomsText || '') + ' ' + (fullSymptoms || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  // Escalate severity based on clinical signs (IREC-0072)
+  const isHighPain = pain >= 8;
+  const hasSevereOdor = !!odor;
+  const hasInfection = infectionSigns && infectionSigns !== 'Nenhum';
+  const hasBleedingOrDeep = /\b(sangramento|profundo|gordura)\b/.test(text);
+
+  if (isPeripheralArterial || (isDiabetes && hasAmputationHistory) || (hasInfection && isHighPain) || hasBleedingOrDeep) {
     severity = "Crítico";
     isRedirect = true;
     specialist = "Cirurgião Vascular / Pronto-Socorro";
-    reason = "Paciente com histórico vascular ou de amputação prévia apresentando lesão em membro inferior.";
-  } else if (isDiabetes || isSmoker) {
+    reason = "Paciente apresentando sinais clínicos críticos (possível infecção avançada, lesão profunda ou comprometimento vascular).";
+  } else if (isDiabetes || isSmoker || hasInfection || hasSevereOdor || isHighPain) {
     severity = "Alto Risco";
     isRedirect = true;
-    specialist = "Médico Especialista (Angiologia / Endocrinologia)";
-    reason = "Paciente com fator sistêmico (Diabetes/Tabagismo) que necessita de acompanhamento vascular preventivo.";
-  } else if (isHypertension) {
+    specialist = "Médico Especialista (Angiologia / Estomaterapia)";
+    reason = "Paciente com fatores de risco sistêmicos ou sinais de alerta local (odor/dor intensa/infecção) que necessitam de avaliação especializada.";
+  } else if (isHypertension || pain > 4) {
     severity = "Risco Moderado";
   }
 
-  let baseArea = 2.0;
-  if (lesionStage === 'Estágio II') baseArea = 4.0;
-  else if (lesionStage === 'Estágio III') baseArea = 8.5;
-  else if (lesionStage === 'Estágio IV') baseArea = 15.0;
-
-  const variation = 0.85 + Math.random() * 0.3;
-  const area = Math.round(baseArea * variation * 10) / 10;
-  const length = Math.round(Math.sqrt(area) * 1.3 * 10) / 10;
-  const width = Math.round((area / length) * 10) / 10;
-
+  // Tissue breakdown (IREC-0252)
   let necrose = 0;
   let fibrina = 0;
   let granulacao = 60;
   let epitelizacao = 40;
 
-  const text = (symptomsText || '').toLowerCase();
-  if (text.includes('preto') || text.includes('escuro') || text.includes('necro')) {
+  if (/\b(preto|escuro|necro)\b/.test(text) && !/\b(nao|sem)\s+(preto|escuro|necro)\b/.test(text)) {
     necrose = 30;
     fibrina = 20;
     granulacao = 30;
     epitelizacao = 20;
-  } else if (text.includes('amarel') || text.includes('pus') || text.includes('secrec')) {
+  } else if (/\b(amarel|secrec|pus)\b/.test(text) || (hasInfection && !/\b(nao|sem)\s+(pus|secrec)\b/.test(text))) {
     fibrina = 35;
     granulacao = 45;
     epitelizacao = 20;
@@ -293,14 +267,14 @@ const generateLocalFallbackAnalysis = (woundType, lesionStage, clinicalProfile, 
     lesionStage: lesionStage || "Estágio I",
     severity: severity,
     isRedirect: isRedirect,
-    specialist: specialist,
-    reason: reason,
+    specialist: specialist || "Clínico Geral / Estomaterapeuta",
+    reason: reason || "Acompanhamento clínico de rotina recomendado.",
     geminiSummary: `Queixa registrada: ${symptomsText || 'Avaliação rotineira de pele'}.`,
-    medPalmDiagnosis: `Avaliação algorítmica iRec baseada nas comorbidades cadastradas no prontuário.`,
+    medPalmDiagnosis: `Avaliação algorítmica iRec baseada no protocolo de contingência e sintomas reportados.`,
     treatmentPlan: treatmentPlan,
-    aiAreaCm2: area,
-    aiLengthCm: length,
-    aiWidthCm: width,
+    aiAreaCm2: null, // IREC-0007: Do not generate fake random measurements
+    aiLengthCm: null,
+    aiWidthCm: null,
     aiTissueAnalysis: { necrose, fibrina, granulacao, epitelizacao },
     aiRecommendation: "Seguir conduta prescrita pelo seu médico assistente.",
     clinicalEvolution: "Estável",
@@ -319,9 +293,10 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState('');
   const [result, setResult] = useState(null);
+  const [saveError, setSaveError] = useState('');
 
-  // Form states
-  const [woundType, setWoundType] = useState('Úlcera Venosa');
+  // Form states (IREC-0074: unasked fields default to empty/null if not evaluated)
+  const [woundType, setWoundType] = useState('Vermelhidão / Inflamação de Pele');
   const [appearanceDate, setAppearanceDate] = useState('');
   const [anatomicalLocation, setAnatomicalLocation] = useState('');
   const [lesionStage, setLesionStage] = useState('Estágio I');
@@ -340,13 +315,13 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
   const [patientComplaintType, setPatientComplaintType] = useState('vermelhidao');
   const [dynamicAnswers, setDynamicAnswers] = useState({});
 
-  // Escala de Braden States
+  // Escala de Braden States (IREC-0253)
   const [bradenSensory, setBradenSensory] = useState(4);
   const [bradenMoisture, setBradenMoisture] = useState(4);
   const [bradenActivity, setBradenActivity] = useState(4);
   const [bradenMobility, setBradenMobility] = useState(4);
-  const [bradenNutrition] = useState(3);
-  const [bradenFriction] = useState(3);
+  const [bradenNutrition, setBradenNutrition] = useState(4);
+  const [bradenFriction, setBradenFriction] = useState(3);
 
   const bradenTotalScore = Number(bradenSensory) + Number(bradenMoisture) + Number(bradenActivity) + Number(bradenMobility) + Number(bradenNutrition) + Number(bradenFriction);
   
@@ -363,9 +338,22 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     skinProtectionColor = '#0284c7';
   }
 
-  // Auto-sync complaint type & handle "outro" text area focus
+  // Revoke Blob URLs on unmount (IREC-0255)
   useEffect(() => {
-    switch (patientComplaintType) {
+    return () => {
+      attachments.forEach(att => {
+        if (att.url && att.url.startsWith('blob:')) {
+          URL.revokeObjectURL(att.url);
+        }
+      });
+    };
+  }, [attachments]);
+
+  // Sync complaint type & handle card selection without synchronous effect state setters
+  const handleSelectComplaintCard = (cardId) => {
+    setPatientComplaintType(cardId);
+    setDynamicAnswers({});
+    switch (cardId) {
       case 'vermelhidao':
         setWoundType('Vermelhidão / Inflamação de Pele');
         setLesionStage('Estágio I');
@@ -393,20 +381,22 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
       case 'outro':
         setWoundType('Outra Alteração Registrada');
         setLesionStage('Estágio I');
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-        }
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+          }
+        }, 50);
         break;
       default:
-        setWoundType('Outras Queixas');
+        setWoundType('Vermelhidão / Inflamação de Pele');
         setLesionStage('Estágio I');
     }
-  }, [patientComplaintType]);
+  };
 
   const activeComplaintCard = PATIENT_COMPLAINT_CARDS.find(c => c.id === patientComplaintType);
-
   const [selectedHotspot, setSelectedHotspot] = useState(null);
 
+  // Clean pure state updates without side-effects in setters (IREC-0460)
   const handleAttachmentsChange = (e) => {
     const files = Array.from(e.target.files || []);
     const newAttachments = files.map(file => ({
@@ -414,110 +404,144 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
       url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
     }));
 
-    setAttachments(prev => {
-      const updated = [...prev, ...newAttachments];
-      const lastImage = [...updated].reverse().find(att => att.file.type.startsWith('image/'));
-      if (lastImage) {
-        setImage(lastImage.url);
-        setPhotoFile(lastImage.file);
-      } else {
-        setImage(null);
-        setPhotoFile(null);
-      }
-      return updated;
-    });
+    const updated = [...attachments, ...newAttachments];
+    setAttachments(updated);
+    
+    const lastImage = [...updated].reverse().find(att => att.file?.type?.startsWith('image/'));
+    if (lastImage) {
+      setImage(lastImage.url);
+      setPhotoFile(lastImage.file);
+    } else {
+      setImage(null);
+      setPhotoFile(null);
+    }
     e.target.value = "";
   };
 
   const handleRemoveAttachment = (indexToRemove) => {
-    setAttachments(prev => {
-      const updated = prev.filter((_, idx) => idx !== indexToRemove);
-      const lastImage = [...updated].reverse().find(att => att.file.type.startsWith('image/'));
-      if (lastImage) {
-        setImage(lastImage.url);
-        setPhotoFile(lastImage.file);
-      } else {
-        setImage(null);
-        setPhotoFile(null);
-      }
-      return updated;
-    });
+    const target = attachments[indexToRemove];
+    if (target && target.url && target.url.startsWith('blob:')) {
+      URL.revokeObjectURL(target.url);
+    }
+    const updated = attachments.filter((_, idx) => idx !== indexToRemove);
+    setAttachments(updated);
+    const lastImage = [...updated].reverse().find(att => att.file?.type?.startsWith('image/'));
+    if (lastImage) {
+      setImage(lastImage.url);
+      setPhotoFile(lastImage.file);
+    } else {
+      setImage(null);
+      setPhotoFile(null);
+    }
   };
 
+  const isClinicianWithoutPatient = (clinicalProfile?.role === 'doctor' || clinicalProfile?.role === 'nurse') && !clinicalProfile?.id;
+
   const handleStartAnalysis = async () => {
+    // IREC-0008: Block triage if doctor/nurse has no patient selected
+    if (isClinicianWithoutPatient || !clinicalProfile?.id) {
+      alert("Por favor, selecione um paciente no prontuário/diretório antes de realizar a triagem clínica.");
+      return;
+    }
+
     if (attachments.length === 0) {
       alert("Por favor, selecione ou tire pelo menos uma foto ou anexo da região afetada primeiro.");
       return;
     }
 
-    setIsAnalyzing(true);
-    setAnalysisStep('Analisando imagem e sintomas com o Sistema iRec...');
-
-    const dynamicAnswersText = Object.entries(dynamicAnswers).map(([k, v]) => `${k}: ${v}`).join(', ');
-    const fullSymptoms = `Tipo/Queixa: ${woundType}. Respostas Específicas: ${dynamicAnswersText}. Local Anatômico: ${anatomicalLocation}. Data de Aparecimento: ${appearanceDate}. Estágio: ${lesionStage}. Temperatura Local: ${localTemperature}. Infecção: ${infectionSigns}. Cobertura: ${appliedDressing}. Quantidade: ${dressingQuantity}. Frequência: ${dressingFrequency}. Procedimentos: ${performedProcedures}. Evolução: ${clinicalEvolution}. Sintomas: ${symptomsText}`;
-
-    let finalResult = await analyzeWoundWithAI(photoFile, clinicalProfile, fullSymptoms);
-    
-    if (finalResult && finalResult.isValidWound === false) {
-      alert(finalResult.invalidReason || "A imagem enviada não é uma foto de ferida ou lesão de pele. Por favor, envie uma foto nítida da região afetada.");
-      setIsAnalyzing(false);
-      setAnalysisStep('');
+    // IREC-0256: Require image attachment for computer vision analysis
+    const hasImage = attachments.some(a => a.file?.type?.startsWith('image/'));
+    if (!hasImage) {
+      alert("Para a triagem de imagem, é necessário selecionar ou fotografar pelo menos uma imagem da lesão.");
       return;
     }
 
-    if (!finalResult) {
-      finalResult = generateLocalFallbackAnalysis(woundType, lesionStage, clinicalProfile, symptomsText);
-    }
-
-    if (finalResult.type) setWoundType(finalResult.type);
-    if (finalResult.lesionStage) setLesionStage(finalResult.lesionStage);
-    if (finalResult.clinicalEvolution) setClinicalEvolution(finalResult.clinicalEvolution);
-    
-    setResult(finalResult);
-    setSelectedHotspot(null);
-
-    setAnalysisStep('Gravando no Prontuário do Paciente...');
-    
-    const newEntryData = {
-      date: new Date().toLocaleDateString('pt-BR'),
-      type: finalResult.type || woundType,
-      appearanceDate: appearanceDate,
-      anatomicalLocation: anatomicalLocation,
-      lesionStage: lesionStage,
-      pain: finalResult.painLevel !== undefined ? finalResult.painLevel : pain,
-      exudate: (finalResult.exudate || exudate).toUpperCase(),
-      odor: odor,
-      localTemperature: localTemperature,
-      infectionSigns: infectionSigns,
-      appliedDressing: appliedDressing,
-      dressingQuantity: parseInt(dressingQuantity) || 1,
-      dressingFrequency: dressingFrequency,
-      performedProcedures: performedProcedures,
-      clinicalEvolution: finalResult.clinicalEvolution || clinicalEvolution,
-      photo: image && image.startsWith('blob:') ? '' : (image || ''),
-      aiAreaCm2: finalResult.aiAreaCm2 || null,
-      aiLengthCm: finalResult.aiLengthCm || null,
-      aiWidthCm: finalResult.aiWidthCm || null,
-      aiTissueAnalysis: finalResult.aiTissueAnalysis || {},
-      aiRecommendation: finalResult.aiRecommendation || finalResult.treatmentPlan?.join('\n') || '',
-      clinicalOutcome: clinicalOutcome
-    };
+    setIsAnalyzing(true);
+    setSaveError('');
+    setAnalysisStep('Analisando imagem e sintomas com o Sistema iRec...');
 
     try {
-      const savedEntry = await addWoundEntryService(newEntryData, photoFile, clinicalProfile?.id, attachments);
-      addClinicalEntry(savedEntry);
-    } catch (err) {
-      console.error('Falha ao salvar no prontuário:', err);
-    }
+      const dynamicAnswersText = Object.entries(dynamicAnswers).map(([k, v]) => `${k}: ${v}`).join(', ');
+      const bradenSummary = `Escala Braden (${bradenTotalScore}/23) - Sensorial: ${bradenSensory}, Umidade: ${bradenMoisture}, Atividade: ${bradenActivity}, Mobilidade: ${bradenMobility}, Nutrição: ${bradenNutrition}, Fricção: ${bradenFriction}`;
+      const fullSymptoms = `Tipo/Queixa: ${woundType}. Respostas Específicas: ${dynamicAnswersText}. ${bradenSummary}. Local Anatômico: ${anatomicalLocation || 'Não especificado'}. Data de Aparecimento: ${appearanceDate || 'Não informada'}. Estágio: ${lesionStage}. Odor: ${odor ? 'Sim' : 'Não'}. Temperatura Local: ${localTemperature}. Infecção: ${infectionSigns}. Cobertura: ${appliedDressing || 'Nenhuma'}. Quantidade: ${dressingQuantity}. Frequência: ${dressingFrequency || 'Conforme necessidade'}. Procedimentos: ${performedProcedures || 'Nenhum'}. Evolução: ${clinicalEvolution}. Sintomas: ${symptomsText}`;
 
-    setIsAnalyzing(false);
-    setAnalysisStep('');
+      let finalResult = await analyzeWoundWithAI(photoFile, clinicalProfile, fullSymptoms);
+      
+      if (finalResult && finalResult.isValidWound === false) {
+        alert(finalResult.invalidReason || "A imagem enviada não é uma foto de ferida ou lesão de pele. Por favor, envie uma foto nítida da região afetada.");
+        return;
+      }
+
+      if (!finalResult) {
+        finalResult = generateLocalFallbackAnalysis(woundType, lesionStage, clinicalProfile, symptomsText, pain, odor, infectionSigns, fullSymptoms);
+      }
+
+      if (finalResult.type) setWoundType(finalResult.type);
+      if (finalResult.lesionStage) setLesionStage(finalResult.lesionStage);
+      if (finalResult.clinicalEvolution) setClinicalEvolution(finalResult.clinicalEvolution);
+      
+      setResult(finalResult);
+      setSelectedHotspot(null);
+
+      setAnalysisStep('Gravando no Prontuário do Paciente...');
+      
+      const newEntryData = {
+        date: new Date().toLocaleDateString('pt-BR'),
+        type: finalResult.type || woundType,
+        appearanceDate: appearanceDate || null,
+        anatomicalLocation: anatomicalLocation || null,
+        lesionStage: finalResult.lesionStage || lesionStage, // IREC-0073
+        pain: pain, // IREC-0462
+        exudate: (finalResult.exudate || exudate).toUpperCase(),
+        odor: odor,
+        localTemperature: localTemperature,
+        infectionSigns: infectionSigns,
+        appliedDressing: appliedDressing || null,
+        dressingQuantity: parseInt(dressingQuantity) || 1,
+        dressingFrequency: dressingFrequency || null,
+        performedProcedures: performedProcedures || null,
+        clinicalEvolution: finalResult.clinicalEvolution || clinicalEvolution,
+        bradenScore: bradenTotalScore, // IREC-0254
+        photo: image && image.startsWith('blob:') ? '' : (image || ''),
+        aiAreaCm2: finalResult.aiAreaCm2 || null,
+        aiLengthCm: finalResult.aiLengthCm || null,
+        aiWidthCm: finalResult.aiWidthCm || null,
+        aiTissueAnalysis: finalResult.aiTissueAnalysis || {},
+        aiRecommendation: finalResult.aiRecommendation || (finalResult.treatmentPlan ? finalResult.treatmentPlan.join('\n') : ''),
+        clinicalOutcome: clinicalOutcome
+      };
+
+      try {
+        const savedEntry = await addWoundEntryService(newEntryData, photoFile, clinicalProfile?.id, attachments);
+        if (savedEntry) { // IREC-0075
+          addClinicalEntry(savedEntry);
+        } else {
+          setSaveError("Atenção: Não foi possível salvar o registro no banco de dados.");
+          alert("Aviso: A triagem foi concluída mas ocorreu uma falha ao salvar no prontuário.");
+        }
+      } catch (err) { // IREC-0076
+        console.error('Falha ao salvar no prontuário:', err);
+        setSaveError("Erro de conexão ao gravar registro no prontuário.");
+        alert("Erro ao gravar registro no prontuário. Por favor tente novamente.");
+      }
+    } catch (err) { // IREC-0257
+      console.error('Erro na análise da triagem:', err);
+      alert("Ocorreu um erro inesperado ao processar a triagem clínica.");
+    } finally {
+      setIsAnalyzing(false);
+      setAnalysisStep('');
+    }
   };
 
   const resetTriageForm = () => {
     if (attachmentsInputRef.current) {
       attachmentsInputRef.current.value = "";
     }
+    attachments.forEach(att => {
+      if (att.url && att.url.startsWith('blob:')) {
+        URL.revokeObjectURL(att.url);
+      }
+    });
     setImage(null);
     setPhotoFile(null);
     setPain(3);
@@ -527,7 +551,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     setAttachments([]);
     setPatientComplaintType('vermelhidao');
     setDynamicAnswers({});
-    setWoundType('Úlcera Venosa');
+    setWoundType('Vermelhidão / Inflamação de Pele'); // IREC-0077
     setAppearanceDate('');
     setAnatomicalLocation('');
     setLesionStage('Estágio I');
@@ -539,9 +563,18 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     setPerformedProcedures('');
     setClinicalEvolution('Estável');
     setClinicalOutcome('Tratamento em andamento');
+    setBradenSensory(4); // IREC-0258
+    setBradenMoisture(4);
+    setBradenActivity(4);
+    setBradenMobility(4);
+    setBradenNutrition(4);
+    setBradenFriction(3);
+    setSaveError('');
     setResult(null);
     setSelectedHotspot(null);
   };
+
+  const isHighSeverity = result && (result.isRedirect || ['Alto Risco', 'Crítico'].includes(result.severity)); // IREC-0078
 
   return (
     <div className="animate-fade-in" style={{ width: '100%' }}>
@@ -556,10 +589,25 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
         </h2>
       </div>
 
+      {/* Clinician missing patient alert banner (IREC-0008) */}
+      {isClinicianWithoutPatient && (
+        <div className="glass-card" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.3)', marginBottom: '20px', padding: '16px' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <span style={{ fontSize: '24px' }}>⚠️</span>
+            <div>
+              <h3 style={{ fontSize: '14.5px', color: '#ef4444', fontWeight: '800', margin: '0 0 2px 0' }}>Seleção de Paciente Necessária</h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+                Você está conectado como profissional de saúde. Por favor, selecione um paciente no diretório para que os dados sejam gravados no prontuário correto.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!isAnalyzing && !result && (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
           
-          {/* Card 1: Fotos, Vídeos e Exames do Caso (Glassmorphism + Luz Vazada Esmeralda) */}
+          {/* Card 1: Fotos, Vídeos e Exames do Caso */}
           <div className="glass-card glass-card-emerald-glow" style={{ margin: 0 }}>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
@@ -579,8 +627,9 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
               />
 
               <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-                {/* Interactive Add Photo Button */}
-                <div 
+                {/* Interactive Add Photo Button (IREC-0259: button type="button") */}
+                <button 
+                  type="button"
                   onClick={() => attachmentsInputRef.current?.click()}
                   style={{
                     width: '100px',
@@ -597,27 +646,21 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                     transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                     boxShadow: '0 4px 14px rgba(2, 132, 199, 0.1)'
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
-                    e.currentTarget.style.backgroundColor = 'rgba(2, 132, 199, 0.12)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'none';
-                    e.currentTarget.style.backgroundColor = 'rgba(2, 132, 199, 0.06)';
-                  }}
+                  aria-label="Anexar fotos ou documentos"
                 >
                   <span style={{ fontSize: '26px' }}>📷</span>
                   <span style={{ fontSize: '11px', fontWeight: '800', marginTop: '4px' }}>+ Anexar</span>
-                </div>
+                </button>
 
-                {/* Render Selected Attachments */}
+                {/* Render Selected Attachments (IREC-0463, IREC-0464) */}
                 {attachments.map((fileObj, idx) => {
-                  const isImage = fileObj.file.type?.startsWith('image/');
-                  const isVideo = fileObj.file.type?.startsWith('video/');
+                  const isImage = fileObj.file?.type?.startsWith('image/');
+                  const isVideo = fileObj.file?.type?.startsWith('video/');
+                  const fileKey = `${fileObj.file?.name || 'att'}-${fileObj.file?.lastModified || idx}`;
                   return (
-                    <div key={idx} style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '16px', overflow: 'hidden', border: '1.5px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                    <div key={fileKey} style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '16px', overflow: 'hidden', border: '1.5px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                       {isImage ? (
-                        <img src={fileObj.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="anexo" />
+                        <img src={fileObj.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={fileObj.file?.name || "anexo"} />
                       ) : isVideo ? (
                         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', color: '#10b981' }}>
                           <span style={{ fontSize: '22px' }}>🎥</span>
@@ -626,14 +669,15 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                       ) : (
                         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', color: '#0ea5e9' }}>
                           <span style={{ fontSize: '22px' }}>📄</span>
-                          <span style={{ fontSize: '9.5px', fontWeight: '800', marginTop: '4px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '85px', textAlign: 'center' }}>{fileObj.file.name}</span>
+                          <span style={{ fontSize: '9.5px', fontWeight: '800', marginTop: '4px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '85px', textAlign: 'center' }}>{fileObj.file?.name}</span>
                         </div>
                       )}
                       
-                      {/* Remove button */}
+                      {/* Remove button (IREC-0464) */}
                       <button
                         type="button"
                         onClick={() => handleRemoveAttachment(idx)}
+                        aria-label={`Remover anexo ${fileObj.file?.name || idx + 1}`}
                         style={{
                           position: 'absolute',
                           top: '6px',
@@ -662,7 +706,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </div>
           </div>
 
-          {/* Card 2: Sintomas Básicos em Grid Card Selecionável sem nenhum Select Nativo */}
+          {/* Card 2: Sintomas Básicos (IREC-0259: button type="button") */}
           <div className="glass-card glass-card-cyan-glow" style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
@@ -672,7 +716,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 Selecione a opção que melhor descreve como está a sua pele ou o seu sintoma de saúde:
               </p>
 
-              {/* Custom Interactive Glassmorphic Card Grid */}
+              {/* Complaint Cards Grid */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -682,9 +726,10 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 {PATIENT_COMPLAINT_CARDS.map((card) => {
                   const isSelected = patientComplaintType === card.id;
                   return (
-                    <div
+                    <button
                       key={card.id}
-                      onClick={() => setPatientComplaintType(card.id)}
+                      type="button"
+                      onClick={() => handleSelectComplaintCard(card.id)}
                       style={{
                         padding: '14px 16px',
                         borderRadius: '14px',
@@ -696,7 +741,8 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '4px'
+                        gap: '4px',
+                        textAlign: 'left'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -708,12 +754,12 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                       <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', lineHeight: '1.4', marginTop: '2px' }}>
                         {card.desc}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
 
-              {/* Dynamic Interactive Feedback Banner & Custom Chip Selector Questions (Sem HTML Select) */}
+              {/* Complaint Advice & Dynamic Questions */}
               {activeComplaintCard && (
                 <div className="animate-fade-in" style={{
                   backgroundColor: 'rgba(2, 132, 199, 0.08)',
@@ -729,14 +775,15 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                     {activeComplaintCard.advice}
                   </p>
 
-                  {/* Specific Custom Chip Questions for Selected Card */}
+                  {/* Questions */}
                   {activeComplaintCard.questions && activeComplaintCard.questions.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '8px', borderTop: '1px solid rgba(2, 132, 199, 0.15)' }}>
+                    <fieldset style={{ border: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '8px', borderTop: '1px solid rgba(2, 132, 199, 0.15)' }}>
+                      <legend style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whitespace: 'nowrap', border: 0 }}>Perguntas complementares</legend>
                       {activeComplaintCard.questions.map((q, idx) => (
                         <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                          <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>
                             {q.label}
-                          </label>
+                          </span>
 
                           {q.type === 'boolean' ? (
                             <div style={{ display: 'flex', gap: '8px' }}>
@@ -766,8 +813,8 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                                   borderRadius: '10px',
                                   fontSize: '12px',
                                   fontWeight: '800',
-                                  border: dynamicAnswers[q.key] === 'Não' ? '1px solid rgba(255,255,255,0.4)' : '1px solid var(--border-color)',
-                                  backgroundColor: dynamicAnswers[q.key] === 'Não' ? 'rgba(255,255,255,0.25)' : 'var(--bg-secondary)',
+                                  border: dynamicAnswers[q.key] === 'Não' ? '1px solid var(--text-secondary)' : '1px solid var(--border-color)',
+                                  backgroundColor: dynamicAnswers[q.key] === 'Não' ? 'var(--text-secondary)' : 'var(--bg-secondary)', // IREC-0260 Contrast fix
                                   color: dynamicAnswers[q.key] === 'Não' ? '#ffffff' : 'var(--text-primary)',
                                   cursor: 'pointer',
                                   transition: 'all 0.2s ease'
@@ -777,7 +824,6 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                               </button>
                             </div>
                           ) : q.type === 'select' ? (
-                            /* Custom Glassmorphic Chip Group (Sem HTML Select Nativo) */
                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                               {q.options.map((opt, oIdx) => {
                                 const isOptSelected = dynamicAnswers[q.key] === opt;
@@ -807,20 +853,23 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                           ) : null}
                         </div>
                       ))}
-                    </div>
+                    </fieldset>
                   )}
                 </div>
               )}
 
-              {/* Pain Scale Selector */}
+              {/* Pain Scale Selector (IREC-0465, IREC-0466) */}
               <div style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Intensidade da Dor</label>
-                  <span style={{ fontWeight: '800', fontSize: '13px', color: pain > 6 ? '#ef4444' : pain > 3 ? '#f59e0b' : '#10b981' }}>
+                  <label htmlFor="pain-scale-input" style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>
+                    Intensidade da Dor
+                  </label>
+                  <span style={{ fontWeight: '800', fontSize: '13px', color: pain > 7 ? '#ef4444' : pain > 3 ? '#f59e0b' : '#10b981' }}>
                     {pain}/10 ({pain === 0 ? 'Sem dor' : pain <= 3 ? 'Leve' : pain <= 7 ? 'Moderada' : 'Intensa'})
                   </span>
                 </div>
                 <input 
+                  id="pain-scale-input"
                   type="range" 
                   min="0" 
                   max="10" 
@@ -830,7 +879,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 />
               </div>
 
-              {/* Integrated Daily Mobility & Skin Protection Assessment (Sem Dropdown Nativo) */}
+              {/* Escala de Braden Completa (6 domínios: 6 a 23) (IREC-0253) */}
               <div style={{
                 backgroundColor: 'var(--bg-primary)',
                 padding: '16px',
@@ -840,23 +889,23 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
               }}>
                 <div style={{ marginBottom: '14px' }}>
                   <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', display: 'block' }}>
-                    🚶‍♂️ Mobilidade & Cuidados Diários
+                    🚶‍♂️ Mobilidade & Escala de Braden
                   </span>
                   <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                    Nível de Proteção da Pele: <strong style={{ color: skinProtectionColor }}>{skinProtectionText}</strong>
+                    Nível de Proteção da Pele ({bradenTotalScore}/23): <strong style={{ color: skinProtectionColor }}>{skinProtectionText}</strong>
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {/* Question 1: Sensory */}
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                       Sensibilidade à dor e desconforto:
-                    </label>
+                    </span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
                       {[
                         { val: 4, label: 'Sinto dor normalmente' },
-                        { val: 3, label: 'Pouca dificuldade de sentir dor' },
+                        { val: 3, label: 'Pouca dificuldade de sentir' },
                         { val: 2, label: 'Bastante dificuldade' },
                         { val: 1, label: 'Sem resposta à dor / Acamado' }
                       ].map(opt => (
@@ -885,14 +934,14 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
 
                   {/* Question 2: Moisture */}
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                       Umidade da pele no dia a dia:
-                    </label>
+                    </span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
                       {[
                         { val: 4, label: 'Pele quase sempre seca' },
                         { val: 3, label: 'Molhada de vez em quando' },
-                        { val: 2, label: 'Molhada com muita frequência' },
+                        { val: 2, label: 'Molhada com frequência' },
                         { val: 1, label: 'Molhada o tempo todo' }
                       ].map(opt => (
                         <button
@@ -920,14 +969,14 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
 
                   {/* Question 3: Activity */}
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                       Atividade física e caminhada:
-                    </label>
+                    </span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
                       {[
                         { val: 4, label: 'Caminho frequentemente' },
                         { val: 3, label: 'Caminho curtas distâncias' },
-                        { val: 2, label: 'Confinado à cadeira/poltrona' },
+                        { val: 2, label: 'Confinado à cadeira' },
                         { val: 1, label: 'Totalmente deitado (acamado)' }
                       ].map(opt => (
                         <button
@@ -955,9 +1004,9 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
 
                   {/* Question 4: Mobility */}
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                       Capacidade de mudar de posição:
-                    </label>
+                    </span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
                       {[
                         { val: 4, label: 'Mudo de posição sozinho' },
@@ -987,6 +1036,76 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                       ))}
                     </div>
                   </div>
+
+                  {/* Question 5: Nutrition (IREC-0253) */}
+                  <div>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                      Padrão de Nutrição e Alimentação:
+                    </span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
+                      {[
+                        { val: 4, label: 'Alimentação excelente/normal' },
+                        { val: 3, label: 'Alimentação adequada' },
+                        { val: 2, label: 'Provavelmente inadequada' },
+                        { val: 1, label: 'Muito pobre / Jejum estendido' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => setBradenNutrition(opt.val)}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: '10px',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            textAlign: 'left',
+                            border: bradenNutrition === opt.val ? '1.5px solid var(--primary)' : '1px solid var(--border-color)',
+                            backgroundColor: bradenNutrition === opt.val ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                            color: bradenNutrition === opt.val ? 'var(--primary)' : 'var(--text-primary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Question 6: Friction & Shear (IREC-0253) */}
+                  <div>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                      Fricção e Cisalhamento na Cama/Cadeira:
+                    </span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
+                      {[
+                        { val: 3, label: 'Sem problema aparente' },
+                        { val: 2, label: 'Problema potencial (escorrega)' },
+                        { val: 1, label: 'Problema significativo (fricção frequente)' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => setBradenFriction(opt.val)}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: '10px',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            textAlign: 'left',
+                            border: bradenFriction === opt.val ? '1.5px solid var(--primary)' : '1px solid var(--border-color)',
+                            backgroundColor: bradenFriction === opt.val ? 'var(--primary-glow)' : 'var(--bg-secondary)',
+                            color: bradenFriction === opt.val ? 'var(--primary)' : 'var(--text-primary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                 </div>
               </div>
 
@@ -1003,12 +1122,13 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                 </label>
               </div>
 
-              {/* Symptoms Description Textarea */}
+              {/* Symptoms Description Textarea (IREC-0466) */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', marginBottom: '6px' }}>
+                <label htmlFor="symptoms-text-input" style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700', marginBottom: '6px' }}>
                   Descrição adicional da queixa ou sintomas
                 </label>
                 <textarea
+                  id="symptoms-text-input"
                   ref={textareaRef}
                   value={symptomsText}
                   onChange={(e) => setSymptomsText(e.target.value)}
@@ -1033,8 +1153,9 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </div>
           </div>
 
-          {/* Action Button: Iniciar Análise (Botao Primario com Brilho Neon Shimmer) */}
+          {/* Action Button: Iniciar Análise */}
           <button 
+            type="button"
             className="btn btn-primary" 
             onClick={handleStartAnalysis}
             style={{ width: '100%', height: '54px', fontSize: '15px', borderRadius: '14px' }}
@@ -1065,8 +1186,8 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
         </div>
       )}
 
-      {/* Results Section */}
-      {result && (
+      {/* Results Section (IREC-0461: result && !isAnalyzing) */}
+      {result && !isAnalyzing && (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
           
           {/* Contingency Banner */}
@@ -1075,7 +1196,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <span style={{ fontSize: '24px' }}>⚠️</span>
                 <div>
-                  <h3 style={{ fontSize: '14.5px', color: '#d97706', fontWeight: '800', margin: '0 0 2px 0' }}>Triagem Clínica em Modo Local</h3>
+                  <h3 style={{ fontSize: '14.5px', color: '#d97706', fontWeight: '800', margin: '0 0 2px 0' }}>Triagem Clínica em Modo Local (Contingência)</h3>
                   <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
                     Relatório gerado com base no protocolo de contingência e sintomas informados.
                   </p>
@@ -1083,27 +1204,45 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
               </div>
             </div>
           )}
+
+          {/* Save Error Alert (IREC-0076) */}
+          {saveError && (
+            <div className="glass-card" style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.3)', margin: 0, padding: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ fontSize: '24px' }}>🚨</span>
+                <div>
+                  <h3 style={{ fontSize: '14.5px', color: '#ef4444', fontWeight: '800', margin: '0 0 2px 0' }}>Aviso de Gravação</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+                    {saveError}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           
-          {/* Severe Redirect Alert */}
-          {result.isRedirect ? (
+          {/* Severe Redirect Alert (IREC-0078, IREC-0261) */}
+          {isHighSeverity ? (
             <div className="glass-card glass-card-danger-glow neon-edge-danger" style={{ margin: 0 }}>
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '26px' }}>🚨</span>
                 <div>
-                  <h3 style={{ fontSize: '16px', color: '#ef4444', fontWeight: '900', margin: 0 }}>CASO CRÍTICO - ENCAMINHAMENTO RECOMENDADO</h3>
+                  <h3 style={{ fontSize: '16px', color: '#ef4444', fontWeight: '900', margin: 0 }}>
+                    ENCAMINHAMENTO RECOMENDADO — {result.severity || 'CASO CRÍTICO'}
+                  </h3>
                   <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Triagem Médica Ativa</span>
                 </div>
               </div>
               
               <div style={{ position: 'relative', zIndex: 1, borderTop: '1px solid rgba(239, 68, 68, 0.2)', paddingTop: '12px', marginBottom: '12px' }}>
                 <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)' }}>Especialista Recomendado:</p>
-                <p style={{ fontSize: '16px', fontWeight: '900', color: '#ef4444', marginTop: '2px' }}>{result.specialist}</p>
+                <p style={{ fontSize: '16px', fontWeight: '900', color: '#ef4444', marginTop: '2px' }}>{result.specialist || "Cirurgião Vascular / Estomaterapeuta"}</p>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: '1.4' }}>
-                  <strong>Motivo:</strong> {result.reason}
+                  <strong>Motivo:</strong> {result.reason || "Avaliação especializada recomendada com base nos fatores de risco e sintomas localizados."}
                 </p>
               </div>
 
               <button
+                type="button"
                 onClick={() => setActiveTab('doctors_directory')}
                 className="btn btn-sos"
                 style={{ width: '100%', padding: '12px', fontSize: '13px' }}
@@ -1113,40 +1252,42 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </div>
           ) : (
             <div className="glass-card glass-card-emerald-glow neon-edge-emerald" style={{ margin: 0 }}>
-              <h4 style={{ fontSize: '14.5px', color: '#10b981', fontWeight: '800', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ fontSize: '14.5px', color: '#10b981', fontWeight: '800', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>✅</span>
-                <span>Lesão Liberada para Cuidado Domiciliar Monitorado</span>
-              </h4>
+                <span>Lesão Liberada para Cuidado Domiciliar Monitorado ({result.severity || 'Baixo Risco'})</span>
+              </h3>
               <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0 }}>
                 Baixo risco imediato. Siga as orientações prescritas pelo seu médico assistente.
               </p>
             </div>
           )}
 
-          {/* Interactive Visual Wound Mapping with Responsiveness */}
+          {/* Interactive Visual Wound Mapping (IREC-0251, IREC-0079) */}
           <div className="glass-card glass-card-cyan-glow" style={{ margin: 0 }}>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <h4 style={{ fontSize: '15px', fontWeight: '800', marginBottom: '6px', color: 'var(--text-primary)' }}>
                 🗺️ Mapeamento de Tecidos da Foto
               </h4>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                Clique nos pontos numerados sobre a imagem para entender a análise de cada tecido:
+                Segmentação visual e proporção calculada de tecidos da lesão:
               </p>
 
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
                 
-                {/* Uploaded Image Box with Hotspots */}
+                {/* Uploaded Image Box or Canvas Segment Overlay */}
                 <div style={{ 
                   position: 'relative', 
                   width: '240px', 
-                  height: '180px', 
+                  minHeight: '180px', 
                   borderRadius: '16px', 
                   border: '2px solid var(--border-color)',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   overflow: 'hidden',
                   margin: '0 auto',
+                  padding: '10px',
                   boxShadow: 'var(--shadow-md)',
                   backgroundColor: 'var(--bg-primary)'
                 }}>
@@ -1154,121 +1295,140 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                     <img 
                       src={image} 
                       alt="Ferida analisada" 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '12px' }} 
                     />
                   ) : (
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Sem Imagem</div>
                   )}
 
-                  {/* Hotspots sobre a Imagem */}
-                  <div 
-                    onClick={() => setSelectedHotspot('1')}
-                    style={{ 
-                      position: 'absolute',
-                      bottom: '40px', 
-                      right: '65px',
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '50%',
-                      backgroundColor: selectedHotspot === '1' ? '#ef4444' : 'rgba(239, 68, 68, 0.85)',
-                      color: '#ffffff',
-                      fontWeight: '900',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '2px solid #ffffff',
-                      cursor: 'pointer',
-                      boxShadow: '0 0 12px rgba(239, 68, 68, 0.6)'
-                    }} 
-                  >
-                    1
-                  </div>
-
-                  <div 
-                    onClick={() => setSelectedHotspot('2')}
-                    style={{ 
-                      position: 'absolute',
-                      top: '40px', 
-                      left: '80px',
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '50%',
-                      backgroundColor: selectedHotspot === '2' ? '#f59e0b' : 'rgba(245, 158, 11, 0.85)',
-                      color: '#ffffff',
-                      fontWeight: '900',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '2px solid #ffffff',
-                      cursor: 'pointer',
-                      boxShadow: '0 0 12px rgba(245, 158, 11, 0.6)'
-                    }} 
-                  >
-                    2
-                  </div>
-
-                  <div 
-                    onClick={() => setSelectedHotspot('3')}
-                    style={{ 
-                      position: 'absolute',
-                      bottom: '25px', 
-                      left: '30px',
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '50%',
-                      backgroundColor: selectedHotspot === '3' ? '#10b981' : 'rgba(16, 185, 129, 0.85)',
-                      color: '#ffffff',
-                      fontWeight: '900',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '2px solid #ffffff',
-                      cursor: 'pointer',
-                      boxShadow: '0 0 12px rgba(16, 185, 129, 0.6)'
-                    }} 
-                  >
-                    3
-                  </div>
+                  {/* Render Canvas Overlay if Tissue Analysis Present */}
+                  {result.aiTissueAnalysis && Object.keys(result.aiTissueAnalysis).length > 0 && (
+                    <div style={{ marginTop: '12px' }}>
+                      <WoundTissueOverlay entry={result} />
+                    </div>
+                  )}
                 </div>
 
-                {/* Explanation Box */}
-                <div style={{ flex: '1', minWidth: '220px' }}>
-                  {selectedHotspot === '1' && (
+                {/* Tissue Breakdown Buttons and Explanation Box (IREC-0079: 4 tissues including Necrose) */}
+                <div style={{ flex: '1', minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedHotspot('granulacao')}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: '10px',
+                        fontSize: '11.5px',
+                        fontWeight: '700',
+                        textAlign: 'left',
+                        border: selectedHotspot === 'granulacao' ? '2px solid #ef4444' : '1px solid var(--border-color)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🔴 Granulação: {result.aiTissueAnalysis?.granulacao !== undefined ? result.aiTissueAnalysis.granulacao : 0}%
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedHotspot('fibrina')}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: '10px',
+                        fontSize: '11.5px',
+                        fontWeight: '700',
+                        textAlign: 'left',
+                        border: selectedHotspot === 'fibrina' ? '2px solid #f59e0b' : '1px solid var(--border-color)',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        color: '#f59e0b',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🟡 Esfacelo / Fibrina: {result.aiTissueAnalysis?.fibrina !== undefined ? result.aiTissueAnalysis.fibrina : 0}%
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedHotspot('epitelizacao')}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: '10px',
+                        fontSize: '11.5px',
+                        fontWeight: '700',
+                        textAlign: 'left',
+                        border: selectedHotspot === 'epitelizacao' ? '2px solid #10b981' : '1px solid var(--border-color)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        color: '#10b981',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🟢 Epitelização: {result.aiTissueAnalysis?.epitelizacao !== undefined ? result.aiTissueAnalysis.epitelizacao : 0}%
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedHotspot('necrose')}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: '10px',
+                        fontSize: '11.5px',
+                        fontWeight: '700',
+                        textAlign: 'left',
+                        border: selectedHotspot === 'necrose' ? '2px solid #0f172a' : '1px solid var(--border-color)',
+                        backgroundColor: 'rgba(15, 23, 42, 0.1)',
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ⬛ Necrose: {result.aiTissueAnalysis?.necrose !== undefined ? result.aiTissueAnalysis.necrose : 0}%
+                    </button>
+                  </div>
+
+                  {/* Selected Tissue Details */}
+                  {selectedHotspot === 'granulacao' && (
                     <div className="animate-fade-in" style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'rgba(239, 68, 68, 0.08)', borderLeft: '4px solid #ef4444' }}>
                       <strong style={{ fontSize: '13.5px', color: '#ef4444', display: 'block' }}>
-                        [Ponto 1] Tecido de Granulação ({result.aiTissueAnalysis?.granulacao !== undefined ? result.aiTissueAnalysis.granulacao : 70}%)
+                        Tecido de Granulação ({result.aiTissueAnalysis?.granulacao || 0}%)
                       </strong>
                       <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
                         Pele nova rica em circulação de sangue. A cor vermelha indica bom progresso de cicatrização.
                       </p>
                     </div>
                   )}
-                  {selectedHotspot === '2' && (
+                  {selectedHotspot === 'fibrina' && (
                     <div className="animate-fade-in" style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'rgba(245, 158, 11, 0.08)', borderLeft: '4px solid #f59e0b' }}>
                       <strong style={{ fontSize: '13.5px', color: '#f59e0b', display: 'block' }}>
-                        [Ponto 2] Esfacelo / Tecido Inviável ({result.aiTissueAnalysis?.fibrina !== undefined ? result.aiTissueAnalysis.fibrina : 20}%)
+                        Esfacelo / Tecido Inviável ({result.aiTissueAnalysis?.fibrina || 0}%)
                       </strong>
                       <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
                         Camada amarelada de tecido morto. Deve ser limpa com hidrogel para liberar a pele nova.
                       </p>
                     </div>
                   )}
-                  {selectedHotspot === '3' && (
+                  {selectedHotspot === 'epitelizacao' && (
                     <div className="animate-fade-in" style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'rgba(16, 185, 129, 0.08)', borderLeft: '4px solid #10b981' }}>
                       <strong style={{ fontSize: '13.5px', color: '#10b981', display: 'block' }}>
-                        [Ponto 3] Borda e Pele Perilesional ({result.aiTissueAnalysis?.epitelizacao !== undefined ? result.aiTissueAnalysis.epitelizacao : 10}%)
+                        Epitelização ({result.aiTissueAnalysis?.epitelizacao || 0}%)
                       </strong>
                       <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-                        Pele íntegra ao redor da lesão. Proteja com creme barreira contra maceração por umidade.
+                        Regeneração da camada externa da pele. Proteja contra umidade e atrito.
+                      </p>
+                    </div>
+                  )}
+                  {selectedHotspot === 'necrose' && (
+                    <div className="animate-fade-in" style={{ padding: '14px', borderRadius: '12px', backgroundColor: 'rgba(15, 23, 42, 0.08)', borderLeft: '4px solid #0f172a' }}>
+                      <strong style={{ fontSize: '13.5px', color: 'var(--text-primary)', display: 'block' }}>
+                        Tecido Necrótico ({result.aiTissueAnalysis?.necrose || 0}%)
+                      </strong>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
+                        Tecido escuro/preto endurecido desprovido de oxigenação. Requer avaliação especializada para desbridamento.
                       </p>
                     </div>
                   )}
                   {!selectedHotspot && (
-                    <div style={{ padding: '16px', textAlign: 'center', border: '1px dashed var(--border-color)', borderRadius: '12px', color: 'var(--text-muted)', fontSize: '12.5px' }}>
-                      Toque nos números 1, 2 ou 3 sobre a imagem para ler a análise de cada tecido da lesão.
+                    <div style={{ padding: '14px', textAlign: 'center', border: '1px dashed var(--border-color)', borderRadius: '12px', color: 'var(--text-muted)', fontSize: '12.5px' }}>
+                      Clique nos botões de tecidos acima para ver detalhes de cada tecido mapeado.
                     </div>
                   )}
                 </div>
@@ -1277,13 +1437,13 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </div>
           </div>
 
-          {/* AI Metrics (Área, Comprimento, Largura) */}
+          {/* AI Metrics (Área, Comprimento, Largura) (IREC-0007) */}
           <div className="glass-card" style={{ margin: 0 }}>
             <h3 style={{ fontSize: '15.5px', fontWeight: '800', marginBottom: '14px', color: 'var(--text-primary)' }}>
               📊 Dimensões Estimadas & Tecidos
             </h3>
 
-            {result.aiAreaCm2 && (
+            {result.aiAreaCm2 !== null && result.aiAreaCm2 !== undefined ? (
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: '1fr 1fr 1fr', 
@@ -1307,17 +1467,25 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                   <p style={{ fontSize: '20px', fontWeight: '900', color: 'var(--primary)', margin: '2px 0 0 0' }}>{result.aiWidthCm} cm</p>
                 </div>
               </div>
+            ) : (
+              <div style={{ padding: '12px 16px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', marginBottom: '16px', border: '1px solid var(--border-color)', fontSize: '12.5px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                Medidas de área não mensuradas no modo de contingência local (requer avaliação por régua de calibração ou foto nítida).
+              </div>
             )}
 
-            {/* Conduct / Treatment Plan */}
+            {/* Conduct / Treatment Plan (IREC-0080) */}
             <div>
               <h4 style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '10px' }}>
                 📌 Plano de Conduta & Curativo Sugerido
               </h4>
               <ul style={{ paddingLeft: '18px', fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '8px', margin: 0 }}>
-                {result.treatmentPlan.map((step, idx) => (
-                  <li key={idx} style={{ listStyleType: 'decimal', lineHeight: '1.5' }}>{step}</li>
-                ))}
+                {(result.treatmentPlan && result.treatmentPlan.length > 0) ? (
+                  result.treatmentPlan.map((step, idx) => (
+                    <li key={idx} style={{ listStyleType: 'decimal', lineHeight: '1.5' }}>{step}</li>
+                  ))
+                ) : (
+                  <li style={{ listStyleType: 'none' }}>Manter a higienização com soro fisiológico e seguir as orientações do profissional de saúde.</li>
+                )}
               </ul>
             </div>
           </div>
@@ -1325,6 +1493,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
           {/* Action Buttons */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <button 
+              type="button"
               className="btn btn-primary" 
               onClick={resetTriageForm}
               style={{ padding: '16px', fontSize: '14px' }}
@@ -1334,6 +1503,7 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
             </button>
 
             <button 
+              type="button"
               className="btn btn-secondary" 
               onClick={() => {
                 resetTriageForm();
