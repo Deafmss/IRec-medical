@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { speakNaturalText } from '../utils/speechUtils';
 
-export function AccessibleTelemedicineView({ currentUser, setActiveTab, onStartVideoCall }) {
+export function AccessibleTelemedicineView({ setActiveTab, onStartVideoCall }) {
   useEffect(() => {
     speakNaturalText("Para falar por vídeo com o seu profissional de saúde, aperte no botão verde grande na tela.");
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
 
   const triggerVibration = () => {
@@ -60,6 +65,7 @@ export function AccessibleTelemedicineView({ currentUser, setActiveTab, onStartV
         </div>
 
         <button
+          type="button"
           onClick={() => speakNaturalText("Para falar por vídeo com o seu profissional de saúde, aperte no botão verde grande na tela.")}
           style={{
             backgroundColor: '#0284c7',
@@ -82,6 +88,7 @@ export function AccessibleTelemedicineView({ currentUser, setActiveTab, onStartV
 
       {/* GIANT CALL BUTTON */}
       <button
+        type="button"
         onClick={() => {
           triggerVibration();
           onStartVideoCall();
@@ -111,6 +118,7 @@ export function AccessibleTelemedicineView({ currentUser, setActiveTab, onStartV
 
       {/* GIANT RETURN BUTTON */}
       <button
+        type="button"
         onClick={() => {
           triggerVibration();
           setActiveTab('dashboard');
@@ -140,6 +148,11 @@ export function AccessibleTelemedicineView({ currentUser, setActiveTab, onStartV
 export function AccessibleUploadView({ setActiveTab, onPhotoTaken }) {
   useEffect(() => {
     speakNaturalText("Aperte no botão roxo grande para abrir a câmera e tirar a foto da ferida ou da pele.");
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
 
   const triggerVibration = () => {
@@ -147,11 +160,14 @@ export function AccessibleUploadView({ setActiveTab, onPhotoTaken }) {
   };
 
   const handleFileSelect = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       triggerVibration();
       const reader = new FileReader();
       reader.onloadend = () => {
+        if (reader.result && onPhotoTaken) {
+          onPhotoTaken(reader.result);
+        }
         alert("Foto capturada com sucesso! Nossa equipe de enfermagem receberá sua imagem.");
         setActiveTab('dashboard');
       };
@@ -195,7 +211,8 @@ export function AccessibleUploadView({ setActiveTab, onPhotoTaken }) {
         </div>
 
         <button
-          onClick={() => speakText("Aperte no botão roxo grande para abrir a câmera e tirar a foto da ferida ou da pele.")}
+          type="button"
+          onClick={() => speakNaturalText("Aperte no botão roxo grande para abrir a câmera e tirar a foto da ferida ou da pele.")}
           style={{
             backgroundColor: '#6366f1',
             color: '#ffffff',

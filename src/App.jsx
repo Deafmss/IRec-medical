@@ -28,7 +28,7 @@ import UserProfilePage from './components/UserProfilePage';
 import ReportPDFGenerator from './components/ReportPDFGenerator';
 import VitalsTelemetry from './components/VitalsTelemetry';
 import WoundEvolutionComparator from './components/WoundEvolutionComparator';
-import { getClinicalProfile, getWoundEntries, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
+import { getClinicalProfile, getWoundEntries, addWoundEntry, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
 import { generatePersonalizedProtocol } from './services/geminiService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -796,7 +796,30 @@ export default function App() {
         );
       case 'upload':
         if (uiMode === 'accessible' && currentUser?.role === 'patient') {
-          return <AccessibleUploadView setActiveTab={setActiveTab} />;
+          return (
+            <AccessibleUploadView 
+              setActiveTab={setActiveTab} 
+              onPhotoTaken={async (photoDataUri) => {
+                const newEntry = {
+                  id: `acc_wound_${Date.now()}`,
+                  type: 'Ferida / Lesão em acompanhamento',
+                  date: new Date().toLocaleDateString('pt-BR'),
+                  photo: photoDataUri,
+                  pain: 3,
+                  aiAreaCm2: null,
+                  notes: 'Foto capturada via Modo Fácil Acessível'
+                };
+                addClinicalEntryLocal(newEntry);
+                if (clinicalProfile?.id) {
+                  try {
+                    await addWoundEntry(clinicalProfile.id, newEntry);
+                  } catch (err) {
+                    console.warn("Falha ao salvar entrada de ferida no Supabase:", err);
+                  }
+                }
+              }}
+            />
+          );
         }
         return (
           <ClinicalTriage 

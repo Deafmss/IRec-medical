@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 292 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 307 corrigidos**
 
 ---
 
@@ -464,28 +464,40 @@ $ npx cap sync
 
 ---
 
-## 10. Modo Fácil (acessível) — 0/15
+## 10. Modo Fácil (acessível) — 15/15
 
-- [ ] IREC-0002 · CRÍTICO · `src/components/AccessibleSubViews.jsx:154` — Foto da ferida no modo acessível é descartada, mas o app afirma que a enfermagem recebeu a imagem
-- [ ] IREC-0003 · CRÍTICO · `src/components/AccessibleSubViews.jsx:198` — speakText não existe neste arquivo: botão de áudio do Modo Fácil quebra
-- [ ] IREC-0043 · ALTO · `src/components/AccessibleDashboard.jsx:196` — Catch da triagem por voz devolve orientação tranquilizadora 'Verde' para qualquer sintoma, inclusive graves
-- [ ] IREC-0044 · ALTO · `src/components/AccessibleSubViews.jsx:198` — Botão de áudio do modo acessível chama função inexistente (speakText) e quebra em runtime
-- [ ] IREC-0205 · MÉDIO · `src/components/AccessibleDashboard.jsx:31` — Sem cleanup de reconhecimento de voz e síntese de fala no unmount (áudio vaza entre telas e setState após unmount)
-- [ ] IREC-0206 · MÉDIO · `src/components/AccessibleDashboard.jsx:53` — Ids de tarefa baseados no índice do medicamento marcam a tarefa errada quando a lista é editada
-- [ ] IREC-0207 · MÉDIO · `src/components/AccessibleDashboard.jsx:183` — Gravação da triagem usa snapshot obsoleto do perfil e pode perder alertas / ser sobrescrita pelo polling
-- [ ] IREC-0208 · MÉDIO · `src/components/AccessibleDashboard.jsx:225` — Parar a gravação de voz não interrompe o reconhecimento: a triagem dispara sozinha depois
-- [ ] IREC-0209 · MÉDIO · `src/components/AccessibleDashboard.jsx:351` — Botão principal de voz é uma div clicável, sem foco, role ou nome acessível
-- [ ] IREC-0210 · MÉDIO · `src/components/AccessibleDashboard.jsx:453` — Card afirma 'Registrado automaticamente na ficha médica' mesmo quando nada foi salvo
-- [ ] IREC-0211 · MÉDIO · `src/components/AccessibleDashboard.jsx:519` — Texto invisível no tema claro: var(--text-primary) sobre fundo escuro fixo #1e293b
-- [ ] IREC-0212 · MÉDIO · `src/components/AccessibleSubViews.jsx:5` — Narração automática no mount sem cleanup: fala duplicada em StrictMode e áudio que não para ao sair da tela
-- [ ] IREC-0426 · BAIXO · `src/components/AccessibleDashboard.jsx:78` — Permissão de notificação negada: botão permanece na tela e o clique não dá nenhum retorno ao usuário
-- [ ] IREC-0427 · BAIXO · `src/components/AccessibleDashboard.jsx:141` — Estado selectedSymptomTitle é gravado mas nunca renderizado: o card de resposta não identifica o sintoma
-- [ ] IREC-0428 · BAIXO · `src/components/AccessibleDashboard.jsx:460` — Botão 'AGENDAR CONSULTA POR VÍDEO NO APP' leva para a listagem de enfermeiros, não para agendamento
+- [x] IREC-0002 · CRÍTICO · `src/components/AccessibleSubViews.jsx:154` — Foto da ferida no modo acessível é descartada, mas o app afirma que a enfermagem recebeu a imagem
+- [x] IREC-0003 · CRÍTICO · `src/components/AccessibleSubViews.jsx:198` — speakText não existe neste arquivo: botão de áudio do Modo Fácil quebra
+- [x] IREC-0043 · ALTO · `src/components/AccessibleDashboard.jsx:196` — Catch da triagem por voz devolve orientação tranquilizadora 'Verde' para qualquer sintoma, inclusive graves
+- [x] IREC-0044 · ALTO · `src/components/AccessibleSubViews.jsx:198` — Botão de áudio do modo acessível chama função inexistente (speakText) e quebra em runtime
+- [x] IREC-0205 · MÉDIO · `src/components/AccessibleDashboard.jsx:31` — Sem cleanup de reconhecimento de voz e síntese de fala no unmount (áudio vaza entre telas e setState após unmount)
+- [x] IREC-0206 · MÉDIO · `src/components/AccessibleDashboard.jsx:53` — Ids de tarefa baseados no índice do medicamento marcam a tarefa errada quando a lista é editada
+- [x] IREC-0207 · MÉDIO · `src/components/AccessibleDashboard.jsx:183` — Gravação da triagem usa snapshot obsoleto do perfil e pode perder alertas / ser sobrescrita pelo polling
+- [x] IREC-0208 · MÉDIO · `src/components/AccessibleDashboard.jsx:225` — Parar a gravação de voz não interrompe o reconhecimento: a triagem dispara sozinha depois
+- [x] IREC-0209 · MÉDIO · `src/components/AccessibleDashboard.jsx:351` — Botão principal de voz é uma div clicável, sem foco, role ou nome acessível
+- [x] IREC-0210 · MÉDIO · `src/components/AccessibleDashboard.jsx:453` — Card afirma 'Registrado automaticamente na ficha médica' mesmo quando nada foi salvo
+- [x] IREC-0211 · MÉDIO · `src/components/AccessibleDashboard.jsx:519` — Texto invisível no tema claro: var(--text-primary) sobre fundo escuro fixo #1e293b
+- [x] IREC-0212 · MÉDIO · `src/components/AccessibleSubViews.jsx:5` — Narração automática no mount sem cleanup: fala duplicada em StrictMode e áudio que não para ao sair da tela
+- [x] IREC-0426 · BAIXO · `src/components/AccessibleDashboard.jsx:78` — Permissão de notificação negada: botão permanece na tela e o clique não dá nenhum retorno ao usuário
+- [x] IREC-0427 · BAIXO · `src/components/AccessibleDashboard.jsx:141` — Estado selectedSymptomTitle é gravado mas nunca renderizado: o card de resposta não identifica o sintoma
+- [x] IREC-0428 · BAIXO · `src/components/AccessibleDashboard.jsx:460` — Botão 'AGENDAR CONSULTA POR VÍDEO NO APP' leva para a listagem de enfermeiros, não para agendamento
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/AccessibleDashboard.jsx src/components/AccessibleSubViews.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-DxcMqtTl.js        1,272.07 kB │ gzip: 307.62 kB
+✓ built in 1.50s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 484.77ms
+√ Sync finished in 1.112s
 ```
 
 ---

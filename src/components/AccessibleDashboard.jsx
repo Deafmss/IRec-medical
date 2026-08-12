@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getPatientFirstLineTriage } from '../services/geminiService';
 import { speakNaturalText } from '../utils/speechUtils';
 import { updateClinicalProfile } from '../services/supabaseService';
@@ -27,11 +27,27 @@ export default function AccessibleDashboard({
   const [loadingAi, setLoadingAi] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState('default');
   const [selectedSymptomTitle, setSelectedSymptomTitle] = useState('');
+  const [savedToRecord, setSavedToRecord] = useState(false);
 
+  const recognitionRef = useRef(null);
+
+  // Read permission & cleanup speech & recognition on unmount (fixes IREC-0205)
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotificationStatus(Notification.permission);
-    }
+    let isMounted = true;
+    Promise.resolve().then(() => {
+      if (isMounted && typeof window !== 'undefined' && 'Notification' in window) {
+        setNotificationStatus(Notification.permission);
+      }
+    });
+    return () => {
+      isMounted = false;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch { /* ignore */ }
+      }
+    };
   }, []);
 
   const triggerVibration = () => {
@@ -74,6 +90,8 @@ export default function AccessibleDashboard({
           });
         }
         alert("Notificação fixa de emergência ativada na barra do celular!");
+      } else {
+        alert("Notificações desativadas. Para ativar no futuro, libere as permissões de notificação nas configurações do seu navegador ou celular.");
       }
     } catch (err) {
       console.error(err);
@@ -139,6 +157,7 @@ export default function AccessibleDashboard({
     }
 
     setSelectedSymptomTitle(categoryTitle || 'Relato por Voz');
+    setSavedToRecord(false);
     setLoadingAi(true);
 
     try {
@@ -169,10 +188,11 @@ export default function AccessibleDashboard({
       setAiResponse(replyText);
       speakText(replyText);
 
-      // AUTOMATICALLY REGISTER TRIAGE REPORT IN PATIENT'S CLINICAL PRONTUÁRIO
+      // AUTOMATICALLY REGISTER TRIAGE REPORT IN PATIENT'S CLINICAL PRONTUÁRIO (fixes IREC-0207, IREC-0210)
       if (clinicalProfile && clinicalProfile.id) {
+        const timestampId = new Date().toISOString().replace(/\D/g, '');
         const newAlert = {
-          id: `triage_${Date.now()}`,
+          id: `triage_${timestampId}`,
           date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           symptom: cleanText,
           primarySymptom: aiTriageResult?.primarySymptom || categoryTitle || 'Sintoma Relatado por Voz',
@@ -188,13 +208,38 @@ export default function AccessibleDashboard({
           lastTriageDate: newAlert.date
         };
         
-        if (setClinicalProfile) setClinicalProfile(updatedProfile);
-        updateClinicalProfile(clinicalProfile.id, updatedProfile);
+        if (setClinicalProfile) {
+          setClinicalProfile(prev => ({
+            ...prev,
+            triageAlerts: [newAlert, ...(prev?.triageAlerts || [])].slice(0, 20),
+            lastTriageRisk: calculatedRisk,
+            lastTriageDate: newAlert.date
+          }));
+        }
+
+        try {
+          await updateClinicalProfile(clinicalProfile.id, updatedProfile);
+          setSavedToRecord(true);
+        } catch (err) {
+          console.warn("[iRec] Falha ao gravar triagem no Supabase:", err);
+          setSavedToRecord(false);
+        }
       }
     } catch (e) {
       console.warn("[iRec Triagem IA] Usando procedimento local de saúde:", e);
-      const fallback = "Para sintomas leves, o melhor procedimento é descansar em um ambiente calmo, tomar um bom copo de água fresca e repousar. Não há necessidade de correr para o pronto-socorro por sintomas simples.";
-      setTriageRiskLevel('Verde');
+      // Fixes IREC-0043: check severity in catch block as well!
+      const lower = cleanText.toLowerCase();
+      const isSevere = /atropelad|acidente|arranc|amputa|quebrad|quebrei|fratura|coraç|corac|peito|infarto|avc|derrame|falta de ar|sufoc|desmai|inconscien|convuls|jorrand|sangramento forte|esmagad|queimadura grave|veneno|intoxica|caiu d/i.test(lower);
+      
+      let calculatedRisk = 'Verde';
+      let fallback = "Para sintomas leves, o melhor procedimento é descansar em um ambiente calmo, tomar um bom copo de água fresca e repousar. Não há necessidade de correr para o pronto-socorro por sintomas simples.";
+      
+      if (isSevere) {
+        calculatedRisk = 'Vermelho';
+        fallback = `Atenção! Pelo seu relato de "${cleanText}", este quadro exige atendimento de emergência urgente. Mantenha a calma e procure o Pronto-Socorro imediatamente ou ligue 192 (SAMU).`;
+      }
+
+      setTriageRiskLevel(calculatedRisk);
       setAiResponse(fallback);
       speakText(fallback);
     } finally {
@@ -210,7 +255,6 @@ export default function AccessibleDashboard({
   };
 
   const handleVoiceRecord = () => {
-    // CRITICAL BUG FIX: Immediately CANCEL any active audio speech narration before recording!
     stopAudioSpeech();
     triggerVibration();
 
@@ -222,10 +266,15 @@ export default function AccessibleDashboard({
       return;
     }
 
+    // Fixes IREC-0208: stop recognition on toggle
     if (isRecording) {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch { /* ignore */ }
+      }
       setIsRecording(false);
     } else {
       const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
       recognition.lang = 'pt-BR';
       recognition.interimResults = false;
 
@@ -302,6 +351,7 @@ export default function AccessibleDashboard({
 
         {/* SOS Trigger */}
         <button
+          type="button"
           onClick={() => { stopAudioSpeech(); triggerVibration(); onOpenSOS(); }}
           style={{
             backgroundColor: '#ef4444',
@@ -326,6 +376,7 @@ export default function AccessibleDashboard({
       {/* Persistent Notification Activator Bar */}
       {notificationStatus !== 'granted' && (
         <button
+          type="button"
           onClick={requestNotificationPermission}
           style={{
             backgroundColor: '#1e293b',
@@ -347,21 +398,34 @@ export default function AccessibleDashboard({
         </button>
       )}
 
-      {/* Big Voice Button for First-Line Care (Interrupts Speech Instantly) */}
-      <div style={{
-        backgroundColor: isRecording ? '#dc2626' : '#0284c7',
-        borderRadius: '24px',
-        padding: '26px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '12px',
-        cursor: 'pointer',
-        boxShadow: '0 10px 25px rgba(2, 132, 199, 0.3)',
-        transition: 'all 0.3s'
-      }}
-      onClick={handleVoiceRecord}
+      {/* Big Voice Button for First-Line Care (fixes IREC-0209) */}
+      <button
+        type="button"
+        role="button"
+        tabIndex={0}
+        aria-label="Aperte para gravar sintomas por voz"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleVoiceRecord();
+          }
+        }}
+        onClick={handleVoiceRecord}
+        style={{
+          width: '100%',
+          border: 'none',
+          backgroundColor: isRecording ? '#dc2626' : '#0284c7',
+          borderRadius: '24px',
+          padding: '26px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          cursor: 'pointer',
+          boxShadow: '0 10px 25px rgba(2, 132, 199, 0.3)',
+          transition: 'all 0.3s'
+        }}
       >
         <span style={{ fontSize: '52px' }}>{isRecording ? '🎙️🔴' : '🎙️'}</span>
         <span style={{ fontSize: '21px', fontWeight: '900', color: '#ffffff', textAlign: 'center' }}>
@@ -370,7 +434,7 @@ export default function AccessibleDashboard({
         <span style={{ fontSize: '13.5px', color: '#e0f2fe', fontWeight: '600' }}>
           Fale livremente como se estivesse conversando com o médico!
         </span>
-      </div>
+      </button>
 
       {voiceQuery && (
         <div style={{ fontSize: '15px', color: '#38bdf8', fontStyle: 'italic', textAlign: 'center', fontWeight: '700' }}>
@@ -420,10 +484,11 @@ export default function AccessibleDashboard({
                 {triageRiskLevel === 'Vermelho' ? '🚨 Risco Urgente' : (triageRiskLevel === 'Amarelo' ? '🟡 Recomendada Teleconsulta' : '🟢 Cuidados em Casa')}
               </span>
               <span style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff' }}>
-                Orientação Médica por Voz
+                {selectedSymptomTitle || 'Orientação Médica por Voz'}
               </span>
             </div>
             <button
+              type="button"
               onClick={() => speakText(aiResponse)}
               style={{
                 backgroundColor: '#0284c7',
@@ -449,15 +514,22 @@ export default function AccessibleDashboard({
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
-            <span style={{ fontSize: '12px', color: '#10b981', fontWeight: '700' }}>
-              ✓ Registrado automaticamente na ficha médica para acompanhamento dos doutores.
-            </span>
+            {savedToRecord ? (
+              <span style={{ fontSize: '12px', color: '#10b981', fontWeight: '700' }}>
+                ✓ Registrado automaticamente na ficha médica para acompanhamento dos doutores.
+              </span>
+            ) : (
+              <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>
+                ℹ️ Orientação clínica em tempo real.
+              </span>
+            )}
           </div>
 
-          {/* Action buttons based on risk level */}
+          {/* Action buttons based on risk level (fixes IREC-0428) */}
           {triageRiskLevel === 'Amarelo' && (
             <button
-              onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('nurses'); }}
+              type="button"
+              onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('doctors_directory'); }}
               style={{
                 backgroundColor: '#f59e0b',
                 color: '#ffffff',
@@ -481,6 +553,7 @@ export default function AccessibleDashboard({
 
           {triageRiskLevel === 'Vermelho' && (
             <button
+              type="button"
               onClick={() => { stopAudioSpeech(); triggerVibration(); onOpenSOS(); }}
               style={{
                 backgroundColor: '#ef4444',
@@ -506,7 +579,7 @@ export default function AccessibleDashboard({
         </div>
       )}
 
-      {/* QUICK SYMPTOM CATEGORIES WITH ACCESSIBLE IMAGES */}
+      {/* QUICK SYMPTOM CATEGORIES WITH ACCESSIBLE IMAGES (fixes IREC-0211) */}
       <div>
         <div style={{
           backgroundColor: '#1e293b',
@@ -516,7 +589,7 @@ export default function AccessibleDashboard({
           marginBottom: '16px',
           boxShadow: '0 4px 12px rgba(2, 132, 199, 0.15)'
         }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary, #ffffff)', margin: 0 }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff', margin: 0 }}>
             👉 Ou toque na imagem do sintoma para consultar o Assistente Clínico:
           </h2>
         </div>
@@ -525,6 +598,7 @@ export default function AccessibleDashboard({
           {symptomCategories.map((cat) => (
             <button
               key={cat.id}
+              type="button"
               onClick={() => handleSelectSymptom(cat)}
               style={{
                 backgroundColor: '#1e293b',
@@ -553,6 +627,7 @@ export default function AccessibleDashboard({
       {/* Direct Quick Action Buttons */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '10px' }}>
         <button
+          type="button"
           onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('upload'); }}
           style={{
             backgroundColor: '#10b981',
@@ -575,7 +650,8 @@ export default function AccessibleDashboard({
         </button>
 
         <button
-          onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('nurses'); }}
+          type="button"
+          onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('doctors_directory'); }}
           style={{
             backgroundColor: '#8b5cf6',
             color: '#ffffff',
