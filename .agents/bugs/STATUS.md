@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 441 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 467 corrigidos**
 
 ---
 
@@ -728,39 +728,51 @@ $ npx cap sync
 
 ---
 
-## 15. Login e cadastro — 0/26
+## 15. Login e cadastro — 26/26
 
-- [ ] IREC-0015 · CRÍTICO · `src/components/Login.jsx:146` — Cadastro de médico/enfermeiro sem nenhuma verificação de credencial, já marcado como 'verified'
-- [ ] IREC-0112 · ALTO · `src/components/Login.jsx:131` — CPF, cidade e estado exigidos como obrigatórios são descartados e nunca persistidos
-- [ ] IREC-0113 · ALTO · `src/components/Login.jsx:198` — Login social offline gera novo id a cada acesso e perde todo o histórico do usuário
-- [ ] IREC-0114 · ALTO · `src/components/Login.jsx:622` — Enfermeiro é cadastrado com role 'doctor' e o papel 'nurse' nunca é criado
-- [ ] IREC-0300 · MÉDIO · `src/components/Login.jsx:142` — COREN do enfermeiro é gravado no campo 'crm' sem prefixo, quebrando a heurística de exibição
-- [ ] IREC-0301 · MÉDIO · `src/components/Login.jsx:152` — Botão reabilita durante o setTimeout de 1,5 s e permite cadastro duplicado
-- [ ] IREC-0302 · MÉDIO · `src/components/Login.jsx:176` — E-mail sem trim/lowercase impede o login no modo contingência local
-- [ ] IREC-0303 · MÉDIO · `src/components/Login.jsx:177` — onLoginSuccess é chamado com profile possivelmente null e derruba o app
-- [ ] IREC-0304 · MÉDIO · `src/components/Login.jsx:181` — Senha sem validação mínima: erro cru do Supabase em inglês é exibido ao usuário
-- [ ] IREC-0305 · MÉDIO · `src/components/Login.jsx:220` — JSON.parse de 'irec_users' sem try/catch e sem validar que é array
-- [ ] IREC-0306 · MÉDIO · `src/components/Login.jsx:235` — Tokens OAuth do hash são interpretados como aba e persistidos em localStorage
-- [ ] IREC-0307 · MÉDIO · `src/components/Login.jsx:235` — redirectTo com window.location.origin quebra o login Google no app nativo
-- [ ] IREC-0308 · MÉDIO · `src/components/Login.jsx:238` — Loading do login social nunca é encerrado no caminho de sucesso
-- [ ] IREC-0309 · MÉDIO · `src/components/Login.jsx:252` — Busca de especialidade não normaliza acentos e induz duplicata sem acento
-- [ ] IREC-0310 · MÉDIO · `src/components/Login.jsx:590` — Seletor de papel é div clicável: inacessível por teclado e para leitor de tela
-- [ ] IREC-0311 · MÉDIO · `src/components/Login.jsx:842` — Overlay fixed em tela cheia com o dropdown aberto engole o primeiro clique em qualquer botão
-- [ ] IREC-0508 · BAIXO · `src/components/Login.jsx:115` — Validação aceita campos preenchidos só com espaços
-- [ ] IREC-0509 · BAIXO · `src/components/Login.jsx:121` — CPF é validado limpo mas persistido com máscara, gerando formatos divergentes
-- [ ] IREC-0510 · BAIXO · `src/components/Login.jsx:122` — CPF aceito só por quantidade de dígitos, sem dígito verificador
-- [ ] IREC-0511 · BAIXO · `src/components/Login.jsx:263` — Especialidade armazenada como string separada por vírgula corrompe entradas customizadas
-- [ ] IREC-0512 · BAIXO · `src/components/Login.jsx:609` — Clicar novamente no papel já selecionado apaga os dados profissionais digitados
-- [ ] IREC-0513 · BAIXO · `src/components/Login.jsx:638` — Labels sem htmlFor e inputs sem id/aria-label em todo o formulário
-- [ ] IREC-0514 · BAIXO · `src/components/Login.jsx:692` — Data de nascimento no futuro é aceita e gera idade negativa nas telas clínicas
-- [ ] IREC-0515 · BAIXO · `src/components/Login.jsx:729` — UF é armazenada em minúsculas: o uppercase é apenas visual
-- [ ] IREC-0516 · BAIXO · `src/components/Login.jsx:801` — Botão de remover especialidade sem nome acessível
-- [ ] IREC-0517 · BAIXO · `src/components/Login.jsx:925` — Botão do Google não é desabilitado durante loading
+- [x] IREC-0015 · CRÍTICO · `src/components/Login.jsx:146` — Cadastro de médico/enfermeiro sem nenhuma verificação de credencial, já marcado como 'verified'
+- [x] IREC-0112 · ALTO · `src/components/Login.jsx:131` — CPF, cidade e estado exigidos como obrigatórios são descartados e nunca persistidos
+- [x] IREC-0113 · ALTO · `src/components/Login.jsx:198` — Login social offline gera novo id a cada acesso e perde todo o histórico do usuário
+- [x] IREC-0114 · ALTO · `src/components/Login.jsx:622` — Enfermeiro é cadastrado com role 'doctor' e o papel 'nurse' nunca é criado
+- [x] IREC-0300 · MÉDIO · `src/components/Login.jsx:142` — COREN do enfermeiro é gravado no campo 'crm' sem prefixo, quebrando a heurística de exibição
+- [x] IREC-0301 · MÉDIO · `src/components/Login.jsx:152` — Botão reabilita durante o setTimeout de 1,5 s e permite cadastro duplicado
+- [x] IREC-0302 · MÉDIO · `src/components/Login.jsx:176` — E-mail sem trim/lowercase impede o login no modo contingência local
+- [x] IREC-0303 · MÉDIO · `src/components/Login.jsx:177` — onLoginSuccess é chamado com profile possivelmente null e derruba o app
+- [x] IREC-0304 · MÉDIO · `src/components/Login.jsx:181` — Senha sem validação mínima: erro cru do Supabase em inglês é exibido ao usuário
+- [x] IREC-0305 · MÉDIO · `src/components/Login.jsx:220` — JSON.parse de 'irec_users' sem try/catch e sem validar que é array
+- [x] IREC-0306 · MÉDIO · `src/components/Login.jsx:235` — Tokens OAuth do hash são interpretados como aba e persistidos em localStorage
+- [x] IREC-0307 · MÉDIO · `src/components/Login.jsx:235` — redirectTo com window.location.origin quebra o login Google no app nativo
+- [x] IREC-0308 · MÉDIO · `src/components/Login.jsx:238` — Loading do login social nunca é encerrado no caminho de sucesso
+- [x] IREC-0309 · MÉDIO · `src/components/Login.jsx:252` — Busca de especialidade não normaliza acentos e induz duplicata sem acento
+- [x] IREC-0310 · MÉDIO · `src/components/Login.jsx:590` — Seletor de papel é div clicável: inacessível por teclado e para leitor de tela
+- [x] IREC-0311 · MÉDIO · `src/components/Login.jsx:842` — Overlay fixed em tela cheia com o dropdown aberto engole o primeiro clique em qualquer botão
+- [x] IREC-0508 · BAIXO · `src/components/Login.jsx:115` — Validação aceita campos preenchidos só com espaços
+- [x] IREC-0509 · BAIXO · `src/components/Login.jsx:121` — CPF é validado limpo mas persistido com máscara, gerando formatos divergentes
+- [x] IREC-0510 · BAIXO · `src/components/Login.jsx:122` — CPF aceito só por quantidade de dígitos, sem dígito verificador
+- [x] IREC-0511 · BAIXO · `src/components/Login.jsx:263` — Especialidade armazenada como string separada por vírgula corrompe entradas customizadas
+- [x] IREC-0512 · BAIXO · `src/components/Login.jsx:609` — Clicar novamente no papel já selecionado apaga os dados profissionais digitados
+- [x] IREC-0513 · BAIXO · `src/components/Login.jsx:638` — Labels sem htmlFor e inputs sem id/aria-label em todo o formulário
+- [x] IREC-0514 · BAIXO · `src/components/Login.jsx:692` — Data de nascimento no futuro é aceita e gera idade negativa nas telas clínicas
+- [x] IREC-0515 · BAIXO · `src/components/Login.jsx:729` — UF é armazenada em minúsculas: o uppercase é apenas visual
+- [x] IREC-0516 · BAIXO · `src/components/Login.jsx:801` — Botão de remover especialidade sem nome acessível
+- [x] IREC-0517 · BAIXO · `src/components/Login.jsx:925` — Botão do Google não é desabilitado durante loading
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/Login.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-DEENIYD3.js        1,277.86 kB │ gzip: 309.42 kB
+✓ built in 3.34s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 564.03ms
+√ Sync finished in 1.338s
 ```
 
 ---

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { signInUser, signUpUser, uploadProfessionalCredential } from '../services/supabaseService';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
@@ -138,11 +138,21 @@ export default function Login({ onLoginSuccess }) {
             throw new Error(`Por favor, adicione pelo menos uma especialidade para o ${clinicianType === 'doctor' ? 'Médico' : 'Enfermeiro'}.`);
           }
 
+          let documentUrl = '';
+          if (documentFile) {
+            try {
+              documentUrl = await uploadProfessionalCredential(crm, documentFile);
+            } catch (docErr) {
+              console.warn("Falha no upload do documento comprobatório:", docErr);
+            }
+          }
+
           additionalData = { 
             crm: `${crm.toUpperCase()}-${crmState}`, 
             specialty, 
             rqe: clinicianType === 'doctor' ? rqe : '',
-            professionalDocumentUrl: ''
+            professionalDocumentUrl: documentUrl,
+            verificationStatus: 'pending' // Fixes IREC-0015: set verification to pending for clinicians
           };
         }
 
@@ -192,36 +202,39 @@ export default function Login({ onLoginSuccess }) {
     const providerId = provider.toLowerCase(); // 'google' or 'apple'
 
     if (!isSupabaseConfigured) {
-      // Mock/Offline login success
+      // Mock/Offline login success (fixes IREC-0113: stable ID per email)
       setTimeout(() => {
-        const mockProfile = {
-          id: `social_${Date.now()}`,
-          role: 'patient', // default to patient for social logins
-          name: `Paciente ${provider}`,
-          email: `${providerId}_user@example.com`,
-          birthDate: '1990-01-01',
-          gender: 'Masculino',
-          healthUnit: '',
-          hasDiabetes: false,
-          hasHypertension: false,
-          hasVenousInsufficiency: false,
-          hasPeripheralArterialDisease: false,
-          isSmoker: false,
-          isObese: false,
-          hasAmputationHistory: false,
-          otherConditions: '',
-          medications: '',
-          allergies: '',
-          attachedExams: [],
-          triageAlerts: []
-        };
-        localStorage.setItem('irec_active_user', JSON.stringify(mockProfile));
-        // Add to offline users database
-        const users = JSON.parse(localStorage.getItem('irec_users') || '[]');
-        if (!users.some(u => u.email === mockProfile.email)) {
-          users.push({ id: mockProfile.id, email: mockProfile.email, name: mockProfile.name, role: mockProfile.role });
-          localStorage.setItem('irec_users', JSON.stringify(users));
+        const email = `${providerId}_user@example.com`;
+        const existingUsers = JSON.parse(localStorage.getItem('irec_users') || '[]');
+        let mockProfile = existingUsers.find(u => u.email === email);
+
+        if (!mockProfile) {
+          mockProfile = {
+            id: `social_${providerId}`,
+            role: 'patient', // default to patient for social logins
+            name: `Paciente ${provider}`,
+            email,
+            birthDate: '1990-01-01',
+            gender: 'Masculino',
+            healthUnit: '',
+            hasDiabetes: false,
+            hasHypertension: false,
+            hasVenousInsufficiency: false,
+            hasPeripheralArterialDisease: false,
+            isSmoker: false,
+            isObese: false,
+            hasAmputationHistory: false,
+            otherConditions: '',
+            medications: '',
+            allergies: '',
+            attachedExams: [],
+            triageAlerts: []
+          };
+          existingUsers.push({ id: mockProfile.id, email: mockProfile.email, name: mockProfile.name, role: mockProfile.role });
+          localStorage.setItem('irec_users', JSON.stringify(existingUsers));
         }
+
+        localStorage.setItem('irec_active_user', JSON.stringify(mockProfile));
         setLoading(false);
         onLoginSuccess(mockProfile);
       }, 1000);

@@ -119,7 +119,7 @@ export const getSecureMediaUrl = async (bucket, filePath, expiresIn = 900) => {
 
 // 1. Sign Up User (Patient or Doctor)
 export const signUpUser = async (email, password, name, role, additionalData = {}) => {
-  let verificationStatus = 'verified'; // All users are verified automatically by default
+  let verificationStatus = (role === 'doctor' || role === 'nurse' || additionalData.verificationStatus === 'pending') ? 'pending' : 'verified'; // Fixes IREC-0015
 
   if (!isSupabaseConfigured) {
     const users = getLocalUsers();
@@ -140,36 +140,26 @@ export const signUpUser = async (email, password, name, role, additionalData = {
       crm: additionalData.crm || '',
       specialty: additionalData.specialty || '',
       rqe: additionalData.rqe || '',
+      cpf: additionalData.cpf || '',
+      city: additionalData.city || '',
+      state: additionalData.state || '',
       birthDate: additionalData.birthDate || '',
       gender: additionalData.gender || '',
       verificationStatus: verificationStatus,
       professionalDocumentUrl: additionalData.professionalDocumentUrl || '',
-      healthUnit: '',
-      hasDiabetes: false,
-      hasHypertension: false,
-      hasVenousInsufficiency: false,
-      hasPeripheralArterialDisease: false,
-      isSmoker: false,
-      isObese: false,
-      hasAmputationHistory: false,
-      otherConditions: '',
-      medications: '',
-      allergies: '',
-      attachedExams: [],
-      triageAlerts: [],
-      cpf: additionalData.cpf || '',
-      rg: additionalData.rg || '',
-      cns: additionalData.cns || '',
-      phone: additionalData.phone || '',
-      emergencyContactName: additionalData.emergencyContactName || '',
-      emergencyContactPhone: additionalData.emergencyContactPhone || '',
-      cep: additionalData.cep || '',
-      street: additionalData.street || '',
-      number: additionalData.number || '',
-      complement: additionalData.complement || '',
-      neighborhood: additionalData.neighborhood || '',
-      city: additionalData.city || '',
-      state: additionalData.state || '',
+      healthUnit: additionalData.healthUnit || '',
+      hasDiabetes: additionalData.hasDiabetes || false,
+      hasHypertension: additionalData.hasHypertension || false,
+      hasVenousInsufficiency: additionalData.hasVenousInsufficiency || false,
+      hasPeripheralArterialDisease: additionalData.hasPeripheralArterialDisease || false,
+      isSmoker: additionalData.isSmoker || false,
+      isObese: additionalData.isObese || false,
+      hasAmputationHistory: additionalData.hasAmputationHistory || false,
+      otherConditions: additionalData.otherConditions || '',
+      medications: additionalData.medications || '',
+      allergies: additionalData.allergies || '',
+      attachedExams: additionalData.attachedExams || [],
+      triageAlerts: additionalData.triageAlerts || [],
       weight: additionalData.weight || '',
       height: additionalData.height || '',
       bloodType: additionalData.bloodType || '',
@@ -218,6 +208,9 @@ export const signUpUser = async (email, password, name, role, additionalData = {
       crm: additionalData.crm || null,
       specialty: additionalData.specialty || null,
       rqe: additionalData.rqe || null,
+      cpf: additionalData.cpf || null, // Fixes IREC-0112
+      city: additionalData.city || null, // Fixes IREC-0112
+      state: additionalData.state || null, // Fixes IREC-0112
       birth_date: additionalData.birthDate || null,
       gender: additionalData.gender || null,
       verification_status: verificationStatus,
@@ -244,6 +237,9 @@ export const signUpUser = async (email, password, name, role, additionalData = {
       crm: additionalData.crm || '',
       specialty: additionalData.specialty || '',
       rqe: additionalData.rqe || '',
+      cpf: additionalData.cpf || '', // Fixes IREC-0112
+      city: additionalData.city || '', // Fixes IREC-0112
+      state: additionalData.state || '', // Fixes IREC-0112
       birthDate: additionalData.birthDate || '',
       gender: additionalData.gender || '',
       verificationStatus: verificationStatus,
