@@ -1,21 +1,58 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import PrescriptionGeneratorModal from './PrescriptionGeneratorModal';
 
 export default function PrescriptionPage({ currentUser, selectedPatient, clinicalProfile, setActiveTab }) {
+  const isClinician = currentUser?.role === 'doctor' || currentUser?.role === 'nurse';
+  const storageKey = `irec_prescription_history_${currentUser?.id || 'guest'}`;
+
   const [prescriptionHistory, setPrescriptionHistory] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('irec_prescription_history') || '[]');
-    } catch (e) {
+      return JSON.parse(localStorage.getItem(storageKey) || '[]');
+    } catch {
       return [];
     }
   });
 
   const [activeDoc, setActiveDoc] = useState(null);
 
+  if (!isClinician) {
+    return (
+      <div style={{
+        padding: '60px 24px',
+        textAlign: 'center',
+        color: 'var(--text-primary)',
+        maxWidth: '500px',
+        margin: '0 auto'
+      }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+        <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 8px 0' }}>Acesso Restrito</h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 20px 0' }}>
+          Apenas médicos e enfermeiros credenciados possuem autorização para acessar o módulo de emissão de prescrições e atestados.
+        </p>
+        <button 
+          type="button" 
+          onClick={() => setActiveTab && setActiveTab('dashboard')}
+          style={{
+            padding: '12px 24px',
+            borderRadius: '12px',
+            backgroundColor: '#0284c7',
+            color: '#ffffff',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: '800',
+            fontSize: '14px'
+          }}
+        >
+          Voltar ao Painel Principal
+        </button>
+      </div>
+    );
+  }
+
   const handlePrescriptionCreated = (docData) => {
     const updated = [docData, ...prescriptionHistory];
     setPrescriptionHistory(updated);
-    localStorage.setItem('irec_prescription_history', JSON.stringify(updated));
+    localStorage.setItem(storageKey, JSON.stringify(updated));
   };
 
   const patientTarget = selectedPatient || clinicalProfile || { name: 'Paciente Selecionado' };
@@ -30,6 +67,17 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
       minHeight: '100vh',
       boxSizing: 'border-box'
     }}>
+      {/* Modal for Viewing/Reprinting Selected History Document */}
+      {activeDoc && (
+        <PrescriptionGeneratorModal
+          currentUser={currentUser}
+          patientProfile={{ name: activeDoc.patientName, cpf: activeDoc.patientCpf }}
+          onClose={() => setActiveDoc(null)}
+          onPrescriptionCreated={null}
+          embeddedMode={false}
+        />
+      )}
+
       {/* Page Title & Header */}
       <div style={{
         display: 'flex',
@@ -52,7 +100,7 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
             📜 Prescrições, Atestados & Receituários
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-            Emissão oficial de receituários de medicamentos, atestados clínicos e encaminhamentos com validação QR Code.
+            Emissão oficial de receituários de medicamentos, atestados clínicos e encaminhamentos com validação iRec.
           </p>
         </div>
 
@@ -87,7 +135,7 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
           <PrescriptionGeneratorModal 
             currentUser={currentUser}
             patientProfile={patientTarget}
-            onClose={() => {}}
+            onClose={() => setActiveTab && setActiveTab('dashboard')}
             onPrescriptionCreated={handlePrescriptionCreated}
             embeddedMode={true}
           />
@@ -113,6 +161,8 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
               {prescriptionHistory.map((doc) => (
                 <div 
                   key={doc.id}
+                  role="button"
+                  tabIndex={0}
                   style={{
                     padding: '12px 14px',
                     borderRadius: '10px',
@@ -125,6 +175,13 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
                     transition: 'all 0.15s ease'
                   }}
                   onClick={() => setActiveDoc(doc)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setActiveDoc(doc);
+                    }
+                  }}
+                  title="Clique para visualizar ou reimprimir este documento"
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', fontWeight: '800', color: '#0284c7', textTransform: 'uppercase' }}>

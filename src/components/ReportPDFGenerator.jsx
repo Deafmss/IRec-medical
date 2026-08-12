@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useMemo } from 'react';
 import { speakNaturalText } from '../utils/speechUtils';
 
 export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }) {
@@ -6,33 +6,50 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
   const patientCpf = clinicalProfile?.cpf || 'Não informado';
   const allergy = clinicalProfile?.allergies || 'Nenhuma declarada';
 
-  const docId = 'EVOL-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+  const docId = useMemo(() => {
+    const seed = (clinicalProfile?.id || clinicalProfile?.cpf || patientName).replace(/\D/g, '');
+    const num = seed ? (parseInt(seed.slice(-6), 10) || 102938) : 102938;
+    return 'EVOL-' + num;
+  }, [clinicalProfile?.id, clinicalProfile?.cpf, patientName]);
   const currentDate = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'long',
     year: 'numeric'
   });
 
-  const qrValidationUrl = `https://i-rec-medical.vercel.app/?validar=${docId}`;
-  const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrValidationUrl)}`;
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
-  // Calculate dynamic reduction percentage from entries if available
-  let healingPercentage = 56;
-  let healingLabel = "56% de Redução da Lesão";
+  // Calculate dynamic reduction percentage from entries using real aiAreaCm2 field
+  let healingPercentage = null;
+  let healingLabel = "Dados insuficientes para cálculo de evolução";
+  let isWorsening = false;
 
   if (entries && entries.length >= 2) {
     const first = entries[0];
     const latest = entries[entries.length - 1];
-    const firstArea = parseFloat(first.area || first.woundArea || first.size || 10);
-    const latestArea = parseFloat(latest.area || latest.woundArea || latest.size || 4);
+    const firstArea = parseFloat(first.aiAreaCm2 || first.area || first.woundArea);
+    const latestArea = parseFloat(latest.aiAreaCm2 || latest.area || latest.woundArea);
+
     if (!isNaN(firstArea) && !isNaN(latestArea) && firstArea > 0) {
       const pct = Math.round(((firstArea - latestArea) / firstArea) * 100);
       if (pct > 0) {
         healingPercentage = pct;
         healingLabel = `${pct}% de Redução da Lesão`;
-      } else {
+      } else if (pct === 0) {
         healingPercentage = 0;
-        healingLabel = "Fase de Limpeza Tecidual / Desbridamento (Estável)";
+        healingLabel = "Área da lesão mantida (Estável)";
+      } else {
+        isWorsening = true;
+        healingPercentage = Math.abs(pct);
+        healingLabel = `Aumento de ${Math.abs(pct)}% na área da lesão (Reavaliação recomendada)`;
       }
     }
   }
@@ -48,21 +65,26 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.88)',
-      backdropFilter: 'blur(10px)',
-      zIndex: 999999,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      fontFamily: 'var(--font-primary, sans-serif)'
-    }}>
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-label="Relatório Evolutivo de Estomaterapia & Cicatrização"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.88)',
+        backdropFilter: 'blur(10px)',
+        zIndex: 999999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        fontFamily: 'var(--font-primary, sans-serif)'
+      }}
+    >
       <div style={{
         width: '100%',
         maxWidth: '820px',
@@ -78,6 +100,26 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
         flexDirection: 'column',
         gap: '20px'
       }}>
+        <style>{`
+          @media print {
+            body * {
+              visibility: hidden !important;
+            }
+            #printable-report, #printable-report * {
+              visibility: visible !important;
+            }
+            #printable-report {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              max-height: none !important;
+              box-shadow: none !important;
+              border: none !important;
+            }
+          }
+        `}</style>
+
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155', paddingBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -92,8 +134,11 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
             </div>
           </div>
           <button
+            type="button"
             onClick={() => { triggerVibration(); onClose(); }}
             style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '26px', cursor: 'pointer' }}
+            aria-label="Fechar"
+            title="Fechar (Esc)"
           >
             ×
           </button>
@@ -134,18 +179,40 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
           </div>
 
           {/* Healing Percentage Bar */}
-          <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '12px', padding: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{
+            backgroundColor: isWorsening ? '#fef2f2' : (healingPercentage !== null ? '#ecfdf5' : '#f8fafc'),
+            border: `1px solid ${isWorsening ? '#fca5a5' : (healingPercentage !== null ? '#a7f3d0' : '#e2e8f0')}`,
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
             <div>
-              <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#047857', display: 'block' }}>
-                EVOLUÇÃO ESTIMADA DA CICATRIZAÇÃO
+              <span style={{ fontSize: '12px', fontWeight: 'bold', color: isWorsening ? '#991b1b' : (healingPercentage !== null ? '#047857' : '#64748b'), display: 'block' }}>
+                EVOLUÇÃO DA CICATRIZAÇÃO
               </span>
-              <h3 style={{ margin: '4px 0 0 0', color: '#065f46', fontSize: '24px', fontWeight: '900' }}>
+              <h3 style={{ margin: '4px 0 0 0', color: isWorsening ? '#7f1d1d' : (healingPercentage !== null ? '#065f46' : '#1e293b'), fontSize: '20px', fontWeight: '900' }}>
                 {healingLabel}
               </h3>
             </div>
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '20px' }}>
-              {healingPercentage}%
-            </div>
+            {healingPercentage !== null && (
+              <div style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                backgroundColor: isWorsening ? '#ef4444' : '#10b981',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '900',
+                fontSize: '18px'
+              }}>
+                {isWorsening ? `+${healingPercentage}%` : `${healingPercentage}%`}
+              </div>
+            )}
           </div>
 
           {/* Evolution Records Table */}
@@ -158,7 +225,7 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
                 <th style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Data</th>
                 <th style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Tipo de Lesão</th>
                 <th style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Dor (0-10)</th>
-                <th style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Aspecto do Tecido</th>
+                <th style={{ padding: '8px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Aspecto do Tecido / Anotações</th>
               </tr>
             </thead>
             <tbody>
@@ -166,41 +233,33 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
                 entries.map((entry, idx) => (
                   <tr key={idx}>
                     <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{entry.date || currentDate}</td>
-                    <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{entry.tissue_type || 'Lesão com Eritema'}</td>
-                    <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{entry.pain_level || 3}/10</td>
-                    <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{entry.notes || 'Em processo de epitelização e cicatrização.'}</td>
+                    <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{entry.type || '—'}</td>
+                    <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{entry.pain !== undefined && entry.pain !== null ? `${entry.pain}/10` : '—'}</td>
+                    <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{entry.doctorNotes || entry.clinicalEvolution || entry.aiRecommendation || '—'}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>{currentDate}</td>
-                  <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>Úlcera de Pressão / Eritema</td>
-                  <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>3/10 (Leve)</td>
-                  <td style={{ padding: '8px', border: '1px solid #cbd5e1' }}>Tecido de granulação saudável em bordas. Redução de exsudato.</td>
+                  <td colSpan={4} style={{ padding: '16px', border: '1px solid #cbd5e1', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                    Nenhum registro de lesão disponível no histórico.
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
 
-          {/* QR Code Validation Stamp */}
+          {/* Document Footer */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '2px solid #10b981', paddingTop: '16px', marginTop: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img
-                src={qrCodeApiUrl}
-                alt="QR Code de Validação"
-                style={{ width: '70px', height: '70px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-              />
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#047857', display: 'block' }}>
-                  🛡️ LAUDO AUTENTICADO iREC
-                </span>
-                <span style={{ fontSize: '10px', color: '#64748b' }}>
-                  Acompanhamento de Enfermagem & Telemedicina
-                </span>
-                <span style={{ fontSize: '10px', color: '#0f172a', fontWeight: 'bold', display: 'block' }}>
-                  Código de Autenticidade: {docId}
-                </span>
-              </div>
+            <div>
+              <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#047857', display: 'block' }}>
+                🛡️ LAUDO REGISTRADO NA PLATAFORMA iREC
+              </span>
+              <span style={{ fontSize: '10px', color: '#64748b' }}>
+                Acompanhamento Clínico de Estomaterapia
+              </span>
+              <span style={{ fontSize: '10px', color: '#0f172a', fontWeight: 'bold', display: 'block' }}>
+                Código: {docId}
+              </span>
             </div>
 
             <div style={{ textAlign: 'right', fontSize: '11px', color: '#64748b' }}>
@@ -213,6 +272,7 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
         {/* Action Buttons */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <button
+            type="button"
             onClick={handlePrint}
             style={{
               backgroundColor: '#10b981',
@@ -234,6 +294,7 @@ export default function ReportPDFGenerator({ clinicalProfile, entries, onClose }
           </button>
 
           <button
+            type="button"
             onClick={() => { triggerVibration(); onClose(); }}
             style={{
               backgroundColor: '#334155',

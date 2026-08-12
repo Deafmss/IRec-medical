@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { getLocalHealthcareResources, getRecommendedMaterials, getAssignedDoctors } from '../services/supabaseService';
-import { generatePersonalizedProtocol, isGeminiConfigured } from '../services/geminiService';
+import { useState, useEffect } from 'react';
+import { getRecommendedMaterials, getAssignedDoctors } from '../services/supabaseService';
+import { generatePersonalizedProtocol } from '../services/geminiService';
 
 // Client-side rule-based fallback generator in case Gemini fails or is offline
 function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician = false) {
   const profile = clinicalProfile || {};
   const woundType = latestWoundEntry?.type || (profile.hasDiabetes ? 'Pé Diabético' : profile.hasVenousInsufficiency ? 'Úlcera Venosa' : 'Lesão Cutânea');
+  const userAllergies = (profile.allergies || '').toLowerCase();
   
   if (isClinician) {
     const title = `Condutas Clínicas de Apoio à Decisão para: ${profile.name || 'Paciente'}`;
@@ -24,7 +25,7 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
     if (necrose > 0) {
       steps.push({
         title: 'Condutas de Desbridamento Instrumental e Autolítico',
-        desc: 'Avaliar indicação de desbridamento cortante instrumental conservador (slicing ou square) se houver profissional qualificado e ausência de isquemia crítica. Prescrever Hidrogel com Alginato no leito da lesão para promover desbridamento autolítico seguro. Proteger a pele perilesional.'
+        desc: 'Avaliar indicação de desbridamento cortante instrumental conservador se houver profissional qualificado e ausência de isquemia crítica. Prescrever Hidrogel com Alginato no leito da lesão para promover desbridamento autolítico seguro. Proteger a pele perilesional.'
       });
     } else if (fibrina > 0) {
       steps.push({
@@ -46,17 +47,28 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
     }
     
     if (profile.hasVenousInsufficiency) {
-      steps.push({
-        title: 'Terapia Compressiva Multibandas',
-        desc: 'Realizar avaliação arterial prévia (mensurar pulso pedioso e ITB). Se ITB > 0.8, prescrever enfaixamento compressivo de curta elasticidade (ex: Bota de Unna ou bandagens multibandas de 2/4 camadas) para combater a hipertensão venosa.'
-      });
+      if (profile.hasPeripheralArterialDisease) {
+        steps.push({
+          title: '⚠️ CONTRAINDICAÇÃO DE TERAPIA COMPRESSIVA',
+          desc: 'ATENÇÃO CLÍNICA: Terapia compressiva contraindicada devido ao diagnóstico concomitante de Doença Arterial Periférica (DAP). Priorizar desbridamento, otimização perfusional e parecer vascular urgente.'
+        });
+      } else {
+        steps.push({
+          title: 'Terapia Compressiva Multibandas',
+          desc: 'Realizar avaliação arterial prévia (mensurar pulso pedioso e ITB). Se ITB > 0.8, prescrever enfaixamento compressivo de curta elasticidade (ex: Bota de Unna ou bandagens multibandas de 2/4 camadas) para combater a hipertensão venosa.'
+        });
+      }
     }
 
-    const materials = [
+    let materials = [
       { name: 'Alginato de Cálcio e Sódio', brand: 'Feridas cavitárias ou planas com exsudação moderada a alta.', price: 'Uso Tópico • Troca 24h a 48h' },
       { name: 'Hidrogel Amorfo com Alginato', brand: 'Desbridamento autolítico e hidratação de tecidos necróticos secos.', price: 'Uso Tópico • Troca a cada 48h' },
       { name: 'Placa de Hidrocolóide Extra Fino', brand: 'Proteção e barreira em feridas limpas com baixo exsudato.', price: 'Uso Tópico • Troca até 7 dias' }
     ];
+
+    if (userAllergies && userAllergies !== 'nenhuma declarada') {
+      materials = materials.filter(m => !userAllergies.includes(m.name.toLowerCase()));
+    }
 
     const scientificBacking = 'Resolução COFEN nº 567/2018 (Diretrizes para o tratamento de feridas por enfermeiros) • Consenso WUWHS (Manejo de Exsudato em Feridas/2019).';
     const specialistRecommendation = 'Se houver sinais de infecção sistêmica ou isquemia de membro (ITB < 0.5), encaminhar com urgência ao Cirurgião Vascular. Controle glicêmico com endocrinologista.';
@@ -72,7 +84,6 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
     };
   }
 
-  // Standard patient simulated protocol
   const title = `Guia Clínico Personalizado: ${woundType} com ${
     [
       profile.hasDiabetes ? 'Diabetes' : null,
@@ -87,7 +98,7 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
 
   const steps = [
     { 
-      title: '1. Como Limpar o Ferimento', 
+      title: 'Como Limpar o Ferimento', 
       desc: 'Lave a ferida delicadamente usando soro fisiológico 0.9% morno (se puder, aqueça levemente o frasco em banho-maria). Deixe o soro escorrer suavemente sobre a lesão. Nunca esfregue a ferida com gaze ou pano para não machucar a pele nova que está nascendo e não causar dor.' 
     }
   ];
@@ -97,47 +108,54 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
 
   if (necrose > 0) {
     steps.push({
-      title: '2. Como Cuidar da Parte Preta (Casca Seca)',
-      desc: 'Use um curativo em gel (como o Hidrogel). Ele ajuda a amolecer e remover essa casca preta de forma natural e sem dor. Aplique uma camada fina do gel apenas em cima da parte preta e proteja a pele saudável ao redor usando um creme protetor (creme barreira).'
+      title: 'Como Cuidar da Parte Preta (Casca Seca)',
+      desc: 'Use um curativo em gel (como o Hidrogel). Ele ajuda a amolecer e remover essa casca preta de forma natural e sem dor. Aplique uma camada fina do gel apenas em cima da parte preta e proteja a pele saudável ao redor usando um creme protetor.'
     });
   } else if (fibrina > 0) {
     steps.push({
-      title: '2. Como Cuidar da Parte Amarela (Secreção Seca)',
+      title: 'Como Cuidar da Parte Amarela (Secreção Seca)',
       desc: 'Se a ferida estiver soltando líquido e tiver partes amarelas, use uma placa de Alginato de Cálcio. Esse curativo absorve o excesso de líquido e se transforma em uma gelatina macia, facilitando a limpeza e a remoção da sujeira.'
     });
   } else {
     steps.push({
-      title: '2. Como Ajudar a Pele Nova a Fechar (Parte Vermelha)',
+      title: 'Como Ajudar a Pele Nova a Fechar (Parte Vermelha)',
       desc: 'Aplique óleo cicatrizante (óleo AGE, como Dersani) ou use um curativo de espuma. Isso mantém a ferida na umidade ideal para que a pele nova cresça e feche o machucado mais rápido.'
     });
   }
 
   if (profile.hasDiabetes) {
     steps.push({
-      title: '3. Exame dos Pés Todos os Dias (Pé Diabético)',
+      title: 'Exame dos Pés Todos os Dias (Pé Diabético)',
       desc: 'Olhe a sola dos seus pés e entre os dedos todos os dias (use um espelho para ajudar). Lave bem e seque muito bem com uma toalha macia, principalmente entre os dedos, para evitar frieiras ou rachaduras.'
     });
     steps.push({
-      title: '4. Evite Pisar com o Pé Machucado',
+      title: 'Evite Pisar com o Pé Machucado',
       desc: 'Não apoie o peso do corpo sobre o pé que está com a ferida. Use muletas, cadeiras ou sapatos especiais recomendados pelo seu médico para evitar que a ferida piore.'
     });
   }
 
   if (profile.hasVenousInsufficiency) {
-    steps.push({
-      title: '3. Cuidado com o Inchaço e Uso de Meias',
-      desc: 'Se o seu médico indicou, use meias elásticas ou enfaixamento de compressão. Quando puder, deite-se e coloque as pernas para cima apoiadas em almofadas (acima da linha do coração) por 30 minutos, 3 vezes ao dia, para ajudar o sangue a circular.'
-    });
+    if (profile.hasPeripheralArterialDisease) {
+      steps.push({
+        title: '⚠️ Cuidados Especiais: Não Usar Meias Elásticas',
+        desc: 'COMO VOCÊ POSSUI DOENÇA ARTERIAL PERIFÉRICA REGISTRADA, NÃO UTILIZE MEIAS ELÁSTICAS NEM COMPRESSÃO SEM AUTORIZAÇÃO EXPRESSA DO SEU CIRURGIÃO VASCULAR, POIS PODE PREJUDICAR A CIRCULAÇÃO.'
+      });
+    } else {
+      steps.push({
+        title: 'Cuidado com o Inchaço e Uso de Meias',
+        desc: 'Se o seu médico indicou, use meias elásticas ou enfaixamento de compressão. Quando puder, deite-se e coloque as pernas para cima apoiadas em almofadas (acima da linha do coração) por 30 minutos, 3 vezes ao dia, para ajudar o sangue a circular.'
+      });
+    }
   }
 
   if (profile.hasHypertension) {
     steps.push({
-      title: '3. Controle o Sal e Meça a Pressão',
+      title: 'Controle o Sal e Meça a Pressão',
       desc: 'Meça sua pressão arterial todo dia. Evite comer sal, alimentos industrializados ou salgados. O excesso de sal faz o corpo acumular líquido e inchar as pernas, o que atrasa a cicatrização da ferida.'
     });
   }
 
-  const materials = [];
+  let materials = [];
   if (necrose > 0 || fibrina > 0) {
     materials.push({ name: 'Hidrogel Amorfo com Alginato (85g)', price: 'R$ 42,90', brand: 'Curatec' });
     materials.push({ name: 'Placa de Alginato de Cálcio (10x10cm)', price: 'R$ 28,50', brand: 'Curatec' });
@@ -146,6 +164,10 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
   }
   materials.push({ name: 'Solução Antisséptica de PHMB (350ml)', price: 'R$ 62,00', brand: 'Prontosan' });
   materials.push({ name: 'Óleo Dersani AGE (100ml)', price: 'R$ 38,90', brand: 'Dersani' });
+
+  if (userAllergies && userAllergies !== 'nenhuma declarada') {
+    materials = materials.filter(m => !userAllergies.includes(m.name.toLowerCase()));
+  }
 
   const scientificBacking = 'Resolução COFEN nº 567/2018 (Diretrizes para o tratamento de feridas por enfermeiros) • Manual de Condutas para Tratamento de Feridas do Ministério da Saúde, Brasil, 2016.';
   const specialistRecommendation = 'Necessário acompanhamento multidisciplinar: Cirurgião Vascular para avaliação de pulso/edema e Endocrinologista para controle do alvo glicêmico (HbA1c < 7.0%).';
@@ -163,29 +185,27 @@ function generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, 
 
 const formatMaterialsForView = (materialsList, isClinician) => {
   if (!materialsList) return [];
-  if (!isClinician) return materialsList;
   
   return materialsList.map(item => {
-    const isPriceAlreadyClinical = item.price && (item.price.includes('Troca') || item.price.includes('Uso') || item.price.includes('Aplicar'));
-    const isBrandAlreadyClinical = item.brand && (item.brand.includes('Indicação') || item.brand.includes('Mecanismo') || item.brand.includes('ferida') || item.brand.includes('Ferida'));
-
+    const strPrice = String(item.price ?? '');
+    const strBrand = String(item.brand ?? '');
+    
     return {
       ...item,
-      brand: isBrandAlreadyClinical ? item.brand : `Cobertura recomendada para o manejo da lesão.`,
-      price: isPriceAlreadyClinical ? item.price : `Uso Tópico • Conforme evolução`
+      brand: strBrand || (isClinician ? 'Cobertura recomendada para o manejo da lesão.' : 'Marca recomendada'),
+      price: strPrice || (isClinician ? 'Uso Tópico • Conforme evolução' : 'A consultar')
     };
   });
 }
 
 export default function ProtocolGuide({ currentUser, clinicalProfile, entries = [], setActiveTab: setAppActiveTab }) {
-  const [activeTab, setActiveTab] = useState('ai-protocol');
+  const [activeTab] = useState('ai-protocol');
   const [loading, setLoading] = useState(false);
   const [aiProtocol, setAiProtocol] = useState(null);
-  const [error, setError] = useState('');
   const [dbRecommendedMaterials, setDbRecommendedMaterials] = useState([]);
   const [assignedDoctors, setAssignedDoctors] = useState([]);
   const latestWoundEntry = entries && entries.length > 0 ? entries[entries.length - 1] : null;
-  const isClinician = currentUser?.role === 'doctor';
+  const isClinician = currentUser?.role === 'doctor' || currentUser?.role === 'nurse';
 
   const [bookingModal, setBookingModal] = useState({
     isOpen: false,
@@ -198,21 +218,37 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
     countdown: 3
   });
 
+  const getDoctorName = (doctorId) => {
+    const doc = assignedDoctors.find(d => d.id === doctorId);
+    return doc ? doc.name : 'Médico Credenciado';
+  };
+
+  const getDoctorPartners = () => {
+    return dbRecommendedMaterials.filter(m => {
+      if (m.type !== 'doctor_partner') return false;
+      if (m.patient_id === clinicalProfile?.id) return true;
+      const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
+      return m.patient_id === null && isAssigned;
+    });
+  };
+
   const handlePartnerRedirectClick = (itemName, partner) => {
-    let doctorName = '';
-    if (partner.type === 'irec_partner') {
-      doctorName = 'iRec Oficial';
-    } else {
-      doctorName = getDoctorName(partner.doctor_id);
+    const doctorName = partner.type === 'irec_partner'
+      ? 'iRec Oficial'
+      : getDoctorName(partner.doctor_id);
+
+    let link = partner.affiliate_link || '#';
+    if (link !== '#' && !link.startsWith('http://') && !link.startsWith('https://')) {
+      link = 'https://' + link;
     }
 
     setBookingModal({
       isOpen: true,
-      itemName: itemName,
+      itemName: String(itemName || ''),
       itemPrice: partner.price || 'A consultar',
       partnerName: partner.pharmacy_name || partner.brand || partner.name || 'Parceiro Credenciado',
       doctorName: doctorName,
-      affiliateLink: partner.affiliate_link || '#',
+      affiliateLink: link,
       isIrecPartner: partner.type === 'irec_partner',
       countdown: 3
     });
@@ -227,21 +263,20 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
           countdown: prev.countdown - 1
         }));
       }, 1000);
-    } else if (bookingModal.isOpen && bookingModal.countdown === 0) {
-      window.open(bookingModal.affiliateLink, '_blank');
-      setBookingModal(prev => ({ ...prev, isOpen: false }));
     }
     return () => clearTimeout(timer);
-  }, [bookingModal.isOpen, bookingModal.countdown, bookingModal.affiliateLink]);
+  }, [bookingModal.isOpen, bookingModal.countdown]);
 
-  // Load dynamic personalized protocol using Gemini API on mount or update
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchProtocol() {
       if (activeTab !== 'ai-protocol' || !clinicalProfile) return;
 
+      const userId = currentUser?.id || 'guest';
       const profileId = clinicalProfile.id || 'guest';
       const entryId = latestWoundEntry ? (latestWoundEntry.id || latestWoundEntry.createdAt) : 'no-entry';
-      const cacheKey = `irec_cached_protocol_${profileId}_${entryId}`;
+      const cacheKey = `irec_cached_protocol_${userId}_${profileId}_${entryId}`;
       const cached = localStorage.getItem(cacheKey);
 
       if (cached) {
@@ -252,9 +287,10 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
           const modeMatch = parsed.isClinician === isClinician || (parsed.isClinician === undefined && isClinician === false);
           
           if (profileMatch && modeMatch && parsed.protocol) {
-            console.log("Using cached personalized protocol...");
-            setAiProtocol(parsed.protocol);
-            setLoading(false);
+            if (!cancelled) {
+              setAiProtocol(parsed.protocol);
+              setLoading(false);
+            }
             return;
           }
         } catch (e) {
@@ -262,19 +298,18 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
         }
       }
 
-      // Load fallback immediately to avoid blocking the user with a loading spinner!
       const fallbackProtocol = generateDefaultPersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
-      setAiProtocol(fallbackProtocol);
-      setLoading(false); // Set loading to false so no blocker is displayed!
+      if (!cancelled) {
+        setAiProtocol(fallbackProtocol);
+        setLoading(false);
+      }
 
       try {
-        console.log("Generating personalized clinical protocol via Gemini in background...");
         const result = await generatePersonalizedProtocol(clinicalProfile, latestWoundEntry, isClinician);
         
-        if (result) {
+        if (result && !cancelled) {
           setAiProtocol(result);
           
-          // Cache the result along with the profile properties
           const cacheData = {
             protocol: result,
             isClinician: isClinician,
@@ -299,46 +334,56 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
     }
 
     fetchProtocol();
-  }, [clinicalProfile, latestWoundEntry, activeTab]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clinicalProfile, latestWoundEntry, activeTab, isClinician, currentUser?.id]);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadDbMaterials() {
       if (clinicalProfile && clinicalProfile.id) {
         try {
           const data = await getRecommendedMaterials(clinicalProfile.id);
-          setDbRecommendedMaterials(data);
+          if (!cancelled) setDbRecommendedMaterials(data || []);
           
           const docs = await getAssignedDoctors(clinicalProfile.id);
-          setAssignedDoctors(docs || []);
+          if (!cancelled) setAssignedDoctors(docs || []);
         } catch (e) {
           console.error("Erro ao carregar insumos do banco:", e);
         }
       }
     }
+
     loadDbMaterials();
+
+    return () => {
+      cancelled = true;
+    };
   }, [clinicalProfile]);
 
   const getAvailablePartnersForMaterial = (itemName) => {
-    // 1. Doctor's specific partners for this material
+    const safeName = String(itemName ?? '').toLowerCase();
+
     const docSpecific = dbRecommendedMaterials.filter(m => {
       if (m.type !== 'doctor_partner') return false;
-      if (!m.name || m.name.toLowerCase() !== itemName.toLowerCase()) return false;
+      if (!m.name || m.name.toLowerCase() !== safeName) return false;
       if (m.patient_id === clinicalProfile?.id) return true;
       const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
       return m.patient_id === null && isAssigned;
     });
 
-    // 2. Doctor's general pharmacy links
     const docGeneral = dbRecommendedMaterials.filter(m => {
       if (m.type !== 'doctor_general_partner') return false;
       const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
       return isAssigned;
     });
 
-    // 3. iRec's global partners for this material (registered by Admin)
     const irecSpecific = dbRecommendedMaterials.filter(m => {
       if (m.type !== 'irec_partner') return false;
-      return m.name && m.name.toLowerCase() === itemName.toLowerCase();
+      return m.name && m.name.toLowerCase() === safeName;
     });
 
     return {
@@ -349,22 +394,9 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
     };
   };
 
-  const getDoctorName = (doctorId) => {
-    const doc = assignedDoctors.find(d => d.id === doctorId);
-    return doc ? doc.name : 'Médico Credenciado';
-  };
+  const getStripeInfo = (name = '') => {
+    const lowerName = String(name ?? '').toLowerCase();
 
-  const getDoctorPartners = () => {
-    return dbRecommendedMaterials.filter(m => {
-      if (m.type !== 'doctor_partner') return false;
-      if (m.patient_id === clinicalProfile?.id) return true;
-      const isAssigned = assignedDoctors.some(doc => doc.id === m.doctor_id);
-      return m.patient_id === null && isAssigned;
-    });
-  };  const getStripeInfo = (name = '') => {
-    const lowerName = name.toLowerCase();
-
-    // Check for free items (MIPs/Insumos)
     if (
       lowerName.includes('sabonete') || 
       lowerName.includes('syndet') || 
@@ -627,9 +659,6 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
       </div>
     );
   }
-
-  
-  const isAiActive = true;
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
