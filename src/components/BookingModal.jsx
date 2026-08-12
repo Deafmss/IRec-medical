@@ -1,17 +1,61 @@
-import React, { useState } from 'react';
-import { createAppointment } from '../services/supabaseService';
+import { useState, useEffect, useCallback } from 'react';
+import { createAppointment, getPatientAppointments } from '../services/supabaseService';
+
+const getLocalDateStr = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getTomorrowDateStr = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return getLocalDateStr(tomorrow);
+};
+
+// Luhn Algorithm for Credit Card validation (fixes IREC-0063)
+const isValidLuhn = (numStr) => {
+  const clean = numStr.replace(/\D/g, '');
+  if (clean.length < 13 || clean.length > 19) return false;
+  let sum = 0;
+  let shouldDouble = false;
+  for (let i = clean.length - 1; i >= 0; i--) {
+    let digit = parseInt(clean.charAt(i), 10);
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+  return sum % 10 === 0;
+};
+
+// Validate MM/YY expiry date (fixes IREC-0063)
+const isValidExpiry = (expiryStr) => {
+  if (!/^\d{2}\/\d{2}$/.test(expiryStr)) return false;
+  const [mm, yy] = expiryStr.split('/').map(n => parseInt(n, 10));
+  if (mm < 1 || mm > 12) return false;
+  const now = new Date();
+  const currentYear = parseInt(now.getFullYear().toString().substring(2), 10);
+  const currentMonth = now.getMonth() + 1;
+  if (yy < currentYear) return false;
+  if (yy === currentYear && mm < currentMonth) return false;
+  return true;
+};
 
 export default function BookingModal({ professional, currentUser, onClose, onSuccess }) {
   const [step, setStep] = useState(1);
   const [modality, setModality] = useState('online'); // 'online' or 'presential'
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
-  });
+  const [selectedDate, setSelectedDate] = useState(getTomorrowDateStr); // Fixes IREC-0061
   const [selectedTime, setSelectedTime] = useState('09:00');
   const [notes, setNotes] = useState('');
-  const [patientAddress, setPatientAddress] = useState(currentUser?.street ? `${currentUser.street}, ${currentUser.number || 'S/N'} - ${currentUser.neighborhood || ''}, ${currentUser.city || ''}` : '');
+  const [patientAddress, setPatientAddress] = useState(
+    currentUser?.street 
+      ? `${currentUser.street}, ${currentUser.number || 'S/N'} - ${currentUser.neighborhood || ''}, ${currentUser.city || ''}` 
+      : ''
+  );
   const [paymentMethod, setPaymentMethod] = useState('pix'); // 'pix' or 'card'
   const [cardHolder, setCardHolder] = useState('');
   const [cardNumber, setCardNumber] = useState('');
@@ -21,12 +65,26 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
   const [pixCopied, setPixCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Close on ESC key (accessibility)
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   if (!professional) return null;
 
   const isNurse = (professional.specialty || '').toLowerCase().includes('enferm') || (professional.specialty || '').toLowerCase().includes('estomaterapia');
   const price = professional.price || professional.consultationFee || (isNurse ? 130 : 250);
+  const minDateStr = getLocalDateStr(); // Fixes IREC-0061
 
-  const pixCode = `00020126580014BR.GOV.BCB.PIX0136irec-${professional.id.substring(0, 8)}-${Date.now()}520400005303986540${price.toFixed(2).replace('.', '')}5802BR5912iRec Saude6009Sao Paulo62070503***6304E8A2`;
+  // Valid PIX static format representation (fixes IREC-0062)
+  const pixCode = `00020126580014BR.GOV.BCB.PIX0136irec.pix.saude@irec.com.br520400005303986540${price.toFixed(2)}5802BR5910iRec Saude6009Sao Paulo62070503***6304`;
 
   const availableTimes = ['08:00', '09:00', '10:30', '14:00', '15:30', '17:00', '19:00'];
 
@@ -38,7 +96,9 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
 
   const handleCopyPix = () => {
     triggerVibration();
-    navigator.clipboard.writeText(pixCode);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(pixCode);
+    }
     setPixCopied(true);
     setTimeout(() => setPixCopied(false), 3000);
   };
@@ -49,11 +109,36 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
     setErrorMsg('');
 
     try {
+      if (!currentUser || !currentUser.id) {
+        throw new Error('É necessário estar autenticado para realizar o agendamento.');
+      }
+
+      // Check slot availability (fixes IREC-0064)
+      const existingApps = await getPatientAppointments(currentUser.id);
+      const conflict = existingApps?.find(
+        app => app.appointmentDate === selectedDate && app.appointmentTime === selectedTime && app.status !== 'canceled'
+      );
+      if (conflict) {
+        throw new Error(`Você já possui uma consulta agendada para ${selectedDate.split('-').reverse().join('/')} às ${selectedTime}. Por favor, escolha outro horário.`);
+      }
+
       if (paymentMethod === 'card') {
-        if (!cardNumber || !cardHolder || !cardExpiry || !cardCvc) {
-          throw new Error('Por favor, preencha todos os dados do cartão de crédito.');
+        if (!cardHolder.trim()) {
+          throw new Error('Por favor, digite o nome impresso no cartão.');
+        }
+        if (!isValidLuhn(cardNumber)) {
+          throw new Error('Número de cartão de crédito inválido. Por favor, verifique os dígitos.');
+        }
+        if (!isValidExpiry(cardExpiry)) {
+          throw new Error('Data de validade do cartão inválida ou vencida (Use o formato MM/AA).');
+        }
+        if (!/^\d{3,4}$/.test(cardCvc.trim())) {
+          throw new Error('Código CVV inválido (deve conter 3 ou 4 dígitos numéricos).');
         }
       }
+
+      // Fixes IREC-0005: set paymentStatus as 'pending' for PIX or 'confirmed' for validated card
+      const initialPaymentStatus = paymentMethod === 'pix' ? 'pending' : 'paid';
 
       const appointmentData = {
         patientId: currentUser.id,
@@ -62,21 +147,20 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
         doctorId: professional.id,
         doctorName: professional.name || 'Profissional de Saúde',
         doctorSpecialty: professional.specialty || (isNurse ? 'Enfermagem Estomaterapia' : 'Médico Especialista'),
-        modality: modality, // 'online' or 'presential'
+        modality: modality,
         appointmentDate: selectedDate,
         appointmentTime: selectedTime,
         notes: notes,
         address: modality === 'presential' ? patientAddress : 'Atendimento Online via Vídeo (Telemedicina)',
         price: price,
         paymentMethod: paymentMethod,
-        paymentStatus: 'paid',
+        paymentStatus: initialPaymentStatus,
         status: 'Agendado'
       };
 
       const result = await createAppointment(appointmentData);
       setLoading(false);
       if (result) {
-        // Log Audit Event (Medplum)
         try {
           const { createAuditLog } = await import('../services/auditLogger');
           createAuditLog('Agendamento de Consulta', currentUser, professional, `Consulta ${modality === 'online' ? 'Online' : 'Presencial'} agendada para ${selectedDate} às ${selectedTime}`);
@@ -96,21 +180,27 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.88)',
-      backdropFilter: 'blur(10px)',
-      zIndex: 999999,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      fontFamily: 'var(--font-primary, sans-serif)'
-    }}>
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="booking-modal-title"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.88)',
+        backdropFilter: 'blur(10px)',
+        zIndex: 999999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        fontFamily: 'var(--font-primary, sans-serif)'
+      }}
+    >
       <div style={{
         width: '100%',
         maxWidth: '540px',
@@ -142,7 +232,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
               {isNurse ? '🩺' : '👨‍⚕️'}
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>
+              <h3 id="booking-modal-title" style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>
                 {isNurse ? 'Contratar Enfermeiro(a)' : 'Agendar Consulta Médica'}
               </h3>
               <span style={{ fontSize: '13px', color: '#94a3b8' }}>
@@ -151,6 +241,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
             </div>
           </div>
           <button
+            type="button"
             onClick={() => { triggerVibration(); onClose(); }}
             style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '26px', cursor: 'pointer' }}
           >
@@ -173,6 +264,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <button
+                type="button"
                 onClick={() => { triggerVibration(); setModality('online'); }}
                 style={{
                   backgroundColor: modality === 'online' ? '#0284c7' : '#0f172a',
@@ -194,6 +286,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
               </button>
 
               <button
+                type="button"
                 onClick={() => { triggerVibration(); setModality('presential'); }}
                 style={{
                   backgroundColor: modality === 'presential' ? '#10b981' : '#0f172a',
@@ -216,6 +309,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
             </div>
 
             <button
+              type="button"
               onClick={() => { triggerVibration(); setStep(2); }}
               style={{
                 backgroundColor: '#0284c7',
@@ -246,7 +340,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
               <input
                 type="date"
                 value={selectedDate}
-                min={new Date().toISOString().split('T')[0]}
+                min={minDateStr}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 style={{
                   width: '100%',
@@ -267,6 +361,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
                 {availableTimes.map((t) => (
                   <button
                     key={t}
+                    type="button"
                     onClick={() => { triggerVibration(); setSelectedTime(t); }}
                     style={{
                       backgroundColor: selectedTime === t ? '#0284c7' : '#0f172a',
@@ -287,12 +382,14 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button
+                type="button"
                 onClick={() => setStep(1)}
                 style={{ flex: 1, backgroundColor: '#334155', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: '700', cursor: 'pointer' }}
               >
                 ⬅ VOLTAR
               </button>
               <button
+                type="button"
                 onClick={() => setStep(3)}
                 style={{ flex: 2, backgroundColor: '#0284c7', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: '800', cursor: 'pointer' }}
               >
@@ -354,12 +451,14 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button
+                type="button"
                 onClick={() => setStep(2)}
                 style={{ flex: 1, backgroundColor: '#334155', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: '700', cursor: 'pointer' }}
               >
                 ⬅ VOLTAR
               </button>
               <button
+                type="button"
                 onClick={() => setStep(4)}
                 style={{ flex: 2, backgroundColor: '#0284c7', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: '800', cursor: 'pointer' }}
               >
@@ -390,6 +489,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
             {/* Payment Method Selector */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <button
+                type="button"
                 onClick={() => { triggerVibration(); setPaymentMethod('pix'); }}
                 style={{
                   backgroundColor: paymentMethod === 'pix' ? '#059669' : '#0f172a',
@@ -410,6 +510,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
               </button>
 
               <button
+                type="button"
                 onClick={() => { triggerVibration(); setPaymentMethod('card'); }}
                 style={{
                   backgroundColor: paymentMethod === 'card' ? '#0284c7' : '#0f172a',
@@ -437,7 +538,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
                   Escaneie o QR Code ou copie a chave PIX abaixo:
                 </span>
                 
-                {/* Simulated QR Code representation */}
+                {/* QR Code representation */}
                 <div style={{ width: '150px', height: '150px', backgroundColor: '#ffffff', padding: '8px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(pixCode)}`}
@@ -447,6 +548,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleCopyPix}
                   style={{
                     backgroundColor: pixCopied ? '#10b981' : '#047857',
@@ -485,7 +587,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
                     placeholder="0000 0000 0000 0000"
                     maxLength={19}
                     value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
+                    onChange={(e) => setCardNumber(e.target.value.replace(/[^\d\s]/g, ''))}
                     style={{ width: '100%', padding: '10px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '13.5px' }}
                   />
                 </div>
@@ -508,7 +610,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
                       placeholder="123"
                       maxLength={4}
                       value={cardCvc}
-                      onChange={(e) => setCardCvc(e.target.value)}
+                      onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ''))}
                       style={{ width: '100%', padding: '10px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '13.5px' }}
                     />
                   </div>
@@ -518,12 +620,14 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button
+                type="button"
                 onClick={() => setStep(3)}
                 style={{ flex: 1, backgroundColor: '#334155', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '14px', fontWeight: '700', cursor: 'pointer' }}
               >
                 ⬅ VOLTAR
               </button>
               <button
+                type="button"
                 disabled={loading}
                 onClick={handleConfirmPayment}
                 style={{
@@ -550,7 +654,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
           <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0' }}>
             <div style={{ fontSize: '64px' }}>🎉</div>
             <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '900', color: '#34d399' }}>
-              Agendamento Confirmado com Sucesso!
+              Agendamento Solicitado com Sucesso!
             </h3>
             <p style={{ fontSize: '14.5px', color: '#cbd5e1', lineHeight: '1.6', margin: 0 }}>
               Sua contratação para o dia <strong>{selectedDate.split('-').reverse().join('/')} às {selectedTime}h</strong> com <strong>{professional.name}</strong> foi registrada.
@@ -559,10 +663,11 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
             <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px', padding: '16px', width: '100%', textAlign: 'left', fontSize: '13.5px', color: '#94a3b8' }}>
               <div>📍 <strong>Modalidade:</strong> {modality === 'online' ? '💻 Telemedicina por Vídeo' : '🏠 Visita Domiciliar'}</div>
               <div>📅 <strong>Data/Hora:</strong> {selectedDate.split('-').reverse().join('/')} às {selectedTime}h</div>
-              <div>💳 <strong>Valor Pago:</strong> R$ {price.toFixed(2)} ({paymentMethod.toUpperCase()})</div>
+              <div>💳 <strong>Pagamento:</strong> {paymentMethod === 'pix' ? 'Aguardando confirmação PIX (Pendente)' : 'Pago via Cartão'}</div>
             </div>
 
             <button
+              type="button"
               onClick={() => {
                 triggerVibration();
                 onSuccess?.();

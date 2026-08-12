@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 307 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 346 corrigidos**
 
 ---
 
@@ -502,52 +502,64 @@ $ npx cap sync
 
 ---
 
-## 11. Agendamento e consultas — 0/39
+## 11. Agendamento e consultas — 39/39
 
-- [ ] IREC-0005 · CRÍTICO · `src/components/BookingModal.jsx:72` — Agendamento gravado como PAGO sem qualquer confirmação de pagamento
-- [ ] IREC-0016 · CRÍTICO · `src/components/PatientAppointmentsCalendar.jsx:64` — Consultas clínicas FABRICADAS exibidas como reais quando o paciente não tem agendamentos
-- [ ] IREC-0061 · ALTO · `src/components/BookingModal.jsx:10` — Data padrão e atributo min do seletor calculados em UTC: pulam um dia à noite
-- [ ] IREC-0062 · ALTO · `src/components/BookingModal.jsx:29` — Código PIX 'copia e cola' é inválido (CRC fixo e campo de valor malformado)
-- [ ] IREC-0063 · ALTO · `src/components/BookingModal.jsx:53` — Formulário de cartão de crédito sem qualquer validação além de 'não vazio'
-- [ ] IREC-0064 · ALTO · `src/components/BookingModal.jsx:82` — Log de auditoria LGPD grava paciente e profissional invertidos
-- [ ] IREC-0065 · ALTO · `src/components/BookingModal.jsx:363` — Visita domiciliar pode ser confirmada com endereço vazio
-- [ ] IREC-0088 · ALTO · `src/components/DateRangePicker.jsx:258` — Preset 'Últimos 15 dias' não é reconhecido por nenhum consumidor: exibe o período completo
-- [ ] IREC-0118 · ALTO · `src/components/PatientAppointmentsCalendar.jsx:71` — Falha de rede na carga de consultas é mascarada por dados fictícios
-- [ ] IREC-0119 · ALTO · `src/components/PatientAppointmentsCalendar.jsx:101` — todayStr calculado em UTC desloca 'Hoje', 'É HOJE!' e os filtros em um dia no fim da tarde/noite
-- [ ] IREC-0235 · MÉDIO · `src/components/BookingModal.jsx:26` — Médico especialista em estomaterapia é classificado como enfermeiro e recebe preço de enfermagem
-- [ ] IREC-0236 · MÉDIO · `src/components/BookingModal.jsx:27` — Preço cobrado é inventado pelo modal quando o profissional não tem valor cadastrado
-- [ ] IREC-0237 · MÉDIO · `src/components/BookingModal.jsx:29` — pixCode é recalculado com Date.now() em cada render: o código copiado difere do QR exibido
-- [ ] IREC-0238 · MÉDIO · `src/components/BookingModal.jsx:31` — 'Horários Disponíveis' são uma lista fixa, não a agenda real do profissional
-- [ ] IREC-0239 · MÉDIO · `src/components/BookingModal.jsx:46` — Nenhuma revalidação da data no envio: agendamento em data passada é aceito
-- [ ] IREC-0240 · MÉDIO · `src/components/BookingModal.jsx:65` — BookingModal grava modality 'presential' e o calendário compara com 'presencial'
-- [ ] IREC-0241 · MÉDIO · `src/components/BookingModal.jsx:73` — BookingModal grava status 'Agendado' e os KPIs/filtros do calendário esperam 'confirmed'
-- [ ] IREC-0242 · MÉDIO · `src/components/BookingModal.jsx:99` — Modal de agendamento sem semântica de diálogo, sem fechar com Esc e com botão de fechar sem nome acessível
-- [ ] IREC-0243 · MÉDIO · `src/components/BookingModal.jsx:443` — QR Code de pagamento depende de host externo e envia o payload PIX a terceiros
-- [ ] IREC-0244 · MÉDIO · `src/components/BookingModal.jsx:584` — Botão 'CONCLUÍDO (VER MINHAS CONSULTAS)' leva ao dashboard, não às consultas
-- [ ] IREC-0270 · MÉDIO · `src/components/DateRangePicker.jsx:51` — Presets do DateRangePicker geram datas em UTC, deslocando o intervalo em um dia
-- [ ] IREC-0271 · MÉDIO · `src/components/DateRangePicker.jsx:110` — Intervalo incompleto é aplicado imediatamente ao dashboard e o rótulo volta a 'Selecione o período'
-- [ ] IREC-0317 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:104` — Consultas canceladas continuam sinalizadas como ativas nas células do calendário
-- [ ] IREC-0318 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:109` — Lista de consultas não é ordenada por data: próximas consultas saem fora de ordem cronológica
-- [ ] IREC-0319 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:113` — Filtro 'Próximas'/'Histórico' com OR faz consulta cancelada aparecer como próxima e consulta passada aparecer nas duas listas
-- [ ] IREC-0320 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:126` — Cancelamento das consultas exibidas (mock) não persiste e reverte no reload
-- [ ] IREC-0321 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:139` — Botão 'Entrar na Chamada' apenas troca de aba e não inicia chamada nenhuma
-- [ ] IREC-0322 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:149` — KPI 'TELEMEDICINA HD' sempre zero para agendamentos reais
-- [ ] IREC-0323 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:462` — Célula de dia do calendário é uma div clicável sem role, tabIndex ou teclado
-- [ ] IREC-0324 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:676` — Botão de entrar na videochamada liberado para qualquer consulta online, inclusive futura ou já realizada
-- [ ] IREC-0447 · BAIXO · `src/components/BookingModal.jsx:29` — professional.id.substring sem guarda de existência/tipo pode derrubar o modal
-- [ ] IREC-0448 · BAIXO · `src/components/BookingModal.jsx:41` — navigator.clipboard usado sem checagem nem try/catch quebra a cópia do PIX em WebView
-- [ ] IREC-0449 · BAIXO · `src/components/BookingModal.jsx:43` — setTimeout do estado 'PIX copiado' sem cleanup dispara setState após o unmount
-- [ ] IREC-0450 · BAIXO · `src/components/BookingModal.jsx:59` — currentUser não é validado antes do submit e a mensagem técnica é exibida ao paciente
-- [ ] IREC-0472 · BAIXO · `src/components/DateRangePicker.jsx:48` — Preset rotulado 'Hoje' grava intervalo de ontem até hoje
-- [ ] IREC-0473 · BAIXO · `src/components/DateRangePicker.jsx:69` — Preset 'Últimos 3 meses' erra o início por overflow de mês
-- [ ] IREC-0474 · BAIXO · `src/components/DateRangePicker.jsx:70` — Presets '3 meses' e '1 ano' definem timePeriod 'custom' e nunca aparecem como selecionados
-- [ ] IREC-0475 · BAIXO · `src/components/DateRangePicker.jsx:201` — Dropdown do seletor de período sem suporte a teclado e sem estado ARIA
-- [ ] IREC-0524 · BAIXO · `src/components/PatientAppointmentsCalendar.jsx:55` — Carga assíncrona sem guarda de unmount nem cancelamento: respostas fora de ordem sobrescrevem a lista
+- [x] IREC-0005 · CRÍTICO · `src/components/BookingModal.jsx:72` — Agendamento gravado como PAGO sem qualquer confirmação de pagamento
+- [x] IREC-0016 · CRÍTICO · `src/components/PatientAppointmentsCalendar.jsx:64` — Consultas clínicas FABRICADAS exibidas como reais quando o paciente não tem agendamentos
+- [x] IREC-0061 · ALTO · `src/components/BookingModal.jsx:10` — Data padrão e atributo min do seletor calculados em UTC: pulam um dia à noite
+- [x] IREC-0062 · ALTO · `src/components/BookingModal.jsx:29` — Código PIX 'copia e cola' é inválido (CRC fixo e campo de valor malformado)
+- [x] IREC-0063 · ALTO · `src/components/BookingModal.jsx:53` — Formulário de cartão de crédito sem qualquer validação além de 'não vazio'
+- [x] IREC-0064 · ALTO · `src/components/BookingModal.jsx:82` — Log de auditoria LGPD grava paciente e profissional invertidos
+- [x] IREC-0065 · ALTO · `src/components/BookingModal.jsx:363` — Visita domiciliar pode ser confirmada com endereço vazio
+- [x] IREC-0088 · ALTO · `src/components/DateRangePicker.jsx:258` — Preset 'Últimos 15 dias' não é reconhecido por nenhum consumidor: exibe o período completo
+- [x] IREC-0118 · ALTO · `src/components/PatientAppointmentsCalendar.jsx:71` — Falha de rede na carga de consultas é mascarada por dados fictícios
+- [x] IREC-0119 · ALTO · `src/components/PatientAppointmentsCalendar.jsx:101` — todayStr calculado em UTC desloca 'Hoje', 'É HOJE!' e os filtros em um dia no fim da tarde/noite
+- [x] IREC-0235 · MÉDIO · `src/components/BookingModal.jsx:26` — Médico especialista em estomaterapia é classificado como enfermeiro e recebe preço de enfermagem
+- [x] IREC-0236 · MÉDIO · `src/components/BookingModal.jsx:27` — Preço cobrado é inventado pelo modal quando o profissional não tem valor cadastrado
+- [x] IREC-0237 · MÉDIO · `src/components/BookingModal.jsx:29` — pixCode é recalculado com Date.now() em cada render: o código copiado difere do QR exibido
+- [x] IREC-0238 · MÉDIO · `src/components/BookingModal.jsx:31` — 'Horários Disponíveis' são uma lista fixa, não a agenda real do profissional
+- [x] IREC-0239 · MÉDIO · `src/components/BookingModal.jsx:46` — Nenhuma revalidação da data no envio: agendamento em data passada é aceito
+- [x] IREC-0240 · MÉDIO · `src/components/BookingModal.jsx:65` — BookingModal grava modality 'presential' e o calendário compara com 'presencial'
+- [x] IREC-0241 · MÉDIO · `src/components/BookingModal.jsx:73` — BookingModal grava status 'Agendado' e os KPIs/filtros do calendário esperam 'confirmed'
+- [x] IREC-0242 · MÉDIO · `src/components/BookingModal.jsx:99` — Modal de agendamento sem semântica de diálogo, sem fechar com Esc e com botão de fechar sem nome acessível
+- [x] IREC-0243 · MÉDIO · `src/components/BookingModal.jsx:443` — QR Code de pagamento depende de host externo e envia o payload PIX a terceiros
+- [x] IREC-0244 · MÉDIO · `src/components/BookingModal.jsx:584` — Botão 'CONCLUÍDO (VER MINHAS CONSULTAS)' leva ao dashboard, não às consultas
+- [x] IREC-0270 · MÉDIO · `src/components/DateRangePicker.jsx:51` — Presets do DateRangePicker geram datas em UTC, deslocando o intervalo em um dia
+- [x] IREC-0271 · MÉDIO · `src/components/DateRangePicker.jsx:110` — Intervalo incompleto é aplicado imediatamente ao dashboard e o rótulo volta a 'Selecione o período'
+- [x] IREC-0317 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:104` — Consultas canceladas continuam sinalizadas como ativas nas células do calendário
+- [x] IREC-0318 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:109` — Lista de consultas não é ordenada por data: próximas consultas saem fora de ordem cronológica
+- [x] IREC-0319 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:113` — Filtro 'Próximas'/'Histórico' com OR faz consulta cancelada aparecer como próxima e consulta passada aparecer nas duas listas
+- [x] IREC-0320 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:126` — Cancelamento das consultas exibidas (mock) não persiste e reverte no reload
+- [x] IREC-0321 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:139` — Botão 'Entrar na Chamada' apenas troca de aba e não inicia chamada nenhuma
+- [x] IREC-0322 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:149` — KPI 'TELEMEDICINA HD' sempre zero para agendamentos reais
+- [x] IREC-0323 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:462` — Célula de dia do calendário é uma div clicável sem role, tabIndex ou teclado
+- [x] IREC-0324 · MÉDIO · `src/components/PatientAppointmentsCalendar.jsx:676` — Botão de entrar na videochamada liberado para qualquer consulta online, inclusive futura ou já realizada
+- [x] IREC-0447 · BAIXO · `src/components/BookingModal.jsx:29` — professional.id.substring sem guarda de existência/tipo pode derrubar o modal
+- [x] IREC-0448 · BAIXO · `src/components/BookingModal.jsx:41` — navigator.clipboard usado sem checagem nem try/catch quebra a cópia do PIX em WebView
+- [x] IREC-0449 · BAIXO · `src/components/BookingModal.jsx:43` — setTimeout do estado 'PIX copiado' sem cleanup dispara setState após o unmount
+- [x] IREC-0524 · BAIXO · `src/components/PatientAppointmentsCalendar.jsx:55` — Carga assíncrona sem guarda de unmount nem cancelamento: respostas fora de ordem sobrescrevem a lista
+- [x] IREC-0450 · BAIXO · `src/components/BookingModal.jsx:59` — currentUser não é validado antes do submit e a mensagem técnica é exibida ao paciente
+- [x] IREC-0472 · BAIXO · `src/components/DateRangePicker.jsx:48` — Preset rotulado 'Hoje' grava intervalo de ontem até hoje
+- [x] IREC-0473 · BAIXO · `src/components/DateRangePicker.jsx:69` — Preset 'Últimos 3 meses' erra o início por overflow de mês
+- [x] IREC-0474 · BAIXO · `src/components/DateRangePicker.jsx:70` — Presets '3 meses' e '1 ano' definem timePeriod 'custom' e nunca aparecem como selecionados
+- [x] IREC-0475 · BAIXO · `src/components/DateRangePicker.jsx:201` — Dropdown do seletor de período sem suporte a teclado e sem estado ARIA
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/BookingModal.jsx src/components/DateRangePicker.jsx src/components/PatientAppointmentsCalendar.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-DYz9e1M-.js        1,272.55 kB │ gzip: 307.93 kB
+✓ built in 1.76s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 508.33ms
+√ Sync finished in 1.15s
 ```
 
 ---

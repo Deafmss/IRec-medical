@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getPatientAppointments, cancelAppointment } from '../services/supabaseService';
 
 export default function PatientAppointmentsCalendar({ currentUser, setActiveTab, setTelemedicineContactId }) {
@@ -11,64 +11,19 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
   const [selectedAppDetail, setSelectedAppDetail] = useState(null);
   const [cancelingId, setCancelingId] = useState(null);
 
-  // Mock fallback appointments for demonstration if none exist in database
-  const getMockAppointments = () => [
-    {
-      id: 'app_mock_1',
-      doctorName: 'Dr. Carlos Eduardo Santos',
-      doctorSpecialty: 'Estomaterapia & Feridas Crônicas',
-      modality: 'online',
-      appointmentDate: new Date(Date.now() + 86400000 * 1).toISOString().split('T')[0], // Tomorrow
-      appointmentTime: '14:30',
-      status: 'confirmed',
-      notes: 'Avaliação de cicatriz em pé diabético e troca de curativo especial.',
-      doctorId: 'doc_1',
-      price: 180.00
-    },
-    {
-      id: 'app_mock_2',
-      doctorName: 'Dra. Ana Paula Silva',
-      doctorSpecialty: 'Dermatologia & Laser',
-      modality: 'presencial',
-      appointmentDate: new Date(Date.now() + 86400000 * 4).toISOString().split('T')[0], // 4 days from now
-      appointmentTime: '10:00',
-      status: 'confirmed',
-      address: 'Av. Paulista, 1000 - Cj 502, São Paulo - SP',
-      notes: 'Retorno de acompanhamento de lesão vascular.',
-      doctorId: 'doc_2',
-      price: 220.00
-    },
-    {
-      id: 'app_mock_3',
-      doctorName: 'Dr. Roberto Mendes',
-      doctorSpecialty: 'Cirurgia Vascular',
-      modality: 'online',
-      appointmentDate: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0], // 5 days ago
-      appointmentTime: '16:00',
-      status: 'completed',
-      notes: 'Consulta inicial de telemedicina realizada com sucesso.',
-      doctorId: 'doc_3',
-      price: 200.00
-    }
-  ];
-
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
         if (currentUser?.id) {
           const data = await getPatientAppointments(currentUser.id);
-          if (data && data.length > 0) {
-            setAppointments(data);
-          } else {
-            setAppointments(getMockAppointments());
-          }
+          setAppointments(data || []);
         } else {
-          setAppointments(getMockAppointments());
+          setAppointments([]);
         }
       } catch (err) {
         console.warn('Erro ao carregar agendamentos:', err);
-        setAppointments(getMockAppointments());
+        setAppointments([]);
       } finally {
         setLoading(false);
       }

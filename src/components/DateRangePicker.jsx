@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function DateRangePicker({ 
   timePeriod, 
@@ -40,6 +40,13 @@ export default function DateRangePicker({
   const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
   const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
 
+  const toLocalIsoStr = (d = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Quick Preset Actions
   const handlePreset = (preset) => {
     const now = new Date();
@@ -48,33 +55,33 @@ export default function DateRangePicker({
     if (preset === '24h') {
       start.setHours(now.getHours() - 24);
       setTimePeriod('24h');
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(now.toISOString().split('T')[0]);
+      setStartDate(toLocalIsoStr(start));
+      setEndDate(toLocalIsoStr(now));
     } else if (preset === '7d') {
       start.setDate(now.getDate() - 7);
       setTimePeriod('7d');
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(now.toISOString().split('T')[0]);
+      setStartDate(toLocalIsoStr(start));
+      setEndDate(toLocalIsoStr(now));
     } else if (preset === '15d') {
       start.setDate(now.getDate() - 15);
       setTimePeriod('15d');
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(now.toISOString().split('T')[0]);
+      setStartDate(toLocalIsoStr(start));
+      setEndDate(toLocalIsoStr(now));
     } else if (preset === '30d') {
       start.setDate(now.getDate() - 30);
       setTimePeriod('30d');
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(now.toISOString().split('T')[0]);
+      setStartDate(toLocalIsoStr(start));
+      setEndDate(toLocalIsoStr(now));
     } else if (preset === '3m') {
       start.setMonth(now.getMonth() - 3);
       setTimePeriod('custom');
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(now.toISOString().split('T')[0]);
+      setStartDate(toLocalIsoStr(start));
+      setEndDate(toLocalIsoStr(now));
     } else if (preset === '1y') {
       start.setFullYear(now.getFullYear() - 1);
       setTimePeriod('custom');
-      setStartDate(start.toISOString().split('T')[0]);
-      setEndDate(now.toISOString().split('T')[0]);
+      setStartDate(toLocalIsoStr(start));
+      setEndDate(toLocalIsoStr(now));
     } else if (preset === 'all') {
       setTimePeriod('all');
       setStartDate('');
