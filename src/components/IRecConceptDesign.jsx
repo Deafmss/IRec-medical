@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
 import { 
-  Video, Camera, MapPin, Calendar, Clock, ChevronRight, 
-  PhoneCall, ShieldCheck, Heart, User, CheckCircle
+  Video, Camera, MapPin, ChevronRight, 
+  PhoneCall, ShieldCheck
 } from 'lucide-react';
 
 /**

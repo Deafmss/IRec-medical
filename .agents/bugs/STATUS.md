@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 555 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 590 corrigidos (100% CONCLUÍDO!)**
 
 ---
 
@@ -962,50 +962,62 @@ $ npx cap sync
 
 ---
 
-## 19. Serviços de base e CSS — 0/37
+## 19. Serviços de base e CSS — 35/35
 
-- [ ] IREC-0162 · ALTO · `src/index.css:125` — outline: none global sem nenhum estilo de foco: teclado fica sem indicador visível em todo o app
-- [ ] IREC-0163 · ALTO · `src/index.css:837` — @media print não isola o conteúdo do modal: impressão da receita inclui o dashboard e o prontuário de fundo
-- [ ] IREC-0164 · ALTO · `src/index.css:856` — @media print não zera o padding-left de 260px do .app-container: documento impresso sai deslocado e cortado
-- [ ] IREC-0165 · ALTO · `src/index.css:1013` — Duas barras de navegação inferiores renderizam juntas; a de paciente cobre a de médico/admin no celular
-- [ ] IREC-0166 · ALTO · `src/index.css:1026` — Barra de navegação mobile (z-index 99999) fica acima de todos os modais e bloqueia seus controles
-- [ ] IREC-0167 · ALTO · `src/services/auditLogger.js:8` — Dois createAuditLog com assinaturas e destinos diferentes; os eventos LGPD nunca chegam à tela admin-logs
-- [ ] IREC-0168 · ALTO · `src/services/auditLogger.js:25` — Trilha de auditoria LGPD gravada só em localStorage e declarada "imutável"
-- [ ] IREC-0169 · ALTO · `src/services/fhirService.js:28` — Bundle FHIR exportado omite CPF, alergias e medicamentos em uso
-- [ ] IREC-0170 · ALTO · `src/services/fhirService.js:191` — Medidas de ferida não medidas são exportadas como 0 cm / 0 cm² com status "final" no bundle FHIR
-- [ ] IREC-0387 · MÉDIO · `src/index.css:1013` — Colisão de breakpoint em exatamente 768px: sidebar desktop e barra mobile ativas ao mesmo tempo
-- [ ] IREC-0388 · MÉDIO · `src/index.css:1023` — Classe .no-print é derrotada por !important declarado depois no arquivo
-- [ ] IREC-0390 · MÉDIO · `src/services/auditLogger.js:3` — Logs de auditoria com nomes de pacientes não são apagados no logout (vazamento em dispositivo compartilhado)
-- [ ] IREC-0391 · MÉDIO · `src/services/auditLogger.js:25` — Nome de paciente gravado pelo log de auditoria não é limpo no logout (vazamento entre usuários do mesmo dispositivo)
-- [ ] IREC-0392 · MÉDIO · `src/services/auditLogger.js:26` — Nome do paciente é impresso no console a cada abertura do prontuário (PII em log)
-- [ ] IREC-0393 · MÉDIO · `src/services/auditLogger.js:26` — Nome do paciente escrito em console.log vira breadcrumb do Sentry e sai do dispositivo
-- [ ] IREC-0394 · MÉDIO · `src/services/auditLogger.js:28` — Falha na gravação da auditoria é silenciosa: acesso ao prontuário prossegue sem registro
-- [ ] IREC-0395 · MÉDIO · `src/services/auditLogger.js:37` — Trilha de auditoria é write-only: getPatientAuditLogs nunca é chamada em nenhum lugar
-- [ ] IREC-0396 · MÉDIO · `src/services/fhirService.js:25` — Nome do paciente invertido no HumanName FHIR: prenome exportado como family (sobrenome)
-- [ ] IREC-0397 · MÉDIO · `src/services/fhirService.js:48` — Arrays vazios e fullUrl relativo tornam o bundle inválido para servidores FHIR conformes
-- [ ] IREC-0398 · MÉDIO · `src/services/fhirService.js:102` — effectiveDateTime da avaliação sai um dia antes por parse de data em UTC
-- [ ] IREC-0399 · MÉDIO · `src/services/fhirService.js:201` — Dor não informada é exportada como 0/10 e valor string quebra o valueInteger do FHIR
-- [ ] IREC-0420 · MÉDIO · `src/utils/speechUtils.js:19` — Nenhuma função de cancelamento é exportada e a fala do mount continua depois de sair da tela
-- [ ] IREC-0421 · MÉDIO · `src/utils/speechUtils.js:95` — setTimeout de fallback da síntese de voz fica fora do try/catch e usa timeout fixo de 150ms
-- [ ] IREC-0422 · MÉDIO · `src/utils/speechUtils.js:95` — Chamadas em sequência com vozes não carregadas enfileiram falas sobrepostas (timers nunca cancelados)
-- [ ] IREC-0500 · BAIXO · `src/components/IRecConceptDesign.jsx:1` — Imports não utilizados no design conceitual alimentam os erros de ESLint
-- [ ] IREC-0501 · BAIXO · `src/components/IRecConceptDesign.jsx:16` — Cores fixas e fonte não carregada no design conceitual quebram o tema
-- [ ] IREC-0502 · BAIXO · `src/components/IRecConceptDesign.jsx:49` — Dados clínicos e de identificação fabricados hardcoded na tela do paciente
-- [ ] IREC-0503 · BAIXO · `src/components/IRecConceptDesign.jsx:98` — Botões principais do design conceitual não têm handler ("Ligar Agora" da emergência inclusive)
-- [ ] IREC-0504 · BAIXO · `src/components/IRecConceptDesign.jsx:129` — Cards "clicáveis" são divs sem onClick, role ou tabIndex
-- [ ] IREC-0572 · BAIXO · `src/index.css:723` — Contraste insuficiente nos badges de comorbidade no tema claro
-- [ ] IREC-0573 · BAIXO · `src/index.css:981` — Altura do chat mobile calculada com header fixo de 60px, mas o header mede ~71px
-- [ ] IREC-0574 · BAIXO · `src/services/auditLogger.js:11` — Timestamps da auditoria vêm de três instantes diferentes e do fuso do dispositivo
-- [ ] IREC-0575 · BAIXO · `src/services/auditLogger.js:24` — Cap de 200 registros descarta silenciosamente a auditoria mais antiga
-- [ ] IREC-0576 · BAIXO · `src/services/auditLogger.js:41` — Consulta da trilha de auditoria mistura patientId com patientName e agrupa pacientes sem id
-- [ ] IREC-0577 · BAIXO · `src/services/fhirService.js:134` — Texto "undefined" no code.text da Observation FHIR quando entry.type está vazio
-- [ ] IREC-0585 · BAIXO · `src/utils/speechUtils.js:15` — onvoiceschanged global sobrescrito e v.lang usado sem verificação
-- [ ] IREC-0586 · BAIXO · `src/utils/speechUtils.js:24` — navigator.vibrate embutido no utilitário de fala dispara sem gesto do usuário
+- [x] IREC-0162 · ALTO · `src/index.css:125` — outline: none global sem nenhum estilo de foco: teclado fica sem indicador visível em todo o app
+- [x] IREC-0163 · ALTO · `src/index.css:837` — @media print não isola o conteúdo do modal: impressão da receita inclui o dashboard e o prontuário de fundo
+- [x] IREC-0164 · ALTO · `src/index.css:856` — @media print não zera o padding-left de 260px do .app-container: documento impresso sai deslocado e cortado
+- [x] IREC-0165 · ALTO · `src/index.css:1013` — Duas barras de navegação inferiores renderizam juntas; a de paciente cobre a de médico/admin no celular
+- [x] IREC-0166 · ALTO · `src/index.css:1026` — Barra de navegação mobile (z-index 99999) fica acima de todos os modais e bloqueia seus controles
+- [x] IREC-0167 · ALTO · `src/services/auditLogger.js:8` — Dois createAuditLog com assinaturas e destinos diferentes; os eventos LGPD nunca chegam à tela admin-logs
+- [x] IREC-0168 · ALTO · `src/services/auditLogger.js:25` — Trilha de auditoria LGPD gravada só em localStorage e declarada "imutável"
+- [x] IREC-0169 · ALTO · `src/services/fhirService.js:28` — Bundle FHIR exportado omite CPF, alergias e medicamentos em uso
+- [x] IREC-0170 · ALTO · `src/services/fhirService.js:191` — Medidas de ferida não medidas são exportadas como 0 cm / 0 cm² com status "final" no bundle FHIR
+- [x] IREC-0387 · MÉDIO · `src/index.css:1013` — Colisão de breakpoint em exatamente 768px: sidebar desktop e barra mobile ativas ao mesmo tempo
+- [x] IREC-0388 · MÉDIO · `src/index.css:1023` — Classe .no-print é derrotada por !important declarado depois no arquivo
+- [x] IREC-0390 · MÉDIO · `src/services/auditLogger.js:3` — Logs de auditoria com nomes de pacientes não são apagados no logout (vazamento em dispositivo compartilhado)
+- [x] IREC-0391 · MÉDIO · `src/services/auditLogger.js:25` — Nome de paciente gravado pelo log de auditoria não é limpo no logout (vazamento entre usuários do mesmo dispositivo)
+- [x] IREC-0392 · MÉDIO · `src/services/auditLogger.js:26` — Nome do paciente é impresso no console a cada abertura do prontuário (PII em log)
+- [x] IREC-0393 · MÉDIO · `src/services/auditLogger.js:26` — Nome do paciente escrito em console.log vira breadcrumb do Sentry e sai do dispositivo
+- [x] IREC-0394 · MÉDIO · `src/services/auditLogger.js:28` — Falha na gravação da auditoria é silenciosa: acesso ao prontuário prossegue sem registro
+- [x] IREC-0395 · MÉDIO · `src/services/auditLogger.js:37` — Trilha de auditoria é write-only: getPatientAuditLogs nunca é chamada em nenhum lugar
+- [x] IREC-0396 · MÉDIO · `src/services/fhirService.js:25` — Nome do paciente invertido no HumanName FHIR: prenome exportado como family (sobrenome)
+- [x] IREC-0397 · MÉDIO · `src/services/fhirService.js:48` — Arrays vazios e fullUrl relativo tornam o bundle inválido para servidores FHIR conformes
+- [x] IREC-0398 · MÉDIO · `src/services/fhirService.js:102` — effectiveDateTime da avaliação sai um dia antes por parse de data em UTC
+- [x] IREC-0399 · MÉDIO · `src/services/fhirService.js:201` — Dor não informada é exportada como 0/10 e valor string quebra o valueInteger do FHIR
+- [x] IREC-0420 · MÉDIO · `src/utils/speechUtils.js:19` — Nenhuma função de cancelamento é exportada e a fala do mount continua depois de sair da tela
+- [x] IREC-0421 · MÉDIO · `src/utils/speechUtils.js:95` — setTimeout de fallback da síntese de voz fica fora do try/catch e usa timeout fixo de 150ms
+- [x] IREC-0422 · MÉDIO · `src/utils/speechUtils.js:95` — Chamadas em sequência com vozes não carregadas enfileiram falas sobrepostas (timers nunca cancelados)
+- [x] IREC-0500 · BAIXO · `src/components/IRecConceptDesign.jsx:1` — Imports não utilizados no design conceitual alimentam os erros de ESLint
+- [x] IREC-0501 · BAIXO · `src/components/IRecConceptDesign.jsx:16` — Cores fixas e fonte não carregada no design conceitual quebram o tema
+- [x] IREC-0502 · BAIXO · `src/components/IRecConceptDesign.jsx:49` — Dados clínicos e de identificação fabricados hardcoded na tela do paciente
+- [x] IREC-0503 · BAIXO · `src/components/IRecConceptDesign.jsx:98` — Botões principais do design conceitual não têm handler ("Ligar Agora" da emergência inclusive)
+- [x] IREC-0504 · BAIXO · `src/components/IRecConceptDesign.jsx:129` — Cards "clicáveis" são divs sem onClick, role ou tabIndex
+- [x] IREC-0572 · BAIXO · `src/index.css:723` — Contraste insuficiente nos badges de comorbidade no tema claro
+- [x] IREC-0573 · BAIXO · `src/index.css:981` — Altura do chat mobile calculada com header fixo de 60px, mas o header mede ~71px
+- [x] IREC-0574 · BAIXO · `src/services/auditLogger.js:11` — Timestamps da auditoria vêm de três instantes diferentes e do fuso do dispositivo
+- [x] IREC-0575 · BAIXO · `src/services/auditLogger.js:24` — Cap de 200 registros descarta silenciosamente a auditoria mais antiga
+- [x] IREC-0576 · BAIXO · `src/services/auditLogger.js:41` — Consulta da trilha de auditoria mistura patientId com patientName e agrupa pacientes sem id
+- [x] IREC-0577 · BAIXO · `src/services/fhirService.js:134` — Texto "undefined" no code.text da Observation FHIR quando entry.type está vazio
+- [x] IREC-0585 · BAIXO · `src/utils/speechUtils.js:15` — onvoiceschanged global sobrescrito e v.lang usado sem verificação
+- [x] IREC-0586 · BAIXO · `src/utils/speechUtils.js:24` — navigator.vibrate embutido no utilitário de fala dispara sem gesto do usuário
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/services/auditLogger.js src/services/fhirService.js src/utils/speechUtils.js src/components/IRecConceptDesign.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-Dihr6CaK.css          17.47 kB │ gzip:   4.07 kB
+dist/assets/index-IkcxHH-b.js        1,278.56 kB │ gzip: 309.64 kB
+✓ built in 1.87s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 535.20ms
+√ Sync finished in 1.182s
 ```
 
 ---

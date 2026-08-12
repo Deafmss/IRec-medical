@@ -125,6 +125,12 @@ input, button, textarea, select {
   outline: none;
 }
 
+/* Fixes IREC-0162: Focus visible indicator for accessibility */
+input:focus-visible, button:focus-visible, textarea:focus-visible, select:focus-visible, .premium-checkbox-input:focus-visible {
+  outline: 2px solid var(--primary) !important;
+  outline-offset: 2px !important;
+}
+
 select option {
   background-color: var(--bg-secondary) !important;
   color: var(--text-primary) !important;
@@ -853,9 +859,12 @@ select option {
     display: none !important;
   }
   
+  /* Fixes IREC-0164: zero padding-left on container in print mode */
   .app-container {
     display: block !important;
     min-height: auto !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
   }
   
   .main-content {

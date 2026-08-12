@@ -38,7 +38,7 @@ export const speakNaturalText = (text, rate = 0.95, pitch = 1.0) => {
       const ptVoices = availableVoices.filter(v => v.lang === 'pt-BR' || v.lang === 'pt_BR' || v.lang.startsWith('pt'));
 
       const isAppleDevice = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
-      let targetVoice = null;
+      let targetVoice;
 
       if (isAppleDevice) {
         // ----------------------------------------------------
