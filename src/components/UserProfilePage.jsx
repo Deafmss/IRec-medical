@@ -1,7 +1,7 @@
-import React from 'react';
 import UserProfileModal from './UserProfileModal';
+import { getWoundEntries } from '../services/supabaseService';
 
-export default function UserProfilePage({ currentUser, onProfileUpdate, setActiveTab }) {
+export default function UserProfilePage({ currentUser, onProfileUpdate }) {
   return (
     <div style={{
       padding: '24px',
@@ -76,12 +76,24 @@ export default function UserProfilePage({ currentUser, onProfileUpdate, setActiv
 
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <button
-            onClick={() => {
+            type="button"
+            onClick={async () => {
+              let remoteEntries = [];
+              if (currentUser?.id) {
+                try {
+                  remoteEntries = await getWoundEntries(currentUser.id);
+                } catch (e) {
+                  console.warn("Falha ao ler entradas do Supabase para exportação LGPD:", e);
+                }
+              }
+              const localEntries = JSON.parse(localStorage.getItem(`irec_entries_${currentUser?.id}`) || '[]');
+              const allEntries = remoteEntries && remoteEntries.length > 0 ? remoteEntries : localEntries;
+
               const exportData = {
                 user: currentUser,
                 exportedAt: new Date().toISOString(),
                 lgpdNotice: 'Dados pessoais e clínicos exportados via Plataforma iRec Saúde em conformidade com o Art. 18 da LGPD.',
-                localEntries: JSON.parse(localStorage.getItem(`irec_entries_${currentUser?.id}`) || '[]')
+                clinicalEntries: allEntries
               };
               const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
               const downloadAnchor = document.createElement('a');
@@ -111,8 +123,15 @@ export default function UserProfilePage({ currentUser, onProfileUpdate, setActiv
           </button>
 
           <button
-            onClick={() => {
+            type="button"
+            onClick={async () => {
               if (window.confirm("⚠️ Tem certeza de que deseja solicitar a exclusão de sua conta? Seus prontuários serão arquivados conforme prazo legal do CFM e o acesso será suspenso.")) {
+                try {
+                  const { createAuditLog } = await import('../services/auditLogger');
+                  createAuditLog('Solicitação de Exclusão LGPD', currentUser, currentUser, 'Solicitação de revogação de consentimento e exclusão de conta via painel LGPD');
+                } catch (e) {
+                  console.warn("[iRec AuditLog] Falha ao gravar log de exclusão LGPD:", e);
+                }
                 alert("📩 Solicitação de exclusão registrada com sucesso em auditoria. Nossa equipe entrará em contato em até 48 horas.");
               }
             }}

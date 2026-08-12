@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { updateClinicalProfile, uploadAvatar } from '../services/supabaseService';
 
 const ALL_SPECIALTIES = [
@@ -132,6 +132,61 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
   const [specDropdownOpen, setSpecDropdownOpen] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Sync formData when currentUser updates (fixes IREC-0364)
+  useEffect(() => {
+    if (currentUser) {
+      Promise.resolve().then(() => {
+        setFormData(prev => ({
+          ...prev,
+          name: currentUser.name || prev.name,
+          email: currentUser.email || prev.email,
+          role: currentUser.role || prev.role,
+          crm: currentUser.crm || prev.crm,
+          specialty: currentUser.specialty || prev.specialty,
+          rqe: currentUser.rqe || prev.rqe,
+          bio: currentUser.bio || prev.bio,
+          education: currentUser.education || prev.education,
+          consultationFee: currentUser.consultationFee || prev.consultationFee,
+          birthDate: currentUser.birthDate || prev.birthDate,
+          gender: currentUser.gender || prev.gender,
+          healthUnit: currentUser.healthUnit || prev.healthUnit,
+          cpf: currentUser.cpf || prev.cpf,
+          rg: currentUser.rg || prev.rg,
+          cns: currentUser.cns || prev.cns,
+          phone: currentUser.phone || prev.phone,
+          emergencyContactName: currentUser.emergencyContactName || prev.emergencyContactName,
+          emergencyContactPhone: currentUser.emergencyContactPhone || prev.emergencyContactPhone,
+          cep: currentUser.cep || prev.cep,
+          street: currentUser.street || prev.street,
+          number: currentUser.number || prev.number,
+          complement: currentUser.complement || prev.complement,
+          neighborhood: currentUser.neighborhood || prev.neighborhood,
+          city: currentUser.city || prev.city,
+          state: currentUser.state || prev.state,
+          weight: currentUser.weight || prev.weight,
+          height: currentUser.height || prev.height,
+          bloodType: currentUser.bloodType || prev.bloodType,
+          mobility: currentUser.mobility || prev.mobility,
+          nutritionalStatus: currentUser.nutritionalStatus || prev.nutritionalStatus,
+          alcoholism: currentUser.alcoholism ?? prev.alcoholism,
+          hasCaregiver: currentUser.hasCaregiver ?? prev.hasCaregiver,
+          caregiverName: currentUser.caregiverName || prev.caregiverName,
+          hasDiabetes: currentUser.hasDiabetes ?? prev.hasDiabetes,
+          hasHypertension: currentUser.hasHypertension ?? prev.hasHypertension,
+          hasVenousInsufficiency: currentUser.hasVenousInsufficiency ?? prev.hasVenousInsufficiency,
+          hasPeripheralArterialDisease: currentUser.hasPeripheralArterialDisease ?? prev.hasPeripheralArterialDisease,
+          isSmoker: currentUser.isSmoker ?? prev.isSmoker,
+          isObese: currentUser.isObese ?? prev.isObese,
+          hasAmputationHistory: currentUser.hasAmputationHistory ?? prev.hasAmputationHistory,
+          otherConditions: currentUser.otherConditions || prev.otherConditions,
+          medications: currentUser.medications || prev.medications,
+          allergies: currentUser.allergies || prev.allergies,
+          avatarUrl: currentUser.avatarUrl || prev.avatarUrl
+        }));
+      });
+    }
+  }, [currentUser]);
+
   // Auto CEP lookup
   const handleCepChange = async (e) => {
     const value = e.target.value.replace(/\D/g, '');
@@ -155,10 +210,14 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
     }
   };
 
-  // BMI calculations and automatic obesity flag
+  // BMI calculations and automatic obesity flag (fixes IREC-0154)
   const w = parseFloat(formData.weight);
-  const h = parseFloat(formData.height);
-  const bmi = (w && h) ? (w / (h * h)) : null;
+  let rawH = parseFloat(formData.height);
+  if (rawH > 3.0) {
+    rawH = rawH / 100; // Convert cm to meters if entered as cm
+  }
+  const h = rawH;
+  const bmi = (w && h && h > 0) ? (w / (h * h)) : null;
 
   const getBmiCategory = (value) => {
     if (!value) return null;
@@ -273,7 +332,7 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
         hasVenousInsufficiency: formData.hasVenousInsufficiency,
         hasPeripheralArterialDisease: formData.hasPeripheralArterialDisease,
         isSmoker: formData.isSmoker,
-        isObese: (bmi !== null) ? (bmi >= 30) : (formData.isObese || false),
+        isObese: formData.isObese || (bmi !== null && bmi >= 30), // Fixes IREC-0155
         hasAmputationHistory: formData.hasAmputationHistory,
         otherConditions: formData.otherConditions,
         medications: formData.medications,
@@ -287,14 +346,14 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
       }
 
       const result = await updateClinicalProfile(currentUser.id, updatedProfile);
-      if (result) {
+      if (result && result.id) { // Fixes IREC-0030
         onProfileUpdate(result);
         setSuccessMsg('Perfil atualizado com sucesso!');
         setTimeout(() => {
           onClose();
         }, 1200);
       } else {
-        setErrorMsg('Erro ao atualizar perfil.');
+        setErrorMsg('Falha ao atualizar perfil no servidor. Por favor, verifique sua conexão.');
       }
     } catch (err) {
       console.error(err);

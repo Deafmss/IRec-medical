@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 376 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 404 corrigidos**
 
 ---
 
@@ -617,41 +617,53 @@ $ npx cap sync
 
 ---
 
-## 13. Perfil do usuário — 0/28
+## 13. Perfil do usuário — 28/28
 
-- [ ] IREC-0030 · CRÍTICO · `src/components/UserProfileModal.jsx:289` — Salvamento do perfil sempre reporta sucesso, mesmo quando o UPDATE no Supabase falha (perda silenciosa de dados clínicos)
-- [ ] IREC-0154 · ALTO · `src/components/UserProfileModal.jsx:160` — Unidade da altura divergente: perfil grava metros e o Dashboard do paciente divide por 100, exibindo IMC absurdo
-- [ ] IREC-0155 · ALTO · `src/components/UserProfileModal.jsx:276` — Flag clínica isObese é sobrescrita automaticamente pelo IMC, apagando comorbidade registrada por profissional
-- [ ] IREC-0156 · ALTO · `src/components/UserProfileModal.jsx:410` — Enfermeiro (role 'nurse') recebe o formulário de PACIENTE e não consegue editar dados profissionais
-- [ ] IREC-0157 · ALTO · `src/components/UserProfileModal.jsx:438` — Perfil profissional permite salvar CRM/COREN vazio e o gerador de receita usa registro fabricado '123456-SP'
-- [ ] IREC-0158 · ALTO · `src/components/UserProfilePage.jsx:84` — Exportação LGPD entrega arquivo sem nenhum registro clínico quando o Supabase está configurado
-- [ ] IREC-0159 · ALTO · `src/components/UserProfilePage.jsx:113` — Botão 'Solicitar Exclusão de Conta (LGPD)' não faz nada e afirma falsamente que registrou a solicitação em auditoria
-- [ ] IREC-0364 · MÉDIO · `src/components/UserProfileModal.jsx:79` — formData nunca ressincroniza com o prop currentUser: salvar o perfil sobrescreve dados atualizados por outro profissional
-- [ ] IREC-0365 · MÉDIO · `src/components/UserProfileModal.jsx:124` — Salvar o perfil reverte o 'Modo Fácil' escolhido depois da abertura da tela (uiMode capturado na montagem)
-- [ ] IREC-0366 · MÉDIO · `src/components/UserProfileModal.jsx:124` — Preferência de acessibilidade é global (não por usuário) e não é limpa no logout: vaza entre contas e é gravada no perfil errado
-- [ ] IREC-0367 · MÉDIO · `src/components/UserProfileModal.jsx:136` — Race na busca automática de CEP grava endereço de um CEP anterior
-- [ ] IREC-0368 · MÉDIO · `src/components/UserProfileModal.jsx:222` — Erro de validação aparece fora da área visível e sem levar o usuário ao campo inválido
-- [ ] IREC-0369 · MÉDIO · `src/components/UserProfileModal.jsx:267` — Status nutricional derivado grava 'Bem nutrido' para IMC de sobrepeso, contradizendo o badge exibido
-- [ ] IREC-0370 · MÉDIO · `src/components/UserProfileModal.jsx:330` — Especialidade personalizada com vírgula é fatiada em duas especialidades falsas
-- [ ] IREC-0371 · MÉDIO · `src/components/UserProfileModal.jsx:514` — Overlay invisível do autocomplete de especialidades engole o primeiro clique nos botões do rodapé
-- [ ] IREC-0372 · MÉDIO · `src/components/UserProfileModal.jsx:548` — Autocomplete de especialidades e avatar são divs clicáveis sem role, foco ou suporte a teclado
-- [ ] IREC-0373 · MÉDIO · `src/components/UserProfileModal.jsx:721` — Validação 'required' do Nome só existe na aba Dados Pessoais: é possível salvar nome vazio trocando de aba
-- [ ] IREC-0374 · MÉDIO · `src/components/UserProfileModal.jsx:978` — Selects de etilismo e cuidador não têm estado 'não informado' e gravam 'Não' como resposta clínica
-- [ ] IREC-0375 · MÉDIO · `src/components/UserProfilePage.jsx:52` — Botão 'Cancelar' da página de Perfil é inoperante (onClose é uma função vazia)
-- [ ] IREC-0550 · BAIXO · `src/components/UserProfileModal.jsx:152` — Falha na busca de CEP é silenciosa (apenas console.warn)
-- [ ] IREC-0551 · BAIXO · `src/components/UserProfileModal.jsx:178` — Reselecionar o mesmo arquivo após uma falha de upload não dispara nada (input file não é resetado)
-- [ ] IREC-0552 · BAIXO · `src/components/UserProfileModal.jsx:197` — Troca de foto é persistida imediatamente no banco e 'Cancelar' não a desfaz
-- [ ] IREC-0553 · BAIXO · `src/components/UserProfileModal.jsx:293` — setTimeout que fecha o modal não é cancelado no desmonte
-- [ ] IREC-0554 · BAIXO · `src/components/UserProfileModal.jsx:351` — Botão de fechar do modal não tem nome acessível
-- [ ] IREC-0555 · BAIXO · `src/components/UserProfileModal.jsx:1330` — Backdrop fecha o modal em qualquer clique e descarta todas as edições sem confirmação
-- [ ] IREC-0556 · BAIXO · `src/components/UserProfilePage.jsx:37` — Página anuncia 'preferências de interface' que não existem em nenhum campo do formulário
-- [ ] IREC-0557 · BAIXO · `src/components/UserProfilePage.jsx:79` — Exportação de dados de saúde não gera registro de auditoria LGPD
-- [ ] IREC-0558 · BAIXO · `src/components/UserProfilePage.jsx:84` — JSON.parse sem try/catch no botão de exportação LGPD derruba o handler
+- [x] IREC-0030 · CRÍTICO · `src/components/UserProfileModal.jsx:289` — Salvamento do perfil sempre reporta sucesso, mesmo quando o UPDATE no Supabase falha (perda silenciosa de dados clínicos)
+- [x] IREC-0154 · ALTO · `src/components/UserProfileModal.jsx:160` — Unidade da altura divergente: perfil grava metros e o Dashboard do paciente divide por 100, exibindo IMC absurdo
+- [x] IREC-0155 · ALTO · `src/components/UserProfileModal.jsx:276` — Flag clínica isObese é sobrescrita automaticamente pelo IMC, apagando comorbidade registrada por profissional
+- [x] IREC-0156 · ALTO · `src/components/UserProfileModal.jsx:410` — Enfermeiro (role 'nurse') recebe o formulário de PACIENTE e não consegue editar dados profissionais
+- [x] IREC-0157 · ALTO · `src/components/UserProfileModal.jsx:438` — Perfil profissional permite salvar CRM/COREN vazio e o gerador de receita usa registro fabricado '123456-SP'
+- [x] IREC-0158 · ALTO · `src/components/UserProfilePage.jsx:84` — Exportação LGPD entrega arquivo sem nenhum registro clínico quando o Supabase está configurado
+- [x] IREC-0159 · ALTO · `src/components/UserProfilePage.jsx:113` — Botão 'Solicitar Exclusão de Conta (LGPD)' não faz nada e afirma falsamente que registrou a solicitação em auditoria
+- [x] IREC-0364 · MÉDIO · `src/components/UserProfileModal.jsx:79` — formData nunca ressincroniza com o prop currentUser: salvar o perfil sobrescreve dados atualizados por outro profissional
+- [x] IREC-0365 · MÉDIO · `src/components/UserProfileModal.jsx:124` — Salvar o perfil reverte o 'Modo Fácil' escolhido depois da abertura da tela (uiMode capturado na montagem)
+- [x] IREC-0366 · MÉDIO · `src/components/UserProfileModal.jsx:124` — Preferência de acessibilidade é global (não por usuário) e não é limpa no logout: vaza entre contas e é gravada no perfil errado
+- [x] IREC-0367 · MÉDIO · `src/components/UserProfileModal.jsx:136` — Race na busca automática de CEP grava endereço de um CEP anterior
+- [x] IREC-0368 · MÉDIO · `src/components/UserProfileModal.jsx:222` — Erro de validação aparece fora da área visível e sem levar o usuário ao campo inválido
+- [x] IREC-0369 · MÉDIO · `src/components/UserProfileModal.jsx:267` — Status nutricional derivado grava 'Bem nutrido' para IMC de sobrepeso, contradizendo o badge exibido
+- [x] IREC-0370 · MÉDIO · `src/components/UserProfileModal.jsx:330` — Especialidade personalizada com vírgula é fatiada em duas especialidades falsas
+- [x] IREC-0371 · MÉDIO · `src/components/UserProfileModal.jsx:514` — Overlay invisível do autocomplete de especialidades engole o primeiro clique nos botões do rodapé
+- [x] IREC-0372 · MÉDIO · `src/components/UserProfileModal.jsx:548` — Autocomplete de especialidades e avatar são divs clicáveis sem role, foco ou suporte a teclado
+- [x] IREC-0373 · MÉDIO · `src/components/UserProfileModal.jsx:721` — Validação 'required' do Nome só existe na aba Dados Pessoais: é possível salvar nome vazio trocando de aba
+- [x] IREC-0374 · MÉDIO · `src/components/UserProfileModal.jsx:978` — Selects de etilismo e cuidador não têm estado 'não informado' e gravam 'Não' como resposta clínica
+- [x] IREC-0375 · MÉDIO · `src/components/UserProfilePage.jsx:52` — Botão 'Cancelar' da página de Perfil é inoperante (onClose é uma função vazia)
+- [x] IREC-0550 · BAIXO · `src/components/UserProfileModal.jsx:152` — Falha na busca de CEP é silenciosa (apenas console.warn)
+- [x] IREC-0551 · BAIXO · `src/components/UserProfileModal.jsx:178` — Reselecionar o mesmo arquivo após uma falha de upload não dispara nada (input file não é resetado)
+- [x] IREC-0552 · BAIXO · `src/components/UserProfileModal.jsx:197` — Troca de foto é persistida imediatamente no banco e 'Cancelar' não a desfaz
+- [x] IREC-0553 · BAIXO · `src/components/UserProfileModal.jsx:293` — setTimeout que fecha o modal não é cancelado no desmonte
+- [x] IREC-0554 · BAIXO · `src/components/UserProfileModal.jsx:351` — Botão de fechar do modal não tem nome acessível
+- [x] IREC-0555 · BAIXO · `src/components/UserProfileModal.jsx:1330` — Backdrop fecha o modal em qualquer clique e descarta todas as edições sem confirmação
+- [x] IREC-0556 · BAIXO · `src/components/UserProfilePage.jsx:37` — Página anuncia 'preferências de interface' que não existem em nenhum campo do formulário
+- [x] IREC-0557 · BAIXO · `src/components/UserProfilePage.jsx:79` — Exportação de dados de saúde não gera registro de auditoria LGPD
+- [x] IREC-0558 · BAIXO · `src/components/UserProfilePage.jsx:84` — JSON.parse sem try/catch no botão de exportação LGPD derruba o handler
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/UserProfileModal.jsx src/components/UserProfilePage.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-CUWmiOxc.js        1,275.37 kB │ gzip: 308.59 kB
+✓ built in 1.59s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 512.18ms
+√ Sync finished in 1.154s
 ```
 
 ---
