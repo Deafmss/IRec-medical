@@ -850,7 +850,7 @@ export default function App() {
           />
         );
       case 'history':
-        return <ClinicalHistory entries={targetEntries} clinicalProfile={targetProfile} setActiveTab={setActiveTab} />;
+        return <ClinicalHistory entries={targetEntries} clinicalProfile={targetProfile} currentUser={currentUser} setActiveTab={setActiveTab} />;
       case 'nurses':
         return (
           <NursesNetwork 
@@ -889,9 +889,10 @@ export default function App() {
       case 'doctor-partners':
         return <DoctorPartners doctorProfile={currentUser} />;
       case 'vitals':
+      case 'telemetry':
         return <VitalsTelemetry patientId={targetProfile?.id || currentUser?.id} isDoctorView={isClinician} />;
       case 'comparator':
-        return <WoundEvolutionComparator woundEntries={targetEntries} patientProfile={targetProfile} />;
+        return <WoundEvolutionComparator entries={targetEntries} patientProfile={targetProfile} onClose={() => setActiveTab('history')} />;
       case 'protocols':
         return (
           <ProtocolGuide 

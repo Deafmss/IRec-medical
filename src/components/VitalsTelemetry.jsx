@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
-export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
+export default function VitalsTelemetry() {
   const [activeSubTab, setActiveSubTab] = useState('vitals');
   const [syncing, setSyncing] = useState(false);
+  const [simulateCritical, setSimulateCritical] = useState(false);
 
   // Sinais vitais gerais
   const [vitals, setVitals] = useState({
@@ -13,7 +14,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
     glucose: 95
   });
 
-  // Temperaturas plantar do pé diabético (compatibilidade)
+  // Temperaturas plantar do pé diabético (compatibilidade e diagnóstico)
   const [temperatures, setTemperatures] = useState({
     leftToe: 31.2,
     rightToe: 31.4,
@@ -27,31 +28,105 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
     setSyncing(true);
     setTimeout(() => {
       setSyncing(false);
-      // Gera flutuações sutis e normais para simular medição em tempo real de sensores pareados
-      setVitals({
-        heartRate: Math.floor(65 + Math.random() * 15),
-        bloodPressure: `${115 + Math.floor(Math.random() * 10)}/${75 + Math.floor(Math.random() * 8)}`,
-        spo2: Math.floor(96 + Math.random() * 4),
-        bodyTemp: parseFloat((36.2 + Math.random() * 0.7).toFixed(1)),
-        glucose: Math.floor(85 + Math.random() * 20)
-      });
-
-      setTemperatures({
-        leftToe: 31.0 + Math.random() * 0.5,
-        rightToe: 31.1 + Math.random() * 0.5,
-        leftPlantar: 32.0 + Math.random() * 0.5,
-        rightPlantar: 32.2 + Math.random() * 0.5, 
-        leftHeel: 30.6 + Math.random() * 0.5,
-        rightHeel: 30.7 + Math.random() * 0.5
-      });
-    }, 1000);
+      
+      // Simulação com opção de disparar assimetria crítica (>= 2.0°C) (fixes IREC-0377)
+      if (simulateCritical) {
+        setVitals({
+          heartRate: 108,
+          bloodPressure: '145/92',
+          spo2: 93,
+          bodyTemp: 37.8,
+          glucose: 142
+        });
+        setTemperatures({
+          leftToe: 31.0,
+          rightToe: 33.4, // 2.4°C asymmetry on toes
+          leftPlantar: 32.0,
+          rightPlantar: 34.3, // 2.3°C asymmetry on plantar
+          leftHeel: 30.6,
+          rightHeel: 31.1
+        });
+      } else {
+        setVitals({
+          heartRate: Math.floor(65 + Math.random() * 15),
+          bloodPressure: `${115 + Math.floor(Math.random() * 10)}/${75 + Math.floor(Math.random() * 8)}`,
+          spo2: Math.floor(96 + Math.random() * 4),
+          bodyTemp: parseFloat((36.2 + Math.random() * 0.7).toFixed(1)),
+          glucose: Math.floor(85 + Math.random() * 20)
+        });
+        setTemperatures({
+          leftToe: 31.0 + Math.random() * 0.5,
+          rightToe: 31.1 + Math.random() * 0.5,
+          leftPlantar: 32.0 + Math.random() * 0.5,
+          rightPlantar: 32.2 + Math.random() * 0.5, 
+          leftHeel: 30.6 + Math.random() * 0.5,
+          rightHeel: 30.7 + Math.random() * 0.5
+        });
+      }
+    }, 800);
   };
 
-  const diffToe = Math.abs(temperatures.leftToe - temperatures.rightToe).toFixed(1);
-  const diffPlantar = Math.abs(temperatures.leftPlantar - temperatures.rightPlantar).toFixed(1);
-  const diffHeel = Math.abs(temperatures.leftHeel - temperatures.rightHeel).toFixed(1);
+  // Clinical Reference Seals Calculations (fixes IREC-0378)
+  const getHeartRateSeal = (hr) => {
+    if (hr < 60) return { label: 'Bradicardia', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+    if (hr > 100) return { label: 'Taquicardia', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
+    return { label: 'Normal', color: 'var(--success)', bg: 'rgba(72, 187, 120, 0.1)' };
+  };
 
-  const hasCriticalAsymmetry = parseFloat(diffToe) >= 2.0 || parseFloat(diffPlantar) >= 2.0 || parseFloat(diffHeel) >= 2.0;
+  const getBPSeal = (bpStr) => {
+    const parts = bpStr.split('/');
+    const sys = parseInt(parts[0]) || 120;
+    const dia = parseInt(parts[1]) || 80;
+    if (sys >= 140 || dia >= 90) return { label: 'Hipertensão', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
+    if (sys >= 120 || dia >= 80) return { label: 'Pré-Hipertensão', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+    return { label: 'Normal', color: 'var(--success)', bg: 'rgba(72, 187, 120, 0.1)' };
+  };
+
+  const getSpo2Seal = (spo2) => {
+    if (spo2 < 90) return { label: 'Hipóxia Severa', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
+    if (spo2 < 95) return { label: 'Hipóxia Leve', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+    return { label: 'Excelente', color: 'var(--success)', bg: 'rgba(72, 187, 120, 0.1)' };
+  };
+
+  const getTempSeal = (t) => {
+    if (t > 38.0) return { label: 'Febre', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
+    if (t > 37.5) return { label: 'Subfebril', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+    if (t < 35.5) return { label: 'Hipotermia', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)' };
+    return { label: 'Normal', color: 'var(--success)', bg: 'rgba(72, 187, 120, 0.1)' };
+  };
+
+  const getGlucoseSeal = (g) => {
+    if (g < 70) return { label: 'Hipoglicemia', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
+    if (g >= 126) return { label: 'Hiperglicemia', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
+    if (g >= 100) return { label: 'Glicemia Alterada', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
+    return { label: 'Normal (Jejum)', color: 'var(--success)', bg: 'rgba(72, 187, 120, 0.1)' };
+  };
+
+  // Asymmetry and Foot / Region Resolution (fixes IREC-0379, IREC-0380)
+  const diffToeVal = temperatures.rightToe - temperatures.leftToe;
+  const diffPlantarVal = temperatures.rightPlantar - temperatures.leftPlantar;
+  const diffHeelVal = temperatures.rightHeel - temperatures.leftHeel;
+
+  const diffToeAbs = Math.abs(diffToeVal).toFixed(1);
+  const diffPlantarAbs = Math.abs(diffPlantarVal).toFixed(1);
+  const diffHeelAbs = Math.abs(diffHeelVal).toFixed(1);
+
+  const hasCriticalAsymmetry = parseFloat(diffToeAbs) >= 2.0 || parseFloat(diffPlantarAbs) >= 2.0 || parseFloat(diffHeelAbs) >= 2.0;
+
+  // Region and Hotter Foot calculation
+  const regions = [
+    { name: 'na região dos dedos', val: diffToeVal, abs: parseFloat(diffToeAbs) },
+    { name: 'na região plantar', val: diffPlantarVal, abs: parseFloat(diffPlantarAbs) },
+    { name: 'na região do calcanhar', val: diffHeelVal, abs: parseFloat(diffHeelAbs) }
+  ];
+  const maxRegion = regions.reduce((max, r) => r.abs > max.abs ? r : max, regions[0]);
+  const hotterFootName = maxRegion.val > 0 ? 'pé direito' : 'pé esquerdo';
+
+  const hrSeal = getHeartRateSeal(vitals.heartRate);
+  const bpSeal = getBPSeal(vitals.bloodPressure);
+  const spo2Seal = getSpo2Seal(vitals.spo2);
+  const tempSeal = getTempSeal(vitals.bodyTemp);
+  const glucoseSeal = getGlucoseSeal(vitals.glucose);
 
   return (
     <div className="glass-card" style={{
@@ -72,7 +147,24 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
           </div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setSimulateCritical(!simulateCritical)}
+            style={{
+              fontSize: '10px',
+              fontWeight: '700',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              backgroundColor: simulateCritical ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-primary)',
+              color: simulateCritical ? '#ef4444' : 'var(--text-secondary)',
+              cursor: 'pointer'
+            }}
+          >
+            {simulateCritical ? '⚠️ Modo Crítico (Simulado)' : '⚙️ Simular Alerta Térmico'}
+          </button>
+
           <span style={{
             fontSize: '10px',
             fontWeight: '700',
@@ -84,7 +176,9 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
           }}>
             ● Dispositivos Pareados
           </span>
+
           <button 
+            type="button"
             className="btn btn-secondary" 
             onClick={handleSync}
             disabled={syncing}
@@ -105,6 +199,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
       {/* Abas Internas da Telemetria */}
       <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '14px' }}>
         <button
+          type="button"
           onClick={() => setActiveSubTab('vitals')}
           style={{
             padding: '6px 12px',
@@ -121,6 +216,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
           📈 Sinais Vitais Gerais
         </button>
         <button
+          type="button"
           onClick={() => setActiveSubTab('plantar')}
           style={{
             padding: '6px 12px',
@@ -138,7 +234,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
         </button>
       </div>
 
-      {/* Conteúdo Aba 1: Sinais Vitais Gerais */}
+      {/* Conteúdo Aba 1: Sinais Vitais Gerais com Selos Clínicos Dinâmicos (fixes IREC-0378) */}
       {activeSubTab === 'vitals' && (
         <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
           
@@ -147,7 +243,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
             <span style={{ fontSize: '20px' }}>❤️</span>
             <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '4px' }}>Batimentos</span>
             <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>{vitals.heartRate} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>BPM</span></strong>
-            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: 'rgba(72, 187, 120, 0.1)', color: 'var(--success)', fontWeight: '700' }}>Normal</span>
+            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: hrSeal.bg, color: hrSeal.color, fontWeight: '700' }}>{hrSeal.label}</span>
           </div>
 
           {/* Card: Pressão Arterial */}
@@ -155,7 +251,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
             <span style={{ fontSize: '20px' }}>🩺</span>
             <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '4px' }}>Pressão Arterial</span>
             <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>{vitals.bloodPressure} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>mmHg</span></strong>
-            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: 'rgba(72, 187, 120, 0.1)', color: 'var(--success)', fontWeight: '700' }}>Normal</span>
+            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: bpSeal.bg, color: bpSeal.color, fontWeight: '700' }}>{bpSeal.label}</span>
           </div>
 
           {/* Card: Saturação O2 */}
@@ -163,7 +259,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
             <span style={{ fontSize: '20px' }}>💨</span>
             <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '4px' }}>Saturação O₂</span>
             <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>{vitals.spo2}%</strong>
-            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: 'rgba(72, 187, 120, 0.1)', color: 'var(--success)', fontWeight: '700' }}>Excelente</span>
+            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: spo2Seal.bg, color: spo2Seal.color, fontWeight: '700' }}>{spo2Seal.label}</span>
           </div>
 
           {/* Card: Temperatura Corporal */}
@@ -171,7 +267,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
             <span style={{ fontSize: '20px' }}>🌡️</span>
             <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '4px' }}>Temp. Corporal</span>
             <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>{vitals.bodyTemp}°C</strong>
-            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: 'rgba(72, 187, 120, 0.1)', color: 'var(--success)', fontWeight: '700' }}>Normal</span>
+            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: tempSeal.bg, color: tempSeal.color, fontWeight: '700' }}>{tempSeal.label}</span>
           </div>
 
           {/* Card: Glicemia */}
@@ -179,13 +275,13 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
             <span style={{ fontSize: '20px' }}>🩸</span>
             <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '4px' }}>Glicemia (Jejum)</span>
             <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>{vitals.glucose} <span style={{ fontSize: '10px', fontWeight: 'normal' }}>mg/dL</span></strong>
-            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: 'rgba(72, 187, 120, 0.1)', color: 'var(--success)', fontWeight: '700' }}>Estável</span>
+            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '8px', backgroundColor: glucoseSeal.bg, color: glucoseSeal.color, fontWeight: '700' }}>{glucoseSeal.label}</span>
           </div>
 
         </div>
       )}
 
-      {/* Conteúdo Aba 2: Temperatura Plantar (Pé Diabético) */}
+      {/* Conteúdo Aba 2: Temperatura Plantar (Pé Diabético) com Lateralidade e Região Dinâmicas (fixes IREC-0379, IREC-0380) */}
       {activeSubTab === 'plantar' && (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {hasCriticalAsymmetry ? (
@@ -200,7 +296,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
               <span style={{ fontWeight: '700', color: 'var(--danger)', display: 'block', marginBottom: '3px' }}>
                 🚨 ALERTA CLÍNICO: Assimetria Térmica Detectada
               </span>
-              Há uma variação de <strong>{diffPlantar}°C</strong> na região plantar. Variações maiores que 2°C indicam risco de ulceração no pé direito. Evite caminhar excessivamente e consulte seu médico.
+              Há uma variação de <strong>{maxRegion.abs.toFixed(1)}°C</strong> {maxRegion.name}. Variações maiores que 2.0°C indicam risco elevado de ulceração no <strong>{hotterFootName}</strong>. Evite caminhada prolongada e consulte a equipe médica.
             </div>
           ) : (
             <div style={{
@@ -221,17 +317,17 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderRight: '1px dashed var(--border-color)', paddingRight: '8px' }}>
               <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '8px' }}>PÉ ESQUERDO</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', fontSize: '11px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: 'rgba(56, 161, 219, 0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: parseFloat(diffToeAbs) >= 2.0 && diffToeVal < 0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(56, 161, 219, 0.05)' }}>
                   <span>Dedos:</span>
-                  <strong>{temperatures.leftToe.toFixed(1)}°C</strong>
+                  <strong style={{ color: parseFloat(diffToeAbs) >= 2.0 && diffToeVal < 0 ? 'var(--danger)' : 'inherit' }}>{temperatures.leftToe.toFixed(1)}°C</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: 'rgba(56, 161, 219, 0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: parseFloat(diffPlantarAbs) >= 2.0 && diffPlantarVal < 0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(56, 161, 219, 0.05)' }}>
                   <span>Plantar:</span>
-                  <strong>{temperatures.leftPlantar.toFixed(1)}°C</strong>
+                  <strong style={{ color: parseFloat(diffPlantarAbs) >= 2.0 && diffPlantarVal < 0 ? 'var(--danger)' : 'inherit' }}>{temperatures.leftPlantar.toFixed(1)}°C</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: 'rgba(56, 161, 219, 0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: parseFloat(diffHeelAbs) >= 2.0 && diffHeelVal < 0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(56, 161, 219, 0.05)' }}>
                   <span>Calcanhar:</span>
-                  <strong>{temperatures.leftHeel.toFixed(1)}°C</strong>
+                  <strong style={{ color: parseFloat(diffHeelAbs) >= 2.0 && diffHeelVal < 0 ? 'var(--danger)' : 'inherit' }}>{temperatures.leftHeel.toFixed(1)}°C</strong>
                 </div>
               </div>
             </div>
@@ -240,17 +336,17 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false }) {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingLeft: '8px' }}>
               <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '8px' }}>PÉ DIREITO</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', fontSize: '11px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: parseFloat(diffToe) >= 2.0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(56, 161, 219, 0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: parseFloat(diffToeAbs) >= 2.0 && diffToeVal > 0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(56, 161, 219, 0.05)' }}>
                   <span>Dedos:</span>
-                  <strong style={{ color: parseFloat(diffToe) >= 2.0 ? 'var(--danger)' : 'inherit' }}>{temperatures.rightToe.toFixed(1)}°C</strong>
+                  <strong style={{ color: parseFloat(diffToeAbs) >= 2.0 && diffToeVal > 0 ? 'var(--danger)' : 'inherit' }}>{temperatures.rightToe.toFixed(1)}°C</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: parseFloat(diffPlantar) >= 2.0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(56, 161, 219, 0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: parseFloat(diffPlantarAbs) >= 2.0 && diffPlantarVal > 0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(56, 161, 219, 0.05)' }}>
                   <span>Plantar:</span>
-                  <strong style={{ color: parseFloat(diffPlantar) >= 2.0 ? 'var(--danger)' : 'inherit' }}>{temperatures.rightPlantar.toFixed(1)}°C</strong>
+                  <strong style={{ color: parseFloat(diffPlantarAbs) >= 2.0 && diffPlantarVal > 0 ? 'var(--danger)' : 'inherit' }}>{temperatures.rightPlantar.toFixed(1)}°C</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: parseFloat(diffHeel) >= 2.0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(56, 161, 219, 0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', borderRadius: '4px', backgroundColor: parseFloat(diffHeelAbs) >= 2.0 && diffHeelVal > 0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(56, 161, 219, 0.05)' }}>
                   <span>Calcanhar:</span>
-                  <strong style={{ color: parseFloat(diffHeel) >= 2.0 ? 'var(--danger)' : 'inherit' }}>{temperatures.rightHeel.toFixed(1)}°C</strong>
+                  <strong style={{ color: parseFloat(diffHeelAbs) >= 2.0 && diffHeelVal > 0 ? 'var(--danger)' : 'inherit' }}>{temperatures.rightHeel.toFixed(1)}°C</strong>
                 </div>
               </div>
             </div>

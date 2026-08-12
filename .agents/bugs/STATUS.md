@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 214 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 261 corrigidos**
 
 ---
 
@@ -317,60 +317,72 @@ $ npx cap sync
 
 ---
 
-## 7. Histórico e evolução — 0/47
+## 7. Histórico e evolução — 47/47
 
-- [ ] IREC-0006 · CRÍTICO · `src/components/ClinicalHistory.jsx:175` — Prontuário exportado em PDF atribui responsabilidade a um médico fixo hardcoded (CRM inventado)
-- [ ] IREC-0066 · ALTO · `src/components/ClinicalHistory.jsx:129` — Log de acesso ao prontuário grava só em localStorage e usa o createAuditLog errado — nunca chega à tabela audit_logs
-- [ ] IREC-0067 · ALTO · `src/components/ClinicalHistory.jsx:132` — Log de auditoria LGPD registra identidade de clínico falsa e fixa em toda leitura de prontuário
-- [ ] IREC-0068 · ALTO · `src/components/ClinicalHistory.jsx:132` — Auditoria de leitura de prontuário registra um profissional FALSO hardcoded
-- [ ] IREC-0069 · ALTO · `src/components/ClinicalHistory.jsx:143` — Percentual de cicatrização soma granulação como tecido cicatrizado (ferida aberta marcada como 100%)
-- [ ] IREC-0070 · ALTO · `src/components/ClinicalHistory.jsx:400` — Falha ao carregar a foto substitui a imagem da lesão por uma foto de banco de imagens (Unsplash) dentro do prontuário
-- [ ] IREC-0160 · ALTO · `src/components/WoundEvolutionComparator.jsx:41` — Comparador exibe 3 lesões fictícias como se fossem do paciente quando ele tem menos de 2 registros
-- [ ] IREC-0161 · ALTO · `src/components/WoundEvolutionComparator.jsx:51` — Comparador fabrica áreas de lesão (14.5 cm² e 3.1 cm²) quando o registro não tem medição
-- [ ] IREC-0245 · MÉDIO · `src/components/ClinicalHistory.jsx:17` — Gráfico de pizza tecidual ignora epitelização e normaliza sobre 3 tecidos, superestimando tecido inviável
-- [ ] IREC-0246 · MÉDIO · `src/components/ClinicalHistory.jsx:138` — Efeito de auditoria re-executa a cada 30 segundos e satura o limite de 200 registros do log
-- [ ] IREC-0247 · MÉDIO · `src/components/ClinicalHistory.jsx:147` — Registros sem análise de imagem aparecem como 'Progresso Calculado: 0%' no prontuário
-- [ ] IREC-0248 · MÉDIO · `src/components/ClinicalHistory.jsx:195` — Código de 'Autenticação Digital' do prontuário é uma string fixa idêntica em todos os documentos
-- [ ] IREC-0249 · MÉDIO · `src/components/ClinicalHistory.jsx:287` — Gráficos estouram o card com muitos registros: barras de largura fixa em linha sem scroll
-- [ ] IREC-0250 · MÉDIO · `src/components/ClinicalHistory.jsx:504` — Bloco 'Composição Tecidual' omite completamente a epitelização
-- [ ] IREC-0376 · MÉDIO · `src/components/VitalsTelemetry.jsx:3` — Componente VitalsTelemetry nunca é renderizado: a tela de sinais vitais é inalcançável no app
-- [ ] IREC-0377 · MÉDIO · `src/components/VitalsTelemetry.jsx:54` — Alerta de assimetria térmica é código inalcançável: as temperaturas simuladas nunca atingem o limiar de 2°C
-- [ ] IREC-0378 · MÉDIO · `src/components/VitalsTelemetry.jsx:150` — Classificações clínicas ('Normal', 'Excelente', 'Estável') são literais fixos, não calculados a partir dos valores
-- [ ] IREC-0379 · MÉDIO · `src/components/VitalsTelemetry.jsx:203` — Mensagem do alerta térmico sempre culpa o pé direito, mesmo quando o pé esquerdo é o alterado
-- [ ] IREC-0380 · MÉDIO · `src/components/VitalsTelemetry.jsx:203` — Alerta disparado por assimetria em dedos ou calcanhar exibe a diferença plantar (normal) no texto
-- [ ] IREC-0381 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:3` — Componente WoundEvolutionComparator nunca é renderizado: o comparador de evolução é inalcançável no app
-- [ ] IREC-0382 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:44` — Estado inicial de indexB é congelado e dessincroniza o <select> do painel exibido
-- [ ] IREC-0383 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:55` — Comparador não valida a ordem cronológica: inverter A e B transforma melhora em piora
-- [ ] IREC-0384 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:239` — Imagens do comparador sem tratamento de erro: entradas com photo vazio mostram caixa preta quebrada
-- [ ] IREC-0385 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:254` — Campo clinicalEvolution (enum 'Melhorou/Estável/Piorou') é exibido entre aspas como se fosse um laudo descritivo
-- [ ] IREC-0386 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:362` — Modal do comparador pode travar o app: overlay fixo z-index 1500 sem fechar por ESC, sem clique no backdrop e com botão ✖ opcional
-- [ ] IREC-0451 · BAIXO · `src/components/ClinicalHistory.jsx:89` — Tooltip afirma 'Lesão Segmentada' em fotos sem nenhuma análise tecidual
-- [ ] IREC-0452 · BAIXO · `src/components/ClinicalHistory.jsx:96` — Tooltip de segmentação tecidual é inacessível em dispositivos touch (app Android/iOS Capacitor)
-- [ ] IREC-0453 · BAIXO · `src/components/ClinicalHistory.jsx:96` — Overlay tecidual desalinhado da foto: 120x120 dentro de contêiner de 130x130 com centro fixo em (60,60)
-- [ ] IREC-0454 · BAIXO · `src/components/ClinicalHistory.jsx:171` — Falha ao registrar auditoria de exportação é silenciada com catch vazio e a impressão prossegue
-- [ ] IREC-0455 · BAIXO · `src/components/ClinicalHistory.jsx:202` — Data de nascimento impressa no prontuário em formato ISO (aaaa-mm-dd) em documento brasileiro
-- [ ] IREC-0456 · BAIXO · `src/components/ClinicalHistory.jsx:256` — Botão da tela vazia 'Fazer Primeira Triagem Agora' nunca é renderizado (prop setActiveTab nunca é passada)
-- [ ] IREC-0457 · BAIXO · `src/components/ClinicalHistory.jsx:258` — CTA da tela vazia navega para a aba inexistente 'triage' (tela em branco)
-- [ ] IREC-0458 · BAIXO · `src/components/ClinicalHistory.jsx:360` — Listas da timeline usam key={index} sobre um array revertido e crescente, embaralhando o estado dos cards
-- [ ] IREC-0459 · BAIXO · `src/components/ClinicalHistory.jsx:401` — onError da foto pode entrar em laço infinito de requisições quando a imagem de fallback também falha
-- [ ] IREC-0559 · BAIXO · `src/components/VitalsTelemetry.jsx:3` — Prop patientId é recebida e nunca usada: telemetria mostra os mesmos valores para qualquer paciente
-- [ ] IREC-0560 · BAIXO · `src/components/VitalsTelemetry.jsx:3` — Prop isDoctorView é declarada e nunca utilizada: visão do médico é idêntica à do paciente
-- [ ] IREC-0561 · BAIXO · `src/components/VitalsTelemetry.jsx:8` — Valores iniciais hardcoded são apresentados como leitura atual antes de qualquer sincronização
-- [ ] IREC-0562 · BAIXO · `src/components/VitalsTelemetry.jsx:28` — setTimeout do Sincronizar não tem cleanup: setState após desmontagem e timer não cancelável
-- [ ] IREC-0563 · BAIXO · `src/components/VitalsTelemetry.jsx:50` — Limiar clínico de 2.0°C é avaliado sobre valor arredondado, deslocando o gatilho para 1.95°C
-- [ ] IREC-0564 · BAIXO · `src/components/VitalsTelemetry.jsx:85` — Selo '● Dispositivos Pareados' é sempre exibido e contradiz a nota de transparência do próprio componente
-- [ ] IREC-0565 · BAIXO · `src/components/VitalsTelemetry.jsx:95` — Spinner de 'Sincronizando...' não anima: a animação 'spin' não está declarada em escopo global
-- [ ] IREC-0566 · BAIXO · `src/components/VitalsTelemetry.jsx:107` — Sub-abas da telemetria não são acessíveis: sem role de tab e sem estado anunciável
-- [ ] IREC-0567 · BAIXO · `src/components/VitalsTelemetry.jsx:215` — Mensagem de segurança térmica afirma limiar de 1.0°C enquanto o código usa 2.0°C
-- [ ] IREC-0568 · BAIXO · `src/components/VitalsTelemetry.jsx:269` — Nota de transparência usa cor fixa #f59e0b em 10px, com contraste insuficiente e sem adaptação ao tema
-- [ ] IREC-0569 · BAIXO · `src/components/WoundEvolutionComparator.jsx:112` — Selects de escolha de foto sem associação com o label e botão de fechar sem nome acessível
-- [ ] IREC-0570 · BAIXO · `src/components/WoundEvolutionComparator.jsx:181` — Área inalterada é reportada como 'Aumento de 0 cm²' com status clínico vermelho
-- [ ] IREC-0571 · BAIXO · `src/components/WoundEvolutionComparator.jsx:188` — Evolução da dor exibe '📉 -0 Níveis' em verde quando não houve mudança
+- [x] IREC-0006 · CRÍTICO · `src/components/ClinicalHistory.jsx:175` — Prontuário exportado em PDF atribui responsabilidade a um médico fixo hardcoded (CRM inventado)
+- [x] IREC-0066 · ALTO · `src/components/ClinicalHistory.jsx:129` — Log de acesso ao prontuário grava só em localStorage e usa o createAuditLog errado — nunca chega à tabela audit_logs
+- [x] IREC-0067 · ALTO · `src/components/ClinicalHistory.jsx:132` — Log de auditoria LGPD registra identidade de clínico falsa e fixa em toda leitura de prontuário
+- [x] IREC-0068 · ALTO · `src/components/ClinicalHistory.jsx:132` — Auditoria de leitura de prontuário registra um profissional FALSO hardcoded
+- [x] IREC-0069 · ALTO · `src/components/ClinicalHistory.jsx:143` — Percentual de cicatrização soma granulação como tecido cicatrizado (ferida aberta marcada como 100%)
+- [x] IREC-0070 · ALTO · `src/components/ClinicalHistory.jsx:400` — Falha ao carregar a foto substitui a imagem da lesão por uma foto de banco de imagens (Unsplash) dentro do prontuário
+- [x] IREC-0160 · ALTO · `src/components/WoundEvolutionComparator.jsx:41` — Comparador exibe 3 lesões fictícias como se fossem do paciente quando ele tem menos de 2 registros
+- [x] IREC-0161 · ALTO · `src/components/WoundEvolutionComparator.jsx:51` — Comparador fabrica áreas de lesão (14.5 cm² e 3.1 cm²) quando o registro não tem medição
+- [x] IREC-0245 · MÉDIO · `src/components/ClinicalHistory.jsx:17` — Gráfico de pizza tecidual ignora epitelização e normaliza sobre 3 tecidos, superestimando tecido inviável
+- [x] IREC-0246 · MÉDIO · `src/components/ClinicalHistory.jsx:138` — Efeito de auditoria re-executa a cada 30 segundos e satura o limite de 200 registros do log
+- [x] IREC-0247 · MÉDIO · `src/components/ClinicalHistory.jsx:147` — Registros sem análise de imagem aparecem como 'Progresso Calculado: 0%' no prontuário
+- [x] IREC-0248 · MÉDIO · `src/components/ClinicalHistory.jsx:195` — Código de 'Autenticação Digital' do prontuário é uma string fixa idêntica em todos os documentos
+- [x] IREC-0249 · MÉDIO · `src/components/ClinicalHistory.jsx:287` — Gráficos estouram o card com muitos registros: barras de largura fixa em linha sem scroll
+- [x] IREC-0250 · MÉDIO · `src/components/ClinicalHistory.jsx:504` — Bloco 'Composição Tecidual' omite completamente a epitelização
+- [x] IREC-0376 · MÉDIO · `src/components/VitalsTelemetry.jsx:3` — Componente VitalsTelemetry nunca é renderizado: a tela de sinais vitais é inalcançável no app
+- [x] IREC-0377 · MÉDIO · `src/components/VitalsTelemetry.jsx:54` — Alerta de assimetria térmica é código inalcançável: as temperaturas simuladas nunca atingem o limiar de 2°C
+- [x] IREC-0378 · MÉDIO · `src/components/VitalsTelemetry.jsx:150` — Classificações clínicas ('Normal', 'Excelente', 'Estável') são literais fixos, não calculados a partir dos valores
+- [x] IREC-0379 · MÉDIO · `src/components/VitalsTelemetry.jsx:203` — Mensagem do alerta térmico sempre culpa o pé direito, mesmo quando o pé esquerdo é o alterado
+- [x] IREC-0380 · MÉDIO · `src/components/VitalsTelemetry.jsx:203` — Alerta disparado por assimetria em dedos ou calcanhar exibe a diferença plantar (normal) no texto
+- [x] IREC-0381 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:3` — Componente WoundEvolutionComparator nunca é renderizado: o comparador de evolução é inalcançável no app
+- [x] IREC-0382 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:44` — Estado inicial de indexB é congelado e dessincroniza o <select> do painel exibido
+- [x] IREC-0383 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:55` — Comparador não valida a ordem cronológica: inverter A e B transforma melhora em piora
+- [x] IREC-0384 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:239` — Imagens do comparador sem tratamento de erro: entradas com photo vazio mostram caixa preta quebrada
+- [x] IREC-0385 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:254` — Campo clinicalEvolution (enum 'Melhorou/Estável/Piorou') é exibido entre aspas como se fosse um laudo descritivo
+- [x] IREC-0386 · MÉDIO · `src/components/WoundEvolutionComparator.jsx:362` — Modal do comparador pode travar o app: overlay fixo z-index 1500 sem fechar por ESC, sem clique no backdrop e com botão ✖ opcional
+- [x] IREC-0451 · BAIXO · `src/components/ClinicalHistory.jsx:89` — Tooltip afirma 'Lesão Segmentada' em fotos sem nenhuma análise tecidual
+- [x] IREC-0452 · BAIXO · `src/components/ClinicalHistory.jsx:96` — Tooltip de segmentação tecidual é inacessível em dispositivos touch (app Android/iOS Capacitor)
+- [x] IREC-0453 · BAIXO · `src/components/ClinicalHistory.jsx:96` — Overlay tecidual desalinhado da foto: 120x120 dentro de contêiner de 130x130 com centro fixo em (60,60)
+- [x] IREC-0454 · BAIXO · `src/components/ClinicalHistory.jsx:171` — Falha ao registrar auditoria de exportação é silenciada com catch vazio e a impressão prossegue
+- [x] IREC-0455 · BAIXO · `src/components/ClinicalHistory.jsx:202` — Data de nascimento impressa no prontuário em formato ISO (aaaa-mm-dd) em documento brasileiro
+- [x] IREC-0456 · BAIXO · `src/components/ClinicalHistory.jsx:256` — Botão da tela vazia 'Fazer Primeira Triagem Agora' nunca é renderizado (prop setActiveTab nunca é passada)
+- [x] IREC-0457 · BAIXO · `src/components/ClinicalHistory.jsx:258` — CTA da tela vazia navega para a aba inexistente 'triage' (tela em branco)
+- [x] IREC-0458 · BAIXO · `src/components/ClinicalHistory.jsx:360` — Listas da timeline usam key={index} sobre um array revertido e crescente, embaralhando o estado dos cards
+- [x] IREC-0459 · BAIXO · `src/components/ClinicalHistory.jsx:401` — onError da foto pode entrar em laço infinito de requisições quando a imagem de fallback também falha
+- [x] IREC-0559 · BAIXO · `src/components/VitalsTelemetry.jsx:3` — Prop patientId é recebida e nunca usada: telemetria mostra os mesmos valores para qualquer paciente
+- [x] IREC-0560 · BAIXO · `src/components/VitalsTelemetry.jsx:3` — Prop isDoctorView é declarada e nunca utilizada: visão do médico é idêntica à do paciente
+- [x] IREC-0561 · BAIXO · `src/components/VitalsTelemetry.jsx:8` — Valores iniciais hardcoded são apresentados como leitura atual antes de qualquer sincronização
+- [x] IREC-0562 · BAIXO · `src/components/VitalsTelemetry.jsx:28` — setTimeout do Sincronizar não tem cleanup: setState após desmontagem e timer não cancelável
+- [x] IREC-0563 · BAIXO · `src/components/VitalsTelemetry.jsx:50` — Limiar clínico de 2.0°C é avaliado sobre valor arredondado, deslocando o gatilho para 1.95°C
+- [x] IREC-0564 · BAIXO · `src/components/VitalsTelemetry.jsx:85` — Selo '● Dispositivos Pareados' é sempre exibido e contradiz a nota de transparência do próprio componente
+- [x] IREC-0565 · BAIXO · `src/components/VitalsTelemetry.jsx:95` — Spinner de 'Sincronizando...' não anima: a animação 'spin' não está declarada em escopo global
+- [x] IREC-0566 · BAIXO · `src/components/VitalsTelemetry.jsx:107` — Sub-abas da telemetria não são acessíveis: sem role de tab e sem estado anunciável
+- [x] IREC-0567 · BAIXO · `src/components/VitalsTelemetry.jsx:215` — Mensagem de segurança térmica afirma limiar de 1.0°C enquanto o código usa 2.0°C
+- [x] IREC-0568 · BAIXO · `src/components/VitalsTelemetry.jsx:269` — Nota de transparência usa cor fixa #f59e0b em 10px, com contraste insuficiente e sem adaptação ao tema
+- [x] IREC-0569 · BAIXO · `src/components/WoundEvolutionComparator.jsx:112` — Selects de escolha de foto sem associação com o label e botão de fechar sem nome acessível
+- [x] IREC-0570 · BAIXO · `src/components/WoundEvolutionComparator.jsx:181` — Área inalterada é reportada como 'Aumento de 0 cm²' com status clínico vermelho
+- [x] IREC-0571 · BAIXO · `src/components/WoundEvolutionComparator.jsx:188` — Evolução da dor exibe '📉 -0 Níveis' em verde quando não houve mudança
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/ClinicalHistory.jsx src/components/VitalsTelemetry.jsx src/components/WoundEvolutionComparator.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-KYR7hyxJ.js        1,265.04 kB │ gzip: 305.00 kB
+✓ built in 2.36s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 762.68ms
+√ Sync finished in 1.682s
 ```
 
 ---
