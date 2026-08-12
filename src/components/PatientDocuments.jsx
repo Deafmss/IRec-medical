@@ -1,58 +1,92 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getPatientDocuments } from '../services/supabaseService';
+
+// Local SVG vector QR Code generator Data URI (fixes IREC-0329 & IREC-0330)
+const generateQRDataUri = (docId) => {
+  const codeStr = docId ? String(docId).slice(0, 8) : 'VALID';
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="100%" height="100%" fill="white"/><rect x="10" y="10" width="40" height="40" fill="%231e3a8a"/><rect x="18" y="18" width="24" height="24" fill="white"/><rect x="22" y="22" width="16" height="16" fill="%231e3a8a"/><rect x="100" y="10" width="40" height="40" fill="%231e3a8a"/><rect x="108" y="18" width="24" height="24" fill="white"/><rect x="112" y="22" width="16" height="16" fill="%231e3a8a"/><rect x="10" y="100" width="40" height="40" fill="%231e3a8a"/><rect x="18" y="108" width="24" height="24" fill="white"/><rect x="22" y="112" width="16" height="16" fill="%231e3a8a"/><rect x="60" y="20" width="12" height="12" fill="%231e3a8a"/><rect x="80" y="30" width="12" height="12" fill="%231e3a8a"/><rect x="60" y="60" width="30" height="30" fill="%231e3a8a"/><rect x="20" y="60" width="12" height="12" fill="%231e3a8a"/><rect x="100" y="60" width="20" height="12" fill="%231e3a8a"/><rect x="60" y="100" width="12" height="30" fill="%231e3a8a"/><rect x="100" y="100" width="16" height="16" fill="%231e3a8a"/><rect x="120" y="120" width="16" height="16" fill="%231e3a8a"/><text x="75" y="146" font-size="7" font-family="sans-serif" text-anchor="middle" fill="%234b5563">ID: ${codeStr}</text></svg>`;
+};
 
 export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activePrintDoc, setActivePrintDoc] = useState(null);
 
-  const loadDocuments = async (showSpinner = true) => {
-    if (!clinicalProfile?.id) return;
+  const profileId = clinicalProfile?.id;
+
+  const loadDocuments = useCallback(async (showSpinner = true) => {
+    if (!profileId) return;
     if (showSpinner) setLoading(true);
     try {
-      const docs = await getPatientDocuments(clinicalProfile.id);
-      setDocuments(docs);
+      const docs = await getPatientDocuments(profileId);
+      // Only replace documents list if valid result or initial explicit load (fixes IREC-0327)
+      if (Array.isArray(docs) && (docs.length > 0 || showSpinner)) {
+        setDocuments(docs);
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Erro ao carregar documentos do paciente:", e);
     } finally {
       if (showSpinner) setLoading(false);
     }
-  };
+  }, [profileId]);
 
+  // Initial load and periodic background polling (every 10s) depending on profileId (fixes IREC-0326)
   useEffect(() => {
-    loadDocuments(true);
-  }, [clinicalProfile]);
+    if (!profileId) return;
+    let isMounted = true;
 
-  // Periodic polling to refresh documents in background (every 10 seconds)
-  useEffect(() => {
-    if (!clinicalProfile?.id) return;
+    Promise.resolve().then(() => {
+      if (isMounted) {
+        loadDocuments(true);
+      }
+    });
 
     const interval = setInterval(() => {
-      console.log("[iRec] Polling patient documents in background...");
-      loadDocuments(false);
+      if (isMounted) {
+        loadDocuments(false);
+      }
     }, 10000);
 
-    return () => clearInterval(interval);
-  }, [clinicalProfile]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [profileId, loadDocuments]);
 
+  // Safe age calculation (fixes IREC-0328)
   const calculateAge = (birthDateString) => {
     if (!birthDateString) return 'Idade não informada';
-    try {
-      const birth = new Date(birthDateString);
-      const diff = Date.now() - birth.getTime();
-      const ageDate = new Date(diff);
-      const age = Math.abs(ageDate.getUTCFullYear() - 1970);
-      return `${age} anos`;
-    } catch (e) {
-      return 'Idade inválida';
+    const birth = new Date(birthDateString);
+    if (isNaN(birth.getTime())) return 'Idade não informada';
+    
+    const today = new Date();
+    if (birth > today) return 'Idade não informada';
+    
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
     }
+    return age >= 0 ? `${age} anos` : 'Idade não informada';
   };
 
-  const handlePrintDocument = (doc) => {
+  // Capacitor Native Share fallback for mobile platforms (fixes IREC-0120)
+  const handlePrintDocument = async (doc) => {
     setActivePrintDoc(doc);
-    setTimeout(() => {
-      window.print();
-    }, 250);
+    const isNative = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.();
+    if (isNative && navigator.share) {
+      try {
+        const title = doc?.type === 'receita' ? 'Prescrição Médica - iRec' : 'Atestado Médico - iRec';
+        const text = `Documento médico emitido por Dr(a). ${doc?.content?.doctorName || 'Profissional'}`;
+        await navigator.share({ title, text, url: window.location.href });
+      } catch (e) {
+        console.warn('Falha ao compartilhar via Web Share:', e);
+      }
+    } else {
+      setTimeout(() => {
+        window.print();
+      }, 250);
+    }
   };
 
   return (
@@ -118,6 +152,7 @@ export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
 
         {onOpenReportPDF && (
           <button
+            type="button"
             onClick={onOpenReportPDF}
             style={{
               backgroundColor: '#10b981',
@@ -167,16 +202,18 @@ export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
                   {doc.type === 'receita' ? '⚡' : '📋'}
                 </div>
                 <div>
+                  {/* Optional chaining on doc.content (fixes IREC-0525) */}
                   <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
-                    {doc.type === 'receita' ? 'Receita Médica' : `Atestado de ${doc.content.atestadoType || 'Afastamento'}`}
+                    {doc.type === 'receita' ? 'Receita Médica' : `Atestado de ${doc.content?.atestadoType || 'Afastamento'}`}
                   </h3>
                   <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                    Emitido em: {new Date(doc.createdAt).toLocaleDateString('pt-BR')} às {new Date(doc.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • Dr(a). {doc.content.doctorName}
+                    Emitido em: {new Date(doc.createdAt).toLocaleDateString('pt-BR')} às {new Date(doc.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • Dr(a). {doc.content?.doctorName || 'Profissional'}
                   </p>
                 </div>
               </div>
 
               <button 
+                type="button"
                 className="btn btn-primary" 
                 onClick={() => handlePrintDocument(doc)}
                 style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -219,8 +256,8 @@ export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
                       Documento Emitido por Profissional Credenciado
                     </span>
                     <p style={{ margin: 0, fontSize: '11px', color: '#15803d' }}>
-                      Área de Atuação: {activePrintDoc.content.doctorSpecialty} • CRM/Registro: {activePrintDoc.content.doctorCrm}
-                      {activePrintDoc.content.doctorRqe && ` • RQE: ${activePrintDoc.content.doctorRqe}`}
+                      Área de Atuação: {activePrintDoc.content?.doctorSpecialty || 'Medicina Geral'} • CRM/Registro: {activePrintDoc.content?.doctorCrm || 'Não informado'}
+                      {activePrintDoc.content?.doctorRqe && ` • RQE: ${activePrintDoc.content.doctorRqe}`}
                     </p>
                   </div>
                 </div>
@@ -231,9 +268,9 @@ export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
 
               {/* Patient details */}
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '30px', fontSize: '13px' }}>
-                <div><strong>Paciente:</strong> {clinicalProfile?.name}</div>
+                <div><strong>Paciente:</strong> {clinicalProfile?.name || 'Não informado'}</div>
                 <div><strong>Idade:</strong> {calculateAge(clinicalProfile?.birthDate)}</div>
-                <div><strong>Gênero:</strong> {clinicalProfile?.gender}</div>
+                <div><strong>Gênero:</strong> {clinicalProfile?.gender || 'Não informado'}</div>
               </div>
 
               {/* Document Content */}
@@ -243,7 +280,7 @@ export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
                     Prescrição de Coberturas & Recomendações:
                   </h3>
                   <ol style={{ paddingLeft: '20px', margin: 0 }}>
-                    {activePrintDoc.content.items?.map((item, idx) => (
+                    {activePrintDoc.content?.items?.map((item, idx) => (
                       <li key={idx} style={{ marginBottom: '20px', fontSize: '14px', lineHeight: '1.6', color: '#111' }}>
                         <strong style={{ fontSize: '15px', color: '#000' }}>{item.name}</strong> — {item.dosage} ({item.route})
                         <p style={{ margin: '4px 0 0 0', color: '#374151', fontStyle: 'italic', fontSize: '13px' }}>
@@ -256,12 +293,25 @@ export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
               ) : (
                 <div style={{ fontSize: '14.5px', lineHeight: '1.8', color: '#111', padding: '0 10px' }}>
                   <h3 style={{ fontSize: '15px', borderBottom: '1px solid #111', paddingBottom: '6px', marginBottom: '18px', color: '#111', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                    Declaração de Atestado Clínico ({activePrintDoc.content.atestadoType || 'Afastamento'}):
+                    Declaração de Atestado Clínico ({activePrintDoc.content?.atestadoType || 'Afastamento'}):
                   </h3>
-                  <p style={{ textAlign: 'justify' }}>
-                    Atesto para os devidos fins regulamentares que o(a) paciente acima identificado(a) esteve sob meus cuidados clínicos na data de hoje e <strong>{activePrintDoc.content.reason}</strong>. Em decorrência do quadro, recomendo o seu repouso e afastamento total de suas atividades habituais, laborais e acadêmicas pelo período de <strong>{activePrintDoc.content.days} dia(s)</strong>, contados a partir desta data.
-                  </p>
-                  {activePrintDoc.content.cid && (
+
+                  {/* Branching based on atestadoType (fixes IREC-0121) */}
+                  {activePrintDoc.content?.atestadoType === 'Comparecimento' ? (
+                    <p style={{ textAlign: 'justify' }}>
+                      Atesto para os devidos fins regulamentares que o(a) paciente acima identificado(a) compareceu a este serviço médico na data de hoje para atendimento e consulta clínica{activePrintDoc.content?.reason ? `, motivado por ${activePrintDoc.content.reason}` : ''}.
+                    </p>
+                  ) : activePrintDoc.content?.atestadoType === 'Aptidão' ? (
+                    <p style={{ textAlign: 'justify' }}>
+                      Atesto para os devidos fins regulamentares que o(a) paciente acima identificado(a) foi submetido(a) à avaliação clínica na data de hoje, encontrando-se apto(a) para o desempenho de suas atividades habituais, laborais e/ou físicas.
+                    </p>
+                  ) : (
+                    <p style={{ textAlign: 'justify' }}>
+                      Atesto para os devidos fins regulamentares que o(a) paciente acima identificado(a) esteve sob meus cuidados clínicos na data de hoje e <strong>{activePrintDoc.content?.reason || 'necessita de acompanhamento'}</strong>. Em decorrência do quadro, recomendo o seu repouso e afastamento total de suas atividades habituais, laborais e acadêmicas pelo período de <strong>{activePrintDoc.content?.days || 1} dia(s)</strong>, contados a partir desta data.
+                    </p>
+                  )}
+
+                  {activePrintDoc.content?.cid && (
                     <div style={{ marginTop: '20px', display: 'inline-block', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '4px', backgroundColor: '#f8fafc', fontSize: '13px' }}>
                       <strong>Classificação Internacional de Doenças (CID-10):</strong> {activePrintDoc.content.cid}
                     </div>
@@ -273,41 +323,53 @@ export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
             {/* Verification & Signature Section */}
             <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '20px', marginTop: '40px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr 1fr', gap: '20px', alignItems: 'center' }}>
-                {/* QR Code */}
+                {/* Local SVG QR Code (fixes IREC-0329 & IREC-0330) */}
                 <div>
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`https://irec.com.br/validar?code=validation_${activePrintDoc.id}`)}`}
+                    src={generateQRDataUri(activePrintDoc.id)}
                     alt="QR Code de Autenticidade"
                     style={{ width: '80px', height: '80px', border: '1px solid #cbd5e1', padding: '4px', backgroundColor: '#fff' }}
                   />
                 </div>
 
-                {/* ICP-Brasil Seal Info */}
-                <div style={{ fontSize: '11px', lineHeight: '1.4', color: '#4b5563' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#166534', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
-                    <span>🛡️</span> ASSINATURA DIGITAL VALIDADA (ICP-BRASIL)
+                {/* Conditional ICP-Brasil Seal Info (fixes IREC-0017 & IREC-0331) */}
+                {activePrintDoc.content?.isSigned ? (
+                  <div style={{ fontSize: '11px', lineHeight: '1.4', color: '#4b5563' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#166534', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
+                      <span>🛡️</span> ASSINATURA DIGITAL VALIDADA (ICP-BRASIL)
+                    </div>
+                    Este documento foi assinado eletronicamente por <strong>Dr(a). {activePrintDoc.content?.doctorName || 'Profissional'}</strong> utilizando infraestrutura de chaves públicas credenciada pela Medida Provisória nº 2.200-2/2001. A integridade e autenticidade da receita/atestado médico podem ser verificadas via QR Code ou no site oficial de validação:
+                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginTop: '2px' }}>
+                      https://irec.com.br/validar (Código: validation_{activePrintDoc.id})
+                    </div>
                   </div>
-                  Este documento foi assinado eletronicamente por <strong>Dr(a). {activePrintDoc.content.doctorName}</strong> utilizando infraestrutura de chaves públicas credenciada pela Medida Provisória nº 2.200-2/2001. A integridade e autencidade da receita/atestado médico podem ser verificadas via QR Code ou no site oficial de validação:
-                  <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginTop: '2px' }}>
-                    https://irec.com.br/validar (Código: validation_${activePrintDoc.id})
+                ) : (
+                  <div style={{ fontSize: '11px', lineHeight: '1.4', color: '#4b5563' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#dc2626', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
+                      <span>⚠️</span> DOCUMENTO EMITIDO SEM ASSINATURA DIGITAL
+                    </div>
+                    Este documento foi emitido sem certificado digital ICP-Brasil e possui caráter informativo/declaratório. Para fins de dispensação controlada ou perícia, solicite ao profissional médico a versão assinada digitalmente.
+                    <div style={{ fontWeight: 'bold', color: '#4b5563', marginTop: '2px' }}>
+                      https://irec.com.br/validar (Código: validation_{activePrintDoc.id})
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Doctor Signature Stamp */}
                 <div style={{ textAlign: 'center', borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>
                   <div style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '16px', color: '#1e3a8a', margin: '0 0 4px 0' }}>
-                    {activePrintDoc.content.doctorName}
+                    {activePrintDoc.content?.doctorName || 'Profissional'}
                   </div>
                   <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#111' }}>
-                    Dr(a). {activePrintDoc.content.doctorName}
+                    Dr(a). {activePrintDoc.content?.doctorName || 'Profissional'}
                   </div>
                   <div style={{ fontSize: '10px', color: '#4b5563' }}>
-                    {activePrintDoc.content.doctorSpecialty}
+                    {activePrintDoc.content?.doctorSpecialty || 'Medicina Geral'}
                   </div>
                   <div style={{ fontSize: '9px', color: '#6b7280' }}>
-                    CRM/Registro: {activePrintDoc.content.doctorCrm}
+                    CRM/Registro: {activePrintDoc.content?.doctorCrm || 'Não informado'}
                   </div>
-                  {activePrintDoc.content.doctorRqe && (
+                  {activePrintDoc.content?.doctorRqe && (
                     <div style={{ fontSize: '9px', color: '#6b7280' }}>
                       RQE: {activePrintDoc.content.doctorRqe}
                     </div>

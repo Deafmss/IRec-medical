@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 261 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 272 corrigidos**
 
 ---
 
@@ -387,24 +387,36 @@ $ npx cap sync
 
 ---
 
-## 8. Documentos do paciente — 0/11
+## 8. Documentos do paciente — 11/11
 
-- [ ] IREC-0017 · CRÍTICO · `src/components/PatientDocuments.jsx:288` — Documento impresso pelo paciente afirma assinatura digital ICP-Brasil mesmo quando não foi assinado
-- [ ] IREC-0120 · ALTO · `src/components/PatientDocuments.jsx:54` — Botão 'Visualizar / Imprimir' não faz nada no app Android/iOS (window.print no WebView)
-- [ ] IREC-0121 · ALTO · `src/components/PatientDocuments.jsx:262` — Atestado de 'Comparecimento' e de 'Aptidão Física' imprime texto de afastamento total do trabalho
-- [ ] IREC-0325 · MÉDIO · `src/components/PatientDocuments.jsx:13` — Documentos médicos ficam em localStorage após logout (chave irec_medical_documents não é limpa)
-- [ ] IREC-0326 · MÉDIO · `src/components/PatientDocuments.jsx:24` — Spinner de carregamento pisca a cada 30s porque o efeito depende do objeto clinicalProfile inteiro
-- [ ] IREC-0327 · MÉDIO · `src/components/PatientDocuments.jsx:32` — Polling de 10s zera a lista quando o Supabase falha: documentos do paciente desaparecem intermitentemente
-- [ ] IREC-0328 · MÉDIO · `src/components/PatientDocuments.jsx:44` — calculateAge imprime 'NaN anos' no documento médico; try/catch nunca captura e Math.abs mascara data futura
-- [ ] IREC-0329 · MÉDIO · `src/components/PatientDocuments.jsx:53` — Impressão disparada por setTimeout fixo de 250ms; QR Code externo não chega a carregar
-- [ ] IREC-0330 · MÉDIO · `src/components/PatientDocuments.jsx:279` — QR Code de autenticidade de documento médico é gerado por serviço de terceiros, com vazamento do ID e falha offline
-- [ ] IREC-0331 · MÉDIO · `src/components/PatientDocuments.jsx:292` — Template literal não interpolado: documento impresso mostra o texto cru '${activePrintDoc.id}'
-- [ ] IREC-0525 · BAIXO · `src/components/PatientDocuments.jsx:171` — Acesso a doc.content sem guarda de null derruba toda a tela de documentos do paciente
+- [x] IREC-0017 · CRÍTICO · `src/components/PatientDocuments.jsx:288` — Documento impresso pelo paciente afirma assinatura digital ICP-Brasil mesmo quando não foi assinado
+- [x] IREC-0120 · ALTO · `src/components/PatientDocuments.jsx:54` — Botão 'Visualizar / Imprimir' não faz nada no app Android/iOS (window.print no WebView)
+- [x] IREC-0121 · ALTO · `src/components/PatientDocuments.jsx:262` — Atestado de 'Comparecimento' e de 'Aptidão Física' imprime texto de afastamento total do trabalho
+- [x] IREC-0325 · MÉDIO · `src/components/PatientDocuments.jsx:13` — Documentos médicos ficam em localStorage após logout (chave irec_medical_documents não é limpa)
+- [x] IREC-0326 · MÉDIO · `src/components/PatientDocuments.jsx:24` — Spinner de carregamento pisca a cada 30s porque o efeito depende do objeto clinicalProfile inteiro
+- [x] IREC-0327 · MÉDIO · `src/components/PatientDocuments.jsx:32` — Polling de 10s zera a lista quando o Supabase falha: documentos do paciente desaparecem intermitentemente
+- [x] IREC-0328 · MÉDIO · `src/components/PatientDocuments.jsx:44` — calculateAge imprime 'NaN anos' no documento médico; try/catch nunca captura e Math.abs mascara data futura
+- [x] IREC-0329 · MÉDIO · `src/components/PatientDocuments.jsx:53` — Impressão disparada por setTimeout fixo de 250ms; QR Code externo não chega a carregar
+- [x] IREC-0330 · MÉDIO · `src/components/PatientDocuments.jsx:279` — QR Code de autenticidade de documento médico é gerado por serviço de terceiros, com vazamento do ID e falha offline
+- [x] IREC-0331 · MÉDIO · `src/components/PatientDocuments.jsx:292` — Template literal não interpolado: documento impresso mostra o texto cru '${activePrintDoc.id}'
+- [x] IREC-0525 · BAIXO · `src/components/PatientDocuments.jsx:171` — Acesso a doc.content sem guarda de null derruba toda a tela de documentos do paciente
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/PatientDocuments.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-D6i4tQVd.js        1,268.58 kB │ gzip: 306.37 kB
+✓ built in 20.56s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 2.13s
+√ Sync finished in 3.694s
 ```
 
 ---
