@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial } from '../services/supabaseService';
 
-export default function AdminPartners({ setActiveTab }) {
+export default function AdminPartners() {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -20,7 +20,7 @@ export default function AdminPartners({ setActiveTab }) {
     setLoading(true);
     try {
       const data = await getRecommendedMaterials(null); // Fetch only global partners
-      setPartners(data);
+      setPartners(data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -29,7 +29,11 @@ export default function AdminPartners({ setActiveTab }) {
   };
 
   useEffect(() => {
-    loadPartners();
+    let isMounted = true;
+    Promise.resolve().then(() => {
+      if (isMounted) loadPartners();
+    });
+    return () => { isMounted = false; };
   }, []);
 
   const handleSubmit = async (e) => {
@@ -47,7 +51,7 @@ export default function AdminPartners({ setActiveTab }) {
       const payload = {
         name,
         brand: brand || 'Genérico/Outros',
-        price: price || 'A consultar',
+        price: parseFloat(price) || 0.0, // Fixes IREC-0047: numeric column compatibility
         affiliate_link: affiliateLink,
         pharmacy_name: pharmacyName,
         type: 'irec_partner',

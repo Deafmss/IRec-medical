@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments, getAdminWoundEntries, updateVerificationStatus, getTrainingKnowledgeList, updateTrainingKnowledgeChapter, deleteTrainingKnowledgeChapter } from '../services/supabaseService';
 import AdminReports from './AdminReports';
 import DateRangePicker from './DateRangePicker';
 
-export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab, onVerificationProcessed }) {
+export default function AdminDashboard({ currentUser, activeTab: propActiveTab, onVerificationProcessed }) {
   const activeTab = propActiveTab === 'dashboard' ? 'metrics' : propActiveTab;
-  const [stats, setStats] = useState({ patients: 0, doctors: 0, nurses: 0, triages: 0, partners: 0, calls: 0 });
   const [users, setUsers] = useState([]);
   const [logs, setLogs] = useState([]);
   const [partners, setPartners] = useState([]);
@@ -45,24 +44,32 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
   const loadData = async () => {
     setLoading(true);
     try {
-      const [statsData, usersData, logsData, partnersData, callsData, assignmentsData, woundEntriesData, trainingData] = await Promise.all([
+      const [, usersData, logsData, partnersData, callsData, assignmentsData, woundEntriesData, trainingData] = await Promise.all([
         getAdminStats(),
         getAllProfiles(),
         getAuditLogs(),
-        getRecommendedMaterials(null, null), // Fetch global platform-wide partners
+        getRecommendedMaterials(null, null),
         getAdminTelemedicineCalls(),
         getAdminAssignments(),
         getAdminWoundEntries(),
         getTrainingKnowledgeList()
       ]);
       
-      setStats(statsData);
-      setUsers(usersData);
-      setLogs(logsData);
-      setPartners(partnersData.filter(p => p.type === 'irec_partner'));
-      setCalls(callsData);
-      setAssignments(assignmentsData);
-      setWoundEntries(woundEntriesData);
+      setUsers(usersData || []);
+      
+      const localLgpdLogs = JSON.parse(localStorage.getItem('irec_log_acessos_prontuario') || '[]').map(l => ({
+        id: l.id || `local_${Math.random()}`,
+        created_at: l.timestamp || new Date().toISOString(),
+        action: 'LGPD_AUDIT_ACCESS',
+        user_id: l.clinicianId,
+        details: { clinician_id: l.clinicianId, patient_id: l.patientId, note: 'Acesso a prontuário (contingência local)' }
+      }));
+      setLogs([...(logsData || []), ...localLgpdLogs]);
+
+      setPartners((partnersData || []).filter(p => p.type === 'irec_partner'));
+      setCalls(callsData || []);
+      setAssignments(assignmentsData || []);
+      setWoundEntries(woundEntriesData || []);
       setTrainingList(trainingData || []);
     } catch (e) {
       console.error("Erro ao carregar dados do admin:", e);
@@ -72,8 +79,36 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
   };
 
   useEffect(() => {
-    loadData();
+    let isMounted = true;
+    Promise.resolve().then(() => {
+      if (isMounted) loadData();
+    });
+    return () => { isMounted = false; };
   }, []);
+
+  const handleVerifyDoctor = async (doctorId, status) => {
+    try {
+      await updateVerificationStatus(doctorId, status);
+      if (onVerificationProcessed) onVerificationProcessed();
+      await loadData();
+      alert(`Status de verificação alterado para '${status}'.`);
+    } catch (err) {
+      console.error("Erro ao alterar verificação:", err);
+      alert("Erro ao alterar verificação do profissional.");
+    }
+  };
+
+  // Fixes IREC-0046: verify admin access
+  if (currentUser && currentUser.role !== 'admin') {
+    return (
+      <div className="glass-card" style={{ padding: '40px', textAlign: 'center', margin: '40px auto', maxWidth: '500px' }}>
+        <h2 style={{ color: 'var(--danger)', fontSize: '20px', fontWeight: '800' }}>⛔ Acesso Restrito</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '8px' }}>
+          Você não possui privilégios de administrador para acessar o Painel Administrativo.
+        </p>
+      </div>
+    );
+  }
 
   const handleAddPartner = async (e) => {
     e.preventDefault();
@@ -87,7 +122,7 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
       const payload = {
         name: partName,
         brand: partBrand || 'Genérico/Outros',
-        price: partPrice || 'A consultar',
+        price: parseFloat(partPrice) || 0.0, // Fixes IREC-0047 (numeric schema compatibility)
         affiliate_link: partLink,
         pharmacy_name: partPharmacy,
         type: 'irec_partner',
@@ -125,8 +160,6 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
       alert('Erro ao excluir parceria.');
     }
   };
-
-  const pendingClinicians = users.filter(u => u.role === 'doctor' && u.verificationStatus === 'pending');
 
   // Exclude system admin from directories
   const filteredUsers = users.filter(u => {
@@ -208,8 +241,8 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
   const countNurses = totalClinicalUsers.filter(u => u.role === 'nurse').length;
 
   // Active / Online Users (last_seen within 15 minutes)
-  const getActiveUsersStats = () => {
-    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+  const getActiveUsersStats = (currentDate = new Date()) => {
+    const fifteenMinsAgo = new Date(currentDate.getTime() - 15 * 60 * 1000);
     const onlineUsers = totalClinicalUsers.filter(u => {
       if (!u.last_seen && !u.lastSeen) return false;
       const lastSeenDate = new Date(u.last_seen || u.lastSeen);
@@ -870,6 +903,26 @@ export default function AdminDashboard({ activeTab: propActiveTab, setActiveTab,
                       )}
                       {item.specialty && (
                         <div>🏥 Especialidade: <strong>{item.specialty}</strong></div>
+                      )}
+                      {item.role !== 'patient' && (
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => handleVerifyDoctor(item.id, 'verified')}
+                            style={{ padding: '4px 8px', fontSize: '11px', backgroundColor: 'rgba(16,185,129,0.1)', color: '#10b981' }}
+                          >
+                            ✓ Verificado
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => handleVerifyDoctor(item.id, 'rejected')}
+                            style={{ padding: '4px 8px', fontSize: '11px', backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444' }}
+                          >
+                            ✕ Rejeitar
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

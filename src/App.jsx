@@ -893,6 +893,7 @@ export default function App() {
       case 'admin-curatoria':
         return (
           <AdminDashboard 
+            currentUser={currentUser}
             activeTab={activeTab.replace('admin-', '')} 
             setActiveTab={(tab) => setActiveTab(`admin-${tab}`)} 
             onVerificationProcessed={fetchPendingCount}

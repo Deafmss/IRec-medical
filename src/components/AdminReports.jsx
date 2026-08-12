@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function AdminReports({ 
   users, 
   callsFiltered, 
   logsFiltered, 
   woundEntriesFiltered, 
-  partners, 
-  assignments 
+  partners
 }) {
   const [activeGroup, setActiveGroup] = useState('clinical'); // 'clinical', 'telehealth', 'commercial', 'security'
 
@@ -700,7 +699,7 @@ export default function AdminReports({
                             </span>
                           </td>
                           <td style={{ padding: '8px', color: 'var(--text-primary)', fontWeight: '500' }}>
-                            {log.details || 'Consulta de dados confidenciais pelo profissional.'}
+                            {typeof log.details === 'object' ? JSON.stringify(log.details) : (log.details || 'Consulta de dados confidenciais pelo profissional.')}
                           </td>
                         </tr>
                       ))

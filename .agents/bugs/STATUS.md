@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 404 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 441 corrigidos**
 
 ---
 
@@ -668,50 +668,62 @@ $ npx cap sync
 
 ---
 
-## 14. Área administrativa — 0/37
+## 14. Área administrativa — 37/37
 
-- [ ] IREC-0004 · CRÍTICO · `src/components/AdminReports.jsx:703` — Tabela LGPD renderiza objeto JSON direto como filho React e quebra a aba Seguranca
-- [ ] IREC-0045 · ALTO · `src/components/AdminDashboard.jsx:51` — Logs de auditoria nunca aparecem: escrita em localStorage e leitura na tabela audit_logs
-- [ ] IREC-0046 · ALTO · `src/components/AdminDashboard.jsx:74` — AdminDashboard carrega perfis, logs e prontuarios sem nenhuma verificacao de papel do usuario
-- [ ] IREC-0047 · ALTO · `src/components/AdminDashboard.jsx:90` — Cadastro de parceiro envia texto no campo price, que e numeric(10,2) no banco
-- [ ] IREC-0048 · ALTO · `src/components/AdminDashboard.jsx:129` — Fluxo de aprovacao de medicos pendentes nunca renderizado; callback onVerificationProcessed jamais chamado
-- [ ] IREC-0049 · ALTO · `src/components/AdminDashboard.jsx:168` — Filtro de periodo personalizado usa fuso UTC no inicio e fuso local no fim (limites assimetricos)
-- [ ] IREC-0050 · ALTO · `src/components/AdminDashboard.jsx:197` — Periodo '15d' oferecido pelo DateRangePicker nao existe no filtro e mostra todos os dados
-- [ ] IREC-0051 · ALTO · `src/components/AdminDashboard.jsx:215` — Contador de usuarios online usa campo inexistente (last_seen/lastSeen) e fica sempre em zero
-- [ ] IREC-0052 · ALTO · `src/components/AdminDashboard.jsx:243` — Status online/offline dos profissionais depende do contador global e do campo inexistente last_seen
-- [ ] IREC-0053 · ALTO · `src/components/AdminDashboard.jsx:331` — Mapeamento de Patologias nunca exibe nada: getAllProfiles descarta todos os campos de comorbidade
-- [ ] IREC-0054 · ALTO · `src/components/AdminReports.jsx:49` — Relatorio de Retorno de Pacientes agrupa tudo sob chave undefined porque patient_id nao vem na consulta
-- [ ] IREC-0055 · ALTO · `src/components/AdminReports.jsx:66` — Relatorio de Altas Clinicas sempre 0% : campos patient_id e clinical_outcome ausentes na consulta
-- [ ] IREC-0056 · ALTO · `src/components/AdminReports.jsx:122` — NPS e avaliacoes de satisfacao fabricados a partir do indice da chamada
-- [ ] IREC-0057 · ALTO · `src/components/AdminReports.jsx:183` — Valores financeiros de comissao por medico calculados a partir do indice do array
-- [ ] IREC-0213 · MÉDIO · `src/components/AdminDashboard.jsx:68` — Falha em qualquer uma das 8 cargas zera o painel inteiro sem avisar o admin
-- [ ] IREC-0214 · MÉDIO · `src/components/AdminDashboard.jsx:1067` — Alerta de sucesso na edicao de capitulo clinico e exibido mesmo quando nada foi salvo
-- [ ] IREC-0215 · MÉDIO · `src/components/AdminPartners.jsx:4` — AdminPartners.jsx e codigo morto: case 'admin-partners' duplicado no switch do App.jsx
-- [ ] IREC-0216 · MÉDIO · `src/components/AdminReports.jsx:34` — Relatorio de epidemiologia sempre com zeros de comorbidade e uma unica localidade generica
-- [ ] IREC-0217 · MÉDIO · `src/components/AdminReports.jsx:92` — Tempo medio de espera na fila e uma formula inventada que DIMINUI conforme a demanda cresce
-- [ ] IREC-0218 · MÉDIO · `src/components/AdminReports.jsx:114` — Retorno antecipado do NPS omite totalRated e a tela mostra '(undefined avaliacoes)'
-- [ ] IREC-0219 · MÉDIO · `src/components/AdminReports.jsx:158` — KPIs de cliques, vendas e receita de afiliados derivados apenas da quantidade de parceiros
-- [ ] IREC-0220 · MÉDIO · `src/components/AdminReports.jsx:174` — Ranking de Insumos Mais Recomendados atribui a mesma contagem fixa a todos os produtos
-- [ ] IREC-0221 · MÉDIO · `src/components/AdminReports.jsx:216` — KPI 'Documentos Clinicos Emitidos' conta triagens de ferida e ignora a emissao real de documentos
-- [ ] IREC-0222 · MÉDIO · `src/components/AdminReports.jsx:418` — Score NPS negativo e exibido com sinal duplo ('+-33')
-- [ ] IREC-0429 · BAIXO · `src/components/AdminDashboard.jsx:59` — Estado stats e preenchido por 6 consultas de contagem e nunca renderizado
-- [ ] IREC-0430 · BAIXO · `src/components/AdminDashboard.jsx:76` — Efeito de carga sem cancelamento: setState apos desmontagem do painel
-- [ ] IREC-0431 · BAIXO · `src/components/AdminDashboard.jsx:412` — Log sem campo action gera a chave literal 'undefined' no ranking de atividades
-- [ ] IREC-0432 · BAIXO · `src/components/AdminDashboard.jsx:423` — Cor de texto fixa 'black' no rotulo de papel desconhecido fica ilegivel no tema escuro
-- [ ] IREC-0433 · BAIXO · `src/components/AdminDashboard.jsx:525` — Condicao de renderizacao dos filtros de patologia e sempre verdadeira
-- [ ] IREC-0434 · BAIXO · `src/components/AdminDashboard.jsx:559` — Seletores de Estado, Cidade e Ordenacao sem label associado
-- [ ] IREC-0435 · BAIXO · `src/components/AdminDashboard.jsx:583` — Filtro de cidade ignora o estado e usa key duplicada para cidades homonimas
-- [ ] IREC-0436 · BAIXO · `src/components/AdminDashboard.jsx:1182` — Aba administrativa desconhecida renderiza painel vazio (header sem conteudo)
-- [ ] IREC-0437 · BAIXO · `src/components/AdminDashboard.jsx:1192` — Botao de fechar do modal de parceiro nao possui nome acessivel
-- [ ] IREC-0438 · BAIXO · `src/components/AdminPartners.jsx:22` — AdminPartners lista materiais que nao sao parceiros iRec (falta o filtro por type)
-- [ ] IREC-0439 · BAIXO · `src/components/AdminPartners.jsx:38` — Mensagens de sucesso e erro do formulario coexistem e nunca sao limpas
-- [ ] IREC-0440 · BAIXO · `src/components/AdminPartners.jsx:50` — Mesmo defeito de tipo no price do AdminPartners (payload texto para coluna numeric)
-- [ ] IREC-0441 · BAIXO · `src/components/AdminReports.jsx:423` — Cinco estrelas fixas exibidas independentemente da nota media
+- [x] IREC-0004 · CRÍTICO · `src/components/AdminReports.jsx:703` — Tabela LGPD renderiza objeto JSON direto como filho React e quebra a aba Seguranca
+- [x] IREC-0045 · ALTO · `src/components/AdminDashboard.jsx:51` — Logs de auditoria nunca aparecem: escrita em localStorage e leitura na tabela audit_logs
+- [x] IREC-0046 · ALTO · `src/components/AdminDashboard.jsx:74` — AdminDashboard carrega perfis, logs e prontuarios sem nenhuma verificacao de papel do usuario
+- [x] IREC-0047 · ALTO · `src/components/AdminDashboard.jsx:90` — Cadastro de parceiro envia texto no campo price, que e numeric(10,2) no banco
+- [x] IREC-0048 · ALTO · `src/components/AdminDashboard.jsx:129` — Fluxo de aprovacao de medicos pendentes nunca renderizado; callback onVerificationProcessed jamais chamado
+- [x] IREC-0049 · ALTO · `src/components/AdminDashboard.jsx:168` — Filtro de periodo personalizado usa fuso UTC no inicio e fuso local no fim (limites assimetricos)
+- [x] IREC-0050 · ALTO · `src/components/AdminDashboard.jsx:197` — Periodo '15d' oferecido pelo DateRangePicker nao existe no filtro e mostra todos os dados
+- [x] IREC-0051 · ALTO · `src/components/AdminDashboard.jsx:215` — Contador de usuarios online usa campo inexistente (last_seen/lastSeen) e fica sempre em zero
+- [x] IREC-0052 · ALTO · `src/components/AdminDashboard.jsx:243` — Status online/offline dos profissionais depende do contador global e do campo inexistente last_seen
+- [x] IREC-0053 · ALTO · `src/components/AdminDashboard.jsx:331` — Mapeamento de Patologias nunca exibe nada: getAllProfiles descarta todos os campos de comorbidade
+- [x] IREC-0054 · ALTO · `src/components/AdminReports.jsx:49` — Relatorio de Retorno de Pacientes agrupa tudo sob chave undefined porque patient_id nao vem na consulta
+- [x] IREC-0055 · ALTO · `src/components/AdminReports.jsx:66` — Relatorio de Altas Clinicas sempre 0% : campos patient_id e clinical_outcome ausentes na consulta
+- [x] IREC-0056 · ALTO · `src/components/AdminReports.jsx:122` — NPS e avaliacoes de satisfacao fabricados a partir do indice da chamada
+- [x] IREC-0057 · ALTO · `src/components/AdminReports.jsx:183` — Valores financeiros de comissao por medico calculados a partir do indice do array
+- [x] IREC-0213 · MÉDIO · `src/components/AdminDashboard.jsx:68` — Falha em qualquer uma das 8 cargas zera o painel inteiro sem avisar o admin
+- [x] IREC-0214 · MÉDIO · `src/components/AdminDashboard.jsx:1067` — Alerta de sucesso na edicao de capitulo clinico e exibido mesmo quando nada foi salvo
+- [x] IREC-0215 · MÉDIO · `src/components/AdminPartners.jsx:4` — AdminPartners.jsx e codigo morto: case 'admin-partners' duplicado no switch do App.jsx
+- [x] IREC-0216 · MÉDIO · `src/components/AdminReports.jsx:34` — Relatorio de epidemiologia sempre com zeros de comorbidade e uma unica localidade generica
+- [x] IREC-0217 · MÉDIO · `src/components/AdminReports.jsx:92` — Tempo medio de espera na fila e uma formula inventada que DIMINUI conforme a demanda cresce
+- [x] IREC-0218 · MÉDIO · `src/components/AdminReports.jsx:114` — Retorno antecipado do NPS omite totalRated e a tela mostra '(undefined avaliacoes)'
+- [x] IREC-0219 · MÉDIO · `src/components/AdminReports.jsx:158` — KPIs de cliques, vendas e receita de afiliados derivados apenas da quantidade de parceiros
+- [x] IREC-0220 · MÉDIO · `src/components/AdminReports.jsx:174` — Ranking de Insumos Mais Recomendados atribui a mesma contagem fixa a todos os produtos
+- [x] IREC-0221 · MÉDIO · `src/components/AdminReports.jsx:216` — KPI 'Documentos Clinicos Emitidos' conta triagens de ferida e ignora a emissao real de documentos
+- [x] IREC-0222 · MÉDIO · `src/components/AdminReports.jsx:418` — Score NPS negativo e exibido com sinal duplo ('+-33')
+- [x] IREC-0429 · BAIXO · `src/components/AdminDashboard.jsx:59` — Estado stats e preenchido por 6 consultas de contagem e nunca renderizado
+- [x] IREC-0430 · BAIXO · `src/components/AdminDashboard.jsx:76` — Efeito de carga sem cancelamento: setState apos desmontagem do painel
+- [x] IREC-0431 · BAIXO · `src/components/AdminDashboard.jsx:412` — Log sem campo action gera a chave literal 'undefined' no ranking de atividades
+- [x] IREC-0432 · BAIXO · `src/components/AdminDashboard.jsx:423` — Cor de texto fixa 'black' no rotulo de papel desconhecido fica ilegivel no tema escuro
+- [x] IREC-0433 · BAIXO · `src/components/AdminDashboard.jsx:525` — Condicao de renderizacao dos filtros de patologia e sempre verdadeira
+- [x] IREC-0434 · BAIXO · `src/components/AdminDashboard.jsx:559` — Seletores de Estado, Cidade e Ordenacao sem label associado
+- [x] IREC-0435 · BAIXO · `src/components/AdminDashboard.jsx:583` — Filtro de cidade ignora o estado e usa key duplicada para cidades homonimas
+- [x] IREC-0436 · BAIXO · `src/components/AdminDashboard.jsx:1182` — Aba administrativa desconhecida renderiza painel vazio (header sem conteudo)
+- [x] IREC-0437 · BAIXO · `src/components/AdminDashboard.jsx:1192` — Botao de fechar do modal de parceiro nao possui nome acessivel
+- [x] IREC-0438 · BAIXO · `src/components/AdminPartners.jsx:22` — AdminPartners lista materiais que nao sao parceiros iRec (falta o filtro por type)
+- [x] IREC-0439 · BAIXO · `src/components/AdminPartners.jsx:38` — Mensagens de sucesso e erro do formulario coexistem e nunca sao limpas
+- [x] IREC-0440 · BAIXO · `src/components/AdminPartners.jsx:50` — Mesmo defeito de tipo no price do AdminPartners (payload texto para coluna numeric)
+- [x] IREC-0441 · BAIXO · `src/components/AdminReports.jsx:423` — Cinco estrelas fixas exibidas independentemente da nota media
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/AdminDashboard.jsx src/components/AdminPartners.jsx src/components/AdminReports.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-oF732S01.js        1,277.18 kB │ gzip: 309.24 kB
+✓ built in 1.63s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 534.27ms
+√ Sync finished in 1.211s
 ```
 
 ---
