@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getAllNurses, getAssignedDoctors, followPatient } from '../services/supabaseService';
 import BookingModal from './BookingModal';
 
@@ -185,7 +185,6 @@ export default function NursesNetwork({ currentUser, setActiveTab, setTelemedici
             return matchesSearch && matchesSpecialty;
           })
           .map(doc => {
-            const isAlreadyAssigned = assignedNurses.some(c => c.id === doc.id);
             const docInitials = doc.name ? doc.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'EN';
             
             return (

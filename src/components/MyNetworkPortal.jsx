@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function MyNetworkPortal({ setActiveTab }) {
   const cards = [
     {

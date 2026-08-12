@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 530 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 555 corrigidos**
 
 ---
 
@@ -886,11 +886,51 @@ $ npx cap sync
 
 ---
 
-## 18. Rede de profissionais — 0/25
+## 18. Rede de profissionais — 25/25
 
-- [ ] IREC-0110 · ALTO · `src/components/DoctorPartners.jsx:4` — Central de Parcerias do médico acessível a qualquer papel (permissão apenas no client, sem RLS)
-- [ ] IREC-0111 · ALTO · `src/components/DoctorPartners.jsx:57` — Cadastro de parceria sempre falha: string 'A consultar' gravada em coluna numeric(10,2)
-- [ ] IREC-0115 · ALTO · `src/components/NursesNetwork.jsx:54` — Bio, formação e valor reais do enfermeiro nunca chegam ao diretório (campos não mapeados no service)
+- [x] IREC-0110 · ALTO · `src/components/DoctorPartners.jsx:4` — Central de Parcerias do médico acessível a qualquer papel (permissão apenas no client, sem RLS)
+- [x] IREC-0111 · ALTO · `src/components/DoctorPartners.jsx:57` — Cadastro de parceria sempre falha: string 'A consultar' gravada em coluna numeric(10,2)
+- [x] IREC-0115 · ALTO · `src/components/NursesNetwork.jsx:54` — Bio, formação e valor reais do enfermeiro nunca chegam ao diretório (campos não mapeados no service)
+- [x] IREC-0116 · ALTO · `src/components/NursesNetwork.jsx:62` — Credenciais, preços, notas e depoimentos de enfermeiros são FABRICADOS e exibidos como reais
+- [x] IREC-0117 · ALTO · `src/components/NursesNetwork.jsx:519` — Agendamento cobra valor inventado (R$ 130 / R$ 250) por price nulo
+- [x] IREC-0137 · ALTO · `src/components/SpecialistDirectory.jsx:66` — Preço do médico lido de campo inexistente (doc.price em vez de consultationFee)
+- [x] IREC-0138 · ALTO · `src/components/SpecialistDirectory.jsx:80` — Diretório de médicos SOBRESCREVE bio e formação reais por texto fabricado
+- [x] IREC-0295 · MÉDIO · `src/components/DoctorPartners.jsx:32` — Falha de carregamento das parcerias é apresentada como catálogo vazio
+- [x] IREC-0296 · MÉDIO · `src/components/DoctorPartners.jsx:124` — Exclusão de parceria por id, sem checagem de propriedade e sem RLS, com ids sequenciais
+- [x] IREC-0312 · MÉDIO · `src/components/MyNetworkPortal.jsx:67` — Cartões de navegação são <div> com onClick, sem role, foco ou teclado
+- [x] IREC-0313 · MÉDIO · `src/components/NursesNetwork.jsx:247` — Selo '✅ Verificado' e 'Registro ativo no COREN' são fixos, não derivados dos dados
+- [x] IREC-0314 · MÉDIO · `src/components/NursesNetwork.jsx:304` — Cartões e mensagem 'Nenhum enfermeiro disponível' aparecem ao mesmo tempo (filtro duplicado divergente)
+- [x] IREC-0315 · MÉDIO · `src/components/NursesNetwork.jsx:496` — Retorno de followPatient ignorado: vínculo pode falhar e a UI segue como se tivesse dado certo
+- [x] IREC-0316 · MÉDIO · `src/components/NursesNetwork.jsx:499` — Redirecionamento para telemedicina não abre a conversa: contatos só atualizam a cada 30 s
+- [x] IREC-0354 · MÉDIO · `src/components/SpecialistDirectory.jsx:501` — Diretórios sem checagem de papel: clínico consegue se vincula como 'paciente' de outro clínico
+- [x] IREC-0497 · BAIXO · `src/components/DoctorPartners.jsx:153` — Variáveis CSS --primary-rgb e --accent-rgb não existem: fundos e bordas não são aplicados
+- [x] IREC-0498 · BAIXO · `src/components/DoctorPartners.jsx:154` — Chaves de estilo inválidas ('justifyContext' e 'hover') geram avisos e efeito que nunca acontece
+- [x] IREC-0499 · BAIXO · `src/components/DoctorPartners.jsx:264` — Link de afiliado informado pelo usuário vai direto para href, permitindo esquema javascript:
+- [x] IREC-0518 · BAIXO · `src/components/NursesNetwork.jsx:104` — Polling de 10s sem cancelamento cria corrida que desfaz o vínculo recém-criado na UI
+- [x] IREC-0519 · BAIXO · `src/components/NursesNetwork.jsx:157` — Seletor de especialidade sem rótulo acessível
+- [x] IREC-0520 · BAIXO · `src/components/NursesNetwork.jsx:183` — Profissional sem nome cadastrado nunca aparece no diretório
+- [x] IREC-0521 · BAIXO · `src/components/NursesNetwork.jsx:188` — isAlreadyAssigned calculado no cartão e nunca usado: paciente não vê que já está vinculado
+- [x] IREC-0522 · BAIXO · `src/components/NursesNetwork.jsx:192` — Cartões de profissionais também são <div> clicáveis sem semântica de botão
+- [x] IREC-0523 · BAIXO · `src/components/NursesNetwork.jsx:322` — Drawer de perfil clínico não fecha com Esc nem com clique no fundo e não é um dialog acessível
+- [x] IREC-0540 · BAIXO · `src/components/SpecialistDirectory.jsx:300` — Campo 'CRM:' renderizado vazio quando o registro não está preenchido
+
+**Verificação do módulo:**
+
+```
+$ npx eslint src/components/DoctorPartners.jsx src/components/MyNetworkPortal.jsx src/components/NursesNetwork.jsx src/components/SpecialistDirectory.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-Bc7YjUVy.js        1,278.57 kB │ gzip: 309.65 kB
+✓ built in 1.91s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 607.15ms
+√ Sync finished in 1.387s
+```ice)
 - [ ] IREC-0116 · ALTO · `src/components/NursesNetwork.jsx:62` — Credenciais, preços, notas e depoimentos de enfermeiros são FABRICADOS e exibidos como reais
 - [ ] IREC-0117 · ALTO · `src/components/NursesNetwork.jsx:519` — Agendamento cobra valor inventado (R$ 130 / R$ 250) por price nulo
 - [ ] IREC-0137 · ALTO · `src/components/SpecialistDirectory.jsx:66` — Preço do médico lido de campo inexistente (doc.price em vez de consultationFee)

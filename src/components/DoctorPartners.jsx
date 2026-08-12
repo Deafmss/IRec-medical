@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial } from '../services/supabaseService';
 
 export default function DoctorPartners({ doctorProfile }) {
@@ -28,7 +28,7 @@ export default function DoctorPartners({ doctorProfile }) {
     try {
       // Load all doctor's recommended materials (both general partners and specific products)
       const data = await getRecommendedMaterials(null, doctorProfile.id);
-      setMaterials(data);
+      setMaterials(data || []);
     } catch (e) {
       console.error('Erro ao buscar parcerias do médico:', e);
     } finally {
@@ -37,8 +37,22 @@ export default function DoctorPartners({ doctorProfile }) {
   };
 
   useEffect(() => {
-    loadMaterials();
+    let isMounted = true;
+    Promise.resolve().then(() => {
+      if (isMounted && doctorProfile) loadMaterials();
+    });
+    return () => { isMounted = false; };
   }, [doctorProfile]);
+
+  // Fixes IREC-0110: Role gate for clinician/admin only
+  if (!doctorProfile || (doctorProfile.role !== 'doctor' && doctorProfile.role !== 'nurse' && doctorProfile.role !== 'admin')) {
+    return (
+      <div className="glass-card" style={{ padding: '40px', textAlign: 'center', margin: '20px auto', maxWidth: '600px' }}>
+        <h3 style={{ margin: '0 0 10px 0', color: 'var(--text-primary)' }}>⚠️ Acesso Restrito</h3>
+        <p style={{ color: 'var(--text-muted)', margin: 0 }}>Apenas profissionais de saúde homologados e administradores têm acesso à Central de Parcerias.</p>
+      </div>
+    );
+  }
 
   // Handlers
   const handleAddPharmacy = async (e) => {
@@ -53,7 +67,7 @@ export default function DoctorPartners({ doctorProfile }) {
       const payload = {
         name: pharmacyName,
         brand: 'Parceria de Vendas Geral',
-        price: 'A consultar',
+        price: null, // Fixes IREC-0111: numeric(10,2) expects null instead of string text
         affiliate_link: pharmacyLink,
         pharmacy_name: pharmacyName,
         type: 'doctor_general_partner',
@@ -87,10 +101,11 @@ export default function DoctorPartners({ doctorProfile }) {
 
     setSubmitting(true);
     try {
+      const numPrice = prodPrice ? parseFloat(String(prodPrice).replace(/[^\d,.]/g, '').replace(',', '.')) : null;
       const payload = {
         name: prodName,
         brand: prodBrand || 'Genérico/Outros',
-        price: prodPrice || 'A consultar',
+        price: (numPrice && !isNaN(numPrice)) ? numPrice : null, // Fixes IREC-0111
         affiliate_link: prodLink,
         pharmacy_name: prodPharmacyName,
         type: 'doctor_partner',

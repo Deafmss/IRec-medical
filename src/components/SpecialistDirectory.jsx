@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getAllDoctors, getAssignedDoctors, followPatient } from '../services/supabaseService';
 import BookingModal from './BookingModal';
 
@@ -190,7 +190,6 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
             return matchesSearch && matchesSpecialty;
           })
           .map(doc => {
-            const isAlreadyAssigned = assignedDoctors.some(c => c.id === doc.id);
             const docInitials = doc.name ? doc.name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
             
             return (
