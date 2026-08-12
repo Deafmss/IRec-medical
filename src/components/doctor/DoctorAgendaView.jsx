@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+const getLocalDateStr = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export default function DoctorAgendaView({
   doctorAppointments = [],
@@ -12,6 +17,8 @@ export default function DoctorAgendaView({
   getCalendarDays,
   onSelectPatient
 }) {
+  const todayDateStr = getLocalDateStr(); // Fixes IREC-0089
+
   return (
     <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Calendar Controls & Month Header */}
@@ -22,6 +29,7 @@ export default function DoctorAgendaView({
           </h3>
           <div style={{ display: 'flex', gap: '4px' }}>
             <button 
+              type="button"
               className="btn btn-secondary" 
               onClick={() => setCalendarViewDate(new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() - 1, 1))}
               style={{ padding: '4px 10px', fontSize: '13px', borderRadius: '8px' }}
@@ -29,13 +37,15 @@ export default function DoctorAgendaView({
               ◀
             </button>
             <button 
+              type="button"
               className="btn btn-secondary" 
-              onClick={() => { setCalendarViewDate(new Date()); setSelectedCalendarDateStr(new Date().toISOString().split('T')[0]); }}
+              onClick={() => { setCalendarViewDate(new Date()); setSelectedCalendarDateStr(todayDateStr); }}
               style={{ padding: '4px 12px', fontSize: '12px', borderRadius: '8px' }}
             >
               Hoje
             </button>
             <button 
+              type="button"
               className="btn btn-secondary" 
               onClick={() => setCalendarViewDate(new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() + 1, 1))}
               style={{ padding: '4px 10px', fontSize: '13px', borderRadius: '8px' }}
@@ -56,6 +66,7 @@ export default function DoctorAgendaView({
           ].map(filter => (
             <button
               key={filter.id}
+              type="button"
               onClick={() => setAgendaStatusFilter(filter.id)}
               style={{
                 padding: '6px 12px',
@@ -88,7 +99,7 @@ export default function DoctorAgendaView({
             return <div key={`empty_${index}`} style={{ minHeight: '70px', opacity: 0.2 }} />;
           }
 
-          const isToday = dayObj.dateStr === new Date().toISOString().split('T')[0];
+          const isToday = dayObj.dateStr === todayDateStr; // Fixes IREC-0089
           const isSelected = dayObj.dateStr === selectedCalendarDateStr;
           const dayApps = doctorAppointments.filter(a => {
             const matchesDate = a.appointmentDate === dayObj.dateStr;
@@ -98,8 +109,9 @@ export default function DoctorAgendaView({
           });
 
           return (
-            <div
+            <button
               key={dayObj.dateStr}
+              type="button"
               onClick={() => setSelectedCalendarDateStr(dayObj.dateStr)}
               style={{
                 minHeight: '75px',
@@ -111,6 +123,8 @@ export default function DoctorAgendaView({
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
+                textAlign: 'left',
+                width: '100%',
                 transition: 'all 0.15s'
               }}
             >
@@ -148,7 +162,7 @@ export default function DoctorAgendaView({
                   <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>+{dayApps.length - 2} consultas</span>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -216,6 +230,7 @@ export default function DoctorAgendaView({
 
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
+                      type="button"
                       className="btn btn-primary"
                       onClick={() => onSelectPatient && onSelectPatient(app)}
                       style={{ flex: 1, padding: '8px', fontSize: '11.5px', borderRadius: '8px', backgroundColor: '#0284c7' }}

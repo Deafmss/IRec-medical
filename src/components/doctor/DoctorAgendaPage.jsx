@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import DoctorAgendaView from './DoctorAgendaView';
-import { getDoctorAppointments, getAllPatients } from '../../services/supabaseService';
+import { getDoctorAppointments, getAssignedPatients, getClinicalProfile } from '../../services/supabaseService';
+
+const getLocalDateStr = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export default function DoctorAgendaPage({
   currentUser,
@@ -10,7 +17,7 @@ export default function DoctorAgendaPage({
   const [doctorAppointments, setDoctorAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [calendarViewDate, setCalendarViewDate] = useState(new Date());
-  const [selectedCalendarDateStr, setSelectedCalendarDateStr] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedCalendarDateStr, setSelectedCalendarDateStr] = useState(getLocalDateStr); // Fixes IREC-0089
   const [agendaStatusFilter, setAgendaStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
@@ -33,23 +40,32 @@ export default function DoctorAgendaPage({
     return days;
   };
 
-  const loadData = async () => {
-    try {
-      if (currentUser?.id) {
-        const apps = await getDoctorAppointments(currentUser.id);
-        setDoctorAppointments(apps);
-      }
-      const allP = await getAllPatients();
-      setPatients(allP);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData();
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        if (currentUser?.id) {
+          const [apps, assignedP] = await Promise.all([
+            getDoctorAppointments(currentUser.id),
+            getAssignedPatients(currentUser.id) // Fixes IREC-0090: load assigned patients only
+          ]);
+          if (isMounted) {
+            setDoctorAppointments(apps || []);
+            setPatients(assignedP || []);
+          }
+        }
+      } catch (e) {
+        console.error("Erro ao carregar agenda do médico:", e);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    Promise.resolve().then(() => {
+      if (isMounted) loadData();
+    });
+
+    return () => { isMounted = false; };
   }, [currentUser]);
 
   return (
@@ -57,7 +73,7 @@ export default function DoctorAgendaPage({
       {/* Page Header */}
       <div className="clinician-header" style={{
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: 'var(--bg-secondary)',
         padding: '20px 24px',
@@ -106,14 +122,23 @@ export default function DoctorAgendaPage({
           setAgendaStatusFilter={setAgendaStatusFilter}
           monthNames={monthNames}
           getCalendarDays={getCalendarDays}
-          onSelectPatient={(app) => {
-            const foundPatient = patients.find(p => p.id === app.patientId || p.name === app.patientName);
+          onSelectPatient={async (app) => {
+            // Fixes IREC-0010 & IREC-0091: exact ID match only, fetch full profile if missing
+            let foundPatient = patients.find(p => p.id === app.patientId);
+            if (!foundPatient && app.patientId) {
+              try {
+                foundPatient = await getClinicalProfile(app.patientId);
+              } catch (err) {
+                console.warn("Falha ao buscar perfil do paciente:", err);
+              }
+            }
+
             if (foundPatient) {
               setSelectedPatient(foundPatient);
+              setActiveTab('doctor-dashboard');
             } else {
-              setSelectedPatient({ id: app.patientId, name: app.patientName, email: app.patientEmail });
+              alert("O perfil clínico completo deste paciente não foi encontrado no sistema.");
             }
-            setActiveTab('doctor-dashboard');
           }}
         />
       )}

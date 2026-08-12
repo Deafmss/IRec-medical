@@ -2,7 +2,7 @@
 
 Marque `[x]` só depois de verificar. Cole a saída do comando na seção do módulo.
 
-**588 defeitos catalogados + 2 do módulo 0 · 346 corrigidos**
+**588 defeitos catalogados + 2 do módulo 0 · 376 corrigidos**
 
 ---
 
@@ -564,43 +564,55 @@ $ npx cap sync
 
 ---
 
-## 12. Agenda e analytics do médico — 0/30
+## 12. Agenda e analytics do médico — 30/30
 
-- [ ] IREC-0010 · CRÍTICO · `src/components/doctor/DoctorAgendaPage.jsx:114` — Agenda abre o prontuário com um objeto de paciente incompleto: alergias e comorbidades aparecem como inexistentes
-- [ ] IREC-0089 · ALTO · `src/components/doctor/DoctorAgendaPage.jsx:13` — Data 'de hoje' calculada em UTC: agenda abre no dia errado após as 21h no horário de Brasília
-- [ ] IREC-0090 · ALTO · `src/components/doctor/DoctorAgendaPage.jsx:42` — Agenda baixa o cadastro completo de TODOS os pacientes da plataforma para o navegador do médico
-- [ ] IREC-0091 · ALTO · `src/components/doctor/DoctorAgendaPage.jsx:110` — Casamento de paciente por NOME pode abrir o prontuário do paciente errado
-- [ ] IREC-0092 · ALTO · `src/components/doctor/DoctorAgendaView.jsx:55` — Contadores dos filtros aceitam status alternativos, mas o filtro aplicado usa igualdade estrita: pill mostra N e lista mostra vazio
-- [ ] IREC-0093 · ALTO · `src/components/doctor/DoctorAgendaView.jsx:200` — Consulta cancelada aparece na agenda com aparência de agendada e rótulo cru 'canceled'
-- [ ] IREC-0106 · ALTO · `src/components/DoctorDashboardAnalytics.jsx:22` — Casos Finalizados e Taxa de Retorno sempre zerados em modo contingência: chaves de localStorage divergentes
-- [ ] IREC-0107 · ALTO · `src/components/DoctorDashboardAnalytics.jsx:66` — Período 'Últimos 15 dias' não é tratado e cai no ramo 'all': painel mostra o histórico inteiro
-- [ ] IREC-0108 · ALTO · `src/components/DoctorDashboardAnalytics.jsx:75` — KPI 'finalizados com sucesso' e 'Taxa de conclusão' são sempre 0: o status gravado é 'ended', não 'completed'
-- [ ] IREC-0109 · ALTO · `src/components/DoctorDashboardAnalytics.jsx:76` — Tempo de teleconsulta sempre 0 minutos: campo local é 'duration', não 'duration_seconds'
-- [ ] IREC-0272 · MÉDIO · `src/components/doctor/DoctorAgendaPage.jsx:44` — Falha de carregamento da agenda é silenciosa e indistinguível de 'nenhuma consulta'
-- [ ] IREC-0273 · MÉDIO · `src/components/doctor/DoctorAgendaView.jsx:53` — Filtros 'Em Espera' e 'Concluídas' são ramos mortos: nenhum código grava esses status e não há ação para concluir consulta
-- [ ] IREC-0274 · MÉDIO · `src/components/doctor/DoctorAgendaView.jsx:213` — Consulta sem preço é exibida como 'Pago', ignorando o paymentStatus disponível
-- [ ] IREC-0290 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:32` — Falha no carregamento apresenta todos os KPIs clínicos como zero, sem indicar erro
-- [ ] IREC-0291 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:60` — Intervalo personalizado exclui o dia final inteiro: new Date('yyyy-mm-dd') em UTC + setHours local
-- [ ] IREC-0292 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:77` — Média de duração da chamada é diluída por chamadas rejeitadas e não atendidas
-- [ ] IREC-0293 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:80` — Seletor de período não afeta pacientes, casos finalizados, taxa de retorno nem perfil de comorbidades
-- [ ] IREC-0294 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:116` — Contador de 'Farmácias/Marcas ativas' lê campo inexistente p.pharmacy
-- [ ] IREC-0476 · BAIXO · `src/components/doctor/DoctorAgendaPage.jsx:60` — Propriedade de estilo inválida 'justify' quebra o alinhamento do cabeçalho da Agenda
-- [ ] IREC-0477 · BAIXO · `src/components/doctor/DoctorAgendaPage.jsx:114` — app.patientEmail nunca existe nos agendamentos vindos do Supabase
-- [ ] IREC-0478 · BAIXO · `src/components/doctor/DoctorAgendaView.jsx:103` — Células do calendário são divs clicáveis sem role, tabIndex ou handler de teclado
-- [ ] IREC-0479 · BAIXO · `src/components/doctor/DoctorAgendaView.jsx:131` — key={appIdx} em lista que muda de conteúdo conforme o filtro de status
-- [ ] IREC-0480 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:12` — Componente inteiro é código morto: nunca é importado, e a prop formatDate é recebida sem uso
-- [ ] IREC-0481 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:19` — Propriedade de estilo inválida 'justify' na barra de busca e filtros
-- [ ] IREC-0482 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:61` — Contador do botão 'Meus Pacientes' mostra o total já filtrado, não o total de pacientes
-- [ ] IREC-0483 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:83` — filteredPatients sem valor default: componente estoura se a prop não for passada
-- [ ] IREC-0484 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:150` — Alerta de infecção nunca é exibido: patient.hasInfectionSigns e patient.lesionType não existem no modelo de dados
-- [ ] IREC-0485 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:180` — Botão de telemedicina não faz nada quando onOpenChat não é fornecido
-- [ ] IREC-0486 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:188` — Botão de ação identificado apenas por emoji, sem nome acessível explícito
-- [ ] IREC-0496 · BAIXO · `src/components/DoctorDashboardAnalytics.jsx:290` — Grid fixo de duas colunas sem media query e com flexWrap inócuo quebra o painel no celular
+- [x] IREC-0010 · CRÍTICO · `src/components/doctor/DoctorAgendaPage.jsx:114` — Agenda abre o prontuário com um objeto de paciente incompleto: alergias e comorbidades aparecem como inexistentes
+- [x] IREC-0089 · ALTO · `src/components/doctor/DoctorAgendaPage.jsx:13` — Data 'de hoje' calculada em UTC: agenda abre no dia errado após as 21h no horário de Brasília
+- [x] IREC-0090 · ALTO · `src/components/doctor/DoctorAgendaPage.jsx:42` — Agenda baixa o cadastro completo de TODOS os pacientes da plataforma para o navegador do médico
+- [x] IREC-0091 · ALTO · `src/components/doctor/DoctorAgendaPage.jsx:110` — Casamento de paciente por NOME pode abrir o prontuário do paciente errado
+- [x] IREC-0092 · ALTO · `src/components/doctor/DoctorAgendaView.jsx:55` — Contadores dos filtros aceitam status alternativos, mas o filtro aplicado usa igualdade estrita: pill mostra N e lista mostra vazio
+- [x] IREC-0093 · ALTO · `src/components/doctor/DoctorAgendaView.jsx:200` — Consulta cancelada aparece na agenda com aparência de agendada e rótulo cru 'canceled'
+- [x] IREC-0106 · ALTO · `src/components/DoctorDashboardAnalytics.jsx:22` — Casos Finalizados e Taxa de Retorno sempre zerados em modo contingência: chaves de localStorage divergentes
+- [x] IREC-0107 · ALTO · `src/components/DoctorDashboardAnalytics.jsx:66` — Período 'Últimos 15 dias' não é tratado e cai no ramo 'all': painel mostra o histórico inteiro
+- [x] IREC-0108 · ALTO · `src/components/DoctorDashboardAnalytics.jsx:75` — KPI 'finalizados com sucesso' e 'Taxa de conclusão' são sempre 0: o status gravado é 'ended', não 'completed'
+- [x] IREC-0109 · ALTO · `src/components/DoctorDashboardAnalytics.jsx:76` — Tempo de teleconsulta sempre 0 minutos: campo local é 'duration', não 'duration_seconds'
+- [x] IREC-0272 · MÉDIO · `src/components/doctor/DoctorAgendaPage.jsx:44` — Falha de carregamento da agenda é silenciosa e indistinguível de 'nenhuma consulta'
+- [x] IREC-0273 · MÉDIO · `src/components/doctor/DoctorAgendaView.jsx:53` — Filtros 'Em Espera' e 'Concluídas' são ramos mortos: nenhum código grava esses status e não há ação para concluir consulta
+- [x] IREC-0274 · MÉDIO · `src/components/doctor/DoctorAgendaView.jsx:213` — Consulta sem preço é exibida como 'Pago', ignorando o paymentStatus disponível
+- [x] IREC-0290 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:32` — Falha no carregamento apresenta todos os KPIs clínicos como zero, sem indicar erro
+- [x] IREC-0291 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:60` — Intervalo personalizado exclui o dia final inteiro: new Date('yyyy-mm-dd') em UTC + setHours local
+- [x] IREC-0292 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:77` — Média de duração da chamada é diluída por chamadas rejeitadas e não atendidas
+- [x] IREC-0293 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:80` — Seletor de período não afeta pacientes, casos finalizados, taxa de retorno nem perfil de comorbidades
+- [x] IREC-0294 · MÉDIO · `src/components/DoctorDashboardAnalytics.jsx:116` — Contador de 'Farmácias/Marcas ativas' lê campo inexistente p.pharmacy
+- [x] IREC-0476 · BAIXO · `src/components/doctor/DoctorAgendaPage.jsx:60` — Propriedade de estilo inválida 'justify' quebra o alinhamento do cabeçalho da Agenda
+- [x] IREC-0477 · BAIXO · `src/components/doctor/DoctorAgendaPage.jsx:114` — app.patientEmail nunca existe nos agendamentos vindos do Supabase
+- [x] IREC-0478 · BAIXO · `src/components/doctor/DoctorAgendaView.jsx:103` — Células do calendário são divs clicáveis sem role, tabIndex ou handler de teclado
+- [x] IREC-0479 · BAIXO · `src/components/doctor/DoctorAgendaView.jsx:131` — key={appIdx} em lista que muda de conteúdo conforme o filtro de status
+- [x] IREC-0480 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:12` — Componente inteiro é código morto: nunca é importado, e a prop formatDate é recebida sem uso
+- [x] IREC-0481 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:19` — Propriedade de estilo inválida 'justify' na barra de busca e filtros
+- [x] IREC-0482 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:61` — Contador do botão 'Meus Pacientes' mostra o total já filtrado, não o total de pacientes
+- [x] IREC-0483 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:83` — filteredPatients sem valor default: componente estoura se a prop não for passada
+- [x] IREC-0484 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:150` — Alerta de infecção nunca é exibido: patient.hasInfectionSigns e patient.lesionType não existem no modelo de dados
+- [x] IREC-0485 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:180` — Botão de telemedicina não faz nada quando onOpenChat não é fornecido
+- [x] IREC-0486 · BAIXO · `src/components/doctor/DoctorPatientsListView.jsx:188` — Botão de ação identificado apenas por emoji, sem nome acessível explícito
+- [x] IREC-0496 · BAIXO · `src/components/DoctorDashboardAnalytics.jsx:290` — Grid fixo de duas colunas sem media query e com flexWrap inócuo quebra o painel no celular
 
 **Verificação do módulo:**
 
 ```
-(cole aqui a saída de npx eslint . e npx vite build)
+$ npx eslint src/components/doctor/DoctorAgendaPage.jsx src/components/doctor/DoctorAgendaView.jsx src/components/doctor/DoctorPatientsListView.jsx src/components/DoctorDashboardAnalytics.jsx src/App.jsx
+✔ 0 errors
+
+$ npx vite build
+✓ 450 modules transformed.
+dist/index.html                          2.69 kB │ gzip:   1.08 kB
+dist/assets/index-DvApQpVp.css          17.23 kB │ gzip:   4.02 kB
+dist/assets/index-CuDQdWof.js        1,273.08 kB │ gzip: 308.09 kB
+✓ built in 1.67s
+
+$ npx cap sync
+√ Copying web assets from dist to android\app\src\main\assets\public in 526.57ms
+√ Sync finished in 1.191s
 ```
 
 ---

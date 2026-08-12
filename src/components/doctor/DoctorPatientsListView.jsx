@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function DoctorPatientsListView({
   filteredPatients,
   selectedPatient,
@@ -8,8 +6,7 @@ export default function DoctorPatientsListView({
   setActiveFilter,
   searchTerm,
   setSearchTerm,
-  onOpenChat,
-  formatDate
+  onOpenChat
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
