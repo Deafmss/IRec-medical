@@ -1,4 +1,39 @@
-export default function MyNetworkPortal({ setActiveTab }) {
+export default function MyNetworkPortal({ currentUser, setActiveTab }) {
+  const isClinician = currentUser?.role === 'doctor' || currentUser?.role === 'nurse';
+
+  if (isClinician) {
+    return (
+      <div style={{ padding: '60px 24px', maxWidth: '520px', margin: '0 auto', textAlign: 'center' }}>
+        <div className="glass-card glass-card-cyan-glow" style={{ padding: '32px 24px', borderRadius: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{ fontSize: '48px', margin: 0 }}>🩺</div>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+            Área Exclusiva de Pacientes
+          </h2>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: '1.55', margin: 0 }}>
+            O portal da rede de apoio ao tratamento é voltado para pacientes. Como profissional de saúde credenciado, gerencie seus atendimentos em <strong>Minhas Parcerias</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={() => setActiveTab && setActiveTab('doctor-partners')}
+            style={{
+              padding: '12px 24px',
+              borderRadius: '30px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              fontWeight: '700',
+              fontSize: '14px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+              marginTop: '8px'
+            }}
+          >
+            Ir para Minhas Parcerias Clínicas
+          </button>
+        </div>
+      </div>
+    );
+  }
   const cards = [
     {
       id: 'telemedicine',
@@ -52,11 +87,11 @@ export default function MyNetworkPortal({ setActiveTab }) {
 
   return (
     <div className="animate-fade-in" style={{ padding: '4px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>iRec Cuidados Integrados</p>
-        <h2 style={{ fontSize: '22px', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Minha Rede de Apoio</h2>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-          Gerencie contatos, teleconsultas e localize recursos úteis para o seu tratamento.
+      <div className="glass-card-cyan-glow" style={{ padding: '24px', borderRadius: '20px', marginBottom: '24px' }}>
+        <p style={{ fontSize: '13px', color: '#0284c7', fontWeight: '800', margin: 0 }}>iRec CUIDADOS INTEGRADOS</p>
+        <h2 style={{ fontSize: '24px', fontFamily: 'var(--font-display)', fontWeight: '800', margin: '4px 0 0 0' }}>Minha Rede de Apoio</h2>
+        <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '4px', margin: '4px 0 0 0' }}>
+          Gerencie contatos, teleconsultas e localize recursos úteis para o seu tratamento com suporte contínuo iRec.
         </p>
       </div>
 
@@ -64,7 +99,7 @@ export default function MyNetworkPortal({ setActiveTab }) {
         {cards.map((card) => (
           <div 
             key={card.id} 
-            className="glass-card" 
+            className="glass-card glass-card-cyan-glow" 
             onClick={() => setActiveTab(card.target)}
             style={{ 
               margin: 0, 
@@ -72,56 +107,45 @@ export default function MyNetworkPortal({ setActiveTab }) {
               flexDirection: 'column', 
               justifyContent: 'space-between',
               cursor: 'pointer', 
-              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)', 
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
               padding: '24px',
-              border: '1px solid var(--border-color)',
+              borderRadius: '20px',
               position: 'relative',
               overflow: 'hidden'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.borderColor = 'var(--primary-light)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
             }}
           >
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div style={{ 
-                  width: '52px', 
-                  height: '52px', 
-                  borderRadius: '12px', 
-                  backgroundColor: 'var(--bg-secondary)', 
+                  width: '54px', 
+                  height: '54px', 
+                  borderRadius: '16px', 
+                  background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.15) 0%, rgba(14, 165, 233, 0.08) 100%)', 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
-                  border: '1px solid var(--border-color)'
+                  border: '1px solid rgba(2, 132, 199, 0.25)',
+                  boxShadow: '0 4px 12px rgba(2, 132, 199, 0.15)'
                 }}>
                   {card.icon}
                 </div>
-                <span className="badge badge-success" style={{ fontSize: '10px', padding: '4px 10px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                <span style={{ fontSize: '10.5px', padding: '4px 12px', backgroundColor: 'rgba(2, 132, 199, 0.12)', border: '1px solid rgba(2, 132, 199, 0.3)', color: '#0284c7', fontWeight: '800', borderRadius: '50px' }}>
                   {card.badge}
                 </span>
               </div>
               
-              <h3 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px', fontFamily: 'var(--font-display)' }}>
                 {card.title}
               </h3>
               
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '20px' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.55', marginBottom: '20px' }}>
                 {card.description}
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', color: 'var(--primary)' }}>
-              Acessar Área
-              <svg style={{ width: '16px', height: '16px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-              </svg>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '800', color: '#0284c7' }}>
+              <span>Acessar Módulo</span>
+              <span>→</span>
             </div>
           </div>
         ))}

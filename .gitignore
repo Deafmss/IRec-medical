@@ -34,3 +34,4 @@ treinamento/
 *.pdf
 *.sql
 
+docs/.print-tmp-*.html

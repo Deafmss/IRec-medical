@@ -90,6 +90,179 @@
   transform: scale(1.05);
 }
 
+/* ==========================================
+   GLASSMORPHISM & AMBIENT NEON LIGHT SYSTEM
+   ========================================== */
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-md);
+  transition: var(--transition-smooth);
+}
+
+:root[data-theme='dark'] .glass-card {
+  background: rgba(12, 24, 19, 0.72);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 8px 25px -5px rgba(16, 185, 129, 0.18);
+}
+
+/* Ambient Radial Glow Effect */
+.ambient-glow-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.ambient-glow-container::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+}
+
+.neon-border-glow {
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.25), inset 0 0 12px rgba(16, 185, 129, 0.08);
+}
+
+.neon-text-glow {
+  text-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+}
+
+/* ==========================================
+   RECONSTRUCTED BUTTON SYSTEM (HUMAN UI HUBS)
+   ========================================== */
+
+/* 1. Primary Glow Emerald Button */
+.btn-glow-emerald {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.925rem;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.38);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.btn-glow-emerald::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.btn-glow-emerald:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 6px 26px rgba(16, 185, 129, 0.52);
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+}
+
+.btn-glow-emerald:hover::after {
+  opacity: 1;
+}
+
+.btn-glow-emerald:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* 2. Glassmorphic Action Button */
+.btn-glass-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glass-action:hover {
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.18);
+  color: #059669;
+}
+
+:root[data-theme='dark'] .btn-glass-action:hover {
+  color: #34d399;
+}
+
+/* 3. Neon Outline Button */
+.btn-neon-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.14);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:root[data-theme='dark'] .btn-neon-outline {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.btn-neon-outline:hover {
+  transform: translateY(-2px);
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.65);
+  box-shadow: 0 0 22px rgba(16, 185, 129, 0.32);
+}
+
 /* Reset & Global Base */
 * {
   box-sizing: border-box;
@@ -431,7 +604,26 @@ select option {
     padding-top: 16px;
     margin-top: auto;
     padding-bottom: 8px;
-    transition: all 0.2s ease;
+    padding-left: 6px;
+    padding-right: 6px;
+    border-radius: 14px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-profile:hover {
+    background: rgba(2, 132, 199, 0.06);
+  }
+
+  .sidebar-profile.active {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.14) 0%, rgba(14, 165, 233, 0.05) 100%);
+    border: 1px solid rgba(2, 132, 199, 0.3);
+    box-shadow: 0 4px 16px -2px rgba(2, 132, 199, 0.2);
+  }
+
+  .sidebar-profile.active .profile-avatar {
+    box-shadow: 0 0 16px rgba(2, 132, 199, 0.6);
+    outline: 2.5px solid #0284c7;
+    outline-offset: 1px;
   }
 
   .profile-avatar {

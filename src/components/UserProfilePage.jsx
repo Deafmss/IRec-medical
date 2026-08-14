@@ -40,12 +40,10 @@ export default function UserProfilePage({ currentUser, onProfileUpdate }) {
       </div>
 
       {/* Embedded UserProfile Content */}
-      <div style={{
-        backgroundColor: 'var(--bg-secondary)',
-        borderRadius: '16px',
-        border: '1px solid var(--border-color)',
-        padding: '24px',
-        boxShadow: 'var(--shadow-sm)'
+      <div className="glass-card-cyan-glow" style={{
+        padding: '28px',
+        borderRadius: '20px',
+        marginBottom: '24px'
       }}>
         <UserProfileModal 
           currentUser={currentUser}
@@ -56,21 +54,20 @@ export default function UserProfilePage({ currentUser, onProfileUpdate }) {
       </div>
 
       {/* LGPD Data Governance & Privacy Rights Section */}
-      <div style={{
+      <div className="glass-card" style={{
         marginTop: '24px',
-        backgroundColor: 'var(--bg-secondary)',
-        borderRadius: '16px',
-        border: '1px solid var(--border-color)',
         padding: '24px',
-        boxShadow: 'var(--shadow-sm)'
+        borderRadius: '20px',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid var(--glass-border)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
           <span style={{ fontSize: '20px' }}>🔒</span>
-          <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
             Privacidade & Direitos do Titular de Dados (LGPD - Lei 13.709/2018)
           </h3>
         </div>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 16px 0' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 18px 0', lineHeight: '1.5' }}>
           Conforme a Lei Geral de Proteção de Dados de Saúde, você tem o direito inalienável de exportar uma cópia completa dos seus dados de saúde ou solicitar a revogação de consentimento.
         </p>
 
@@ -105,17 +102,27 @@ export default function UserProfilePage({ currentUser, onProfileUpdate }) {
               alert("📥 Exportação LGPD concluída com sucesso! Seu arquivo de dados clínicos foi baixado.");
             }}
             style={{
-              backgroundColor: 'var(--primary)',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
               color: '#ffffff',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '12px 18px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '24px',
+              padding: '12px 22px',
               fontSize: '13px',
-              fontWeight: '800',
+              fontWeight: '700',
               cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(2, 132, 199, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.boxShadow = '0 4px 14px rgba(2, 132, 199, 0.35)';
             }}
           >
             <span>📥</span>
@@ -136,14 +143,21 @@ export default function UserProfilePage({ currentUser, onProfileUpdate }) {
               }
             }}
             style={{
-              backgroundColor: 'transparent',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
               color: '#ef4444',
-              border: '1px solid #ef4444',
-              borderRadius: '10px',
-              padding: '12px 18px',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '24px',
+              padding: '12px 22px',
               fontSize: '13px',
               fontWeight: '700',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
             }}
           >
             <span>⚠️</span>

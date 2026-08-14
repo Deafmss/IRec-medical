@@ -1403,7 +1403,7 @@ export const createAppointment = async (appointmentData) => {
   const newApp = {
     id: `app_${Date.now()}`,
     createdAt: new Date().toISOString(),
-    status: appointmentData.status || 'Agendado',
+    status: appointmentData.status || 'confirmed',
     ...appointmentData
   };
 
@@ -1964,48 +1964,10 @@ export const getDoctorDocuments = async (doctorId) => {
 };
 
 // 4. Get local emergency health resources (Hospitals and Pharmacies) based on patient's city
-export const getLocalHealthcareResources = (city, state) => {
-  const cleanCity = city ? city.trim() : '';
-  const cleanState = state ? state.trim().toUpperCase() : '';
-
-  if (!cleanCity) {
-    return {
-      hospitals: [
-        { name: 'Hospital Geral de Emergência', address: 'Av. Principal, Centro', phone: '192 / (11) 3220-4000' },
-        { name: 'UPA 24h Central', address: 'Rua do Pronto Socorro, 100', phone: '192' }
-      ],
-      pharmacies: [
-        { name: 'Drogasil', address: 'Av. Central, 500', phone: '3003-7242' },
-        { name: 'Farmácia Pague Menos', address: 'Rua do Comércio, 120', phone: '0800-275-1313' }
-      ]
-    };
-  }
-
+export const getLocalHealthcareResources = () => {
   return {
-    hospitals: [
-      { 
-        name: `Hospital Geral de ${cleanCity}`, 
-        address: `Av. Presidente Kennedy, Centro - ${cleanCity}/${cleanState}`, 
-        phone: `(0${cleanState === 'SP' ? '11' : cleanState === 'RJ' ? '21' : '71'}) 3220-4000` 
-      },
-      { 
-        name: `UPA 24h ${cleanCity}`, 
-        address: `Rua da Saúde Pública, Bairro Central - ${cleanCity}/${cleanState}`, 
-        phone: '192' 
-      }
-    ],
-    pharmacies: [
-      { 
-        name: `Drogasil - ${cleanCity}/${cleanState}`, 
-        address: `Av. Getúlio Vargas, 1420 - ${cleanCity}/${cleanState}`, 
-        phone: '3003-7242' 
-      },
-      { 
-        name: `Farmácia Pague Menos - ${cleanCity}/${cleanState}`, 
-        address: `Rua Marechal Deodoro, 350 - ${cleanCity}/${cleanState}`, 
-        phone: '0800-275-1313' 
-      }
-    ]
+    hospitals: [],
+    pharmacies: []
   };
 };
 

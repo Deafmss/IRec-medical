@@ -17,6 +17,7 @@ import {
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
 import DoctorAgendaView from './doctor/DoctorAgendaView';
+import DoctorPatientsListView from './doctor/DoctorPatientsListView';
 
 const COMMON_CID10 = [
   { code: 'L98.4', description: 'Úlcera crônica da pele, não classificada em outra parte' },
@@ -37,7 +38,12 @@ const COMMON_CID10 = [
   { code: 'R11', description: 'Náusea e vômito' }
 ];
 
-
+const getLocalDateStr = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export default function DoctorDashboard({ 
   doctorProfile, 
@@ -124,7 +130,7 @@ export default function DoctorDashboard({
 
   const [doctorAppointments, setDoctorAppointments] = useState([]);
   const [calendarViewDate, setCalendarViewDate] = useState(new Date());
-  const [selectedCalendarDateStr, setSelectedCalendarDateStr] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedCalendarDateStr, setSelectedCalendarDateStr] = useState(getLocalDateStr);
   const [agendaStatusFilter, setAgendaStatusFilter] = useState('all');
 
   const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -219,7 +225,7 @@ export default function DoctorDashboard({
   // Periodic polling for patient lists (every 30s silently without triggering loading screen)
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log("[iRec] Polling doctor patients lists silently...");
+      console.log("[iRec] Polling doctor roster silently...");
       loadLists(true);
     }, 30000);
     return () => clearInterval(interval);

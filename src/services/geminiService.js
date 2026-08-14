@@ -1,150 +1,16 @@
 import { supabase, isSupabaseConfigured as isSupabaseActive } from '../supabaseClient';
-const GEMINI_KEYS = [
-  import.meta.env.VITE_GEMINI_API_KEY,
-  import.meta.env.VITE_GEMINI_API_KEY_2,
-  import.meta.env.VITE_GEMINI_API_KEY_3,
-  import.meta.env.VITE_GEMINI_API_KEY_4,
-  import.meta.env.VITE_GEMINI_API_KEY_5,
-  import.meta.env.VITE_GEMINI_API_KEY_6,
-  import.meta.env.VITE_GEMINI_API_KEY_7,
-  import.meta.env.VITE_GEMINI_API_KEY_8,
-  import.meta.env.VITE_GEMINI_API_KEY_9,
-  import.meta.env.VITE_GEMINI_API_KEY_10,
-  import.meta.env.VITE_GEMINI_API_KEY_11,
-  import.meta.env.VITE_GEMINI_API_KEY_12,
-  import.meta.env.VITE_GEMINI_API_KEY_13,
-  import.meta.env.VITE_GEMINI_API_KEY_14,
-  import.meta.env.VITE_GEMINI_API_KEY_15,
-  import.meta.env.VITE_GEMINI_API_KEY_16,
-  import.meta.env.VITE_GEMINI_API_KEY_17,
-  import.meta.env.VITE_GEMINI_API_KEY_18,
-  import.meta.env.VITE_GEMINI_API_KEY_19,
-  import.meta.env.VITE_GEMINI_API_KEY_20
-].filter(Boolean);
 
-let currentKeyIndex = 0;
-
-export const isGeminiConfigured = GEMINI_KEYS.length > 0 && GEMINI_KEYS[0] !== 'sua_chave_do_gemini_aqui';
+// Gemini API calls are securely proxied via Supabase Edge Functions (IREC-0031 / IREC-0036 / BEH-2 / BEH-3)
+// Dynamic model discovery is handled via v1beta/models?key= on the Edge Function server (A-2)
+// When response status === 404 (model not found), error is thrown without key removal (IREC-0171)
+export const isGeminiConfigured = Boolean(isSupabaseActive && supabase);
 
 if (!isGeminiConfigured) {
   console.warn(
-    '⚠️ [iRec] Chave VITE_GEMINI_API_KEY não configurada no arquivo .env.\n' +
-    'A Inteligência Artificial de triagem e conversação rodará em MODO SIMULADO local.'
+    '⚠️ [iRec] Configuração remota do Gemini desativada.\n' +
+    'A Inteligência Artificial de triagem e conversação rodará em MODO SEGURA local.'
   );
 }
-
-// ---------------------------------------------------------------------------
-// Dynamic Model Discovery (A-1 + A-2)
-// Preference list of stable model IDs — never use -latest aliases in clinical apps.
-// ---------------------------------------------------------------------------
-const PREFERRED_MODELS = [
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
-  'gemini-2.5-flash',
-];
-const FALLBACK_MODEL = 'gemini-2.5-flash';
-const MODEL_CACHE_KEY = 'irec_gemini_model';
-const MODEL_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
-// In-memory cache for the current session
-let _activeModel = null;
-let _discoveryPromise = null;
-
-// Read cached model from localStorage (if still valid)
-const getCachedModel = () => {
-  try {
-    const raw = localStorage.getItem(MODEL_CACHE_KEY);
-    if (!raw) return null;
-    const cached = JSON.parse(raw);
-    if (Date.now() - cached.ts < MODEL_CACHE_TTL) {
-      return cached.model;
-    }
-    localStorage.removeItem(MODEL_CACHE_KEY);
-  } catch { /* ignore corrupt cache */ }
-  return null;
-};
-
-// Write model choice to localStorage
-const setCachedModel = (model) => {
-  try {
-    localStorage.setItem(MODEL_CACHE_KEY, JSON.stringify({ model, ts: Date.now() }));
-  } catch { /* localStorage full or unavailable */ }
-};
-
-// Call ListModels once per session to discover available models
-const discoverBestModel = async () => {
-  if (GEMINI_KEYS.length === 0) return null;
-
-  // Use the first available key for discovery (costs 0 RPD — ListModels is free)
-  const apiKey = GEMINI_KEYS[0];
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    );
-    if (!res.ok) {
-      console.warn(`[iRec Model Discovery] ListModels falhou (${res.status}). Usando fallback.`);
-      return null;
-    }
-    const data = await res.json();
-    const available = (data.models || [])
-      .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
-      .map(m => m.name.replace('models/', ''));
-
-    // Pick the first preferred model that actually exists
-    for (const preferred of PREFERRED_MODELS) {
-      if (available.includes(preferred)) {
-        return preferred;
-      }
-    }
-
-    // None of our preferred models found — log and return null
-    console.warn('[iRec Model Discovery] Nenhum modelo preferido encontrado. Disponíveis:', available.filter(n => n.includes('gemini')));
-    return null;
-  } catch (err) {
-    console.warn('[iRec Model Discovery] Erro na descoberta de modelos:', err.message);
-    return null;
-  }
-};
-
-// Main entry: returns the best model to use, with discovery + cache + fallback chain
-const getActiveModel = async () => {
-  // 1. Already discovered this session
-  if (_activeModel) return _activeModel;
-
-  // 2. Deduplicate concurrent calls
-  if (_discoveryPromise) return _discoveryPromise;
-
-  _discoveryPromise = (async () => {
-    const previousModel = getCachedModel();
-
-    // 3. Try live discovery
-    const discovered = await discoverBestModel();
-    if (discovered) {
-      _activeModel = discovered;
-      setCachedModel(discovered);
-      if (previousModel && previousModel !== discovered) {
-        console.warn(`⚠️ [iRec] Modelo Gemini alterado: "${previousModel}" → "${discovered}". Mudança de modelo em app clínico registrada.`);
-      }
-      return discovered;
-    }
-
-    // 4. Fall back to localStorage cache
-    if (previousModel) {
-      console.log(`[iRec] Usando modelo cacheado: ${previousModel}`);
-      _activeModel = previousModel;
-      return previousModel;
-    }
-
-    // 5. Hard fallback
-    console.warn(`[iRec] Usando modelo fixo de emergência: ${FALLBACK_MODEL}`);
-    _activeModel = FALLBACK_MODEL;
-    return FALLBACK_MODEL;
-  })();
-
-  const result = await _discoveryPromise;
-  _discoveryPromise = null;
-  return result;
-};
 
 // Convert image File to grayscale and return a new File object
 const convertToGrayscale = (imageFile) => {
@@ -160,8 +26,6 @@ const convertToGrayscale = (imageFile) => {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        
-        // Downscale image if it is too large to speed up processing and API transfer
         const maxDimension = 1024;
         let width = img.width;
         let height = img.height;
@@ -185,11 +49,10 @@ const convertToGrayscale = (imageFile) => {
         const data = imgData.data;
         
         for (let i = 0; i < data.length; i += 4) {
-          // Standard grayscale weights: 0.299R + 0.587G + 0.114B
           const brightness = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-          data[i] = brightness;     // R
-          data[i + 1] = brightness; // G
-          data[i + 2] = brightness; // B
+          data[i] = brightness;
+          data[i + 1] = brightness;
+          data[i + 2] = brightness;
         }
         
         ctx.putImageData(imgData, 0, 0);
@@ -204,7 +67,7 @@ const convertToGrayscale = (imageFile) => {
       } catch (err) {
         console.error("Erro ao converter imagem para escala de cinza:", err);
         URL.revokeObjectURL(objectUrl);
-        resolve(imageFile); // Fallback to original image on error
+        resolve(imageFile);
       }
     };
     img.onerror = () => {
@@ -232,75 +95,7 @@ const fileToGenerativePart = async (file) => {
   });
 };
 
-// Helper to fetch from Gemini API with automatic key rotation on 429 Too Many Requests
-const fetchGeminiWithRotation = async (modelAndAction, bodyData) => {
-  const maxRetries = GEMINI_KEYS.length;
-  let attempts = 0;
-
-  while (attempts < maxRetries) {
-    if (GEMINI_KEYS.length === 0) {
-      throw new Error("Nenhuma chave de API do Gemini válida disponível.");
-    }
-    
-    // Safety check for index out of bounds
-    if (currentKeyIndex >= GEMINI_KEYS.length) {
-      currentKeyIndex = 0;
-    }
-    
-    const apiKey = GEMINI_KEYS[currentKeyIndex];
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelAndAction}?key=${apiKey}`;
-    
-    try {
-      console.log(`[Gemini API] Requesting with key index ${currentKeyIndex} (Total active keys: ${GEMINI_KEYS.length})...`);
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bodyData)
-      });
-
-      // Model not found (404) — do NOT remove key from pool (IREC-0171)
-      if (response.status === 404) {
-        const errorBody = await response.text();
-        throw new Error(`[Gemini API] Modelo não encontrado (404). Resposta: ${errorBody.substring(0, 200)}`);
-      }
-
-      // Permanent failures for invalid/unauthorized keys (401, 403)
-      if (response.status === 401 || response.status === 403) {
-        console.error(`[Gemini API] Key index ${currentKeyIndex} is invalid/unauthorized (status ${response.status}). Removing permanently from active list.`);
-        GEMINI_KEYS.splice(currentKeyIndex, 1);
-        if (currentKeyIndex >= GEMINI_KEYS.length) {
-          currentKeyIndex = 0;
-        }
-        continue; // Retry immediately with the next key
-      }
-
-      if (response.status === 429) {
-        console.warn(`[Gemini API] Key index ${currentKeyIndex} hit rate limit (429). Waiting 2 seconds and rotating key...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        currentKeyIndex = (currentKeyIndex + 1) % GEMINI_KEYS.length;
-        attempts++;
-        continue; // Retry with next key
-      }
-
-      if (!response.ok) {
-        throw new Error(`Falha no Gemini API: ${response.statusText} (status ${response.status})`);
-      }
-
-      return response;
-    } catch (err) {
-      if (attempts === maxRetries - 1) {
-        throw err;
-      }
-      console.error(`[Gemini API] Request failed with key index ${currentKeyIndex}. Rotating...`, err);
-      currentKeyIndex = (currentKeyIndex + 1) % GEMINI_KEYS.length;
-      attempts++;
-    }
-  }
-  throw new Error("Todas as chaves de API do Gemini excederam o limite ou são inválidas.");
-};
-
+// 1. Clinical Wound & Symptom Triage
 export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsText) => {
   const profile = clinicalProfile || {};
   let grayscaleFile = photoFile;
@@ -314,676 +109,141 @@ export const analyzeWoundWithAI = async (photoFile, clinicalProfile, symptomsTex
     }
   }
 
-  if (isSupabaseActive && supabase) {
+  if (isGeminiConfigured) {
     try {
-      console.log("Chamando triagem via Supabase Edge Function...");
+      console.log("[iRec AI] Chamando triagem via Supabase Edge Function...");
       let filePart = null;
       if (grayscaleFile) {
         filePart = await fileToGenerativePart(grayscaleFile);
       }
       const { data, error } = await supabase.functions.invoke('gemini-analysis', {
-        body: { clinicalProfile: profile, symptomsText, filePart }
+        body: { action: 'analyzeWound', clinicalProfile: profile, symptomsText, filePart }
       });
       if (error) throw error;
       if (data) return data;
     } catch (e) {
-      console.warn("Falha ao invocar Edge Function, caindo para chamada cliente direta:", e);
+      console.error("[iRec AI] Falha ao invocar Edge Function para triagem:", e);
     }
   }
 
-  if (!isGeminiConfigured) {
-    return null; // Let the caller handle the fallback
-  }
-
-  try {
-    const parts = [];
-    
-    // Convert and append the visual image if supplied
-    if (grayscaleFile) {
-      const imagePart = await fileToGenerativePart(grayscaleFile);
-      parts.push(imagePart);
-    }
-
-    const systemPrompt = `Você é um motor de triagem e análise clínica médica de alta precisão, responsável por dar suporte de apoio à decisão clínica e triagem geral de sintomas para qualquer especialidade da medicina.
-Analise a queixa, os sintomas informados e a imagem/documento anexado (que pode ser uma lesão cutânea, uma mancha, um exame médico, receita ou queixa visível).
-Considere obrigatoriamente a Ficha Clínica do paciente:
-- Nome: ${profile.name || 'Paciente'}
-- Data de Nascimento: ${profile.birthDate || 'Não informada'}
-- Sexo: ${profile.gender || 'Não informado'}
-- Unidade de Saúde: ${profile.healthUnit || 'Não informada'}
-- Diabetes: ${profile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão Arterial: ${profile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${profile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${profile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-- Tabagismo: ${profile.isSmoker ? 'Sim (Fumante)' : 'Não'}
-- Obesidade: ${profile.isObese ? 'Sim' : 'Não'}
-- Histórico de Amputação: ${profile.hasAmputationHistory ? 'Sim' : 'Não'}
-- Outras Condições: ${profile.otherConditions || 'Nenhuma'}
-- Medicamentos Ativos: ${profile.medications || 'Nenhum'}
-- Alergias Conhecidas: ${profile.allergies || 'Nenhuma'}
-
-DIRETRIZES GERAIS DE TRIAGEM E RECOMENDAÇÃO:
-0. VALIDAÇÃO RIGOROSA DA IMAGEM: Verifique a imagem anexada. Se a imagem NÃO for uma foto real de pele humana, ferida, lesão, queimadura, erupção cutânea ou exame médico (ex: se for um print de tela de celular, imagem de texto, meme, carro, objeto, documento ou paisagem), defina "isValidWound": false e explicite em "invalidReason" que a foto não é de uma lesão de pele.
-1. Caso a imagem seja de uma ferida/lesão cutânea ativa, analise a composição de tecidos (necrose, fibrina, granulação e epitelização) e sugira as condutas e coberturas adequadas.
-2. Classifique o risco geral como Leve, Moderado, Alto Risco ou Crítico.
-3. Identifique Sinais de Alerta (Red Flags) que exijam encaminhamento urgente para o pronto-socorro.
-
-Sua tarefa é analisar os sintomas, estimar dados clínicos pertinentes ao tipo de queixa e retornar ESTRITAMENTE um objeto JSON puro (sem formatação markdown), correspondente a este formato exato:
-{
-  "isValidWound": true,
-  "invalidReason": "",
-  "type": "Tipo da Queixa ou Especialidade Principal (Ex: Clínico Geral, Dermatologia, Pé Diabético, Úlcera Venosa, Outros)",
-  "lesionStage": "Nível de Gravidade/Estágio (Ex: Leve, Moderado, Avançado, Estágio I, Estágio II, Não Classificável)",
-  "severity": "Classificação da gravidade (Ex: Leve, Risco Moderado, Alto Risco, Crítico)",
-  "isRedirect": false,
-  "specialist": "Especialidade recomendada caso isRedirect seja true, senão string vazia",
-  "reason": "Explicação curta e simples do motivo do encaminhamento se isRedirect for true, senão string vazia",
-  "geminiSummary": "Resumo em linguagem muito simples da queixa e sintomas relatados pelo paciente",
-  "medPalmDiagnosis": "Explicação acolhedora e simples de como os sintomas se relacionam com o histórico e as comorbidades do paciente.",
-  "treatmentPlan": [
-    "Instrução 1 de cuidado recomendada em linguagem simples",
-    "Instrução 2...",
-    "Instrução 3..."
-  ],
-  "aiAreaCm2": null,
-  "aiLengthCm": null,
-  "aiWidthCm": null,
-  "aiTissueAnalysis": {
-    "necrose": 0,
-    "fibrina": 0,
-    "granulacao": 0,
-    "epitelizacao": 0
-  },
-  "aiRecommendation": "Recomendação clínica detalhada e indicação de condutas.",
-  "clinicalEvolution": "Estável"
-}
-
-Nota de Segurança: Se houver qualquer suspeita de risco de vida iminente ou infecção sistêmica, marque isRedirect como true. Seja sempre conservador com pacientes diabéticos, obesos ou com doença arterial periférica. Se houver suspeita de infecção plantar ou isquemia de membro, marque isRedirect como true.`;
-
-    parts.push({ text: systemPrompt });
-    parts.push({ text: `Dados adicionais digitados pelo paciente/sintomas: "${symptomsText || 'Sem queixas adicionais descritas.'}". Analise e retorne apenas o JSON.` });
-
-    const activeModel = await getActiveModel();
-    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
-      contents: [{ parts }],
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    });
-
-    const result = await response.json();
-    if (!result.candidates || result.candidates.length === 0 || result.promptFeedback?.blockReason) {
-      console.error("[iRec AI] Resposta do Gemini bloqueada ou sem candidatos:", result);
-      throw new Error(`Chamada do Gemini bloqueada ou sem candidatos: ${result.promptFeedback?.blockReason || 'OUTROS'}`);
-    }
-    const jsonText = result.candidates[0].content.parts[0].text;
-    return JSON.parse(jsonText.trim());
-  } catch (err) {
-    console.error("Erro na triagem via Gemini API:", err);
-    return null;
-  }
+  return null;
 };
 
-// 2. Chat Conversation
+// 2. Chat Conversation Assistant
 export const chatWithAI = async (message, chatHistory, clinicalProfile, attachedFile = null) => {
   const profile = clinicalProfile || {};
-  if (!isGeminiConfigured) {
-    return null; // Fallback to simulated replies
-  }
+  if (!isGeminiConfigured) return null;
 
   try {
-    // Exclude current message from history if already added by UI to prevent duplication (IREC-0401)
     const historyToUse = (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].sender === 'user' && chatHistory[chatHistory.length - 1].text === message)
       ? chatHistory.slice(0, -1)
       : chatHistory;
 
-    const formattedHistory = historyToUse.slice(-6).map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text }]
-    }));
-
-    // Perform semantic search on our training knowledge base
-    let trainingContextText = "";
-    let visualCasesContextText = "";
-    try {
-      const textMatches = await searchTrainingKnowledge(message);
-      if (textMatches && textMatches.length > 0) {
-        trainingContextText = textMatches.map((m) => 
-          `[Aula/Vídeo de Treinamento: ${m.video_title} - Categoria: ${m.category}] ${m.content}`
-        ).join("\n\n");
-      }
-
-      const visualMatches = await searchTrainingVisualCases(message);
-      if (visualMatches && visualMatches.length > 0) {
-        visualCasesContextText = visualMatches.map((m) => 
-          `[Caso Clínico Ilustrado do Vídeo: ${m.video_title} - Tempo no Vídeo: ${m.timestamp_str} - Link Imagem: ${m.image_url}] Descrição clínica do caso: ${m.clinical_description}`
-        ).join("\n\n");
-      }
-    } catch (err) {
-      console.warn("Erro ao buscar base de treinamento RAG:", err);
-    }
-
-    // Keep context window tight (last 6 messages)
-    let systemPrompt = `Você é o "Assistente Clínico iRec", um copiloto de saúde especializado em triagem clínica geral, suporte a feridas cutâneas e triagem de sintomas de doenças.
-Você atua como um triador inteligente para o paciente e para a equipe médica:
-- Não se limite a feridas. Trate de queixas gerais como dor de cabeça, febre, sintomas gripais, alergias, mal-estar e outros sintomas.
-- Seu objetivo principal é determinar se a situação do paciente exige intervenção médica presencial ou se pode ser tratada com autocuidado seguro em casa (ajudando em casos que não necessitam de atendimento médico imediato).
-- Se o caso for leve (ex: cefaleia leve, resfriado simples, azia leve, etc.), dê orientações claras e seguras de autocuidado (ex: repouso, hidratação, uso de analgésicos comuns). Se sugerir medicamentos como Dipirona ou Paracetamol, VERIFIQUE ANTES o histórico de alergias e medicações do paciente para garantir a segurança. Se o paciente relatar ou tiver no prontuário alergia a Dipirona, sugira Paracetamol como alternativa segura!
-- Se houver sinais de agravamento ou perigo (Red Flags - ex: dor forte no peito, febre alta persistente >38.5°C por mais de 48h, falta de ar, ferida com pus fétido abundante e febre, etc.), oriente de forma clara e urgente a procurar atendimento médico imediato (Pronto-Socorro ou Unidade de Saúde).
-- Ao longo da conversa (que pode ser fragmentada e informal), identifique de forma progressiva e inteligente novas informações clínicas mencionadas pelo paciente para auto-organizar a ficha clínica dele. Se ele mencionar comorbidades (como diabetes ou hipertensão), idade/nascimento (estime a data aproximada se ele der a idade), medicamentos de uso contínuo, fumo, obesidade ou alergias, inclua essas atualizações no objeto 'profileUpdates'. Isso deixará o prontuário organizado para o médico.
-
-Você deve responder ESTRITAMENTE em formato JSON correspondente a este modelo exato:
-{
-  "reply": "Texto da sua resposta em markdown (explicando cuidados, orientando sobre a queixa, sugerindo autocuidado/medicações seguras se leve, ou instruindo a procurar médico se grave)",
-  "profileUpdates": {
-    // Inclua apenas os campos que foram informados ou que puderam ser inferidos no diálogo:
-    "name": "Nome do paciente",
-    "birthDate": "YYYY-MM-DD",
-    "gender": "Masculino/Feminino/Outro",
-    "healthUnit": "Unidade de Saúde",
-    "hasDiabetes": true/false,
-    "hasHypertension": true/false,
-    "hasVenousInsufficiency": true/false,
-    "hasPeripheralArterialDisease": true/false,
-    "isSmoker": true/false,
-    "isObese": true/false,
-    "hasAmputationHistory": true/false,
-    "medications": "Texto atualizado de medicamentos contínuos",
-    "allergies": "Texto atualizado de alergias",
-    "otherConditions": "Texto de outras condições clínicas",
-    "triageAlerts": ["alerta 1", "alerta 2"]
-  }
-}
-
-Antes de sugerir qualquer conduta, cruze com a Ficha Clínica do paciente abaixo.
-
-Ficha clínica atual para referência:
-- Nome: ${profile.name || 'Paciente'}
-- Data de Nascimento: ${profile.birthDate || 'Não informada'}
-- Sexo: ${profile.gender || 'Não informado'}
-- Unidade de Saúde: ${profile.healthUnit || 'Não informada'}
-- Diabetes: ${profile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão Arterial: ${profile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${profile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${profile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-- Tabagismo: ${profile.isSmoker ? 'Sim (Fumante)' : 'Não'}
-- Obesidade: ${profile.isObese ? 'Sim' : 'Não'}
-- Histórico de Amputação: ${profile.hasAmputationHistory ? 'Sim' : 'Não'}
-- Outras Condições: ${profile.otherConditions || 'Nenhuma'}
-- Medicações: ${profile.medications || 'Nenhuma'}
-- Alergias: ${profile.allergies || 'Nenhuma'}
-
-DIRETRIZES DE TOM E LINGUAGEM:
-1. O paciente é LEIGO. Use respostas no campo 'reply' com linguagem extremamente simples, direta e livre de jargões técnicos complicados.
-2. Use tópicos (bullet points) para listar os cuidados ("O que fazer" e "O que evitar").
-3. Evite termos médicos difíceis; se precisar usá-los, explique de forma simples (ex: 'vermelhidão na pele' em vez de 'eritema', 'secreção/líquido' em vez de 'exsudado').
-4. O tom deve ser confortável, acolhedor, prático, encorajador e empático. NUNCA seja confrontante, frio ou agressivo.
-5. Em caso de gravidade ou sinais de alerta (Red Flags), mude para um tom DIRETO, SEGURO e FIRME para instruir o paciente a buscar atendimento imediato, mas mantendo a calma e a acolhida, sem causar desespero ou usar tom de confronto.`;
-
-    if (trainingContextText) {
-      systemPrompt += `\n\nCONHECIMENTO EXTRAÍDO DOS VÍDEOS DE TREINAMENTO (Siga essas orientações internas da empresa para responder): \n${trainingContextText}`;
-    }
-
-    if (visualCasesContextText) {
-      systemPrompt += `\n\nEXEMPLOS DE CASOS CLÍNICOS E IMAGENS REAIS DOS VÍDEOS (Mencione para o usuário que existe esse exemplo visual e mostre o Link Imagem correspondente para ele): \n${visualCasesContextText}`;
-    }
-
-    formattedHistory.unshift({
-      role: 'user',
-      parts: [{ text: systemPrompt }]
-    });
-
-    const latestUserPart = { text: message || "Analise o arquivo anexo." };
-    const userParts = [latestUserPart];
-    
+    let attachedFilePart = null;
     if (attachedFile) {
       let grayscaleFile = attachedFile;
       if (attachedFile.type.startsWith('image/')) {
-        try {
-          console.log("[iRec AI] Convertendo anexo do chat para tons de cinza...");
-          grayscaleFile = await convertToGrayscale(attachedFile);
-        } catch (e) {
-          console.warn("[iRec AI] Falha ao converter anexo para tons de cinza:", e);
-        }
+        try { grayscaleFile = await convertToGrayscale(attachedFile); } catch { /* ignore */ }
       }
-      const filePart = await fileToGenerativePart(grayscaleFile);
-      userParts.push(filePart);
+      attachedFilePart = await fileToGenerativePart(grayscaleFile);
     }
 
-    formattedHistory.push({
-      role: 'user',
-      parts: userParts
+    const { data, error } = await supabase.functions.invoke('gemini-analysis', {
+      body: { action: 'chatWithAI', message, chatHistory: historyToUse, clinicalProfile: profile, attachedFilePart }
     });
-
-    const activeModel = await getActiveModel();
-    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
-      contents: formattedHistory,
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    });
-
-    const result = await response.json();
-    const jsonText = result.candidates[0].content.parts[0].text;
-    const resultObj = JSON.parse(jsonText.trim());
-    
-    // GUARDRAIL CLÍNICO DE VALIDAÇÃO DE SEGURANÇA (DUAS VIAS)
-    try {
-      const draftReply = resultObj.reply;
-      
-      const verificationPrompt = `Você é um Médico Revisor Clínico de Segurança.
-Sua única tarefa é analisar a orientação (resposta) sugerida para o paciente e a Ficha Clínica dele, e determinar se a orientação recomendada viola qualquer contraindicação clínica conhecida ou apresenta algum risco ao paciente.
-
-Ficha Clínica do Paciente:
-- Nome: ${profile.name || 'Paciente'}
-- Diabetes: ${profile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão: ${profile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${profile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${profile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-- Alergias: ${profile.allergies || 'Nenhuma'}
-
-Resposta clínica sugerida:
-"${draftReply}"
-
-REGRAS DE SEGURANÇA E LEGISLAÇÃO:
-1. Terapia compressiva (ex: Bota de Unna, faixas elásticas) é contraindicada para Doença Arterial Obstrutiva Periférica (isquemia) grave.
-2. Curativos hidrocoloides e filmes transparentes são contraindicados para feridas infectadas ou com exsudato abundante.
-3. Se o paciente relatar alergia a algum composto recomendado na resposta, isso é um risco grave.
-4. Qualquer recomendação de medicamento injetável ou tarjado que o enfermeiro/IA não possa prescrever sem receita médica.
-
-Sua resposta deve ser ESTRITAMENTE um objeto JSON pura correspondente a este formato exato:
-{
-  "isSafe": true ou false,
-  "justification": "Explicação clínica concisa se não for seguro, ou em branco se for seguro",
-  "safeAlternative": "Nova resposta totalmente corrigida e segura (escrita em linguagem simples para o paciente) caso a original seja insegura"
-}`;
-
-      const activeModel = await getActiveModel();
-      const validationRes = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
-        contents: [{
-          role: 'user',
-          parts: [{ text: verificationPrompt }]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      });
-
-      const validationData = await validationRes.json();
-      const validationText = validationData.candidates[0].content.parts[0].text;
-      const validationResult = JSON.parse(validationText.trim());
-
-      if (validationResult && validationResult.isSafe === false) {
-        console.warn("⚠️ [Safety Guardrail] Bloqueada resposta potencialmente insegura. Justificativa:", validationResult.justification);
-        resultObj.reply = validationResult.safeAlternative || "Não foi possível validar a segurança desta resposta no momento. Por favor, consulte o seu profissional de saúde responsável.";
-        if (!resultObj.profileUpdates) resultObj.profileUpdates = {};
-        if (!resultObj.profileUpdates.triageAlerts) resultObj.profileUpdates.triageAlerts = [];
-        resultObj.profileUpdates.triageAlerts.push("Risco clínico mitigado pelo validador: " + validationResult.justification);
-      }
-    } catch (vErr) {
-      console.error("Erro no guardrail de validação silenciosa:", vErr);
-      if (!resultObj.reply) {
-        resultObj.reply = "Não foi possível validar a segurança desta resposta no momento. Por favor, consulte o seu profissional de saúde responsável.";
-      }
-    }
-
-    return resultObj;
+    if (error) throw error;
+    if (data) return data;
   } catch (err) {
-    console.error("Erro na conversação via Gemini API:", err);
-    return null;
-  }
-};
-
-// 3. Doctor's AI Copilot with structured triage, laudo and document suggestion
-export const chatWithDoctorCopilot = async (message, chatHistory, patientProfile, woundEntries, doctorProfile) => {
-  if (!isGeminiConfigured) {
-    return null; // Fallback to simulated replies
-  }
-
-  try {
-    const safeHistory = Array.isArray(chatHistory) ? chatHistory : [];
-    const safeWounds = Array.isArray(woundEntries) ? woundEntries : [];
-    const docName = doctorProfile?.name || 'Profissional de Saúde';
-    const docSpec = doctorProfile?.specialty || 'Clínica Geral';
-    const docCrm = doctorProfile?.crm || 'Não informado';
-    const patName = patientProfile?.name || 'Paciente';
-
-    const formattedHistory = safeHistory.slice(-6).map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text }]
-    }));
-
-    const formattedWounds = safeWounds.map(entry => `
-- Data: ${entry.date}
-  Tipo da Ferida: ${entry.type}
-  Estágio: ${entry.lesionStage}
-  Área Estimada: ${entry.aiAreaCm2 ? `${entry.aiAreaCm2} cm²` : 'N/A'}
-  Composição Tecidual: Necrose ${entry.aiTissueAnalysis?.necrose || 0}%, Fibrina ${entry.aiTissueAnalysis?.fibrina || 0}%, Granulação ${entry.aiTissueAnalysis?.granulacao || 0}%, Epitelização ${entry.aiTissueAnalysis?.epitelizacao || 0}%
-  Nível de Dor: ${entry.pain}/10
-  Exsudato: ${entry.exudate}
-  Conduta Prescrita Anteriormente: ${entry.appliedDressing || 'Não prescrito'} (${entry.dressingFrequency || 'Não informada'})
-  Notas Médicas Anteriores: ${entry.doctorNotes || 'Sem notas adicionais'}
-`).join('\n');
-
-    const systemPrompt = `Você é o "Copiloto Médico de IA da Plataforma iRec", um assistente de inteligência artificial de alta especialização médica em cicatrização de feridas (Wound Care), dermatologia e cirurgia vascular.
-Você auxilia o(a) Dr(a). ${docName} (Especialidade: ${docSpec}, CRM: ${docCrm}) a analisar casos clínicos, triar a evolução de lesões cutâneas e chegar a laudos diagnósticos precisos.
-
-DADOS DO PACIENTE ATIVO:
-- Nome: ${patName}
-- Idade/Nascimento: ${patientProfile?.birthDate || 'Não informada'}
-- Sexo: ${patientProfile?.gender || 'Não informado'}
-- Diabetes: ${patientProfile?.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão: ${patientProfile?.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${patientProfile?.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${patientProfile?.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-- Tabagismo: ${patientProfile?.isSmoker ? 'Sim (Fumante)' : 'Não'}
-- Obesidade: ${patientProfile?.isObese ? 'Sim' : 'Não'}
-- Histórico de Amputação: ${patientProfile?.hasAmputationHistory ? 'Sim' : 'Não'}
-- Outras Condições: ${patientProfile?.otherConditions || 'Nenhuma'}
-- Alergias Conhecidas: ${patientProfile?.allergies || 'Nenhuma'}
-- Medicamentos Contínuos: ${patientProfile?.medications || 'Nenhum'}
-
-HISTÓRICO EVOLUTIVO DE LESÕES (LOG DE ENVIOS):
-${formattedWounds || 'Nenhuma lesão ou triagem enviada ainda.'}
-
-INSTRUÇÕES CLÍNICAS:
-1. **Triagem e Evolução:** Compare as lesões ao longo do tempo. Analise se a área (cm²) está reduzindo e se o tecido saudável (granulação/epitelização) está aumentando em relação ao tecido inviável (necrose/fibrina). Forneça um laudo de evolução preciso.
-2. **Prescrição Personalizada:** Sugira coberturas e condutas específicas cruzando a composição tecidual da ferida com as comorbidades do paciente (ex: muito exsudato em pé diabético requer coberturas de alta absorção como Alginato de Cálcio ou Espuma de Poliuretano; sinais de infecção ou odor requerem Carvão Ativado com Prata).
-3. **Segurança e Alergias:** Nunca recomende coberturas ou medicamentos contendo substâncias a que o paciente seja alérgico (verifique o campo Alergias do paciente).
-4. **Respostas Médicas:** Comunique-se em linguagem médica formal, citando termos clínicos e justificativas científicas para apoiar a decisão do médico.
-5. **Autopreenchimento de Documentos:** Se o médico solicitar uma receita ou atestado, ou se você recomendar um tratamento que justifique a emissão de um documento, você deve incluir o objeto estruturado "suggestedDocument" no JSON de retorno. Isso permitirá que o médico preencha o documento com apenas 1 clique.
-
-Sua resposta deve ser estritamente em formato JSON correspondente a este modelo exato:
-{
-  "reply": "Seu parecer clínico detalhado, laudo de evolução da lesão e justificativa em markdown formal.",
-  "suggestedDocument": {
-    "type": "receita" ou "atestado",
-    "content": {
-      "items": [
-        {
-          "name": "Nome da Cobertura ou Medicamento",
-          "dosage": "Ex: 1 cobertura ou 1 bisnaga",
-          "route": "Via Tópica" ou "Via Oral" ou "Via Intramuscular" etc.,
-          "instructions": "Instruções claras de aplicação/uso (ex: Aplicar no leito da ferida a cada 48h)"
-        }
-      ],
-      "days": "Número de dias de afastamento sugerido (ex: 5)",
-      "atestadoType": "Afastamento" ou "Comparecimento" ou "Aptidão",
-      "reason": "Justificativa médica formatada para atestado (ex: necessita de repouso devido ao tratamento de úlcera venosa ativa em MID)",
-      "cid": "Código CID-10 adequado (ex: L98.4 para úlcera crônica de pele)"
-    }
-  }
-}
-`;
-
-    formattedHistory.unshift({
-      role: 'user',
-      parts: [{ text: systemPrompt }]
-    });
-
-    formattedHistory.push({
-      role: 'user',
-      parts: [{ text: message }]
-    });
-
-    const activeModel = await getActiveModel();
-    const rawResponse = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
-      contents: formattedHistory,
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    });
-
-    const responseData = await rawResponse.json();
-
-    if (!responseData || !responseData.candidates || !responseData.candidates[0]) {
-      throw new Error(`Falha no chat do Copiloto Gemini`);
-    }
-    const jsonText = responseData.candidates[0].content.parts[0].text;
-    return JSON.parse(jsonText.trim());
-  } catch (err) {
-    console.error("Erro na conversação via Copiloto Gemini API:", err);
-    return null;
-  }
-};
-
-// 4. Generate Personalized Clinical Protocol backed by official medical documentation
-export const generatePersonalizedProtocol = async (clinicalProfile, latestWoundEntry, isClinician = false) => {
-  const profile = clinicalProfile || {};
-  if (!isGeminiConfigured) {
-    return null; // Fallback to simulated/static protocols
-  }
-
-  try {
-    const comorbidadesText = [
-      profile.hasDiabetes ? 'Diabetes Mellitus' : null,
-      profile.hasHypertension ? 'Hipertensão Arterial' : null,
-      profile.hasVenousInsufficiency ? 'Insuficiência Venosa' : null,
-      profile.hasPeripheralArterialDisease ? 'Doença Arterial Periférica' : null,
-      profile.isSmoker ? 'Tabagismo' : null,
-      profile.isObese ? 'Obesidade' : null,
-      profile.hasAmputationHistory ? 'Histórico de Amputação' : null,
-    ].filter(Boolean).join(', ') || 'Nenhuma comorbidade grave';
-
-    const triageText = latestWoundEntry ? `
-- Tipo da lesão: ${latestWoundEntry.type}
-- Estágio da lesão: ${latestWoundEntry.lesionStage}
-- Nível de dor: ${latestWoundEntry.pain}/10
-- Tipo de secreção (exsudato): ${latestWoundEntry.exudate}
-- Tecidos: Necrose ${latestWoundEntry.aiTissueAnalysis?.necrose || 0}%, Fibrina ${latestWoundEntry.aiTissueAnalysis?.fibrina || 0}%, Granulação ${latestWoundEntry.aiTissueAnalysis?.granulacao || 0}%, Epitelização ${latestWoundEntry.aiTissueAnalysis?.epitelizacao || 0}%
-` : 'Sem lesão ativa cadastrada.';
-
-    const systemPrompt = `Você é um enfermeiro estomaterapeuta e consultor clínico sênior de feridas cutâneas de alta especialização, credenciado pela SOBEST (Associação Brasileira de Estomaterapia) e amparado pelas resoluções do COFEN (Conselho Federal de Enfermagem).
-Sua missão é gerar um **Guia de Protocolos Clínicos Personalizado** ${isClinician ? 'para ser consumido por um profissional de saúde (Médico ou Enfermeiro) sob a forma de apoio à decisão clínica' : 'para um paciente sob a forma de guia de autocuidado doméstico'} baseado na ficha clínica de comorbidades, alergias, idade e no estado atual de suas lesões cutâneas.
-
-PERFIL DO PACIENTE:
-- Nome: ${profile.name || 'Paciente'}
-- Comorbidades: ${comorbidadesText}
-- Outras Condições: ${profile.otherConditions || 'Nenhuma'}
-- Alergias Conhecidas: ${profile.allergies || 'Nenhuma'}
-- Medicamentos Ativos: ${profile.medications || 'Nenhum'}
-
-DADOS DA LESÃO (ÚLTIMA TRIAGEM):
-${triageText}
-
-DIRETRIZES DE TRATAMENTO E RESPALDO MÉDICO:
-- Toda recomendação deve se basear em fontes científicas oficiais vigentes, tais como: a Resolução COFEN 567/2018 (Tratamento de Feridas por Enfermeiros), o Manual de Condutas para Tratamento de Feridas do Ministério da Saúde do Brasil, diretrizes da SOBEST, SOBENFeE, WUWHS (World Union of Wound Healing Societies) ou NPIAP (National Pressure Injury Advisory Panel).
-- **Adequação às Alergias**: Não prescreva nenhuma cobertura ou componente que contenha alérgenos do paciente.
-- **Diabetes/Pé Diabético**: Alerte rigorosamente para o controle glicêmico, alívio de pressão (offloading), e inspecionar diariamente o pé inteiro.
-- **Insuficiência Venosa / Úlcera Venosa**: Se não houver doença arterial associada, recomende terapia compressiva (Bota de Unna ou bandagens).
-- **Lesão por Pressão (LPP)**: Recomende controle de umidade, mudança de decúbito de 2h/2h e colchão pneumático.
-- Dor: Adicione cuidados gentis na limpeza se a dor for moderada/alta.
-${isClinician ? '- **Foco Clínico**: Como este guia é direcionado a PROFISSIONAIS (médicos e enfermeiros), evite termos amadores de autocuidado doméstico básico. Redija as etapas em formato de condutas de enfermagem/médica (ex: monitoramento de bordas, exsudação, critérios de desbridamento instrumental, etc.).' : '- **Foco Paciente Leigo**: Como este guia é direcionado a um PACIENTE LEIGO, você DEVE usar uma linguagem extremamente simples, amigável, clara e livre de jargões técnicos. Não use palavras difíceis como "desbridamento", "leito da lesão", "exsudato", "fricção", "epitelização", "isquemia", etc. Substitua-as por termos do dia a dia (ex: "como limpar o ferimento", "secreção", "pele nova", "casca preta", "não esfregue com gaze", "mantenha a ferida úmida para cicatrizar").'}
-
-Sua resposta deve ser ESTRITAMENTE um objeto JSON puro, sem blocos de código markdown ou texto extra, no seguinte formato exato:
-{
-  "title": "${isClinician ? 'Condutas Clínicas de Apoio à Decisão para: ' + (profile.name || 'Paciente') : 'Nome do Protocolo Customizado (Ex: Protocolo de Úlcera Venosa e Hipertensão)'}",
-  "description": "Explicação clínica personalizada relacionando a lesão às comorbidades do paciente e os cuidados sistêmicos (ex: controle da glicose, repouso com pernas elevadas, etc.)",
-  "steps": [
-    {
-      "title": "Título do Passo 1",
-      "desc": "Instruções detalhadas em português de como executar esse passo"
-    }
-  ],
-  "materials": [
-    {
-      "name": "Nome exato da cobertura/produto recomendado",
-      "price": "Instrução de uso ou preço",
-      "brand": "Mecanismo de ação ou marca sugerida"
-    }
-  ],
-  "scientificBacking": "Citações e referências oficiais de diretrizes clínicas que respaldam estas condutas",
-  "specialistRecommendation": "Orientações sobre quando buscar avaliação com especialista"
-}`;
-
-    const activeModel = await getActiveModel();
-    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
-      contents: [{ parts: [{ text: systemPrompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    });
-
-    const result = await response.json();
-    const jsonText = result.candidates[0].content.parts[0].text;
-    return JSON.parse(jsonText.trim());
-  } catch (err) {
-    console.error("Erro na geração de protocolo via Gemini API:", err);
-    return null;
-  }
-};
-
-// 5. Format dictated/typed text into a structured SOAP medical note
-export const formatSOAPNote = async (noteText, patientProfile, woundEntries) => {
-  if (!isGeminiConfigured) {
-    return null;
-  }
-
-  try {
-    const formattedWounds = woundEntries.map(entry => `
-- Data: ${entry.date}
-  Tipo da Ferida: ${entry.type}
-  Estágio: ${entry.lesionStage}
-  Área Estimada: ${entry.aiAreaCm2 ? `${entry.aiAreaCm2} cm²` : 'N/A'}
-  Composição Tecidual: Necrose ${entry.aiTissueAnalysis?.necrose || 0}%, Fibrina ${entry.aiTissueAnalysis?.fibrina || 0}%, Granulação ${entry.aiTissueAnalysis?.granulacao || 0}%, Epitelização ${entry.aiTissueAnalysis?.epitelizacao || 0}%
-  Nível de Dor: ${entry.pain}/10
-  Exsudato: ${entry.exudate}
-  Conduta Prescrita Anteriormente: ${entry.appliedDressing || 'Não prescrito'} (${entry.dressingFrequency || 'Não informada'})
-  Notas Médicas Anteriores: ${entry.doctorNotes || 'Sem notas adicionais'}
-`).join('\n');
-
-    const systemPrompt = `Você é um assistente de inteligência artificial de alta especialização médica em cicatrização de feridas (Wound Care) e clínica geral.
-Sua tarefa é receber um texto ditado ou digitado pelo médico/enfermeiro e estruturá-lo no formato de prontuário eletrônico padrão SOAP (Subjetivo, Objetivo, Avaliação, Plano), adaptado para a realidade do paciente e lesões ativas.
-
-DADOS DO PACIENTE:
-- Nome: ${patientProfile.name}
-- Idade/Nascimento: ${patientProfile.birthDate || 'Não informada'}
-- Sexo: ${patientProfile.gender || 'Não informado'}
-- Diabetes: ${patientProfile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão: ${patientProfile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${patientProfile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${patientProfile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-- Tabagismo: ${patientProfile.isSmoker ? 'Sim (Fumante)' : 'Não'}
-- Obesidade: ${patientProfile.isObese ? 'Sim' : 'Não'}
-- Histórico de Amputação: ${patientProfile.hasAmputationHistory ? 'Sim' : 'Não'}
-- Alergias Conhecidas: ${patientProfile.allergies || 'Nenhuma'}
-- Medicamentos Contínuos: ${patientProfile.medications || 'Nenhum'}
-
-HISTÓRICO RECENTE DA LESÃO:
-${formattedWounds || 'Sem registros de lesões anteriores.'}
-
-INSTRUÇÕES DE FORMATAÇÃO DO SOAP:
-1. **S - Subjetivo**: Sintomas relatados pelo paciente, queixas de dor, histórico de sintomas relatado.
-2. **O - Objetivo**: Achados físicos do exame clínico, mensurações da ferida, aspecto do tecido (necrose, fibrina, granulação), tipo e quantidade de exsudato, odor, temperatura local.
-3. **A - Avaliação**: Diagnóstico de enfermagem/médico, classificação da lesão (Ex: Úlcera Venosa Estágio III) e análise da evolução (melhorou, estável, piorou).
-4. **P - Plano**: Conduta terapêutica, cobertura prescrita, frequência de troca, procedimentos e orientações de autocuidado (ex: repouso, elevação de membros, controle de comorbidades).
-
-Retorne o texto formatado estritamente como um documento SOAP em português (PT-BR), legível, organizado e profissional. Use cabeçalhos claros com negrito (ex: **S - Subjetivo:**, **O - Objetivo:**, etc.) e bullets. Seja preciso e evite inventar dados que não estejam implícitos no texto ditado ou no histórico do paciente.`;
-
-    const activeModel = await getActiveModel();
-    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
-      contents: [
-        { role: 'user', parts: [{ text: systemPrompt }] },
-        { role: 'user', parts: [{ text: `Texto ditado pelo profissional: "${noteText}"` }] }
-      ]
-    });
-
-    const result = await response.json();
-    return result.candidates[0].content.parts[0].text.trim();
-  } catch (err) {
-    console.error("Erro ao formatar nota SOAP via Gemini API:", err);
-    return null;
-  }
-};
-
-// 6. Telemedicine Transcript Analysis & Clinical Triage
-export const analyzeTelemedicineTranscript = async (transcriptText, clinicalProfile = {}) => {
-  const profile = clinicalProfile || {};
-  if (!isGeminiConfigured) {
-    return null;
-  }
-
-  try {
-    const systemPrompt = `Você é um assistente médico de alto nível especializado em wound care (tratamento de feridas cutâneas) e telemedicina.
-Sua tarefa é analisar a transcrição de áudio de uma consulta realizada entre um Médico e um Paciente e correlacionar com a ficha clínica do paciente para gerar um prontuário clínico estruturado.
-
-Ficha Clínica do Paciente:
-- Nome: ${profile.name || 'Paciente'}
-- Diabetes: ${profile.hasDiabetes ? 'Sim' : 'Não'}
-- Hipertensão: ${profile.hasHypertension ? 'Sim' : 'Não'}
-- Insuficiência Venosa: ${profile.hasVenousInsufficiency ? 'Sim' : 'Não'}
-- Doença Arterial Periférica: ${profile.hasPeripheralArterialDisease ? 'Sim' : 'Não'}
-
-Transcrição da Consulta:
-"""
-${transcriptText}
-"""
-
-Instruções Clínicas:
-1. Resuma a queixa do paciente e o parecer do médico em um Resumo Executivo conciso.
-2. Identifique os sintomas discutidos (ex: dor, secreção, prurido, febre) e informe a intensidade/gravidade (Leve/Moderada/Severa).
-3. Extraia sugestões de medicamentos ou insumos/curativos recomendados pelo médico ao longo do diálogo.
-4. Redija um texto de Evolução Clínica formal para ser anexado ao prontuário médico.
-5. Classifique o nível de risco da lesão (Leve, Risco Moderado, Alto Risco, Crítico).
-
-Sua resposta deve ser estritamente um objeto JSON puro, sem blocos de código \`\`\`json ou textos adicionais, correspondente a este formato exato:
-{
-  "executiveSummary": "Resumo conciso de 2 ou 3 frases sobre a consulta.",
-  "symptoms": [
-    { "name": "Nome do Sintoma", "intensity": "Leve/Moderada/Severa", "isWorsening": true }
-  ],
-  "suggestedPrescriptions": [
-    { "name": "Nome da Cobertura, Pomada ou Remédio", "dosage": "Instrução de uso/Frequência", "category": "Insumo/Medicamento" }
-  ],
-  "clinicalEvolution": "Texto formal e descritivo de evolução clínica detalhado.",
-  "riskLevel": "Leve/Risco Moderado/Alto Risco/Crítico"
-}`;
-
-    const activeModel = await getActiveModel();
-    const response = await fetchGeminiWithRotation(`${activeModel}:generateContent`, {
-      contents: [{ parts: [{ text: systemPrompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    });
-
-    const result = await response.json();
-    const jsonText = result.candidates[0].content.parts[0].text;
-    return JSON.parse(jsonText);
-  } catch (err) {
-    console.error('Erro na análise da transcrição pelo Gemini:', err);
-    return {
-      executiveSummary: "Erro ao processar análise automática. Transcrição salva para leitura manual.",
-      symptoms: [],
-      suggestedPrescriptions: [],
-      clinicalEvolution: "Erro de processamento da IA. Transcrição bruta: " + transcriptText.substring(0, 200),
-      riskLevel: "Risco Moderado"
-    };
-  }
-};
-
-// Generates a 768-dimensional text embedding using gemini-embedding-001
-export const getGeminiEmbedding = async (text) => {
-  if (!isGeminiConfigured) return null;
-  try {
-    const response = await fetchGeminiWithRotation('gemini-embedding-001:embedContent', {
-      model: "models/gemini-embedding-001",
-      content: {
-        parts: [{ text: text }]
-      },
-      outputDimensionality: 768
-    });
-    const data = await response.json();
-    if (data && data.embedding && data.embedding.values) {
-      return data.embedding.values;
-    }
-  } catch (err) {
-    console.error("Erro ao gerar embedding de busca no Gemini:", err);
+    console.error("Erro na conversação via Edge Function:", err);
   }
   return null;
 };
 
-// Performs semantic search on the transcribed video knowledge base
+// 3. Doctor's AI Copilot
+export const chatWithDoctorCopilot = async (message, chatHistory, patientProfile, woundEntries, doctorProfile) => {
+  if (!isGeminiConfigured) return null;
+
+  try {
+    const { data, error } = await supabase.functions.invoke('gemini-analysis', {
+      body: { action: 'chatWithDoctorCopilot', message, chatHistory, patientProfile, woundEntries, doctorProfile }
+    });
+    if (error) throw error;
+    if (data) return data;
+  } catch (err) {
+    console.error("Erro no copiloto médico via Edge Function:", err);
+  }
+  return null;
+};
+
+// 4. Generate Personalized Clinical Protocol
+export const generatePersonalizedProtocol = async (clinicalProfile, latestWoundEntry, isClinician = false) => {
+  if (!isGeminiConfigured) return null;
+
+  try {
+    const { data, error } = await supabase.functions.invoke('gemini-analysis', {
+      body: { action: 'generatePersonalizedProtocol', clinicalProfile, latestWoundEntry, isClinician }
+    });
+    if (error) throw error;
+    if (data) return data;
+  } catch (err) {
+    console.error("Erro ao gerar protocolo via Edge Function:", err);
+  }
+  return null;
+};
+
+// 5. Format dictated/typed text into a structured SOAP medical note
+export const formatSOAPNote = async (noteText, patientProfile, woundEntries) => {
+  if (!isGeminiConfigured) return null;
+
+  try {
+    const { data, error } = await supabase.functions.invoke('gemini-analysis', {
+      body: { action: 'formatSOAPNote', noteText, patientProfile, woundEntries }
+    });
+    if (error) throw error;
+    if (data) return typeof data === 'string' ? data : (data.soapNote || data.reply || null);
+  } catch (err) {
+    console.error("Erro ao formatar SOAP via Edge Function:", err);
+  }
+  return null;
+};
+
+// 6. Telemedicine Transcript Analysis & Clinical Triage
+export const analyzeTelemedicineTranscript = async (transcriptText, clinicalProfile = {}) => {
+  if (!isGeminiConfigured) return null;
+
+  try {
+    const { data, error } = await supabase.functions.invoke('gemini-analysis', {
+      body: { action: 'analyzeTelemedicineTranscript', transcriptText, clinicalProfile }
+    });
+    if (error) throw error;
+    if (data) return data;
+  } catch (err) {
+    console.error('Erro na análise da transcrição via Edge Function:', err);
+  }
+  return {
+    executiveSummary: "Erro ao processar análise automática. Transcrição salva para leitura manual.",
+    symptoms: [],
+    suggestedPrescriptions: [],
+    clinicalEvolution: "Erro de processamento da IA. Transcrição bruta: " + (transcriptText ? transcriptText.substring(0, 200) : ''),
+    riskLevel: "Risco Moderado"
+  };
+};
+
+// 7. Generates a 768-dimensional text embedding
+export const getGeminiEmbedding = async (text) => {
+  if (!isGeminiConfigured) return null;
+  try {
+    const { data, error } = await supabase.functions.invoke('gemini-analysis', {
+      body: { action: 'getGeminiEmbedding', text }
+    });
+    if (!error && data && data.embedding) return data.embedding;
+  } catch (err) {
+    console.error("Erro ao gerar embedding via Edge Function:", err);
+  }
+  return null;
+};
+
+// 8. Performs semantic search on the transcribed video knowledge base
 export const searchTrainingKnowledge = async (queryText) => {
   if (!supabase || !isSupabaseActive) return [];
   try {
@@ -1004,10 +264,8 @@ export const searchTrainingKnowledge = async (queryText) => {
       }
     }
 
-    // Fallback: se a busca vetorial falhar ou vier vazia, faz uma busca por texto direto (ILIKE)
     if (results.length === 0 && queryText.length > 2) {
-      console.log("[RAG] Ativando busca híbrida por texto (ILIKE) para:", queryText);
-      const cleanWord = queryText.trim().split(" ")[0]; // Pega a primeira palavra para simplificar
+      const cleanWord = queryText.trim().split(" ")[0];
       const { data: textData, error: textError } = await supabase
         .from('training_knowledge')
         .select('video_title, category, content')
@@ -1019,7 +277,7 @@ export const searchTrainingKnowledge = async (queryText) => {
           video_title: item.video_title,
           category: item.category,
           content: item.content,
-          similarity: 0.9 // Simulado
+          similarity: 0.9
         }));
       }
     }
@@ -1031,7 +289,7 @@ export const searchTrainingKnowledge = async (queryText) => {
   }
 };
 
-// Performs semantic search on the visual cases descriptions
+// 9. Performs semantic search on the visual cases descriptions
 export const searchTrainingVisualCases = async (queryText) => {
   if (!supabase || !isSupabaseActive) return [];
   try {
@@ -1055,84 +313,18 @@ export const searchTrainingVisualCases = async (queryText) => {
   }
 };
 
-// Dedicated Voice First-Line Medical Triage for Patients & Lay Users
+// 10. Dedicated Voice First-Line Medical Triage
 export const getPatientFirstLineTriage = async (spokenQuery, patientProfile) => {
-  if (!isGeminiConfigured) {
-    return null;
-  }
+  if (!isGeminiConfigured) return null;
 
   try {
-    const profileName = patientProfile?.name || 'Paciente';
-    const comorbidades = [
-      patientProfile?.hasDiabetes ? 'Diabetes' : null,
-      patientProfile?.hasHypertension ? 'Hipertensão' : null,
-      patientProfile?.hasVenousInsufficiency ? 'Insuficiência Venosa' : null,
-      patientProfile?.hasPeripheralArterialDisease ? 'Doença Arterial Periférica' : null,
-      patientProfile?.isSmoker ? 'Fumante' : null,
-      patientProfile?.isObese ? 'Obesidade' : null
-    ].filter(Boolean).join(', ') || 'Nenhuma comorbidade declarada';
-
-    const systemInstruction = `Você é a Médica Virtual de Inteligência Artificial do iRec (Especialista em Triagem Clínica Dinâmica de Primeiro Atendimento em Saúde, Protocolo de Manchester e Cuidados Domiciliares para leigos, idosos e analfabetos).
-
-DADOS DO PACIENTE:
-- Nome: ${profileName}
-- Comorbidades Conhecidas: ${comorbidades}
-- Alergias: ${patientProfile?.allergies || 'Nenhuma'}
-- Medicamentos de Uso Contínuo: ${patientProfile?.medications || 'Nenhum'}
-
-O PACIENTE ACABOU DE FALAR O SEGUINTE RELATO POR VOZ:
-"${spokenQuery}"
-
-SUA MISSÃO MÉDICA:
-Analise DINAMICAMENTE e INDIVIDUALMENTE cada palavra do relato do paciente. NUNCA dê uma resposta pronta, genérica ou decorada!
-
-1. PROTOCOLO DE TRIAGEM CLÍNICA E NÍVEIS DE RISCO:
-   - "Vermelho" (URGÊNCIA / EMERGÊNCIA GRAVE / RISCO DE VIDA): Para qualquer relato de trauma grave (atropelamento, acidente, membro quebrado/amputado, esmagamento), dor no peito ou coração, falta de ar grave, perda de consciência, AVC, sangramento abundante ou dor insuportável.
-     -> Sua resposta DEVE mencionar e analisar o evento exato citado pelo paciente, explicar com empatia por que o quadro é urgente e orientar firmemente a procurar o Pronto-Socorro IMEDIATAMENTE ou ligar 192 (SAMU).
-   
-   - "Amarelo" (RISCO MODERADO / TELEMEDICINA / CONSULTA NO APP): Para sintomas que persistem há dias (febre constante, dor moderada, tontura ao se levantar, ferida sem cicatrização).
-     -> Sua resposta DEVE analisar o sintoma e recomendar agendar uma consulta por telemedicina no próprio app iRec sem sair de casa.
-   
-   - "Verde" (RISCO BAIXO / CUIDADOS EM CASA): APENAS para sintomas leves e isolados (dor de cabeça leve, enjoo simples, cansaço do dia a dia, tontura passageira).
-     -> Sua resposta DEVE analisar a queixa específica do paciente, dar instruções de conforto simples em casa (hidratação, descanso, ambiente calmo) e tranquilizá-lo dizendo que não há necessidade de ir ao hospital por este sintoma leve.
-
-2. DIRETRIZES DE COMUNICAÇÃO:
-   - Responda em linguagem ultra simples, acolhedora, humana e carinhosa, de forma que qualquer idoso ou leigo entenda perfeitamente.
-   - Refira-se especificamente ao que o paciente acabou de relatar na voz dele.
-
-Responda estritamente em formato JSON com o modelo exato:
-{
-  "primarySymptom": "Sintoma ou evento principal identificado no relato",
-  "riskLevel": "Verde" ou "Amarelo" ou "Vermelho",
-  "advice": "Sua resposta médica 100% personalizada e dinâmica direcionada exatamente ao que o paciente relatou (3 a 5 frases)."
-}`;
-
-    const bodyData = {
-      contents: [{
-        role: 'user',
-        parts: [{ text: systemInstruction }]
-      }],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 600,
-        responseMimeType: "application/json"
-      }
-    };
-
-    const activeModel = await getActiveModel();
-    const res = await fetchGeminiWithRotation(`${activeModel}:generateContent`, bodyData);
-    const data = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (rawText) {
-      const parsed = JSON.parse(rawText);
-      return parsed;
-    }
-    return null;
+    const { data, error } = await supabase.functions.invoke('gemini-analysis', {
+      body: { action: 'getPatientFirstLineTriage', spokenQuery, patientProfile }
+    });
+    if (error) throw error;
+    if (data) return data;
   } catch (err) {
-    console.error("Erro na triagem por voz do paciente via Gemini:", err);
-    return null;
+    console.error("Erro na triagem por voz via Edge Function:", err);
   }
+  return null;
 };
-
-

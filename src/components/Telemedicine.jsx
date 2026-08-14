@@ -23,6 +23,8 @@ import {
 } from '../services/supabaseService';
 import { analyzeTelemedicineTranscript, isGeminiConfigured } from '../services/geminiService';
 import TCLETelemedicineModal from './TCLETelemedicineModal';
+import TelemedicineContactsList from './telemedicine/TelemedicineContactsList';
+import TelemedicineClinicalCopilot from './telemedicine/TelemedicineClinicalCopilot';
 
 const getDoctorPremiumDetails = (doc) => {
   if (!doc) return null;
@@ -1974,46 +1976,53 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           {selectedContact ? (
             <>
               {/* Header info */}
-              <div style={{
+              <div className="glass-panel" style={{
                 padding: '16px 20px',
-                borderBottom: '1px solid var(--border-color)',
+                borderBottom: '1px solid var(--glass-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                backgroundColor: 'var(--bg-secondary)'
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1, gap: '12px' }}>
-                  {isMobile && (
-                    <button 
-                      onClick={() => setMobileView('contacts')}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        color: 'var(--text-primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      title="Voltar para contatos"
-                    >
-                      <svg style={{ width: '20px', height: '20px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                      </svg>
-                    </button>
-                  )}
+                  {/* Universal Back Button */}
+                  <button 
+                    type="button" 
+                    onClick={() => setSelectedContact(null)}
+                    style={{
+                      background: 'rgba(2, 132, 199, 0.08)',
+                      border: '1px solid rgba(2, 132, 199, 0.25)',
+                      borderRadius: '10px',
+                      padding: '6px 12px',
+                      fontSize: '12.5px',
+                      fontWeight: '700',
+                      color: '#0284c7',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      transition: 'all 0.2s ease',
+                      flexShrink: 0
+                    }}
+                    className="btn-back-chat"
+                    title="Voltar para a central de conversas"
+                  >
+                    ← Voltar
+                  </button>
+
                   <div style={{
                     width: '42px',
                     height: '42px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(2, 132, 199, 0.15)',
-                    color: '#0284c7',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    color: '#ffffff',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: '800',
-                    fontSize: '16px'
+                    fontSize: '16px',
+                    boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
                   }}>
                     {selectedContact.name ? selectedContact.name.charAt(0).toUpperCase() : 'U'}
                   </div>
@@ -2027,32 +2036,56 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                   </div>
                 </div>
 
-                {/* Video Call Trigger */}
-                <button 
-                  onClick={startCall}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '30px',
-                    padding: '10px 20px',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
-                    transition: 'transform 0.15s ease',
-                    flexShrink: 0
-                  }}
-                  className="btn-video-call"
-                >
-                  <svg style={{ width: '16px', height: '16px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-                  </svg>
-                  Iniciar Teleconsulta por Vídeo
-                </button>
+                {/* Right Actions (Video call + Close icon) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                  <button 
+                    onClick={startCall}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                      color: '#ffffff',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      borderRadius: '30px',
+                      padding: '10px 20px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 18px rgba(2, 132, 199, 0.4)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    className="btn-video-call"
+                  >
+                    <svg style={{ width: '16px', height: '16px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                    Iniciar Teleconsulta por Vídeo
+                  </button>
+
+                  <button 
+                    type="button" 
+                    onClick={() => setSelectedContact(null)}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.25)',
+                      color: '#ef4444',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '15px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    title="Encerrar/Fechar conversa"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               {/* Chat message history list */}
@@ -2066,8 +2099,19 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 backgroundColor: 'var(--bg-primary)'
               }}>
                 {messages.length === 0 ? (
-                  <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', maxWidth: '340px' }}>
-                    💬 Nenhuma mensagem trocada ainda com {selectedContact.name}. Envie uma mensagem abaixo ou inicie a teleconsulta.
+                  <div className="glass-card glass-card-cyan-glow" style={{
+                    margin: 'auto',
+                    textAlign: 'center',
+                    color: 'var(--text-secondary)',
+                    fontSize: '13px',
+                    maxWidth: '380px',
+                    padding: '24px 20px',
+                    borderRadius: '16px',
+                    border: '1px solid var(--glass-border)',
+                    lineHeight: '1.6'
+                  }}>
+                    💬 Nenhuma mensagem trocada ainda com <strong>{selectedContact.name}</strong>.<br />
+                    Envie uma mensagem abaixo ou inicie a teleconsulta por vídeo.
                   </div>
                 ) : (
                   messages.map(m => {
@@ -2087,10 +2131,12 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                         <div style={{
                           padding: '10px 14px',
                           borderRadius: isOwn ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                          backgroundColor: isOwn ? '#0284c7' : 'var(--bg-secondary)',
+                          backgroundColor: isOwn ? '#0284c7' : 'var(--glass-bg)',
                           color: isOwn ? '#ffffff' : 'var(--text-primary)',
                           fontSize: '13px',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                          boxShadow: isOwn ? '0 4px 14px rgba(2, 132, 199, 0.25)' : '0 2px 8px rgba(0, 0, 0, 0.04)',
+                          border: isOwn ? 'none' : '1px solid var(--glass-border)',
+                          backdropFilter: isOwn ? 'none' : 'blur(10px)',
                           wordBreak: 'break-word'
                         }}>
                           {m.fileUrl && (
@@ -2169,13 +2215,14 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               </div>
 
               {/* Input Bar Form */}
-              <form onSubmit={handleSendMessage} style={{
+              <form onSubmit={handleSendMessage} className="glass-panel" style={{
                 padding: '16px 20px',
-                borderTop: '1px solid var(--border-color)',
-                backgroundColor: 'var(--bg-secondary)',
+                borderTop: '1px solid var(--glass-border)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px'
+                gap: '12px',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)'
               }}>
                 <div style={{ position: 'relative' }}>
                   <input 
@@ -2191,14 +2238,15 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      width: '38px',
-                      height: '38px',
+                      width: '40px',
+                      height: '40px',
                       borderRadius: '50%',
-                      backgroundColor: attachedFile ? 'rgba(2, 132, 199, 0.15)' : 'var(--bg-primary)',
-                      border: '1px solid var(--border-color)',
+                      backgroundColor: attachedFile ? 'rgba(2, 132, 199, 0.15)' : 'var(--glass-bg)',
+                      border: '1px solid var(--glass-border)',
                       cursor: 'pointer',
                       color: attachedFile ? '#0284c7' : 'var(--text-secondary)',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
                     }}
                     title="Anexar foto de lesão ou laudo PDF"
                   >
@@ -2218,11 +2266,12 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                       width: '100%',
                       padding: '11px 18px',
                       borderRadius: '30px',
-                      border: '1px solid var(--border-color)',
+                      border: '1px solid var(--glass-border)',
                       backgroundColor: 'var(--bg-primary)',
                       color: 'var(--text-primary)',
                       fontSize: '13px',
-                      outline: 'none'
+                      outline: 'none',
+                      transition: 'all 0.2s ease'
                     }}
                   />
                   {attachedFile && (
@@ -2250,35 +2299,44 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 <button 
                   type="submit"
                   style={{
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
-                    backgroundColor: '#0284c7',
+                    gap: '8px',
+                    padding: '10px 22px',
+                    borderRadius: '30px',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
                     color: '#ffffff',
-                    border: 'none',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    fontWeight: '700',
+                    fontSize: '13px',
                     cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.3)'
+                    boxShadow: '0 4px 18px rgba(2, 132, 199, 0.4)',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    flexShrink: 0
                   }}
+                  className="btn-send-message"
                 >
-                  <svg style={{ width: '16px', height: '16px', transform: 'rotate(45deg)', marginLeft: '-2px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Z" />
+                  <span>Enviar</span>
+                  <svg style={{ width: '15px', height: '15px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.125A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.875L5.999 12Zm0 0h7.5" />
                   </svg>
                 </button>
               </form>
             </>
           ) : (
-            <div style={{
+            <div className="glass-card glass-card-cyan-glow" style={{
               margin: 'auto',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               textAlign: 'center',
-              padding: '40px 24px',
-              maxWidth: '520px'
+              padding: '40px 28px',
+              maxWidth: '520px',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '20px',
+              backdropFilter: 'blur(20px)'
             }}>
               <div style={{
                 width: '80px',
@@ -2291,7 +2349,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 justifyContent: 'center',
                 fontSize: '36px',
                 marginBottom: '20px',
-                boxShadow: '0 8px 24px rgba(2, 132, 199, 0.12)'
+                boxShadow: '0 8px 24px rgba(2, 132, 199, 0.18)'
               }}>
                 🩺
               </div>
@@ -2305,13 +2363,13 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               </p>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.1)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(2, 132, 199, 0.2)' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.12)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(2, 132, 199, 0.25)', boxShadow: '0 0 10px rgba(2, 132, 199, 0.15)' }}>
                   🔒 Chamada WebRTC Criptografada
                 </span>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(16, 185, 129, 0.25)', boxShadow: '0 0 10px rgba(16, 185, 129, 0.15)' }}>
                   📋 Integrado com Prontuário SOAP
                 </span>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.12)', padding: '6px 14px', borderRadius: '50px', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
                   ⚡ Transmissão de Vídeo HD
                 </span>
               </div>
@@ -2322,12 +2380,11 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
       {/* 2. Sidebar Contacts Panel (Right Side - 320px) */}
       {(!isMobile || mobileView === 'contacts') && (
-        <div className="telemedicine-sidebar" style={{
+        <div className="telemedicine-sidebar glass-panel" style={{
           width: isMobile ? '100%' : '320px',
-          borderLeft: isMobile ? 'none' : '1px solid var(--border-color)',
+          borderLeft: isMobile ? 'none' : '1px solid var(--glass-border)',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: 'var(--bg-secondary)',
           flexShrink: 0,
           height: '100%'
         }}>
@@ -2341,7 +2398,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
           </div>
 
           {/* Search bar */}
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-primary)' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <input 
               type="text" 
               placeholder="🔍 Buscar paciente ou médico..." 
@@ -2350,17 +2407,18 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
               style={{
                 width: '100%',
                 padding: '9px 14px',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 border: '1px solid var(--border-color)',
-                backgroundColor: 'var(--bg-secondary)',
+                backgroundColor: 'var(--bg-primary)',
                 color: 'var(--text-primary)',
                 fontSize: '12.5px',
-                outline: 'none'
+                outline: 'none',
+                transition: 'all 0.2s ease'
               }}
             />
           </div>
 
-          <div className="contacts-list" style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
+          <div className="contacts-list" style={{ flex: 1, overflowY: 'auto', padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {filteredContacts.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
                 Nenhum contato encontrado.
@@ -2373,9 +2431,9 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                 const isOnline = (() => {
                   if (!c.lastSeenAt) return false;
                   try {
-                    const lastSeen = new Date(c.lastSeenAt).getTime();
+                    const seenTime = new Date(c.lastSeenAt).getTime();
                     const now = new Date().getTime();
-                    return (now - lastSeen) < 35000;
+                    return (now - seenTime) < 35000;
                   } catch {
                     return false;
                   }
@@ -2394,29 +2452,34 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      padding: '12px 16px',
+                      padding: '12px 14px',
                       cursor: 'pointer',
-                      backgroundColor: active ? 'rgba(2, 132, 199, 0.08)' : 'transparent',
-                      borderLeft: active ? '4px solid #0284c7' : '4px solid transparent',
-                      borderBottom: '1px solid var(--border-color)',
-                      transition: 'all 0.15s ease'
+                      borderRadius: '14px',
+                      backgroundColor: active ? 'rgba(2, 132, 199, 0.12)' : 'var(--glass-bg)',
+                      backdropFilter: 'blur(12px)',
+                      WebkitBackdropFilter: 'blur(12px)',
+                      border: active ? '1.5px solid #0284c7' : '1px solid var(--glass-border)',
+                      boxShadow: active ? '0 4px 16px rgba(2, 132, 199, 0.2)' : '0 2px 8px rgba(0, 0, 0, 0.03)',
+                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
                     }}
-                    className="contact-item"
+                    className="contact-item glass-card"
                   >
                     <div style={{ position: 'relative' }}>
                       <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        backgroundColor: 'rgba(2, 132, 199, 0.15)',
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '12px',
+                        background: active ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(2, 132, 199, 0.1))',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '14px',
                         fontWeight: '800',
-                        color: '#0284c7',
+                        color: active ? '#ffffff' : '#0284c7',
                         overflow: 'hidden',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        boxShadow: active ? '0 4px 12px rgba(2, 132, 199, 0.35)' : 'none',
+                        border: '1px solid rgba(2, 132, 199, 0.2)'
                       }}>
                         {c.avatarUrl ? (
                           <img src={c.avatarUrl} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -2425,13 +2488,14 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                       {isOnline && (
                         <span style={{
                           position: 'absolute',
-                          bottom: 0,
-                          right: 0,
+                          bottom: '-2px',
+                          right: '-2px',
                           width: '10px',
                           height: '10px',
                           borderRadius: '50%',
                           backgroundColor: '#10b981',
-                          border: '2px solid var(--bg-secondary)'
+                          border: '2px solid var(--bg-secondary)',
+                          boxShadow: '0 0 8px #10b981'
                         }} />
                       )}
                     </div>
@@ -2441,7 +2505,15 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
                         <span style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {c.name}
                         </span>
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          color: '#0284c7',
+                          backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          border: '1px solid rgba(2, 132, 199, 0.2)'
+                        }}>
                           {c.role === 'doctor' ? '👨‍⚕️ Médico' : (c.role === 'nurse' ? '🩺 Enfermeiro' : '👤 Paciente')}
                         </span>
                       </div>

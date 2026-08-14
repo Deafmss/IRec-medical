@@ -399,7 +399,7 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
   };
 
   const contentMarkup = (
-    <div className="profile-modal-container" style={{ maxWidth: embeddedMode ? '100%' : '780px', boxShadow: embeddedMode ? 'none' : 'var(--shadow-xl)', border: embeddedMode ? 'none' : '1px solid var(--border-color)', margin: 0 }} onClick={e => e.stopPropagation()}>
+    <div className={`profile-modal-container ${embeddedMode ? 'embedded-mode' : ''}`} style={{ maxWidth: embeddedMode ? '100%' : '780px', width: embeddedMode ? '100%' : '95%', maxHeight: embeddedMode ? 'none' : '85vh', boxShadow: embeddedMode ? 'none' : 'var(--shadow-xl)', border: embeddedMode ? 'none' : '1px solid var(--border-color)', margin: 0, background: embeddedMode ? 'transparent' : 'var(--bg-secondary)' }} onClick={e => e.stopPropagation()}>
       
       {/* Header */}
       {!embeddedMode && (
@@ -427,8 +427,8 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
       )}
 
       {/* Content */}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-        <div className="profile-modal-content">
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: embeddedMode ? 'visible' : 'hidden' }}>
+        <div className="profile-modal-content" style={{ padding: embeddedMode ? '0' : '20px 24px', overflowY: embeddedMode ? 'visible' : 'auto', maxHeight: embeddedMode ? 'none' : '60vh' }}>
             {/* Status alerts */}
             {errorMsg && (
               <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--danger-glow)', color: 'var(--danger)', fontSize: '13px', fontWeight: '600', marginBottom: '16px' }}>
@@ -1186,23 +1186,41 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
           </div>
 
           {/* Footer */}
-          <div className="profile-modal-footer">
+          <div className="profile-modal-footer" style={{ borderTop: embeddedMode ? 'none' : '1px solid var(--glass-border)', background: 'transparent', padding: embeddedMode ? '20px 16px 16px 16px' : '16px 24px' }}>
             <button 
               type="button" 
               className="btn btn-secondary" 
               onClick={onClose}
               disabled={saving}
-              style={{ padding: '8px 18px', fontSize: '13px' }}
+              style={{ padding: '10px 20px', borderRadius: '24px', fontSize: '13px', display: embeddedMode ? 'none' : 'inline-block' }}
             >
               Cancelar
             </button>
             <button 
               type="submit" 
-              className="btn btn-primary" 
               disabled={saving || uploading}
-              style={{ padding: '8px 18px', fontSize: '13px' }}
+              style={{ 
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '10px 26px',
+                borderRadius: '30px',
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                fontWeight: '700',
+                fontSize: '13px',
+                cursor: saving || uploading ? 'not-allowed' : 'pointer',
+                opacity: saving || uploading ? 0.6 : 1,
+                boxShadow: '0 4px 18px rgba(2, 132, 199, 0.4)',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
             >
-              {saving ? 'Salvando...' : 'Salvar Alterações'}
+              <svg style={{ width: '16px', height: '16px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              <span>{saving ? 'Salvando...' : 'Salvar Alterações'}</span>
             </button>
           </div>
         </form>
@@ -1260,16 +1278,16 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
             position: relative;
           }
           .avatar-circle {
-            width: 90px;
-            height: 90px;
+            width: 96px;
+            height: 96px;
             border-radius: 50%;
             position: relative;
             overflow: hidden;
             cursor: pointer;
-            border: 3px solid var(--primary);
-            box-shadow: var(--shadow-md);
+            border: 3px solid #0284c7;
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.4);
             transition: var(--transition-smooth);
-            background-color: var(--primary);
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
             color: #ffffff;
             display: flex;
             align-items: center;
@@ -1279,8 +1297,8 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
             font-family: var(--font-display);
           }
           .avatar-circle:hover {
-            transform: scale(1.03);
-            box-shadow: var(--shadow-lg), var(--shadow-glow);
+            transform: scale(1.04);
+            box-shadow: 0 0 28px rgba(2, 132, 199, 0.6);
           }
           .avatar-overlay {
             position: absolute;
@@ -1301,32 +1319,39 @@ export default function UserProfileModal({ currentUser, onClose, onProfileUpdate
             opacity: 1;
           }
           .profile-tabs {
-            display: flex;
-            gap: 4px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 24px;
+            padding: 6px;
+            background: rgba(2, 132, 199, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            max-width: 100%;
             overflow-x: auto;
-            padding-bottom: 4px;
           }
           .profile-tab-btn {
-            background: none;
-            border: none;
-            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 9px 22px;
             font-size: 13px;
             font-weight: 600;
             color: var(--text-secondary);
             cursor: pointer;
-            border-radius: var(--radius-sm);
-            transition: var(--transition-fast);
+            border-radius: 24px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             white-space: nowrap;
           }
           .profile-tab-btn:hover {
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            color: #0284c7;
+            background: rgba(2, 132, 199, 0.08);
           }
           .profile-tab-btn.active {
-            background: var(--primary-glow);
-            color: var(--primary);
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
           }
           .form-grid {
             display: grid;

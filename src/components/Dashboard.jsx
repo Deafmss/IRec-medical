@@ -489,8 +489,15 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
           <button
             type="button"
             onClick={() => onTriggerSOS && onTriggerSOS()}
-            className="btn btn-sos"
-            style={{ padding: '8px 16px', fontSize: '12px' }}
+            className="btn"
+            style={{ 
+              padding: '8px 16px', 
+              fontSize: '12px',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              color: '#ef4444',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              boxShadow: '0 0 12px rgba(239, 68, 68, 0.2)'
+            }}
           >
             🚨 SOS 192
           </button>
@@ -604,7 +611,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
             <button
               type="button"
               onClick={() => setActiveTab(nextApp ? 'telemedicine' : 'doctors_directory')}
-              className="btn btn-primary"
+              className="btn btn-glow-emerald"
               style={{ whiteSpace: 'nowrap', padding: '10px 18px', fontSize: '12.5px' }}
             >
               {nextApp ? '🎥 Acessar Sala HD' : '📅 Agendar'}
@@ -715,20 +722,20 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
             <button
               type="button"
               onClick={() => setActiveTab('upload')}
-              className="btn btn-primary"
+              className="btn btn-glow-emerald"
               style={{ padding: '16px', fontSize: '14px' }}
             >
-              <span>📷</span>
+              <span style={{ fontSize: '18px' }}>📷</span>
               <span>Fotografar Ferida</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('chat')}
-              className="btn btn-secondary"
+              className="btn btn-glass-action"
               style={{ padding: '16px', fontSize: '14px' }}
             >
-              <span>💬</span>
+              <span style={{ fontSize: '18px' }}>💬</span>
               <span>Assistente Clínico</span>
             </button>
           </div>
@@ -748,7 +755,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
                 <button
                   type="button"
                   onClick={handleOpenFullRecordModal}
-                  className="btn btn-secondary"
+                  className="btn btn-glass-action"
                   style={{ padding: '5px 10px', fontSize: '11.5px' }}
                   title="Visualizar a Ficha Clínica Completa em formato prontuário"
                 >
@@ -757,7 +764,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
                 <button
                   type="button"
                   onClick={() => onOpenProfileModal ? onOpenProfileModal() : setActiveTab('profile')}
-                  className="btn btn-secondary"
+                  className="btn btn-glass-action"
                   style={{ padding: '5px 10px', fontSize: '11.5px' }}
                   title="Editar dados da Ficha Clínica"
                 >
@@ -831,7 +838,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
             <button
               type="button"
               onClick={() => setShowMapModal(true)}
-              className="btn btn-secondary"
+              className="btn btn-glass-action"
               style={{ width: '100%', padding: '10px 14px', fontSize: '12.5px', marginTop: '12px' }}
             >
               🗺️ Ver Mapa Completo de Hospitais & UPAs
@@ -852,8 +859,17 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
             <button
               type="button"
               onClick={() => onTriggerSOS && onTriggerSOS()}
-              className="btn btn-sos"
-              style={{ width: '100%', padding: '12px', fontSize: '13px' }}
+              className="btn"
+              style={{ 
+                width: '100%', 
+                padding: '12px', 
+                fontSize: '13px',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                color: '#ef4444',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                boxShadow: '0 0 16px rgba(239, 68, 68, 0.25)',
+                fontWeight: '800'
+              }}
             >
               Relatar Sintoma Grave (SOS)
             </button>
@@ -1043,7 +1059,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
               <button
                 type="button"
                 onClick={handlePrintFullRecord}
-                className="btn btn-primary"
+                className="btn btn-glow-emerald"
                 style={{ padding: '12px 22px', fontSize: '13.5px', borderRadius: '12px' }}
               >
                 🖨️ Imprimir / Baixar Prontuário em PDF
@@ -1055,7 +1071,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
                   setShowFullRecordModal(false);
                   onOpenProfileModal ? onOpenProfileModal() : setActiveTab('profile');
                 }}
-                className="btn btn-secondary"
+                className="btn btn-glass-action"
                 style={{ padding: '12px 22px', fontSize: '13.5px', borderRadius: '12px' }}
               >
                 ✏️ Editar Ficha Clínica
@@ -1064,7 +1080,7 @@ export default function Dashboard({ setActiveTab, clinicalProfile, entries = [],
               <button
                 type="button"
                 onClick={() => setShowFullRecordModal(false)}
-                className="btn btn-secondary"
+                className="btn btn-neon-outline"
                 style={{ padding: '12px 22px', fontSize: '13.5px', borderRadius: '12px' }}
               >
                 ✕ Fechar

@@ -156,15 +156,27 @@ export default function DoctorDashboardAnalytics({ currentUser }) {
   }
 
   return (
-    <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'var(--font-primary)', animation: 'fadeIn 0.3s ease' }}>
+    <div className="animate-fade-in" style={{ padding: '24px 16px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'var(--font-primary)' }}>
       
       {/* Header */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
+      <header className="glass-card glass-card-cyan-glow" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', padding: '20px 24px' }}>
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '800', margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            🩺 Meu Painel Clínico
+          <div style={{
+            display: 'inline-block',
+            backgroundColor: 'rgba(2, 132, 199, 0.15)',
+            color: '#0284c7',
+            fontSize: '11px',
+            fontWeight: '800',
+            padding: '3px 12px',
+            borderRadius: '50px',
+            marginBottom: '4px'
+          }}>
+            📊 MÉTRICAS & DESEMPENHO CLÍNICO
+          </div>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', margin: 0, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            🩺 Painel de Indicadores de Saúde
           </h2>
-          <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: '500' }}>
             Acompanhe o desempenho dos seus atendimentos e evolução clínica dos seus pacientes.
           </p>
         </div>
@@ -181,60 +193,60 @@ export default function DoctorDashboardAnalytics({ currentUser }) {
       </header>
 
       {/* Main KPI Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px', marginBottom: '24px' }}>
         
         {/* 1. Atendimentos Realizados */}
-        <div className="glass-card" style={{ padding: '20px', margin: 0 }}>
+        <div className="glass-card" style={{ padding: '20px', margin: 0, borderTop: '3px solid #0284c7' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>ATENDIMENTOS NO PERÍODO</span>
             <span style={{ fontSize: '18px' }}>📞</span>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '800', color: '#0284c7', marginTop: '8px', fontFamily: 'var(--font-display)' }}>
             {totalCalls}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '8px' }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '8px' }}>
             {completedCalls} finalizados com sucesso.
           </div>
         </div>
 
         {/* 2. Pacientes Atendidos */}
-        <div className="glass-card" style={{ padding: '20px', margin: 0 }}>
+        <div className="glass-card" style={{ padding: '20px', margin: 0, borderTop: '3px solid #0284c7' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PACIENTES VINCULADOS</span>
             <span style={{ fontSize: '18px' }}>👤</span>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '800', color: '#0284c7', marginTop: '8px', fontFamily: 'var(--font-display)' }}>
             {totalPatients}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '700', marginTop: '8px' }}>
+          <div style={{ fontSize: '11.5px', color: '#0284c7', fontWeight: '700', marginTop: '8px' }}>
             Carteira ativa sob seu acompanhamento.
           </div>
         </div>
 
         {/* 3. Casos Clínicos Finalizados */}
-        <div className="glass-card" style={{ padding: '20px', margin: 0 }}>
+        <div className="glass-card" style={{ padding: '20px', margin: 0, borderTop: '3px solid #10b981' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>CASOS FINALIZADOS</span>
             <span style={{ fontSize: '18px' }}>✅</span>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '800', color: '#10b981', marginTop: '8px', fontFamily: 'var(--font-display)' }}>
             {finalizedCount}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--success-light)', fontWeight: '700', marginTop: '8px' }}>
+          <div style={{ fontSize: '11.5px', color: '#10b981', fontWeight: '700', marginTop: '8px' }}>
             Pacientes com alta ou desfecho clínico.
           </div>
         </div>
 
         {/* 4. Retorno do Paciente */}
-        <div className="glass-card" style={{ padding: '20px', margin: 0 }}>
+        <div className="glass-card" style={{ padding: '20px', margin: 0, borderTop: '3px solid #8b5cf6' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>TAXA DE RETORNO</span>
             <span style={{ fontSize: '18px' }}>🔁</span>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '800', color: '#8b5cf6', marginTop: '8px', fontFamily: 'var(--font-display)' }}>
             {returnRatePct}%
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '8px' }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '8px' }}>
             {returnedPatientsCount} de {totalPatientsWithWounds} pacientes com evoluções.
           </div>
         </div>

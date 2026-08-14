@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { getRecommendedMaterials, getAssignedDoctors } from '../services/supabaseService';
 import { generatePersonalizedProtocol } from '../services/geminiService';
 
@@ -198,7 +199,7 @@ const formatMaterialsForView = (materialsList, isClinician) => {
   });
 }
 
-export default function ProtocolGuide({ currentUser, clinicalProfile, entries = [], setActiveTab: setAppActiveTab }) {
+export default function ProtocolGuide({ currentUser, clinicalProfile, entries = [], setActiveTab: setAppActiveTab, onClose, embeddedMode = false }) {
   const [activeTab] = useState('ai-protocol');
   const [loading, setLoading] = useState(false);
   const [aiProtocol, setAiProtocol] = useState(null);
@@ -660,19 +661,99 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
     );
   }
 
-  return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <h2 style={{ fontSize: '20px', fontFamily: 'var(--font-display)', fontWeight: '700', margin: 0 }}>
-            Guias e Protocolos Clínicos
-          </h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            Instruções seguras para desbridamento, curativo e controle de comorbidades
-          </p>
+  const modalContent = (
+    <div className="protocol-guide-modal-backdrop" style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'rgba(15, 23, 42, 0.82)',
+      backdropFilter: 'blur(12px)',
+      zIndex: 99999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '16px'
+    }}>
+      <div className="glass-card glass-card-cyan-glow protocol-guide-modal-card" style={{
+        borderRadius: '24px',
+        maxWidth: 'min(960px, 94vw)',
+        width: '100%',
+        maxHeight: 'calc(100vh - 48px)',
+        overflow: 'hidden',
+        padding: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'rgba(255, 255, 255, 0.96)',
+        border: '1px solid rgba(2, 132, 199, 0.25)',
+        boxShadow: '0 20px 50px rgba(2, 132, 199, 0.15), 0 0 30px rgba(2, 132, 199, 0.08)',
+        boxSizing: 'border-box'
+      }}>
+        {/* 1. FIXED HEADER LAYER */}
+        <div style={{
+          padding: '18px 24px',
+          borderBottom: '1px solid rgba(2, 132, 199, 0.15)',
+          display: 'flex',
+          justify: 'space-between',
+          alignItems: 'flex-start',
+          backgroundColor: 'rgba(2, 132, 199, 0.05)',
+          flexShrink: 0,
+          gap: '16px'
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              display: 'inline-block',
+              backgroundColor: 'rgba(2, 132, 199, 0.15)',
+              color: '#0284c7',
+              fontSize: '11px',
+              fontWeight: '800',
+              padding: '4px 12px',
+              borderRadius: '50px',
+              border: '1px solid rgba(2, 132, 199, 0.3)',
+              marginBottom: '6px'
+            }}>
+              📋 ORIENTAÇÃO & CONDUTAS CLÍNICAS
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+              Guia de Protocolos Terapêuticos Personalizados
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0', fontWeight: '500' }}>
+              {clinicalProfile?.name ? `Paciente: ${clinicalProfile.name}` : 'Instruções seguras para desbridamento, curativo e controle de comorbidades'}
+            </p>
+          </div>
+
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title="Fechar Janela"
+              className="no-print"
+              style={{
+                backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                border: '1px solid rgba(2, 132, 199, 0.25)',
+                borderRadius: '50%',
+                width: '38px',
+                height: '38px',
+                color: '#0284c7',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                flexShrink: 0
+              }}
+            >
+              ✕
+            </button>
+          )}
         </div>
-      </div>
+
+        {/* 2. SCROLLABLE BODY LAYER */}
+        <div className="irec-glass-scroll protocol-guide-scroll-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
       {/* Comorbidity Badges for Active Patient */}
       <div className="glass-card animate-fade-in" style={{ padding: '12px 16px', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -1052,7 +1133,6 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
                   </p>
                 </div>
               )}
-
             </div>
           ) : (
             <div className="glass-card" style={{ padding: '24px', textAlign: 'center' }}>
@@ -1062,186 +1142,95 @@ export default function ProtocolGuide({ currentUser, clinicalProfile, entries = 
             </div>
           )}
         </div>
-      
+      </div>
+    </div>
 
-      {/* Premium Booking Modal */}
-      {bookingModal.isOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 999999,
+        {/* 3. FIXED FOOTER LAYER */}
+        <div className="no-print" style={{
+          padding: '14px 24px',
+          borderTop: '1px solid rgba(2, 132, 199, 0.15)',
+          backgroundColor: 'rgba(2, 132, 199, 0.03)',
           display: 'flex',
+          justify: 'space-between',
           alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-          animation: 'fadeIn 0.25s ease-out'
+          flexWrap: 'wrap',
+          gap: '12px',
+          flexShrink: 0
         }}>
-          <div style={{
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1.5px solid var(--border-color)',
-            borderRadius: '20px',
-            boxShadow: 'var(--shadow-xl)',
-            width: '100%',
-            maxWidth: '420px',
-            padding: '24px',
-            position: 'relative',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <button
-              onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
+              type="button"
+              onClick={() => window.print()}
               style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                fontSize: '22px',
+                backgroundColor: '#0284c7',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '30px',
+                padding: '8px 18px',
+                fontSize: '12px',
+                fontWeight: '800',
                 cursor: 'pointer',
-                fontWeight: 'bold',
-                lineHeight: 1
-              }}
-            >
-              &times;
-            </button>
-
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                backgroundColor: bookingModal.isIrecPartner ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '28px',
-                color: bookingModal.isIrecPartner ? 'var(--success-light)' : 'var(--primary)',
-                animation: 'pulse 2s infinite'
-              }}>
-                {bookingModal.isIrecPartner ? '🤝' : '🏪'}
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
-                Redirecionando para o Parceiro...
-              </h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4' }}>
-                Você está sendo redirecionado para o site parceiro para concluir sua compra com segurança.
-              </p>
-            </div>
-
-            <div style={{
-              backgroundColor: 'var(--bg-primary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              padding: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px'
-            }}>
-              <div>
-                <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Insumo Recomendado</span>
-                <div style={{ fontSize: '13.5px', fontWeight: '750', color: 'var(--text-primary)', marginTop: '2px' }}>{bookingModal.itemName}</div>
-              </div>
-              <div>
-                <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Farmácia / Canal de Venda</span>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginTop: '2px' }}>🏪 {bookingModal.partnerName}</div>
-              </div>
-              <div>
-                <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Indicação & Autoria</span>
-                <div style={{ fontSize: '12.5px', fontWeight: '750', color: bookingModal.isIrecPartner ? 'var(--success-light)' : 'var(--primary)', marginTop: '2px' }}>
-                  {bookingModal.isIrecPartner ? '🤝 Parceiro Credenciado Oficial iRec' : `👨‍⚕️ Indicação de Dr(a). ${bookingModal.doctorName}`}
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-                <div>
-                  <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Preço Referência</span>
-                  <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>{bookingModal.itemPrice}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: '800' }}>Conexão</span>
-                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'flex-end', marginTop: '2px' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-                    Segura
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              padding: '12px',
-              backgroundColor: 'rgba(59, 130, 246, 0.05)',
-              border: '1px solid rgba(59, 130, 246, 0.12)',
-              borderRadius: '10px',
-              textAlign: 'center',
-              fontSize: '11.5px',
-              fontWeight: '700',
-              color: 'var(--text-secondary)'
-            }}>
-              <span>🔗 Redirecionando automaticamente em <strong>{bookingModal.countdown}s</strong>...</span>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
-              <button
-                onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
-                className="btn btn-secondary"
-                style={{ fontSize: '12.5px', height: '38px', padding: 0 }}
-              >
-                Cancelar
-              </button>
-              <a
-                href={bookingModal.affiliateLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setBookingModal(prev => ({ ...prev, isOpen: false }))}
-                className="btn btn-primary"
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  textDecoration: 'none', 
-                  fontSize: '12.5px', 
-                  height: '38px', 
-                  padding: 0 
-                }}
-              >
-                Ir para o Site Agora
-              </a>
-            </div>
+                gap: '6px'
+              }}
+            >
+              <span>🖨️</span>
+              <span>Imprimir Protocolo</span>
+            </button>
           </div>
-        </div>
-      )}
 
-      {/* CSS Animation injection */}
+          <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: '600' }}>
+            Baseado em Diretrizes COFEN & Consenso WUWHS
+          </span>
+        </div>
+      </div>
+
       <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scaleIn {
-          from { transform: scale(0.95); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-        @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
+        @media print {
+          .protocol-guide-modal-backdrop {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: #ffffff !important;
+            backdrop-filter: none !important;
+            padding: 0 !important;
+            display: block !important;
+            z-index: 999999 !important;
+          }
+          .protocol-guide-modal-card {
+            max-width: 100% !important;
+            width: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: #ffffff !important;
+            display: block !important;
+          }
+          .protocol-guide-scroll-body {
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
+            padding: 0 !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          * {
+            color: #0f172a !important;
+            box-shadow: none !important;
+          }
         }
       `}</style>
     </div>
   );
+
+  if (!embeddedMode && typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }

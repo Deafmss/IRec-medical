@@ -293,9 +293,39 @@ export default function Login({ onLoginSuccess }) {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: radial-gradient(circle at 10% 20%, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+          background-color: var(--bg-primary);
           padding: 20px;
           font-family: var(--font-primary);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .login-page-wrapper::before {
+          content: '';
+          position: absolute;
+          top: 15%;
+          left: 20%;
+          width: 380px;
+          height: 380px;
+          background: radial-gradient(circle, rgba(2, 132, 199, 0.16) 0%, rgba(2, 132, 199, 0) 70%);
+          border-radius: 50%;
+          pointer-events: none;
+          filter: blur(40px);
+          z-index: 0;
+        }
+
+        .login-page-wrapper::after {
+          content: '';
+          position: absolute;
+          bottom: 15%;
+          right: 20%;
+          width: 380px;
+          height: 380px;
+          background: radial-gradient(circle, rgba(14, 165, 233, 0.14) 0%, rgba(14, 165, 233, 0) 70%);
+          border-radius: 50%;
+          pointer-events: none;
+          filter: blur(40px);
+          z-index: 0;
         }
         
         .login-card {
@@ -306,12 +336,14 @@ export default function Login({ onLoginSuccess }) {
           -webkit-backdrop-filter: blur(20px);
           border: 1px solid var(--glass-border);
           border-radius: var(--radius-lg);
-          box-shadow: var(--shadow-lg), var(--shadow-glow);
+          box-shadow: var(--shadow-lg), 0 0 24px rgba(2, 132, 199, 0.08);
           padding: 40px 32px;
           animation: loginFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           display: flex;
           flex-direction: column;
           gap: 24px;
+          position: relative;
+          z-index: 1;
         }
 
         @keyframes loginFadeIn {
@@ -327,21 +359,6 @@ export default function Login({ onLoginSuccess }) {
           gap: 8px;
         }
 
-        .login-logo-badge {
-          width: 48px;
-          height: 48px;
-          border-radius: 14px;
-          background: linear-gradient(135deg, var(--primary), var(--accent));
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #ffffff;
-          font-weight: 800;
-          font-size: 24px;
-          font-family: var(--font-display);
-          box-shadow: 0 4px 12px var(--primary-glow);
-        }
-
         .login-title {
           font-size: 26px;
           font-weight: 800;
@@ -353,6 +370,7 @@ export default function Login({ onLoginSuccess }) {
         .login-subtitle {
           font-size: 13.5px;
           color: var(--text-muted);
+          font-weight: 500;
         }
 
         .login-tabs {
@@ -378,7 +396,8 @@ export default function Login({ onLoginSuccess }) {
 
         .login-tab-btn.active {
           background-color: var(--bg-secondary);
-          color: var(--primary);
+          color: #0284c7;
+          font-weight: 700;
           box-shadow: var(--shadow-sm);
         }
 
@@ -404,14 +423,15 @@ export default function Login({ onLoginSuccess }) {
         }
 
         .role-option:hover {
-          border-color: var(--primary-light);
-          background-color: var(--primary-glow);
+          border-color: rgba(2, 132, 199, 0.4);
+          background-color: rgba(2, 132, 199, 0.05);
         }
 
         .role-option.active {
-          border-color: var(--primary);
-          background-color: var(--primary-glow);
-          color: var(--primary);
+          border-color: #0284c7;
+          background-color: rgba(2, 132, 199, 0.08);
+          color: #0284c7;
+          font-weight: 700;
         }
 
         .role-option svg {
@@ -437,7 +457,7 @@ export default function Login({ onLoginSuccess }) {
           color: var(--text-secondary);
         }
 
-        .form-input {
+        .form-input, .form-select {
           padding: 12px 16px;
           border-radius: var(--radius-md);
           border: 1px solid var(--border-color);
@@ -447,24 +467,9 @@ export default function Login({ onLoginSuccess }) {
           transition: var(--transition-fast);
         }
 
-        .form-input:focus {
-          border-color: var(--primary);
-          box-shadow: 0 0 0 3px var(--primary-glow);
-        }
-
-        .form-select {
-          padding: 12px 16px;
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border-color);
-          background-color: var(--bg-secondary);
-          color: var(--text-primary);
-          font-size: 14px;
-          cursor: pointer;
-          transition: var(--transition-fast);
-        }
-
-        .form-select:focus {
-          border-color: var(--primary);
+        .form-input:focus, .form-select:focus {
+          border-color: #0284c7;
+          box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
         }
 
         .error-message {
@@ -525,30 +530,27 @@ export default function Login({ onLoginSuccess }) {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          padding: 10px 16px;
-          border-radius: var(--radius-md);
+          padding: 11px 20px;
+          border-radius: 50px;
           border: 1px solid var(--border-color);
           background-color: var(--bg-secondary);
           color: var(--text-primary);
-          font-size: 13px;
+          font-size: 13.5px;
           font-weight: 600;
           cursor: pointer;
           transition: var(--transition-smooth);
           gap: 8px;
+          box-shadow: var(--shadow-sm);
         }
 
         .social-btn:hover {
           background-color: var(--bg-primary);
           border-color: var(--text-muted);
-        }
-
-        .social-btn svg {
-          width: 18px;
-          height: 18px;
+          transform: translateY(-1px);
         }
       `}</style>
 
-      <div className="login-card">
+      <div className="login-card glass-card">
         <div className="login-header" style={{ marginBottom: '10px' }}>
           <img 
             src="/logo.png" 
@@ -941,7 +943,7 @@ export default function Login({ onLoginSuccess }) {
             onClick={() => handleSocialLogin('Google')}
             style={{ width: '100%' }}
           >
-            <svg viewBox="0 0 24 24">
+            <svg viewBox="0 0 24 24" style={{ width: '20px', height: '20px', flexShrink: 0 }}>
               <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.69c-.29 1.5-1.14 2.78-2.4 3.63v3.02h3.89c2.28-2.1 3.56-5.17 3.56-8.5z"/>
               <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.89-3.02c-1.08.72-2.45 1.16-4.04 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.11C3.18 21.88 7.39 24 12 24z"/>
               <path fill="#FBBC05" d="M5.32 14.27c-.24-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.62H1.21C.44 8.16 0 9.88 0 12s.44 3.84 1.21 5.38l4.11-3.11z"/>

@@ -273,12 +273,34 @@ export default function ClinicalHistory({ entries = [], clinicalProfile, current
           </h2>
         </div>
 
-        <div className="no-print" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div className="no-print" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           <button 
             type="button"
             onClick={() => setShowComparatorModal(true)}
-            className="btn btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', fontSize: '13px', borderRadius: '12px' }}
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              padding: '9px 18px', 
+              fontSize: '12.5px', 
+              fontWeight: '600',
+              borderRadius: '20px',
+              backgroundColor: 'var(--glass-bg)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid var(--glass-border)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#0284c7';
+              e.currentTarget.style.color = '#0284c7';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--glass-border)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
           >
             <span>🔀</span>
             <span>Comparar Evolução</span>
@@ -287,8 +309,30 @@ export default function ClinicalHistory({ entries = [], clinicalProfile, current
           <button 
             type="button"
             onClick={() => setShowTelemetryModal(true)}
-            className="btn btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', fontSize: '13px', borderRadius: '12px' }}
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              padding: '9px 18px', 
+              fontSize: '12.5px', 
+              fontWeight: '600',
+              borderRadius: '20px',
+              backgroundColor: 'var(--glass-bg)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid var(--glass-border)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#0284c7';
+              e.currentTarget.style.color = '#0284c7';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--glass-border)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
           >
             <span>🩺</span>
             <span>Sinais Vitais</span>
@@ -297,8 +341,22 @@ export default function ClinicalHistory({ entries = [], clinicalProfile, current
           <button 
             type="button"
             onClick={handlePrint}
-            className="btn btn-primary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontSize: '13px', borderRadius: '12px' }}
+            style={{ 
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '10px 24px',
+              borderRadius: '30px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              fontWeight: '700',
+              fontSize: '13px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 18px rgba(2, 132, 199, 0.4)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
           >
             <span>🖨️</span>
             <span>Exportar PDF</span>
@@ -338,7 +396,7 @@ export default function ClinicalHistory({ entries = [], clinicalProfile, current
             📜
           </div>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
               Nenhum Registro de Avaliação no Prontuário
             </h3>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, maxWidth: '380px', lineHeight: '1.5' }}>
@@ -349,10 +407,26 @@ export default function ClinicalHistory({ entries = [], clinicalProfile, current
             <button
               type="button"
               onClick={() => setActiveTab('triage')}
-              className="btn btn-primary"
-              style={{ padding: '12px 24px', fontSize: '14px', borderRadius: '12px', marginTop: '6px' }}
+              style={{ 
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '12px 28px',
+                borderRadius: '30px',
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                fontWeight: '700',
+                fontSize: '13.5px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 18px rgba(2, 132, 199, 0.4)',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                marginTop: '6px'
+              }}
             >
-              📷 Fazer Primeira Triagem Agora
+              <span>📷</span>
+              <span>Fazer Primeira Triagem Agora</span>
             </button>
           )}
         </div>
@@ -362,9 +436,9 @@ export default function ClinicalHistory({ entries = [], clinicalProfile, current
           <div className="history-charts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px', marginBottom: '24px' }}>
             
             {/* Chart 1: Visual Healing Evolution (% Progress) with horizontal scroll fix (IREC-0249) */}
-            <div className="glass-card glass-card-emerald-glow" style={{ margin: 0, overflowX: 'auto', minWidth: 0 }}>
+            <div className="glass-card glass-card-emerald-glow" style={{ margin: 0, overflowX: entries.length > 8 ? 'auto' : 'hidden', scrollbarWidth: 'none', msOverflowStyle: 'none', minWidth: 0 }}>
               <div style={{ position: 'relative', zIndex: 1, minWidth: entries.length > 8 ? `${entries.length * 40}px` : 'auto' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 12px 0', color: 'var(--text-primary)' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 12px 0', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
                   📈 Epitelização / Pele Cicatrizada (%)
                 </h3>
                 
@@ -402,10 +476,10 @@ export default function ClinicalHistory({ entries = [], clinicalProfile, current
             </div>
 
             {/* Chart 2: Pain Level Control (0-10) with horizontal scroll fix (IREC-0249) */}
-            <div className="glass-card glass-card-cyan-glow" style={{ margin: 0, overflowX: 'auto', minWidth: 0 }}>
+            <div className="glass-card glass-card-cyan-glow" style={{ margin: 0, overflowX: entries.length > 8 ? 'auto' : 'hidden', scrollbarWidth: 'none', msOverflowStyle: 'none', minWidth: 0 }}>
               <div style={{ position: 'relative', zIndex: 1, minWidth: entries.length > 8 ? `${entries.length * 40}px` : 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
                     🩸 Controle de Dor (Escala 0-10)
                   </h3>
                   <span className="badge" style={{ backgroundColor: 'rgba(2, 132, 199, 0.15)', color: 'var(--primary)', fontWeight: '800', fontSize: '11px' }}>

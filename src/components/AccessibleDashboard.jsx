@@ -299,52 +299,62 @@ export default function AccessibleDashboard({
       recognition.onend = () => {
         setIsRecording(false);
       };
-
-      recognition.start();
     }
   };
 
   return (
-    <div style={{
-      maxWidth: '800px',
+    <div className="animate-fade-in" style={{
+      maxWidth: '720px',
       margin: '0 auto',
-      padding: '16px',
       display: 'flex',
       flexDirection: 'column',
       gap: '20px',
       fontFamily: 'var(--font-primary, sans-serif)'
     }}>
       {/* Top Welcome & Mode Indicator */}
-      <div style={{
-        backgroundColor: '#1e293b',
-        borderRadius: '20px',
-        padding: '20px',
-        border: '2px solid #334155',
+      <div className="glass-card glass-card-cyan-glow" style={{
+        padding: '20px 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '12px'
+        gap: '16px',
+        border: '1px solid rgba(2, 132, 199, 0.25)',
+        backgroundColor: 'rgba(255, 255, 255, 0.96)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
-            fontSize: '36px',
-            width: '60px',
-            height: '60px',
+            fontSize: '32px',
+            width: '56px',
+            height: '56px',
             borderRadius: '50%',
-            backgroundColor: '#0284c7',
+            backgroundColor: 'rgba(2, 132, 199, 0.12)',
+            border: '1px solid rgba(2, 132, 199, 0.3)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            flexShrink: 0
           }}>
             👵
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '800', color: '#ffffff' }}>
+            <div style={{
+              display: 'inline-block',
+              backgroundColor: 'rgba(2, 132, 199, 0.15)',
+              color: '#0284c7',
+              fontSize: '11px',
+              fontWeight: '800',
+              padding: '3px 10px',
+              borderRadius: '50px',
+              marginBottom: '4px'
+            }}>
+              🧏‍♂️ MODO FÁCIL & ACESSIBILIDADE
+            </div>
+            <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
               Olá, {clinicalProfile?.name?.split(' ')[0] || 'Amigo(a)'}!
             </h1>
-            <span style={{ fontSize: '15px', color: '#38bdf8', fontWeight: '700' }}>
-              Primeiro Atendimento Médico por Voz iRec
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>
+              Atendimento Clínico Guiado por Voz & Fotos
             </span>
           </div>
         </div>
@@ -357,19 +367,20 @@ export default function AccessibleDashboard({
             backgroundColor: '#ef4444',
             color: '#ffffff',
             border: 'none',
-            borderRadius: '16px',
-            padding: '14px 20px',
+            borderRadius: '50px',
+            padding: '12px 22px',
             fontWeight: '800',
-            fontSize: '16px',
+            fontSize: '14px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            boxShadow: '0 8px 20px rgba(239, 68, 68, 0.4)'
+            gap: '8px',
+            boxShadow: '0 8px 20px rgba(239, 68, 68, 0.35)',
+            transition: 'all 0.2s ease'
           }}
         >
-          <span style={{ fontSize: '22px' }}>🚨</span>
-          <span>SOCORRO / EMERGÊNCIA</span>
+          <span style={{ fontSize: '18px' }}>🚨</span>
+          <span>EMERGÊNCIA 192</span>
         </button>
       </div>
 
@@ -379,13 +390,13 @@ export default function AccessibleDashboard({
           type="button"
           onClick={requestNotificationPermission}
           style={{
-            backgroundColor: '#1e293b',
-            color: '#38bdf8',
-            border: '2px dashed #0284c7',
+            backgroundColor: 'rgba(2, 132, 199, 0.06)',
+            color: '#0284c7',
+            border: '1.5px dashed rgba(2, 132, 199, 0.35)',
             borderRadius: '16px',
             padding: '14px 18px',
             fontWeight: '800',
-            fontSize: '14.5px',
+            fontSize: '13.5px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -393,12 +404,12 @@ export default function AccessibleDashboard({
             gap: '10px'
           }}
         >
-          <span style={{ fontSize: '20px' }}>🔔</span>
-          <span>ATIVAR ALERTA FIXO DE EMERGÊNCIA NA BARRA DO CELULAR</span>
+          <span style={{ fontSize: '18px' }}>🔔</span>
+          <span>ATIVAR NOTIFICAÇÃO FIXA DE EMERGÊNCIA NO CELULAR</span>
         </button>
       )}
 
-      {/* Big Voice Button for First-Line Care (fixes IREC-0209) */}
+      {/* Big Voice Button for First-Line Care */}
       <button
         type="button"
         role="button"
@@ -413,77 +424,82 @@ export default function AccessibleDashboard({
         onClick={handleVoiceRecord}
         style={{
           width: '100%',
-          border: 'none',
+          border: isRecording ? '2px solid #ef4444' : '2px solid rgba(2, 132, 199, 0.4)',
           backgroundColor: isRecording ? '#dc2626' : '#0284c7',
           borderRadius: '24px',
-          padding: '26px',
+          padding: '28px 24px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '12px',
           cursor: 'pointer',
-          boxShadow: '0 10px 25px rgba(2, 132, 199, 0.3)',
-          transition: 'all 0.3s'
+          boxShadow: isRecording ? '0 12px 35px rgba(239, 68, 68, 0.45)' : '0 12px 35px rgba(2, 132, 199, 0.35)',
+          transition: 'all 0.3s ease'
         }}
       >
-        <span style={{ fontSize: '52px' }}>{isRecording ? '🎙️🔴' : '🎙️'}</span>
-        <span style={{ fontSize: '21px', fontWeight: '900', color: '#ffffff', textAlign: 'center' }}>
+        <span style={{ fontSize: '56px', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }}>
+          {isRecording ? '🎙️🔴' : '🎙️'}
+        </span>
+        <span style={{ fontSize: '20px', fontWeight: '900', color: '#ffffff', textAlign: 'center', fontFamily: 'var(--font-display)', letterSpacing: '0.01em' }}>
           {isRecording ? 'OUVINDO... FALE SEUS SINTOMAS!' : 'APERTE AQUI E FALE O QUE ESTÁ SENTINDO'}
         </span>
-        <span style={{ fontSize: '13.5px', color: '#e0f2fe', fontWeight: '600' }}>
+        <span style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.9)', fontWeight: '600' }}>
           Fale livremente como se estivesse conversando com o médico!
         </span>
       </button>
 
       {voiceQuery && (
-        <div style={{ fontSize: '15px', color: '#38bdf8', fontStyle: 'italic', textAlign: 'center', fontWeight: '700' }}>
-          🗣️ Relato por Voz: "{voiceQuery}"
+        <div className="glass-card" style={{ padding: '12px 18px', textAlign: 'center' }}>
+          <span style={{ fontSize: '14px', color: '#0284c7', fontWeight: '800' }}>
+            🗣️ Relato Gravado: "{voiceQuery}"
+          </span>
         </div>
       )}
 
       {loadingAi && (
-        <div style={{
-          padding: '20px',
-          backgroundColor: '#1e293b',
-          borderRadius: '20px',
-          border: '2px solid #0284c7',
+        <div className="glass-card" style={{
+          padding: '24px',
           textAlign: 'center',
-          color: '#38bdf8',
-          fontSize: '18px',
-          fontWeight: '700',
-          boxShadow: '0 8px 24px rgba(2, 132, 199, 0.2)'
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px',
+          border: '1.5px solid rgba(2, 132, 199, 0.3)'
         }}>
-          ⏳ O Assistente Clínico iRec está analisando seus sintomas e salvando em seu prontuário...
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(2, 132, 199, 0.2)', borderTopColor: '#0284c7', animation: 'spin 1s linear infinite' }} />
+          <span style={{ color: '#0284c7', fontSize: '15px', fontWeight: '800' }}>
+            O Assistente Clínico iRec está analisando seus sintomas por voz...
+          </span>
         </div>
       )}
 
       {/* MEDICAL AI TRIAGE & ADVICE RESPONSE CARD */}
       {aiResponse && !loadingAi && (
-        <div style={{
-          backgroundColor: '#0f172a',
+        <div className="glass-card" style={{
           borderRadius: '24px',
           padding: '24px',
-          border: `3px solid ${triageRiskLevel === 'Vermelho' ? '#ef4444' : (triageRiskLevel === 'Amarelo' ? '#f59e0b' : '#10b981')}`,
+          borderLeft: `6px solid ${triageRiskLevel === 'Vermelho' ? '#ef4444' : (triageRiskLevel === 'Amarelo' ? '#f59e0b' : '#10b981')}`,
           display: 'flex',
           flexDirection: 'column',
-          gap: '14px',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+          gap: '16px',
+          backgroundColor: 'rgba(255, 255, 255, 0.98)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155', paddingBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(2, 132, 199, 0.15)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{
-                backgroundColor: triageRiskLevel === 'Vermelho' ? '#ef4444' : (triageRiskLevel === 'Amarelo' ? '#f59e0b' : '#10b981'),
-                color: '#ffffff',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                fontWeight: '900',
-                fontSize: '12px',
+                backgroundColor: triageRiskLevel === 'Vermelho' ? 'rgba(239, 68, 68, 0.15)' : (triageRiskLevel === 'Amarelo' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)'),
+                color: triageRiskLevel === 'Vermelho' ? '#ef4444' : (triageRiskLevel === 'Amarelo' ? '#d97706' : '#10b981'),
+                border: `1px solid ${triageRiskLevel === 'Vermelho' ? 'rgba(239, 68, 68, 0.3)' : (triageRiskLevel === 'Amarelo' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)')}`,
+                padding: '4px 12px',
+                borderRadius: '50px',
+                fontWeight: '800',
+                fontSize: '11.5px',
                 textTransform: 'uppercase'
               }}>
                 {triageRiskLevel === 'Vermelho' ? '🚨 Risco Urgente' : (triageRiskLevel === 'Amarelo' ? '🟡 Recomendada Teleconsulta' : '🟢 Cuidados em Casa')}
               </span>
-              <span style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff' }}>
+              <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>
                 {selectedSymptomTitle || 'Orientação Médica por Voz'}
               </span>
             </div>
@@ -491,13 +507,13 @@ export default function AccessibleDashboard({
               type="button"
               onClick={() => speakText(aiResponse)}
               style={{
-                backgroundColor: '#0284c7',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '12px',
+                backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                color: '#0284c7',
+                border: '1px solid rgba(2, 132, 199, 0.25)',
+                borderRadius: '50px',
                 padding: '8px 16px',
                 fontWeight: '800',
-                fontSize: '13.5px',
+                fontSize: '12.5px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -509,23 +525,23 @@ export default function AccessibleDashboard({
             </button>
           </div>
 
-          <p style={{ margin: 0, fontSize: '19px', lineHeight: '1.65', color: '#ffffff', fontWeight: '600' }}>
+          <p style={{ margin: 0, fontSize: '16px', lineHeight: '1.65', color: 'var(--text-primary)', fontWeight: '600' }}>
             "{aiResponse}"
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px', borderTop: '1px solid #334155', paddingTop: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px', borderTop: '1px solid rgba(2, 132, 199, 0.12)', paddingTop: '10px' }}>
             {savedToRecord ? (
               <span style={{ fontSize: '12px', color: '#10b981', fontWeight: '700' }}>
                 ✓ Registrado automaticamente na ficha médica para acompanhamento dos doutores.
               </span>
             ) : (
-              <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>
                 ℹ️ Orientação clínica em tempo real.
               </span>
             )}
           </div>
 
-          {/* Action buttons based on risk level (fixes IREC-0428) */}
+          {/* Action buttons based on risk level */}
           {triageRiskLevel === 'Amarelo' && (
             <button
               type="button"
@@ -535,15 +551,15 @@ export default function AccessibleDashboard({
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '14px',
-                padding: '12px',
-                fontSize: '15px',
+                padding: '14px',
+                fontSize: '14.5px',
                 fontWeight: '800',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                marginTop: '4px'
+                boxShadow: '0 6px 16px rgba(245, 158, 11, 0.3)'
               }}
             >
               <span>👨‍⚕️</span>
@@ -560,15 +576,14 @@ export default function AccessibleDashboard({
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '14px',
-                padding: '12px',
-                fontSize: '16px',
+                padding: '14px',
+                fontSize: '15px',
                 fontWeight: '900',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                marginTop: '4px',
                 boxShadow: '0 6px 16px rgba(239, 68, 68, 0.4)'
               }}
             >
@@ -579,44 +594,43 @@ export default function AccessibleDashboard({
         </div>
       )}
 
-      {/* QUICK SYMPTOM CATEGORIES WITH ACCESSIBLE IMAGES (fixes IREC-0211) */}
+      {/* QUICK SYMPTOM CATEGORIES WITH ACCESSIBLE IMAGES */}
       <div>
         <div style={{
-          backgroundColor: '#1e293b',
-          padding: '16px',
-          borderRadius: '14px',
-          border: '2px solid #0284c7',
-          marginBottom: '16px',
-          boxShadow: '0 4px 12px rgba(2, 132, 199, 0.15)'
+          backgroundColor: 'rgba(2, 132, 199, 0.05)',
+          padding: '14px 18px',
+          borderRadius: '16px',
+          border: '1px solid rgba(2, 132, 199, 0.2)',
+          marginBottom: '14px'
         }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff', margin: 0 }}>
-            👉 Ou toque na imagem do sintoma para consultar o Assistente Clínico:
+          <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, fontFamily: 'var(--font-display)' }}>
+            👉 Ou toque no sintoma para consultar o Assistente Clínico:
           </h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
           {symptomCategories.map((cat) => (
             <button
               key={cat.id}
               type="button"
               onClick={() => handleSelectSymptom(cat)}
+              className="glass-card"
               style={{
-                backgroundColor: '#1e293b',
-                border: `3px solid ${cat.color}`,
+                border: `2px solid ${cat.color}`,
                 borderRadius: '20px',
-                padding: '20px 14px',
+                padding: '18px 14px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '10px',
+                gap: '8px',
                 cursor: 'pointer',
-                transition: 'transform 0.2s',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                transition: 'all 0.2s ease',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)'
               }}
             >
-              <span style={{ fontSize: '42px' }}>{cat.icon}</span>
-              <span style={{ fontSize: '16px', fontWeight: '800', color: '#ffffff', textAlign: 'center' }}>
+              <span style={{ fontSize: '38px' }}>{cat.icon}</span>
+              <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', textAlign: 'center' }}>
                 {cat.title}
               </span>
             </button>
@@ -625,7 +639,7 @@ export default function AccessibleDashboard({
       </div>
 
       {/* Direct Quick Action Buttons */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '4px' }}>
         <button
           type="button"
           onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('upload'); }}
@@ -634,15 +648,15 @@ export default function AccessibleDashboard({
             color: '#ffffff',
             border: 'none',
             borderRadius: '20px',
-            padding: '18px',
-            fontSize: '16px',
+            padding: '18px 14px',
+            fontSize: '15px',
             fontWeight: '800',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: '8px',
-            boxShadow: '0 6px 16px rgba(16, 185, 129, 0.3)'
+            boxShadow: '0 6px 18px rgba(16, 185, 129, 0.35)'
           }}
         >
           <span style={{ fontSize: '32px' }}>📸</span>
@@ -653,19 +667,19 @@ export default function AccessibleDashboard({
           type="button"
           onClick={() => { stopAudioSpeech(); triggerVibration(); setActiveTab('doctors_directory'); }}
           style={{
-            backgroundColor: '#8b5cf6',
+            backgroundColor: '#0284c7',
             color: '#ffffff',
             border: 'none',
             borderRadius: '20px',
-            padding: '18px',
-            fontSize: '16px',
+            padding: '18px 14px',
+            fontSize: '15px',
             fontWeight: '800',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: '8px',
-            boxShadow: '0 6px 16px rgba(139, 92, 246, 0.3)'
+            boxShadow: '0 6px 18px rgba(2, 132, 199, 0.35)'
           }}
         >
           <span style={{ fontSize: '32px' }}>👨‍⚕️</span>

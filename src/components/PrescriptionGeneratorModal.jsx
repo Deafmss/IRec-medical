@@ -87,7 +87,7 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
       }
     }
 
-    const docId = 'IREC-' + Math.floor(100000 + Math.random() * 900000);
+    const docId = 'IREC-' + Date.now().toString().slice(-6);
     const currentDate = new Date().toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: 'long',
@@ -209,24 +209,38 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
       {!generatedDocument ? (
         /* FORM VIEW */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Document Type Selector */}
+          {/* Document Type Selector (Segmented Control Track) */}
           <div>
-            <label style={{ fontSize: '13px', fontWeight: '800', color: '#38bdf8', display: 'block', marginBottom: '8px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '800', color: '#38bdf8', display: 'block', marginBottom: '8px', letterSpacing: '0.5px' }}>
               TIPO DE DOCUMENTO:
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              width: '100%',
+              gap: '6px',
+              padding: '6px',
+              background: 'rgba(2, 132, 199, 0.08)',
+              border: '1px solid rgba(2, 132, 199, 0.25)',
+              borderRadius: '30px',
+              backdropFilter: 'blur(10px)',
+              boxSizing: 'border-box'
+            }}>
               <button
                 type="button"
                 onClick={() => { triggerVibration(); setDocumentType('receita'); setErrorMessage(''); }}
                 style={{
-                  backgroundColor: documentType === 'receita' ? '#0284c7' : '#0f172a',
-                  border: `2px solid ${documentType === 'receita' ? '#38bdf8' : '#334155'}`,
-                  color: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '10px',
+                  flex: 1,
+                  background: documentType === 'receita' ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'transparent',
+                  border: documentType === 'receita' ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid transparent',
+                  color: documentType === 'receita' ? '#ffffff' : '#94a3b8',
+                  borderRadius: '24px',
+                  padding: '9px 12px',
                   fontWeight: '800',
                   fontSize: '13.5px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  boxShadow: documentType === 'receita' ? '0 4px 14px rgba(2, 132, 199, 0.4)' : 'none',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
                 💊 Receituário
@@ -236,14 +250,17 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
                 type="button"
                 onClick={() => { triggerVibration(); setDocumentType('atestado'); setErrorMessage(''); }}
                 style={{
-                  backgroundColor: documentType === 'atestado' ? '#0284c7' : '#0f172a',
-                  border: `2px solid ${documentType === 'atestado' ? '#38bdf8' : '#334155'}`,
-                  color: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '10px',
+                  flex: 1,
+                  background: documentType === 'atestado' ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'transparent',
+                  border: documentType === 'atestado' ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid transparent',
+                  color: documentType === 'atestado' ? '#ffffff' : '#94a3b8',
+                  borderRadius: '24px',
+                  padding: '9px 12px',
                   fontWeight: '800',
                   fontSize: '13.5px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  boxShadow: documentType === 'atestado' ? '0 4px 14px rgba(2, 132, 199, 0.4)' : 'none',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
                 📄 Atestado
@@ -253,14 +270,17 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
                 type="button"
                 onClick={() => { triggerVibration(); setDocumentType('encaminhamento'); setErrorMessage(''); }}
                 style={{
-                  backgroundColor: documentType === 'encaminhamento' ? '#0284c7' : '#0f172a',
-                  border: `2px solid ${documentType === 'encaminhamento' ? '#38bdf8' : '#334155'}`,
-                  color: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '10px',
+                  flex: 1,
+                  background: documentType === 'encaminhamento' ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'transparent',
+                  border: documentType === 'encaminhamento' ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid transparent',
+                  color: documentType === 'encaminhamento' ? '#ffffff' : '#94a3b8',
+                  borderRadius: '24px',
+                  padding: '9px 12px',
                   fontWeight: '800',
                   fontSize: '13.5px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  boxShadow: documentType === 'encaminhamento' ? '0 4px 14px rgba(2, 132, 199, 0.4)' : 'none',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
                 🩺 Encaminhamento
@@ -269,9 +289,9 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
           </div>
 
           {/* Patient Info Summary */}
-          <div style={{ backgroundColor: '#0f172a', padding: '12px 16px', borderRadius: '12px', border: '1px solid #334155' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '700' }}>PACIENTE DESTINATÁRIO:</span>
-            <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', marginTop: '2px' }}>
+          <div style={{ backgroundColor: 'var(--glass-bg)', padding: '12px 16px', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
+            <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: '800' }}>PACIENTE DESTINATÁRIO:</span>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px', fontFamily: 'var(--font-display)' }}>
               👤 {patientProfile?.name || 'Paciente iRec'} {patientProfile?.cpf ? `(CPF: ${patientProfile.cpf})` : ''}
             </div>
           </div>
@@ -280,7 +300,7 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
           {documentType === 'receita' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '13px', fontWeight: '800', color: '#34d399' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#10b981', letterSpacing: '0.5px' }}>
                   MEDICAMENTOS & PRESCRIÇÃO:
                 </label>
                 <button
@@ -290,11 +310,12 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
                     backgroundColor: '#10b981',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: '8px',
-                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    padding: '5px 14px',
                     fontSize: '12px',
                     fontWeight: '800',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
                   }}
                 >
                   + Adicionar Item
@@ -302,20 +323,20 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
               </div>
 
               {medications.map((med, idx) => (
-                <div key={med.id || idx} style={{ backgroundColor: '#0f172a', padding: '12px', borderRadius: '14px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div key={med.id || idx} style={{ backgroundColor: 'var(--glass-bg)', padding: '14px', borderRadius: '16px', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input
                       type="text"
                       placeholder="Nome do Medicamento / Cobertura (ex: Soro Fisiológico 0.9%, Colagenase)"
                       value={med.name}
                       onChange={(e) => handleMedicationChange(idx, 'name', e.target.value)}
-                      style={{ flex: 1, backgroundColor: '#1e293b', border: '1px solid #475569', color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '13px' }}
+                      style={{ flex: 1, backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: '10px', fontSize: '13px' }}
                     />
                     {medications.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemoveMedication(idx)}
-                        style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '0 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: '800' }}
+                        style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0 12px', borderRadius: '10px', cursor: 'pointer', fontWeight: '800' }}
                         aria-label="Remover item"
                       >
                         ✕
@@ -328,14 +349,14 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
                       placeholder="Dosagem (ex: 500mg, 1 ampola, 1 tubo)"
                       value={med.dosage}
                       onChange={(e) => handleMedicationChange(idx, 'dosage', e.target.value)}
-                      style={{ backgroundColor: '#1e293b', border: '1px solid #475569', color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '13px' }}
+                      style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: '10px', fontSize: '13px' }}
                     />
                     <input
                       type="text"
                       placeholder="Posologia / Frequência (ex: 12 em 12h por 7 dias)"
                       value={med.frequency}
                       onChange={(e) => handleMedicationChange(idx, 'frequency', e.target.value)}
-                      style={{ backgroundColor: '#1e293b', border: '1px solid #475569', color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '13px' }}
+                      style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: '10px', fontSize: '13px' }}
                     />
                   </div>
                 </div>
@@ -347,7 +368,7 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
           {documentType === 'atestado' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#38bdf8', display: 'block', marginBottom: '4px', letterSpacing: '0.5px' }}>
                   DIAS DE AFASTAMENTO / REPOUSO:
                 </label>
                 <input
@@ -356,18 +377,18 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
                   max="90"
                   value={certificateDays}
                   onChange={(e) => setCertificateDays(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#0f172a', border: '1px solid #475569', color: '#fff', padding: '10px 12px', borderRadius: '10px', fontSize: '14px' }}
+                  style={{ width: '100%', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#38bdf8', display: 'block', marginBottom: '4px', letterSpacing: '0.5px' }}>
                   JUSTIFICATIVA / MOTIVO CLÍNICO:
                 </label>
                 <textarea
                   rows={3}
                   value={certificateReason}
                   onChange={(e) => setCertificateReason(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#0f172a', border: '1px solid #475569', color: '#fff', padding: '10px 12px', borderRadius: '10px', fontSize: '13px', resize: 'none' }}
+                  style={{ width: '100%', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: '10px', fontSize: '13px', resize: 'none', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -376,7 +397,7 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
           {/* ENCAMINHAMENTO FORM */}
           {documentType === 'encaminhamento' && (
             <div>
-              <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#38bdf8', display: 'block', marginBottom: '4px', letterSpacing: '0.5px' }}>
                 PARECER DE ENCAMINHAMENTO & OBSERVAÇÕES:
               </label>
               <textarea
@@ -384,21 +405,21 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
                 placeholder="Descreva o motivo do encaminhamento para o especialista ou serviço de urgência..."
                 value={referralNotes}
                 onChange={(e) => setReferralNotes(e.target.value)}
-                style={{ width: '100%', backgroundColor: '#0f172a', border: '1px solid #475569', color: '#fff', padding: '10px 12px', borderRadius: '10px', fontSize: '13px', resize: 'none' }}
+                style={{ width: '100%', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: '10px', fontSize: '13px', resize: 'none', boxSizing: 'border-box' }}
               />
             </div>
           )}
 
           {/* Additional Notes */}
           <div>
-            <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#cbd5e1', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '12.5px', fontWeight: '800', color: '#38bdf8', display: 'block', marginBottom: '4px', letterSpacing: '0.5px' }}>
               ORIENTAÇÕES ADICIONAIS AO PACIENTE:
             </label>
             <input
               type="text"
               value={additionalNotes}
               onChange={(e) => setAdditionalNotes(e.target.value)}
-              style={{ width: '100%', backgroundColor: '#0f172a', border: '1px solid #475569', color: '#fff', padding: '10px 12px', borderRadius: '10px', fontSize: '13px' }}
+              style={{ width: '100%', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: '10px', fontSize: '13px', boxSizing: 'border-box' }}
             />
           </div>
 
@@ -407,19 +428,26 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
             type="button"
             onClick={handleGenerate}
             style={{
-              backgroundColor: '#0284c7',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              width: '100%',
+              padding: '12px 24px',
+              borderRadius: '30px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
               color: '#ffffff',
-              border: 'none',
-              borderRadius: '14px',
-              padding: '14px',
-              fontWeight: '900',
-              fontSize: '15px',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              fontWeight: '700',
+              fontSize: '14px',
               cursor: 'pointer',
-              marginTop: '10px',
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.4)'
+              marginTop: '12px',
+              boxShadow: '0 4px 18px rgba(2, 132, 199, 0.4)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
-            EMITIR DOCUMENTO OFICIAL iREC
+            <span>📜</span>
+            <span>EMITIR DOCUMENTO OFICIAL iREC</span>
           </button>
         </div>
       ) : (

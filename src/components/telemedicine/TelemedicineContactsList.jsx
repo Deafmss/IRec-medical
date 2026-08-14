@@ -25,12 +25,11 @@ export default function TelemedicineContactsList({
   });
 
   return (
-    <div style={{
+    <div className="glass-panel" style={{
       display: 'flex',
       flexDirection: 'column',
       width: '320px',
-      backgroundColor: 'var(--bg-secondary)',
-      borderRight: '1px solid var(--border-color)',
+      borderRight: '1px solid var(--glass-border)',
       height: '100%',
       flexShrink: 0
     }}>
@@ -47,12 +46,14 @@ export default function TelemedicineContactsList({
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
             width: '100%',
-            padding: '8px 12px',
-            borderRadius: '8px',
+            padding: '10px 14px',
+            borderRadius: '10px',
             border: '1px solid var(--border-color)',
             backgroundColor: 'var(--bg-primary)',
             fontSize: '12.5px',
-            color: 'var(--text-primary)'
+            color: 'var(--text-primary)',
+            outline: 'none',
+            transition: 'all 0.2s ease'
           }}
         />
 
@@ -62,26 +63,30 @@ export default function TelemedicineContactsList({
             { id: 'all', label: 'Todos' },
             { id: 'patients', label: 'Pacientes' },
             { id: 'doctors', label: 'Profissionais' }
-          ].map(filter => (
-            <button
-              key={filter.id}
-              onClick={() => setActiveFilter(filter.id)}
-              style={{
-                flex: 1,
-                padding: '4px 8px',
-                borderRadius: '50px',
-                fontSize: '11px',
-                fontWeight: '700',
-                border: '1px solid var(--border-color)',
-                backgroundColor: activeFilter === filter.id ? '#0284c7' : 'var(--bg-primary)',
-                color: activeFilter === filter.id ? '#ffffff' : 'var(--text-secondary)',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              {filter.label}
-            </button>
-          ))}
+          ].map(filter => {
+            const isActive = activeFilter === filter.id;
+            return (
+              <button
+                key={filter.id}
+                onClick={() => setActiveFilter(filter.id)}
+                style={{
+                  flex: 1,
+                  padding: '6px 10px',
+                  borderRadius: '50px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  border: isActive ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid var(--border-color)',
+                  background: isActive ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' : 'var(--bg-primary)',
+                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                  boxShadow: isActive ? '0 2px 10px rgba(16, 185, 129, 0.35)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -106,10 +111,11 @@ export default function TelemedicineContactsList({
                   alignItems: 'center',
                   gap: '12px',
                   borderBottom: '1px solid var(--border-color)',
-                  backgroundColor: isSelected ? 'rgba(2, 132, 199, 0.08)' : 'transparent',
+                  backgroundColor: isSelected ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
                   cursor: 'pointer',
-                  borderLeft: isSelected ? '4px solid #0284c7' : '4px solid transparent',
-                  transition: 'all 0.15s'
+                  borderLeft: isSelected ? '4px solid #10b981' : '4px solid transparent',
+                  boxShadow: isSelected ? 'inset 0 0 12px rgba(16, 185, 129, 0.08)' : 'none',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 {/* Avatar */}
@@ -118,13 +124,14 @@ export default function TelemedicineContactsList({
                     width: '40px',
                     height: '40px',
                     borderRadius: '50%',
-                    backgroundColor: 'rgba(2, 132, 199, 0.15)',
-                    color: '#0284c7',
+                    backgroundColor: isSelected ? 'rgba(16, 185, 129, 0.2)' : 'rgba(2, 132, 199, 0.15)',
+                    color: isSelected ? '#10b981' : '#0284c7',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: '800',
-                    fontSize: '16px'
+                    fontSize: '16px',
+                    boxShadow: isSelected ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none'
                   }}>
                     {contact.name ? contact.name.charAt(0).toUpperCase() : 'U'}
                   </div>
@@ -137,7 +144,8 @@ export default function TelemedicineContactsList({
                       height: '10px',
                       borderRadius: '50%',
                       backgroundColor: '#10b981',
-                      border: '2px solid var(--bg-secondary)'
+                      border: '2px solid var(--bg-secondary)',
+                      boxShadow: '0 0 6px #10b981'
                     }} />
                   )}
                 </div>
@@ -155,7 +163,8 @@ export default function TelemedicineContactsList({
                         fontSize: '10px',
                         fontWeight: '800',
                         padding: '2px 6px',
-                        borderRadius: '50px'
+                        borderRadius: '50px',
+                        boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)'
                       }}>
                         {unread}
                       </span>

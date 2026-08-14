@@ -1,0 +1,232 @@
+<title>iRec — Solicitação de verba operacional</title>
+<style>
+:root{
+  --ground:#f1f4f6; --card:#ffffff; --ink:#15191d; --ink-2:#4b5560; --ink-3:#7b8794;
+  --rule:#d9e0e6; --rule-2:#e9edf1;
+  --accent:#1f4e79; --accent-soft:#e3ebf3;
+  --tem:#256d4f; --tem-bg:#e5f0ea;
+  --nao:#9d3640; --nao-bg:#f7e8ea;
+  --parc:#8a6410; --parc-bg:#f6f0de;
+  --serif:Georgia,"Iowan Old Style","Source Serif Pro","Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0e1316; --card:#161c21; --ink:#e6ebef; --ink-2:#a3b0bb; --ink-3:#75828d;
+  --rule:#27313a; --rule-2:#1d252b; --accent:#7bb0dd; --accent-soft:#14232f;
+  --tem:#6cc39a; --tem-bg:#12241c; --nao:#e08c95; --nao-bg:#2a171a;
+  --parc:#d4ab55; --parc-bg:#26200f;
+}}
+:root[data-theme="dark"]{
+  --ground:#0e1316; --card:#161c21; --ink:#e6ebef; --ink-2:#a3b0bb; --ink-3:#75828d;
+  --rule:#27313a; --rule-2:#1d252b; --accent:#7bb0dd; --accent-soft:#14232f;
+  --tem:#6cc39a; --tem-bg:#12241c; --nao:#e08c95; --nao-bg:#2a171a;
+  --parc:#d4ab55; --parc-bg:#26200f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.65;-webkit-text-size-adjust:100%}
+.wrap{max-width:900px;margin:0 auto;padding:0 22px 90px}
+
+header.top{padding:56px 0 26px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+h1{font-family:var(--serif);font-size:clamp(28px,4.6vw,40px);font-weight:600;letter-spacing:-.015em;line-height:1.14;margin:0 0 20px;text-wrap:balance}
+
+.ask{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--accent);padding:22px 26px;margin:0 0 8px}
+.ask .val{font-family:var(--serif);font-size:44px;font-weight:600;letter-spacing:-.02em;line-height:1;color:var(--accent)}
+.ask .un{font-size:15px;color:var(--ink-2);max-width:44ch}
+.ask .un b{color:var(--ink)}
+
+h2{font-family:var(--serif);font-size:23px;font-weight:600;margin:42px 0 4px;text-wrap:balance}
+h2+.sub{color:var(--ink-3);font-size:14px;margin:0 0 18px;max-width:70ch}
+p{max-width:72ch}
+
+.stops{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin:20px 0 0}
+.stop{background:var(--card);border:1px solid var(--rule);border-top:3px solid var(--nao);padding:18px 20px}
+.stop h3{font-family:var(--serif);font-size:16px;font-weight:600;margin:0 0 6px}
+.stop p{font-size:13.5px;color:var(--ink-2);margin:0}
+
+table{border-collapse:collapse;width:100%;background:var(--card);border:1px solid var(--rule);font-size:14px;margin:0}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--rule-2)}
+thead th{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--rule)}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tr.total td{background:var(--accent-soft);font-weight:600;border-top:1px solid var(--rule)}
+tr.total td.num{color:var(--accent)}
+.saldo{color:var(--tem);font-weight:600}
+
+.rule-box{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--tem);padding:20px 24px;margin:22px 0 0}
+.rule-box .tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--tem);display:block;margin-bottom:7px}
+.rule-box h3{font-family:var(--serif);font-size:17px;font-weight:600;margin:0 0 8px}
+.rule-box p{font-size:14px;color:var(--ink-2);margin:0 0 8px}
+.rule-box p:last-child{margin-bottom:0}
+
+.caveat{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--parc);padding:20px 24px;margin:22px 0 0}
+.caveat .tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--parc);display:block;margin-bottom:7px}
+.caveat h3{font-family:var(--serif);font-size:17px;font-weight:600;margin:0 0 8px}
+.caveat p{font-size:14px;color:var(--ink-2);margin:0 0 8px}
+.caveat p:last-child{margin-bottom:0}
+
+.note{margin:36px 0 0;padding:18px 22px;background:var(--accent-soft);border-left:2px solid var(--accent);font-size:13.5px;color:var(--ink-2)}
+.note b{color:var(--ink)}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-3)}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <p class="eyebrow">iRec · solicitação de verba operacional</p>
+  <h1>Custeio mensal de infraestrutura e reserva técnica</h1>
+  <div class="ask">
+    <span class="val">R$&nbsp;1.000</span>
+    <span class="un">por mês, em <b>orçamento rotativo</b> — o saldo não utilizado permanece acumulado no projeto, sem ser reposto no mês seguinte.</span>
+  </div>
+  <p style="font-size:13.5px;color:var(--ink-3);margin:10px 0 0">Destinado às ferramentas, serviços e taxas necessários à operação do sistema. Todos os valores são estimativas sujeitas a variação cambial e a reajuste dos fornecedores.</p>
+</header>
+
+<h2>O que para sem esta verba</h2>
+<p class="sub">Três serviços não têm alternativa gratuita viável no estágio atual do produto.</p>
+
+<div class="stops">
+<div class="stop">
+  <h3>Banco de dados e autenticação</h3>
+  <p>Sem o Supabase em plano pago, o sistema perde limite de armazenamento, backup e as funções de servidor que protegem as chaves de IA.</p>
+</div>
+<div class="stop">
+  <h3>Videochamada</h3>
+  <p>Sem servidor TURN, a teleconsulta não conecta quando médico e paciente estão em redes diferentes — que é o caso da maioria dos atendimentos.</p>
+</div>
+<div class="stop">
+  <h3>Inteligência artificial</h3>
+  <p>O nível gratuito do Gemini permite 20 requisições por dia por projeto. Insuficiente para operação real de triagem com foto.</p>
+</div>
+</div>
+
+<h2>Onde o dinheiro vai</h2>
+<p class="sub">Valores <b>estimados</b>, com base em tabela pública dos fornecedores e câmbio de referência em torno de R$&nbsp;5,20 por dólar. Serviços internacionais são cobrados em dólar e variam com a cotação; o consumo de IA varia com o uso.</p>
+
+<h3 style="font-family:var(--serif);font-size:17px;margin:0 0 8px">Assinaturas cobradas todo mês</h3>
+<table>
+<thead><tr><th>Serviço</th><th>Finalidade</th><th class="num">Estimativa por mês</th></tr></thead>
+<tbody>
+<tr><td>Supabase Pro</td><td>Banco de dados, autenticação e funções de servidor</td><td class="num">≈ R$ 130</td></tr>
+<tr><td>Hospedagem (Vercel Pro)</td><td>Publicação da aplicação web</td><td class="num">≈ R$ 105</td></tr>
+<tr><td>Servidor TURN</td><td>Conexão de vídeo entre redes distintas</td><td class="num">≈ R$ 90</td></tr>
+<tr><td>API Gemini</td><td>Triagem por imagem e assistente clínico</td><td class="num">R$ 100 a 200</td></tr>
+<tr><td>Sentry</td><td>Monitoramento de erros em produção</td><td class="num">≈ R$ 135</td></tr>
+<tr class="total"><td colspan="2">Estimativa mensal</td><td class="num">cerca de R$ 600</td></tr>
+</tbody>
+</table>
+
+<h3 style="font-family:var(--serif);font-size:17px;margin:26px 0 8px">Licenças cobradas uma vez por ano</h3>
+<table>
+<thead><tr><th>Serviço</th><th>Finalidade</th><th class="num">Estimativa por ano</th></tr></thead>
+<tbody>
+<tr><td>Apple Developer Program</td><td>Publicação do app iOS — só existe em plano anual</td><td class="num">≈ R$ 510</td></tr>
+<tr><td>Registro de domínio</td><td>Endereço do sistema — só existe em plano anual</td><td class="num">R$ 40 a 60</td></tr>
+<tr class="total"><td colspan="2">Estimativa anual</td><td class="num">cerca de R$ 560</td></tr>
+</tbody>
+</table>
+
+<div class="rule-box" style="border-left-color:var(--accent);margin-top:22px">
+<span class="tag" style="color:var(--accent)">Por que a verba é de R$ 1.000 e não de R$ 600</span>
+<h3>No mês da renovação anual, a saída chega a cerca de R$ 1.150</h3>
+<p>Nem a conta Apple Developer nem o domínio podem ser contratados mês a mês — os dois só existem em plano anual, cobrados integralmente de uma só vez. Por isso não aparecem rateados nas tabelas acima: um custo de R$ 3 por mês de domínio não existe e não poderia ser pago.</p>
+<p>Em onze meses do ano a saída fica em torno de R$ 600. No décimo segundo, somam-se as renovações e ela chega a <b>aproximadamente R$ 1.150</b> — acima do próprio teto solicitado.</p>
+<p>É esta a razão aritmética do pedido de R$ 1.000 com acúmulo: a diferença guardada nos meses comuns é o que cobre o mês da renovação. Com verba equivalente apenas ao gasto médio e sem acúmulo, o sistema sairia do ar no mês em que a Apple cobrasse.</p>
+</div>
+
+<p style="margin-top:18px;font-size:14px;color:var(--ink-2)">Durante a fase de desenvolvimento, utilizando os níveis gratuitos de hospedagem, monitoramento e IA, permanecem apenas o Supabase e o servidor TURN — <b>em torno de R$ 220 por mês</b> —, além das mesmas licenças anuais.</p>
+
+<h2>Custos únicos previstos</h2>
+<table>
+<thead><tr><th>Item</th><th class="num">Estimativa</th></tr></thead>
+<tbody>
+<tr><td>Taxa ANVISA — notificação de software como dispositivo médico, classe II</td><td class="num">≈ R$ 1.400</td></tr>
+<tr><td>Conta de publicação Google Play</td><td class="num">≈ R$ 130</td></tr>
+<tr><td>Certificado digital ICP-Brasil para assinatura de receita</td><td class="num">R$ 0</td></tr>
+</tbody>
+</table>
+<p style="margin-top:14px;font-size:14px;color:var(--ink-2)">O certificado digital não gera custo: o Conselho Federal de Medicina fornece certificado ICP-Brasil em nuvem, gratuitamente, a todo médico regular no conselho. O sistema apenas integra o certificado que o profissional já possui.</p>
+
+<h2>Comportamento em 15 meses</h2>
+<p class="sub">Projeção <b>estimada</b> com a verba de R$ 1.000 mensais, incluindo as licenças anuais, a taxa da ANVISA e a conta da loja. Valores arredondados.</p>
+
+<table>
+<thead><tr><th>Período</th><th>Fase</th><th class="num">Entra</th><th class="num">Sai</th><th class="num">Reserva acumulada</th></tr></thead>
+<tbody>
+<tr><td>Meses 1 a 5</td><td>Desenvolvimento</td><td class="num">R$ 5.000</td><td class="num">≈ R$ 1.800</td><td class="num saldo">≈ R$ 3.200</td></tr>
+<tr><td>Meses 6 a 10</td><td>Piloto em serviço parceiro</td><td class="num">R$ 5.000</td><td class="num">≈ R$ 3.100</td><td class="num saldo">≈ R$ 5.100</td></tr>
+<tr><td>Meses 11 a 15</td><td>Produção limitada</td><td class="num">R$ 5.000</td><td class="num">≈ R$ 5.500</td><td class="num saldo">≈ R$ 4.600</td></tr>
+<tr class="total"><td colspan="2">Total no período</td><td class="num">R$ 15.000</td><td class="num">≈ R$ 10.400</td><td class="num">≈ R$ 4.600</td></tr>
+</tbody>
+</table>
+
+<p style="margin-top:14px;font-size:14px;color:var(--ink-2)">As saídas incluem a compra e a renovação das licenças anuais, a conta do Google Play nos meses iniciais e a taxa da ANVISA no último período. Ao fim dos 15 meses, todos os compromissos estão pagos e restam <b>cerca de R$ 4.600</b> de reserva.</p>
+
+<div class="rule-box">
+<span class="tag">Condição essencial do pedido</span>
+<h3>O saldo não utilizado precisa acumular</h3>
+<p>Na fase de desenvolvimento o consumo mensal fica em torno de R$ 220, deixando uma sobra próxima de R$ 780. É esse acúmulo que financia, sem nova aprovação: créditos adicionais de IA para refinar os comandos e reduzir o número de requisições por atendimento, ferramenta de rotulagem de imagens para treinar a medição de lesão, e qualquer serviço não previsto que se mostre necessário.</p>
+<p>Se a verba zerar a cada mês, esses gastos passam a exigir aprovação pontual — e o custo administrativo de aprovar uma despesa de poucas centenas de reais supera o próprio valor.</p>
+</div>
+
+<div class="caveat">
+<span class="tag">Ressalva declarada</span>
+<h3>O teto precisará ser revisto, e não é possível prever quando</h3>
+<p>O custo da inteligência artificial cresce com o uso, e cada triagem com fotografia é uma requisição de processamento de imagem. Para a fase de desenvolvimento e para um piloto de algumas dezenas de pacientes, a projeção é que R$ 1.000 mensais atendam — mas trata-se de <b>estimativa otimista</b>, construída sobre o consumo observado até aqui, e não de uma garantia. Em operação com centenas de pacientes, apenas essa linha pode superar o valor total solicitado.</p>
+<p>Duas medidas já adotadas reduzem esse crescimento: a correção de um defeito que enviava cada mensagem duas vezes ao modelo, o que dobrava o consumo, e a centralização das chamadas em servidor, o que permite reaproveitar análises repetidas.</p>
+<p>Ainda assim, registra-se desde já que <b>nenhum valor deste documento deve ser tratado como teto definitivo</b>. O orçamento é uma projeção sobre o estágio atual do produto e precisará ser reavaliado conforme o volume de atendimentos crescer e conforme evoluam as ferramentas de inteligência artificial descritas a seguir.</p>
+</div>
+
+<h2>A inteligência artificial atual é provisória</h2>
+<p class="sub">O maior fator de incerteza do orçamento não é o câmbio: é a substituição da IA de uso geral por modelos clínicos especializados.</p>
+
+<p>O sistema utiliza hoje o <b>Gemini</b>, modelo de propósito geral do Google. Ele funciona como solução transitória, mas não foi treinado para medicina: não conhece protocolos clínicos, não mede lesão com calibração e não possui certificação como dispositivo médico. Para um produto de saúde, isso é um limite de origem, não um detalhe de configuração.</p>
+
+<p>Existem modelos treinados especificamente para uso clínico. O levantamento abaixo separa o que pode ser contratado e integrado daquilo que serve apenas como referência de estudo — distinção que costuma se perder e que altera completamente o orçamento.</p>
+
+<h3 style="font-family:var(--serif);font-size:17px;margin:26px 0 8px">Candidatos a integração — têm interface de programação disponível</h3>
+<table>
+<thead><tr><th>Modelo</th><th>Aplicação no iRec</th><th>Observação relevante ao custo</th></tr></thead>
+<tbody>
+<tr><td><b>MedLM</b> / Med-PaLM 2<br><span style="color:var(--ink-3);font-size:12.5px">Google Cloud, via Vertex AI</span></td><td>Substituto direto do Gemini no copiloto clínico e no resumo de prontuário. Ajustado com literatura médica e provas de residência.</td><td>Disponível por lista de permissão a clientes nos Estados Unidos, com prévia em alguns países. <b>Acesso no Brasil precisa ser confirmado antes de qualquer previsão de custo.</b></td></tr>
+<tr><td><b>Infermedica</b><br><span style="color:var(--ink-3);font-size:12.5px">plataforma comercial</span></td><td>Triagem de sintomas e apoio à decisão clínica, substituindo o questionário atual por motor de inferência auditável.</td><td>Licenciamento corporativo, preço sob consulta. É dispositivo médico certificado na União Europeia.</td></tr>
+<tr><td><b>Skinive MD</b><br><span style="color:var(--ink-3);font-size:12.5px">dispositivo médico com marcação CE</span></td><td>Classificação de risco de lesão cutânea e emissão de laudo para o prontuário.</td><td>Único dos avaliados em visão computacional que se oferece como serviço integrável, e não como plataforma fechada.</td></tr>
+<tr><td><b>BioMistral</b><br><span style="color:var(--ink-3);font-size:12.5px">código aberto</span></td><td>Modelo clínico executado em servidor próprio.</td><td>Sem custo de licença, mas exige servidor com placa gráfica. Vantagem decisiva em conformidade: <b>o dado do paciente não sai da infraestrutura do projeto</b>.</td></tr>
+</tbody>
+</table>
+
+<h3 style="font-family:var(--serif);font-size:17px;margin:26px 0 8px">Referências de estudo — não são fornecedores</h3>
+<table>
+<thead><tr><th>Modelo</th><th>Por que estudar</th><th>Por que não integrar</th></tr></thead>
+<tbody>
+<tr><td><b>Swift Medical</b></td><td>Líder em medição de ferida por fotogrametria: área, dimensões e percentual de tecido de granulação, esfacelo e necrose.</td><td>Plataforma fechada, concorrente direto. Referência de funcionalidade, não fornecedor.</td></tr>
+<tr><td><b>Tissue Analytics</b><br><span style="color:var(--ink-3);font-size:12.5px">Net Health</span></td><td>Estadiamento de lesão por pressão e pé diabético, com predição de tempo de cicatrização.</td><td>Vendida integrada a prontuários hospitalares de grande porte.</td></tr>
+<tr><td><b>Google AMIE</b></td><td>Estado da arte em anamnese conversacional e diagnóstico diferencial. Modelo mental para a triagem do iRec.</td><td>Projeto de pesquisa do Google. Não existe produto nem interface pública.</td></tr>
+<tr><td><b>Google DermAssist</b></td><td>Identificação de condições dermatológicas por foto de celular.</td><td>Ferramenta voltada ao consumidor final, sem oferta como serviço integrável.</td></tr>
+<tr><td><b>Ada Health</b></td><td>Melhor referência de experiência de uso em triagem: questionário adaptativo conforme idade, histórico e respostas anteriores.</td><td>Aplicativo de consumidor. Serve como referência de interface.</td></tr>
+<tr><td><b>Hippocratic AI</b></td><td>Agentes de acompanhamento pós-consulta: adesão à medicação, nível de dor, lembrete de troca de curativo.</td><td>Produto corporativo voltado ao mercado dos Estados Unidos.</td></tr>
+</tbody>
+</table>
+
+<div class="caveat" style="margin-top:22px">
+<span class="tag">Impacto orçamentário ainda não mensurado</span>
+<h3>Os valores destas ferramentas não estão neste orçamento</h3>
+<p>Nenhum dos modelos clínicos acima tem preço público. Infermedica e Skinive trabalham com licenciamento corporativo sob consulta; o MedLM depende de confirmação de disponibilidade no Brasil; o BioMistral não cobra licença, mas exige servidor dedicado com placa gráfica.</p>
+<p>O levantamento desses valores é uma etapa a ser conduzida, e seu resultado deverá ser apresentado em solicitação própria. O orçamento deste documento cobre a operação do sistema no estágio atual — <b>não contempla a migração para inteligência artificial clínica especializada</b>, que é condição para o produto competir de forma legítima no setor de saúde.</p>
+</div>
+
+
+<div class="caveat" style="border-left-color:var(--ink-3);margin-top:26px">
+<span class="tag" style="color:var(--ink-3)">Natureza dos valores</span>
+<h3>Todos os números deste documento são estimativas</h3>
+<p>A maioria dos serviços é cobrada em dólar e convertida na cotação do dia da fatura. Uma variação cambial de dez por cento move a estimativa mensal em cerca de R$ 50 para cima ou para baixo. Fornecedores também reajustam preço de tabela sem aviso prévio, e o custo de IA depende do volume de atendimentos do mês.</p>
+<p>Por isso a solicitação é de um teto mensal com acúmulo, e não de um valor fechado por item: é o formato que absorve essa variação sem exigir nova aprovação a cada oscilação.</p>
+</div>
+
+<footer>
+<p>Referências: tabelas públicas de Supabase, Vercel, Sentry, Google Cloud, Apple Developer Program e registradores de domínio · Taxa de Fiscalização de Vigilância Sanitária da ANVISA para notificação de dispositivo médico classe II · Câmbio de referência em torno de R$ 5,20 por dólar. Documento elaborado em agosto de 2026; valores sujeitos a variação cambial e a reajuste dos fornecedores.</p>
+</footer>
+</div>

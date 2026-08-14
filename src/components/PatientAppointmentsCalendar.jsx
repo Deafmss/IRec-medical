@@ -53,11 +53,35 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
     setSelectedDay(null);
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const getLocalDateStr = (d = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = getLocalDateStr();
 
   // Helper to check if a specific YYYY-MM-DD has appointments
   const getAppsForDate = (dateStr) => {
     return appointments.filter(a => a.appointmentDate === dateStr);
+  };
+
+  // Brazilian National Holidays Map Helper
+  const getBrazilianHoliday = (monthNum, dayNum) => {
+    const key = `${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+    const holidays = {
+      '01-01': 'Ano Novo',
+      '04-21': 'Tiradentes',
+      '05-01': 'Trabalho',
+      '09-07': 'Independência',
+      '10-12': 'N. Sra. Ap.',
+      '11-02': 'Finados',
+      '11-15': 'Proclamação',
+      '11-20': 'Consc. Negra',
+      '12-25': 'Natal'
+    };
+    return holidays[key] || null;
   };
 
   // Filtered list based on status & selected date
@@ -105,29 +129,25 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
   const presencialCount = appointments.filter(a => a.modality === 'presencial' && a.status === 'confirmed').length;
 
   return (
-    <div className="dashboard-content-area" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header & Quick Action */}
-      <div style={{
+    <div className="dashboard-content-area" style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>      {/* Header Banner */}
+      <div className="glass-card-cyan-glow" style={{
         display: 'flex',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
         alignItems: 'center',
         gap: '16px',
         marginBottom: '24px',
-        backgroundColor: 'var(--bg-secondary)',
         padding: '24px',
-        borderRadius: '16px',
-        border: '1px solid var(--border-color)',
-        boxShadow: 'var(--shadow-sm)'
+        borderRadius: '20px'
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '28px' }}>📅</span>
-            <h1 style={{ fontSize: '24px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
+            <h1 style={{ fontSize: '24px', fontFamily: 'var(--font-display)', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>
               Consultas Agendadas
             </h1>
           </div>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', margin: 0 }}>
             Gerencie seus horários, acompanhe teleconsultas em HD e consultas presenciais.
           </p>
         </div>
@@ -136,22 +156,21 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
           <button
             onClick={() => setActiveTab && setActiveTab('doctors_directory')}
             style={{
-              backgroundColor: 'var(--primary)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '8px',
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
-              transition: 'transform 0.15s ease'
+              padding: '10px 24px',
+              borderRadius: '30px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              fontWeight: '700',
+              fontSize: '13.5px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 18px rgba(2, 132, 199, 0.4)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
-            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
-            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
           >
             <span>➕</span>
             <span>Agendar Nova Consulta</span>
@@ -166,11 +185,11 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
         gap: '16px',
         marginBottom: '24px'
       }}>
-        <div className="glass-card" style={{ padding: '20px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '6px' }}>
+        <div className="glass-card glass-card-cyan-glow" style={{ padding: '20px', borderRadius: '16px', margin: 0 }}>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '6px' }}>
             🗓️ PRÓXIMAS CONSULTAS
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: '800', color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
             {upcomingCount}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -178,11 +197,11 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '20px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '6px' }}>
+        <div className="glass-card glass-card-emerald-glow" style={{ padding: '20px', borderRadius: '16px', margin: 0 }}>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '6px' }}>
             📹 TELEMEDICINA HD
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '800', color: '#10b981' }}>
+          <div style={{ fontSize: '30px', fontWeight: '800', color: '#10b981', fontFamily: 'var(--font-display)' }}>
             {onlineCount}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -190,11 +209,11 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '20px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '6px' }}>
+        <div className="glass-card" style={{ padding: '20px', borderRadius: '16px', margin: 0 }}>
+          <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '6px' }}>
             🏥 PRESENCIAIS
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '800', color: '#8b5cf6' }}>
+          <div style={{ fontSize: '30px', fontWeight: '800', color: '#8b5cf6', fontFamily: 'var(--font-display)' }}>
             {presencialCount}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -211,25 +230,36 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
         alignItems: 'center',
         gap: '12px',
         marginBottom: '20px',
-        backgroundColor: 'var(--bg-secondary)',
         padding: '12px 16px',
-        borderRadius: '12px',
-        border: '1px solid var(--border-color)'
+        borderRadius: '20px',
+        backgroundColor: 'var(--glass-bg)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid var(--glass-border)'
       }}>
         {/* Toggle Calendar vs List */}
-        <div style={{ display: 'flex', gap: '6px', backgroundColor: 'var(--bg-primary)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '5px',
+          background: 'rgba(2, 132, 199, 0.05)',
+          border: '1px solid var(--glass-border)',
+          borderRadius: '30px',
+          backdropFilter: 'blur(10px)'
+        }}>
           <button
             onClick={() => setViewMode('calendar')}
             style={{
-              backgroundColor: viewMode === 'calendar' ? 'var(--primary)' : 'transparent',
+              background: viewMode === 'calendar' ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'transparent',
               color: viewMode === 'calendar' ? '#ffffff' : 'var(--text-secondary)',
-              border: 'none',
-              borderRadius: '7px',
-              padding: '8px 16px',
+              border: viewMode === 'calendar' ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid transparent',
+              borderRadius: '24px',
+              padding: '8px 20px',
               fontSize: '13px',
               fontWeight: '700',
               cursor: 'pointer',
-              transition: 'all 0.15s ease'
+              boxShadow: viewMode === 'calendar' ? '0 4px 14px rgba(2, 132, 199, 0.35)' : 'none',
+              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
             📅 Calendário
@@ -237,15 +267,16 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
           <button
             onClick={() => setViewMode('list')}
             style={{
-              backgroundColor: viewMode === 'list' ? 'var(--primary)' : 'transparent',
+              background: viewMode === 'list' ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'transparent',
               color: viewMode === 'list' ? '#ffffff' : 'var(--text-secondary)',
-              border: 'none',
-              borderRadius: '7px',
-              padding: '8px 16px',
+              border: viewMode === 'list' ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid transparent',
+              borderRadius: '24px',
+              padding: '8px 20px',
               fontSize: '13px',
               fontWeight: '700',
               cursor: 'pointer',
-              transition: 'all 0.15s ease'
+              boxShadow: viewMode === 'list' ? '0 4px 14px rgba(2, 132, 199, 0.35)' : 'none',
+              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
             📋 Lista
@@ -257,14 +288,15 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
           <button
             onClick={() => { setFilterStatus('upcoming'); setSelectedDay(null); }}
             style={{
-              backgroundColor: filterStatus === 'upcoming' ? 'rgba(2, 132, 199, 0.15)' : 'transparent',
-              color: filterStatus === 'upcoming' ? 'var(--primary)' : 'var(--text-muted)',
-              border: filterStatus === 'upcoming' ? '1px solid var(--primary)' : '1px solid transparent',
-              borderRadius: '8px',
-              padding: '6px 12px',
+              backgroundColor: filterStatus === 'upcoming' ? 'rgba(2, 132, 199, 0.15)' : 'var(--glass-bg)',
+              color: filterStatus === 'upcoming' ? '#0284c7' : 'var(--text-muted)',
+              border: filterStatus === 'upcoming' ? '1px solid #0284c7' : '1px solid var(--glass-border)',
+              borderRadius: '20px',
+              padding: '7px 16px',
               fontSize: '12.5px',
               fontWeight: '700',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
             }}
           >
             Próximas
@@ -272,14 +304,15 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
           <button
             onClick={() => { setFilterStatus('completed'); setSelectedDay(null); }}
             style={{
-              backgroundColor: filterStatus === 'completed' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+              backgroundColor: filterStatus === 'completed' ? 'rgba(16, 185, 129, 0.15)' : 'var(--glass-bg)',
               color: filterStatus === 'completed' ? '#10b981' : 'var(--text-muted)',
-              border: filterStatus === 'completed' ? '1px solid #10b981' : '1px solid transparent',
-              borderRadius: '8px',
-              padding: '6px 12px',
+              border: filterStatus === 'completed' ? '1px solid #10b981' : '1px solid var(--glass-border)',
+              borderRadius: '20px',
+              padding: '7px 16px',
               fontSize: '12.5px',
               fontWeight: '700',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
             }}
           >
             Histórico / Concluídas
@@ -287,14 +320,15 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
           <button
             onClick={() => { setFilterStatus('all'); setSelectedDay(null); }}
             style={{
-              backgroundColor: filterStatus === 'all' ? 'rgba(100, 116, 139, 0.15)' : 'transparent',
+              backgroundColor: filterStatus === 'all' ? 'rgba(100, 116, 139, 0.15)' : 'var(--glass-bg)',
               color: filterStatus === 'all' ? 'var(--text-primary)' : 'var(--text-muted)',
-              border: filterStatus === 'all' ? '1px solid var(--border-color)' : '1px solid transparent',
-              borderRadius: '8px',
-              padding: '6px 12px',
+              border: filterStatus === 'all' ? '1px solid var(--text-muted)' : '1px solid var(--glass-border)',
+              borderRadius: '20px',
+              padding: '7px 16px',
               fontSize: '12.5px',
               fontWeight: '700',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
             }}
           >
             Todas
@@ -306,12 +340,10 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
       <div style={{ display: 'grid', gridTemplateColumns: viewMode === 'calendar' ? '1fr 340px' : '1fr', gap: '24px' }}>
         {/* CALENDAR VIEW GRID */}
         {viewMode === 'calendar' && (
-          <div style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '16px',
-            padding: '20px',
-            border: '1px solid var(--border-color)',
-            boxShadow: 'var(--shadow-sm)'
+          <div className="glass-card glass-card-cyan-glow" style={{
+            padding: '24px',
+            borderRadius: '20px',
+            margin: 0
           }}>
             {/* Month Navigation */}
             <div style={{
@@ -385,21 +417,21 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
             </div>
 
             {/* Days of Week Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', textAlign: 'center', fontWeight: '700', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
-              <div>DOM</div>
-              <div>SEG</div>
-              <div>TER</div>
-              <div>QUA</div>
-              <div>QUI</div>
-              <div>SEX</div>
-              <div>SÁB</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', textAlign: 'center', fontWeight: '800', fontSize: '11.5px', marginBottom: '12px' }}>
+              <div style={{ color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.08)', padding: '4px', borderRadius: '6px' }}>DOM</div>
+              <div style={{ color: 'var(--text-muted)' }}>SEG</div>
+              <div style={{ color: 'var(--text-muted)' }}>TER</div>
+              <div style={{ color: 'var(--text-muted)' }}>QUA</div>
+              <div style={{ color: 'var(--text-muted)' }}>QUI</div>
+              <div style={{ color: 'var(--text-muted)' }}>SEX</div>
+              <div style={{ color: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.08)', padding: '4px', borderRadius: '6px' }}>SÁB</div>
             </div>
 
             {/* Days Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
               {/* Empty leading slots for first day of month */}
               {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                <div key={`empty_${i}`} style={{ height: '70px', borderRadius: '10px', backgroundColor: 'transparent' }} />
+                <div key={`empty_${i}`} style={{ height: '90px', borderRadius: '12px', backgroundColor: 'transparent' }} />
               ))}
 
               {/* Days of current month */}
@@ -412,22 +444,49 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
                 const dayApps = getAppsForDate(fullDateStr);
                 const isToday = fullDateStr === todayStr;
                 const isSelected = fullDateStr === selectedDay;
+                const dayOfWeekIndex = (firstDayOfMonth + i) % 7; // 0 = DOM, 6 = SÁB
+                const isSunday = dayOfWeekIndex === 0;
+                const isSaturday = dayOfWeekIndex === 6;
+                const holidayName = getBrazilianHoliday(month + 1, dayNum);
+
+                // Cell styling logic
+                let bgStyle = 'var(--bg-primary)';
+                let borderStyle = '1px solid var(--glass-border)';
+                let boxShadowStyle = 'none';
+
+                if (isSelected) {
+                  bgStyle = 'rgba(2, 132, 199, 0.16)';
+                  borderStyle = '2px solid #0284c7';
+                  boxShadowStyle = '0 0 16px rgba(2, 132, 199, 0.3)';
+                } else if (isToday) {
+                  bgStyle = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(2, 132, 199, 0.12) 100%)';
+                  borderStyle = '2px solid #10b981';
+                  boxShadowStyle = '0 0 20px rgba(16, 185, 129, 0.35)';
+                } else if (holidayName) {
+                  bgStyle = 'rgba(239, 68, 68, 0.05)';
+                  borderStyle = '1px dashed rgba(239, 68, 68, 0.4)';
+                } else if (isSunday) {
+                  bgStyle = 'rgba(239, 68, 68, 0.03)';
+                } else if (isSaturday) {
+                  bgStyle = 'rgba(139, 92, 246, 0.03)';
+                }
 
                 return (
                   <div
                     key={`day_${dayNum}`}
                     onClick={() => setSelectedDay(isSelected ? null : fullDateStr)}
                     style={{
-                      height: '75px',
-                      borderRadius: '10px',
-                      backgroundColor: isSelected ? 'rgba(2, 132, 199, 0.15)' : (isToday ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-primary)'),
-                      border: isSelected ? '2px solid var(--primary)' : (isToday ? '2px solid #10b981' : '1px solid var(--border-color)'),
+                      height: '92px',
+                      borderRadius: '12px',
+                      backgroundColor: bgStyle,
+                      border: borderStyle,
+                      boxShadow: boxShadowStyle,
                       padding: '6px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s ease',
                       position: 'relative'
                     }}
                   >
@@ -435,40 +494,69 @@ export default function PatientAppointmentsCalendar({ currentUser, setActiveTab,
                       <span style={{
                         fontSize: '13px',
                         fontWeight: isToday || isSelected ? '800' : '600',
-                        color: isToday ? '#10b981' : (isSelected ? 'var(--primary)' : 'var(--text-primary)')
+                        color: isToday ? '#10b981' : (isSelected ? '#0284c7' : (isSunday ? '#ef4444' : (isSaturday ? '#8b5cf6' : 'var(--text-primary)')))
                       }}>
                         {dayNum}
                       </span>
                       {isToday && (
-                        <span style={{ fontSize: '9px', fontWeight: '800', color: '#ffffff', backgroundColor: '#10b981', padding: '1px 5px', borderRadius: '6px' }}>
-                          Hoje
+                        <span style={{ fontSize: '9px', fontWeight: '800', color: '#ffffff', backgroundColor: '#10b981', padding: '1px 6px', borderRadius: '10px', boxShadow: '0 2px 6px rgba(16, 185, 129, 0.4)' }}>
+                          HOJE
+                        </span>
+                      )}
+                      {!isToday && holidayName && (
+                        <span style={{ fontSize: '8.5px', fontWeight: '800', color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.15)', padding: '1px 5px', borderRadius: '6px' }} title={holidayName}>
+                          🎉 {holidayName}
                         </span>
                       )}
                     </div>
 
-                    {/* Appointment dots / badges inside day cell */}
+                    {/* Appointment pills inside day cell */}
                     {dayApps.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
-                        {dayApps.slice(0, 2).map((app, idx) => (
-                          <div
-                            key={idx}
-                            style={{
-                              fontSize: '10px',
-                              fontWeight: '700',
-                              padding: '2px 4px',
-                              borderRadius: '4px',
-                              backgroundColor: app.modality === 'online' ? 'rgba(2, 132, 199, 0.9)' : 'rgba(139, 92, 246, 0.9)',
-                              color: '#ffffff',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}
-                          >
-                            {app.appointmentTime} {app.modality === 'online' ? '📹' : '🏥'}
-                          </div>
-                        ))}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', overflow: 'hidden' }}>
+                        {dayApps.slice(0, 2).map((app, idx) => {
+                          const isCanceled = app.status === 'canceled';
+                          const isPending = app.status === 'pending';
+
+                          let pillBg = 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)';
+                          let pillColor = '#ffffff';
+                          let pillBorder = '1px solid rgba(255, 255, 255, 0.2)';
+                          let textDecor = 'none';
+
+                          if (isCanceled) {
+                            pillBg = 'rgba(239, 68, 68, 0.18)';
+                            pillColor = '#ef4444';
+                            pillBorder = '1px solid rgba(239, 68, 68, 0.4)';
+                            textDecor = 'line-through';
+                          } else if (isPending) {
+                            pillBg = 'rgba(245, 158, 11, 0.18)';
+                            pillColor = '#f59e0b';
+                            pillBorder = '1px solid rgba(245, 158, 11, 0.4)';
+                          }
+
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                fontSize: '9.5px',
+                                fontWeight: '700',
+                                padding: '2px 5px',
+                                borderRadius: '6px',
+                                background: pillBg,
+                                color: pillColor,
+                                border: pillBorder,
+                                textDecoration: textDecor,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                boxShadow: isCanceled || isPending ? 'none' : '0 2px 6px rgba(2, 132, 199, 0.3)'
+                              }}
+                            >
+                              {isCanceled ? '✕ ' : (isPending ? '⏳ ' : '✓ ')}{app.appointmentTime} {app.modality === 'online' ? '📹' : '🏥'}
+                            </div>
+                          );
+                        })}
                         {dayApps.length > 2 && (
-                          <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--primary)' }}>
+                          <span style={{ fontSize: '9px', fontWeight: '800', color: '#0284c7', paddingLeft: '2px' }}>
                             +{dayApps.length - 2} mais
                           </span>
                         )}

@@ -28,6 +28,8 @@ import UserProfilePage from './components/UserProfilePage';
 import ReportPDFGenerator from './components/ReportPDFGenerator';
 import VitalsTelemetry from './components/VitalsTelemetry';
 import WoundEvolutionComparator from './components/WoundEvolutionComparator';
+import { IRecConceptDesign } from './components/IRecConceptDesign';
+import TelemedicinePage from './components/telemedicine/TelemedicinePage';
 import { getClinicalProfile, getWoundEntries, addWoundEntry, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
 import { generatePersonalizedProtocol } from './services/geminiService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
@@ -445,9 +447,9 @@ export default function App() {
     const isAdmin = userProfile.email === 'admin@irec.com' || role === 'admin';
     if (isAdmin) return tab.startsWith('admin-') || tab === 'profile';
     if (role === 'doctor' || role === 'nurse') {
-      return ['doctor-dashboard', 'telemedicine', 'patient-records', 'protocols', 'prescriptions', 'clinical-guidelines', 'doctor-agenda', 'doctor-analytics', 'doctor-partners', 'nurses-network', 'vitals', 'comparator', 'profile', 'history', 'my_network', 'doctors_directory'].includes(tab);
+      return ['doctor-dashboard', 'doctor-analytics', 'doctor-agenda', 'doctor-partners', 'telemedicine', 'protocols', 'prescriptions', 'vitals', 'telemetry', 'comparator', 'profile', 'history', 'documents', 'my-appointments', 'appointments'].includes(tab);
     }
-    return ['dashboard', 'history', 'telemedicine', 'documents', 'protocols', 'sos', 'accessible', 'upload', 'chat', 'my-appointments', 'appointments', 'nurses', 'vitals', 'comparator', 'profile'].includes(tab);
+    return ['dashboard', 'history', 'telemedicine', 'documents', 'protocols', 'upload', 'chat', 'my-appointments', 'appointments', 'nurses', 'vitals', 'telemetry', 'comparator', 'profile', 'my_network', 'doctors_directory', 'prescriptions'].includes(tab);
   };
 
   // Check auth session on component mount with server truth validation (IREC-0001, IREC-0038, IREC-0202)
@@ -858,7 +860,7 @@ export default function App() {
           />
         );
       case 'my_network':
-        return <MyNetworkPortal setActiveTab={setActiveTab} />;
+        return <MyNetworkPortal currentUser={currentUser} setActiveTab={setActiveTab} />;
       case 'doctors_directory':
         return (
           <SpecialistDirectory 
@@ -916,7 +918,7 @@ export default function App() {
         return <DoctorPartners doctorProfile={currentUser} />;
       case 'vitals':
       case 'telemetry':
-        return <VitalsTelemetry patientId={targetProfile?.id || currentUser?.id} isDoctorView={isClinician} />;
+        return <VitalsTelemetry patientId={targetProfile?.id || currentUser?.id} isDoctorView={isClinician} onClose={() => setActiveTab('dashboard')} />;
       case 'comparator':
         return <WoundEvolutionComparator entries={targetEntries} patientProfile={targetProfile} onClose={() => setActiveTab('history')} />;
       case 'protocols':
@@ -926,6 +928,7 @@ export default function App() {
             clinicalProfile={targetProfile} 
             entries={targetEntries} 
             setActiveTab={setActiveTab}
+            onClose={() => setActiveTab(isClinician ? 'doctor-dashboard' : 'dashboard')}
           />
         );
       case 'prescriptions':
@@ -1442,7 +1445,7 @@ export default function App() {
           </button>
         </nav>
 
-        <div className="sidebar-profile" onClick={() => !isAdmin && setActiveTab('profile')} style={{ cursor: isAdmin ? 'default' : 'pointer', transition: 'var(--transition-fast)' }}>
+        <div className={`sidebar-profile ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => !isAdmin && setActiveTab('profile')} style={{ cursor: isAdmin ? 'default' : 'pointer', transition: 'var(--transition-fast)' }}>
           <div className="profile-avatar" style={{ flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {currentUser.avatarUrl ? (
               <img src={currentUser.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />

@@ -79,13 +79,15 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
       )}
 
       {/* Page Title & Header */}
-      <div style={{
+      <div className="glass-card-cyan-glow" style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: '24px',
         flexWrap: 'wrap',
-        gap: '16px'
+        gap: '16px',
+        padding: '24px',
+        borderRadius: '20px'
       }}>
         <div>
           <h1 style={{
@@ -99,23 +101,24 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
           }}>
             📜 Prescrições, Atestados & Receituários
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
             Emissão oficial de receituários de medicamentos, atestados clínicos e encaminhamentos com validação iRec.
           </p>
         </div>
 
         {selectedPatient && (
           <div style={{
-            backgroundColor: 'rgba(2, 132, 199, 0.1)',
-            border: '1px solid rgba(2, 132, 199, 0.25)',
-            padding: '8px 16px',
+            backgroundColor: 'rgba(2, 132, 199, 0.12)',
+            border: '1px solid rgba(2, 132, 199, 0.3)',
+            padding: '8px 18px',
             borderRadius: '50px',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
             fontSize: '12.5px',
             fontWeight: '700',
-            color: '#0284c7'
+            color: '#0284c7',
+            boxShadow: '0 2px 10px rgba(2, 132, 199, 0.15)'
           }}>
             <span>👤 Paciente Ativo:</span>
             <strong>{selectedPatient.name}</strong>
@@ -125,12 +128,10 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
 
       <div style={{ display: 'grid', gridTemplateColumns: prescriptionHistory.length > 0 ? '1fr 340px' : '1fr', gap: '24px' }}>
         {/* Main Generator Section */}
-        <div style={{
-          backgroundColor: 'var(--bg-secondary)',
-          borderRadius: '16px',
-          border: '1px solid var(--border-color)',
+        <div className="glass-card glass-card-cyan-glow" style={{
+          borderRadius: '20px',
           padding: '24px',
-          boxShadow: 'var(--shadow-sm)'
+          margin: 0
         }}>
           <PrescriptionGeneratorModal 
             currentUser={currentUser}
@@ -143,15 +144,14 @@ export default function PrescriptionPage({ currentUser, selectedPatient, clinica
 
         {/* Prescription History Sidebar */}
         {prescriptionHistory.length > 0 && (
-          <div style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-color)',
+          <div className="glass-card" style={{
+            borderRadius: '20px',
             padding: '20px',
             height: 'fit-content',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px'
+            gap: '16px',
+            margin: 0
           }}>
             <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               📋 Histórico Emitido ({prescriptionHistory.length})

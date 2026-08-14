@@ -1,0 +1,367 @@
+<title>iRec — comparação de mercado</title>
+<style>
+:root{
+  --ground:#f1f4f6; --card:#ffffff; --ink:#15191d; --ink-2:#4b5560; --ink-3:#7b8794;
+  --rule:#d9e0e6; --rule-2:#e9edf1;
+  --accent:#1f4e79; --accent-soft:#e3ebf3;
+  --tem:#256d4f; --tem-bg:#e5f0ea;
+  --nao:#9d3640; --nao-bg:#f7e8ea;
+  --parc:#8a6410; --parc-bg:#f6f0de;
+  --serif:Georgia,"Iowan Old Style","Source Serif Pro","Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0e1316; --card:#161c21; --ink:#e6ebef; --ink-2:#a3b0bb; --ink-3:#75828d;
+  --rule:#27313a; --rule-2:#1d252b;
+  --accent:#7bb0dd; --accent-soft:#14232f;
+  --tem:#6cc39a; --tem-bg:#12241c;
+  --nao:#e08c95; --nao-bg:#2a171a;
+  --parc:#d4ab55; --parc-bg:#26200f;
+}}
+:root[data-theme="dark"]{
+  --ground:#0e1316; --card:#161c21; --ink:#e6ebef; --ink-2:#a3b0bb; --ink-3:#75828d;
+  --rule:#27313a; --rule-2:#1d252b;
+  --accent:#7bb0dd; --accent-soft:#14232f;
+  --tem:#6cc39a; --tem-bg:#12241c;
+  --nao:#e08c95; --nao-bg:#2a171a;
+  --parc:#d4ab55; --parc-bg:#26200f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.65;-webkit-text-size-adjust:100%}
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px 100px}
+
+header.top{padding:60px 0 34px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 16px}
+h1{font-family:var(--serif);font-size:clamp(30px,5.2vw,46px);font-weight:600;letter-spacing:-.015em;line-height:1.12;margin:0 0 18px;text-wrap:balance}
+.lede{font-family:var(--serif);font-size:19px;line-height:1.55;color:var(--ink-2);max-width:62ch;margin:0}
+
+h2{font-family:var(--serif);font-size:26px;font-weight:600;letter-spacing:-.01em;margin:56px 0 6px;text-wrap:balance}
+h2+.sub{color:var(--ink-3);font-size:14.5px;margin:0 0 22px;max-width:70ch}
+h3{font-family:var(--serif);font-size:19px;font-weight:600;margin:0 0 8px}
+p{max-width:74ch}
+
+.matrix-wrap{overflow-x:auto;border:1px solid var(--rule);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px}
+th,td{padding:11px 13px;text-align:left;border-bottom:1px solid var(--rule-2);vertical-align:top}
+thead th{position:sticky;top:0;background:var(--card);font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td:first-child{font-weight:500;color:var(--ink);min-width:200px}
+.mk{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:2px 7px;white-space:nowrap;display:inline-block}
+.s-tem{background:var(--tem-bg);color:var(--tem)}
+.s-nao{background:var(--nao-bg);color:var(--nao)}
+.s-parc{background:var(--parc-bg);color:var(--parc)}
+.col-irec{background:var(--accent-soft)}
+thead th.col-irec{background:var(--accent-soft);color:var(--accent)}
+
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin:24px 0 0}
+.panel{background:var(--card);border:1px solid var(--rule);padding:22px 24px}
+.panel.win{border-top:3px solid var(--tem)}
+.panel.gap{border-top:3px solid var(--nao)}
+.panel h3{margin-top:0}
+.panel ol{margin:14px 0 0;padding-left:22px}
+.panel li{margin-bottom:13px;color:var(--ink-2)}
+.panel li b{color:var(--ink);font-weight:600}
+
+.blocker{margin:32px 0 0;background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--nao);padding:24px 26px}
+.blocker .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--nao);display:block;margin-bottom:8px}
+
+.players{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin:24px 0 0}
+.player{background:var(--card);border:1px solid var(--rule);padding:20px 22px}
+.player .cat{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+.player h3{font-size:17px}
+.player p{font-size:14px;color:var(--ink-2);margin:8px 0 0}
+.player .num{font-family:var(--mono);font-size:12.5px;color:var(--ink);margin-top:10px;padding-top:10px;border-top:1px solid var(--rule-2)}
+
+.note{margin:44px 0 0;padding:20px 22px;background:var(--accent-soft);border-left:2px solid var(--accent);font-size:14px;color:var(--ink-2)}
+.note b{color:var(--ink)}
+
+footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3)}
+footer a{color:var(--accent)}
+footer ul{padding-left:20px;margin:10px 0 0}
+footer li{margin-bottom:5px}
+a:focus-visible,td:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <p class="eyebrow">Análise de mercado · agosto de 2026</p>
+  <h1>Onde o iRec ganha, onde perde, e o que o impede de competir hoje</h1>
+  <p class="lede">O iRec ocupa um espaço que nenhum concorrente ocupa inteiro: cuidado de ferida, telemedicina e emergência num app de paciente. Mas compete em desvantagem nas três coisas que o mercado usa para provar que funciona — medição calibrada, certificação e desfecho clínico publicado.</p>
+</header>
+
+<h2>O cruzamento</h2>
+<p class="sub">Comparação por função entre o iRec e as quatro categorias de produto com que ele concorre. Cada categoria é representada pelos produtos de referência citados no rodapé.</p>
+
+<div class="matrix-wrap">
+<table>
+<thead>
+<tr>
+  <th>Função</th>
+  <th class="col-irec">iRec</th>
+  <th>Ferida com IA<br><span style="font-weight:400;text-transform:none;letter-spacing:0">Swift · eKare · Tissue Analytics</span></th>
+  <th>Telemedicina BR<br><span style="font-weight:400;text-transform:none;letter-spacing:0">Conexa · Docway · Nilo</span></th>
+  <th>Triagem por IA<br><span style="font-weight:400;text-transform:none;letter-spacing:0">Infermedica · Ada</span></th>
+  <th>EHR aberto<br><span style="font-weight:400;text-transform:none;letter-spacing:0">Medplum · OpenEMR</span></th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Análise de ferida por foto</td><td class="col-irec"><span class="mk s-parc">sem calibração</span></td><td><span class="mk s-tem">núcleo do produto</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td></tr>
+<tr><td>Medição dimensional calibrada</td><td class="col-irec"><span class="mk s-nao">não</span></td><td><span class="mk s-tem">3D / AR / volumétrica</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td></tr>
+<tr><td>Triagem conversacional de sintomas</td><td class="col-irec"><span class="mk s-parc">prompt livre</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-parc">varia</span></td><td><span class="mk s-tem">motor probabilístico</span></td><td><span class="mk s-nao">não</span></td></tr>
+<tr><td>Videoconsulta</td><td class="col-irec"><span class="mk s-parc">WebRTC sem TURN</span></td><td><span class="mk s-parc">integra a terceiros</span></td><td><span class="mk s-tem">núcleo do produto</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td></tr>
+<tr><td>Prontuário eletrônico</td><td class="col-irec"><span class="mk s-parc">próprio, simples</span></td><td><span class="mk s-parc">módulo de ferida</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-tem">completo</span></td></tr>
+<tr><td>Prescrição com validade legal no Brasil</td><td class="col-irec"><span class="mk s-nao">simulada</span></td><td><span class="mk s-nao">n/a</span></td><td><span class="mk s-tem">via Memed / CFM</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-parc">depende de integração</span></td></tr>
+<tr><td>Agendamento com pagamento</td><td class="col-irec"><span class="mk s-parc">PIX inválido</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-parc">módulo</span></td></tr>
+<tr><td>SOS de emergência com rota e 192</td><td class="col-irec"><span class="mk s-tem">exclusivo</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td></tr>
+<tr><td>Modo acessível por voz para idosos</td><td class="col-irec"><span class="mk s-tem">exclusivo</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-parc">app de consumidor</span></td><td><span class="mk s-nao">não</span></td></tr>
+<tr><td>App voltado ao paciente</td><td class="col-irec"><span class="mk s-tem">sim</span></td><td><span class="mk s-nao">ferramenta do clínico</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-nao">portal do clínico</span></td></tr>
+<tr><td>Marketplace de insumos com afiliados</td><td class="col-irec"><span class="mk s-tem">exclusivo</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td></tr>
+<tr><td>Exportação FHIR</td><td class="col-irec"><span class="mk s-parc">simplificada</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-tem">nativo</span></td></tr>
+<tr><td>Integração com prontuários do mercado</td><td class="col-irec"><span class="mk s-nao">não</span></td><td><span class="mk s-tem">Epic, Cerner</span></td><td><span class="mk s-tem">TASY, MV</span></td><td><span class="mk s-tem">API-first</span></td><td><span class="mk s-tem">sim</span></td></tr>
+<tr><td>Certificação como dispositivo médico</td><td class="col-irec"><span class="mk s-nao">não</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-parc">varia</span></td><td><span class="mk s-tem">Classe IIb MDR</span></td><td><span class="mk s-nao">n/a</span></td></tr>
+<tr><td>Auditoria de acesso em banco de dados</td><td class="col-irec"><span class="mk s-nao">localStorage</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-tem">SOC2</span></td><td><span class="mk s-tem">enterprise</span></td></tr>
+<tr><td>Controle de acesso no servidor</td><td class="col-irec"><span class="mk s-nao">só no cliente</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-tem">sim</span></td></tr>
+<tr><td>Desfecho clínico publicado</td><td class="col-irec"><span class="mk s-nao">não</span></td><td><span class="mk s-tem">sim</span></td><td><span class="mk s-parc">escala divulgada</span></td><td><span class="mk s-tem">94% de acurácia</span></td><td><span class="mk s-nao">n/a</span></td></tr>
+<tr><td>Código aberto</td><td class="col-irec"><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-nao">não</span></td><td><span class="mk s-tem">sim</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>O que só o iRec tem</h2>
+<p class="sub">Vantagens reais, não derivadas de defeito. São as que valem defender.</p>
+
+<div class="cols">
+<div class="panel win">
+<h3>Cinco diferenciais legítimos</h3>
+<ol>
+<li><b>Emergência integrada.</b> Ligar 192, rota para a UPA mais próxima e notificação fixa na barra do celular. Nenhum concorrente pesquisado tem isso — é uma função que só faz sentido no contexto do SUS e ninguém de fora construiu.</li>
+<li><b>Modo Fácil por voz.</b> Swift, eKare e Tissue Analytics são ferramentas de profissional. Conexa e Docway assumem paciente alfabetizado digitalmente. Um modo com botões grandes e narração para idoso com ferida crônica não existe no mercado.</li>
+<li><b>Escopo combinado.</b> Os especialistas em ferida não fazem telemedicina. Os de telemedicina não analisam ferida. O iRec faz os dois no mesmo prontuário, e é aí que está a tese do produto.</li>
+<li><b>Paciente como usuário primário.</b> Nas plataformas de ferida, o paciente não tem login. No iRec ele fotografa, acompanha a evolução e fala com o profissional.</li>
+<li><b>Modelo de receita embutido.</b> Recomendação de insumos com link de afiliado dentro do protocolo clínico. Nenhum EHR ou plataforma de telemedicina monetiza assim.</li>
+</ol>
+</div>
+
+<div class="panel gap">
+<h3>Cinco desvantagens estruturais</h3>
+<ol>
+<li><b>A medição não é medição.</b> Swift declara base de mais de 32 milhões de imagens calibradas; eKare captura volume em 3D com realidade aumentada. No iRec, a área vem de um modelo de texto sem referência de escala — e até esta semana vinha de <code>Math.random()</code>.</li>
+<li><b>Sem certificação.</b> A Infermedica é dispositivo médico Classe IIb no MDR europeu, com ISO, HIPAA, GDPR e SOC2. O iRec não tem nenhuma, e software que sugere conduta clínica costuma precisar.</li>
+<li><b>Sem número para mostrar.</b> Swift publica 35% de cicatrização mais rápida e 15% menos hospitalizações. Infermedica publica 94% de acurácia. O iRec não tem nenhuma medição de desfecho — e sem isso não se vende para operadora nem para gestor público.</li>
+<li><b>Não conversa com o resto.</b> Nilo Care integra aos prontuários do mercado brasileiro; Medplum é FHIR nativo. O iRec exporta FHIR de forma simplificada e não integra com TASY, MV ou e-SUS.</li>
+<li><b>Segurança de plataforma.</b> Permissão checada só no cliente, admin identificado por comparação de e-mail, e trilha de auditoria em <code>localStorage</code>. Qualquer comprador institucional reprova nesse item antes de olhar a funcionalidade.</li>
+</ol>
+</div>
+</div>
+
+<div class="blocker">
+<span class="tag">O impedimento imediato</span>
+<h3>A receita do iRec não tem validade legal no Brasil</h3>
+<p>A Lei 14.063/2020 e a Resolução CFM nº 2.299/2021 exigem assinatura eletrônica qualificada no padrão <b>ICP-Brasil</b> em prescrição digital. Para medicamento controlado, exige-se ainda integração com o SNCR da ANVISA.</p>
+<p>Hoje o iRec imprime o selo <em>"ASSINATURA DIGITAL VALIDADA (ICP-BRASIL)"</em> com hash gerado por <code>Math.random()</code>, sem validar o PIN. Isso não é uma funcionalidade incompleta — é um documento que afirma ter validade jurídica que não tem.</p>
+<p>É o item que separa "protótipo" de "produto utilizável", porque bloqueia o fluxo inteiro de teleconsulta com prescrição. As duas saídas honestas: integrar a uma plataforma homologada como a Memed ou a Prescrição Eletrônica do CFM, ou <b>remover os selos e o QR</b> até existir assinatura real.</p>
+</div>
+
+<h2>Quem são os concorrentes</h2>
+<p class="sub">Produtos de referência de cada categoria, com o dado público que define seu posicionamento.</p>
+
+<div class="players">
+<div class="player">
+<p class="cat">Ferida com IA</p>
+<h3>Swift Medical</h3>
+<p>Avaliação, documentação e medição de ferida em tempo real, com coordenação de cuidado. Vendido como complemento ao EHR.</p>
+<p class="num">32M+ imagens calibradas · 35% cicatrização mais rápida · 79% avaliação mais rápida · 15% menos hospitalizações</p>
+</div>
+<div class="player">
+<p class="cat">Ferida com IA</p>
+<h3>eKare InSight</h3>
+<p>Captura dimensional por realidade aumentada no celular, com medição volumétrica 3D e suporte à decisão.</p>
+<p class="num">Medição 3D volumétrica · precificado como add-on</p>
+</div>
+<div class="player">
+<p class="cat">Ferida com IA</p>
+<h3>Tissue Analytics <span style="font-weight:400;color:var(--ink-3)">(Net Health)</span></h3>
+<p>Imagem de ferida por smartphone com segmentação, classificação e medição automática por aprendizado de máquina, integrada a telessaúde.</p>
+<p class="num">Segmentação e classificação automáticas</p>
+</div>
+<div class="player">
+<p class="cat">Telemedicina BR</p>
+<h3>Conexa Saúde</h3>
+<p>Telemedicina e saúde digital para operadoras e empresas. Atua B2B e B2C.</p>
+<p class="num">38 milhões de usuários cobertos no Brasil em 2026</p>
+</div>
+<div class="player">
+<p class="cat">Telemedicina BR</p>
+<h3>Nilo Saúde <span style="font-weight:400;color:var(--ink-3)">(NiloCare)</span></h3>
+<p>Engajamento e acompanhamento da jornada de cuidado com IA, com arquitetura que suporta múltiplos protocolos.</p>
+<p class="num">Integra aos principais prontuários do mercado brasileiro</p>
+</div>
+<div class="player">
+<p class="cat">Telemedicina BR</p>
+<h3>Docway</h3>
+<p>Nasceu em 2015 conectando médico e paciente para atendimento domiciliar; passou a oferecer telemedicina em 2018.</p>
+<p class="num">Atendimento domiciliar + telemedicina</p>
+</div>
+<div class="player">
+<p class="cat">Triagem por IA</p>
+<h3>Infermedica</h3>
+<p>Triagem conversacional com motor de inferência probabilístico: escolhe a próxima pergunta mais relevante em vez de seguir roteiro fixo. Integração API-first.</p>
+<p class="num">94% de acurácia declarada · Dispositivo médico Classe IIb (MDR) · ISO, HIPAA, GDPR, SOC2</p>
+</div>
+<div class="player">
+<p class="cat">Triagem por IA</p>
+<h3>Ada Health</h3>
+<p>Verificador de sintomas com foco na experiência do app de consumidor, em contraste com o posicionamento B2B da Infermedica.</p>
+<p class="num">Foco em consumidor final</p>
+</div>
+<div class="player">
+<p class="cat">EHR aberto</p>
+<h3>Medplum</h3>
+<p>Plataforma aberta para desenvolvedor construir software clínico, com FHIR nativo e auditoria de nível empresarial. Já citada como referência no próprio projeto iRec.</p>
+<p class="num">Código aberto · FHIR nativo</p>
+</div>
+<div class="player">
+<p class="cat">EHR aberto</p>
+<h3>OpenEMR</h3>
+<p>Prontuário eletrônico e gestão de consultório aberto, com agendamento, faturamento e internacionalização. Existe desde 2001, sob GPL.</p>
+<p class="num">Código aberto · o EHR livre mais adotado</p>
+</div>
+</div>
+
+<h2>Como o iRec fica inteiro verde</h2>
+<p class="sub">Cada linha em que o iRec aparece em vermelho ou amarelo na matriz, com o que é preciso fazer para alcançar a paridade — e, onde é possível, para ultrapassar.</p>
+
+<div class="matrix-wrap">
+<table>
+<thead>
+<tr><th>Função</th><th>O que fazer para alcançar</th><th>Como ultrapassar</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>Análise de ferida por foto</td>
+<td>Trocar o modelo de texto por um modelo de <b>segmentação de imagem</b> treinado, capaz de separar o leito da lesão da pele sã em nível de pixel. Um modelo de linguagem não devolve máscara confiável.</td>
+<td>Construir base própria de imagens rotuladas fazendo o profissional <b>corrigir a análise na tela</b>. Cada correção vira um rótulo. Em seis meses de piloto existe base própria — e o produto funciona nesse período, porque a decisão final é do clínico.</td>
+</tr>
+<tr>
+<td>Medição dimensional calibrada</td>
+<td>Adotar <b>marcador de calibração impresso</b> — adesivo com régua e padrão de alto contraste colado ao lado da lesão. A visão computacional o detecta e converte pixel em milímetro. É o mesmo princípio do marcador proprietário do Swift.</td>
+<td>Calcular o <b>PUSH</b> (Pressure Ulcer Scale for Healing), instrumento do NPUAP validado para o português desde 2005, que usa área, exsudato e aparência do leito. O eKare exige realidade aumentada e sensor de profundidade; o marcador impresso funciona em celular simples — <b>vantagem de alcance, não de tecnologia</b>.</td>
+</tr>
+<tr>
+<td>Triagem conversacional de sintomas</td>
+<td>Calcular escalas validadas <b>em código</b>, de forma determinística: Braden para risco de lesão por pressão, PUSH para cicatrização, TIME para o leito, Wagner ou Universidade do Texas para pé diabético. O modelo de linguagem passa a apenas explicar o resultado em linguagem simples — nunca a pontuar.</td>
+<td>A Infermedica é generalista e cobre milhares de condições. O iRec não precisa vencê-la em amplitude: precisa ser <b>o melhor do mundo em ferida crônica</b>, com escore reproduzível, auditável e citável na literatura.</td>
+</tr>
+<tr>
+<td>Videoconsulta</td>
+<td>Contratar <b>servidor TURN</b> — coturn autohospedado ou serviço gerenciado. Sem ele a chamada falha em rede móvel, que é a maioria dos atendimentos.</td>
+<td>A reconexão automática por reinício de ICE <b>já está implementada</b> no código, e passa a funcionar assim que o TURN existir. Somar sala de espera virtual e tolerância a atraso, como faz o Cal.com.</td>
+</tr>
+<tr>
+<td>Prontuário eletrônico</td>
+<td>Completar os campos clínicos e corrigir a leitura de dados: hoje vários campos são lidos com nome que não existe no banco, e o valor padrão aparece como se fosse informação real.</td>
+<td>Nenhum concorrente reúne ferida, teleconsulta, documento e emergência <b>no mesmo prontuário</b>. A vantagem não é a profundidade de cada módulo, é a continuidade entre eles.</td>
+</tr>
+<tr>
+<td>Prescrição com validade legal</td>
+<td>Integrar a uma plataforma homologada — <b>Memed</b> ou Prescrição Eletrônica do CFM. Não implementar ICP-Brasil por conta própria: exige certificado em token, cadeia de confiança e homologação.</td>
+<td>O certificado é <b>gratuito</b>: o CFM fornece certificado ICP-Brasil em nuvem a todo médico regular. O médico traz o dele, e o custo por profissional é zero — barreira menor que a de qualquer concorrente.</td>
+</tr>
+<tr>
+<td>Agendamento com pagamento</td>
+<td>Substituir o código PIX montado manualmente por <b>gateway de pagamento real</b> (Mercado Pago, Asaas ou Pagar.me). O código atual tem CRC fixo e campo de valor malformado — nenhum banco lê.</td>
+<td>Cobrança integrada à consulta é rara entre plataformas de ferida, que são vendidas ao hospital. Para atendimento domiciliar particular, é diferencial de operação.</td>
+</tr>
+<tr>
+<td>Exportação FHIR</td>
+<td>Corrigir a estrutura: hoje o prenome do paciente é exportado como sobrenome, faltam CPF, alergias e medicamentos, e medidas não medidas saem como zero com situação “final”.</td>
+<td>FHIR correto é a porta de entrada para qualquer integração futura. É pré-requisito, não diferencial — mas sem ele nenhuma das linhas seguintes é possível.</td>
+</tr>
+<tr>
+<td>Integração com prontuários do mercado</td>
+<td>Integrar ao <b>e-SUS APS</b> para o setor público e a TASY ou MV para o privado.</td>
+<td>Aqui há uma assimetria a favor: Swift e Tissue Analytics integram a Epic e Cerner, sistemas de hospital norte-americano. <b>Nenhum deles fala com o e-SUS.</b> É um mercado que eles não conseguem atender.</td>
+</tr>
+<tr>
+<td>Certificação como dispositivo médico</td>
+<td>Regularizar na ANVISA sob a <b>RDC 657/2022</b>, provavelmente classe II.</td>
+<td>A própria RDC 657 dispensa de regularização o software desenvolvido por serviço de saúde para uso interno, classes I e II. <b>É o caminho para operar e gerar evidência antes de certificar</b> — comercialização só depois.</td>
+</tr>
+<tr>
+<td>Auditoria de acesso em banco</td>
+<td>Gravar a trilha em tabela do banco, imutável, com <b>identidade real do profissional</b>. Hoje grava em armazenamento local do navegador, com nome fixo, e some ao limpar o cache.</td>
+<td>Rastreabilidade real de quem abriu qual prontuário é exigência de LGPD e condição para qualquer comprador institucional. É item de reprovação automática em auditoria.</td>
+</tr>
+<tr>
+<td>Controle de acesso no servidor</td>
+<td>Habilitar <b>segurança em nível de linha</b> no banco, tabela por tabela. Hoje toda permissão é verificada no aplicativo, e o administrador é identificado por comparação de endereço de e-mail.</td>
+<td>Sem isso, qualquer usuário com conhecimento técnico alcança dados de outro paciente. É o primeiro item que uma auditoria de segurança verifica.</td>
+</tr>
+<tr>
+<td>Desfecho clínico publicado</td>
+<td>Conduzir <b>estudo prospectivo</b> durante o piloto, com 50 a 100 pacientes, comparando tempo de cicatrização com o cuidado padrão.</td>
+<td>É o que gera o equivalente ao “35% de cicatrização mais rápida” do Swift. <b>Sem número próprio, não há conversa com operadora nem com gestor público</b> — nenhuma funcionalidade substitui isso.</td>
+</tr>
+<tr>
+<td>Código aberto</td>
+<td colspan="2"><b>Não é lacuna.</b> Abrir o código é modelo de negócio do Medplum, não requisito de qualidade — os quatro concorrentes comerciais também são fechados. Recomenda-se manter fechado e tratar esta linha como não aplicável.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2>Onde o iRec pode ficar à frente de todos</h2>
+<p class="sub">Alcançar a paridade nas treze linhas acima coloca o iRec no mesmo patamar. O que o coloca à frente é outra coisa.</p>
+
+<div class="cols">
+<div class="panel win">
+<h3>Três vantagens que nenhum concorrente consegue copiar rapidamente</h3>
+<ol>
+<li><b>O território que ninguém ocupa.</b> As plataformas de ferida são ferramenta de clínico em hospital norte-americano. As de telemedicina brasileira vendem para operadora e não olham ferida. Ninguém atende o idoso com ferida crônica <b>em casa, dentro do SUS</b> — e o SOS, o Modo Fácil e o escopo combinado só fazem sentido exatamente ali.</li>
+<li><b>Custo de acesso.</b> Marcador impresso em papel contra realidade aumentada com sensor de profundidade; certificado gratuito do CFM contra licença por profissional; celular simples contra aparelho de última geração. Cada uma dessas escolhas amplia o alcance no Brasil, e nenhuma exige vencer um concorrente em tecnologia.</li>
+<li><b>Integração com o e-SUS.</b> É a barreira que protege o mercado público brasileiro. Swift, eKare e Tissue Analytics integram a Epic e Cerner, e não têm incentivo econômico para falar com o e-SUS.</li>
+</ol>
+</div>
+
+<div class="panel gap">
+<h3>Onde a paridade é a meta sensata, não a superação</h3>
+<ol>
+<li><b>Volume de dados de imagem.</b> O Swift declara base de mais de 32 milhões de imagens calibradas. Superar esse número não é meta realista, e não precisa ser: uma base própria menor e brasileira, com feridas em contexto domiciliar, tem valor clínico distinto — não inferior.</li>
+<li><b>Amplitude de triagem.</b> A Infermedica cobre milhares de condições com certificação de dispositivo médico europeu. Competir em amplitude é perder por definição. Competir em profundidade sobre ferida crônica é vencível.</li>
+<li><b>Escala de distribuição.</b> A Conexa declara 38 milhões de usuários cobertos. Essa é uma disputa comercial, não de produto, e não se resolve com funcionalidade.</li>
+</ol>
+</div>
+</div>
+
+<div class="blocker" style="border-left-color:var(--accent)">
+<span class="tag" style="color:var(--accent)">Sequência recomendada</span>
+<h3>A ordem importa mais que a lista</h3>
+<p><b>Primeiro, parar de mostrar dado que não existe.</b> Enquanto a área da lesão vier de valor aleatório e a receita trouxer selo de assinatura que não valida nada, nenhuma outra melhoria conta — e há risco clínico e jurídico real.</p>
+<p><b>Depois, medir de verdade.</b> Marcador de calibração e escore PUSH. É o que transforma o acompanhamento domiciliar de impressão em medição.</p>
+<p><b>Então, operar sob a exceção da RDC 657</b> dentro de um serviço de saúde parceiro, com o estudo prospectivo rodando desde o primeiro dia. É assim que nasce o número que hoje falta.</p>
+<p><b>Por último, certificar e integrar.</b> ANVISA para poder comercializar, e-SUS para alcançar o setor público. Com evidência na mão, a conversa muda de natureza.</p>
+</div>
+
+<h2>Leitura estratégica</h2>
+<p>O iRec não perde por falta de funcionalidade — perde por falta de <b>prova</b>. A lista de funções dele é maior que a de qualquer concorrente isolado. O problema é que as três coisas que um comprador institucional verifica primeiro são exatamente as que faltam: a medição é calibrada? existe certificação? existe desfecho publicado?</p>
+<p>Isso sugere um caminho mais estreito e mais defensável do que competir de frente. As plataformas de ferida com IA são ferramenta de clínico em hospital dos Estados Unidos. As de telemedicina brasileira vendem para operadora e não olham ferida. <b>Ninguém está construindo para o paciente idoso com ferida crônica em casa, dentro do SUS.</b> É exatamente onde o SOS, o Modo Fácil e o escopo combinado deixam de ser curiosidade e passam a ser a razão de existir.</p>
+<p>Mas esse posicionamento só se sustenta com medição de verdade — porque sem área e profundidade calibradas, acompanhar evolução de ferida em casa é adivinhação. Hoje é o maior buraco técnico entre a ambição e o produto.</p>
+
+<p class="note"><b>Sobre o rigor desta comparação.</b> As colunas do iRec vêm da leitura do código-fonte, não de material de divulgação — por isso aparecem ressalvas como <em>"PIX inválido"</em> e <em>"WebRTC sem TURN"</em>, que refletem o estado real do repositório em agosto de 2026. As colunas dos concorrentes vêm de material público dos próprios fornecedores e de comparativos de terceiros; números como acurácia e velocidade de cicatrização são <b>declarados por eles</b> e não foram verificados de forma independente. Não localizei preço público de nenhuma das plataformas comerciais.</p>
+
+<footer>
+<p>Fontes consultadas</p>
+<ul>
+<li><a href="https://swiftmedical.com/">Swift Medical</a> — plataforma de cuidado avançado de ferida com IA</li>
+<li><a href="https://infermedica.com/">Infermedica</a> e <a href="https://infermedica.com/product/symptom-checker">Symptom Checker</a></li>
+<li><a href="https://marketplace.aviahealth.com/compare/62098/46803">AVIA Health</a> — comparativo Infermedica × Ada Health</li>
+<li><a href="https://www.conexasaude.com.br/">Conexa Saúde</a> · <a href="https://www.nilosaude.com.br/nilo-care">NiloCare</a></li>
+<li><a href="https://www.scielo.br/j/rac/a/RBfb9Z78M3WqY3tTfvtnmTg/?lang=pt">SciELO / RAC</a> — ambiente competitivo das plataformas de telemedicina no Brasil</li>
+<li><a href="https://sistemas.cfm.org.br/normas/arquivos/resolucoes/BR/2021/2299_2021.pdf">Resolução CFM nº 2.299/2021</a> · <a href="https://prescricaoeletronica.cfm.org.br/">Prescrição Eletrônica do CFM</a></li>
+<li><a href="https://www.medplum.com/">Medplum</a> · <a href="https://github.com/openemr/openemr">OpenEMR</a> · <a href="https://github.com/kakoni/awesome-healthcare">awesome-healthcare</a></li>
+<li><a href="https://medipyxis.com/compare">Medipyxis</a> — comparativo de EMR de cuidado de ferida</li>
+</ul>
+</footer>
+</div>

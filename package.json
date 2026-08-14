@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "lint:ci": "node scripts/ci-lint-gate.mjs",
+    "verificar": "node scripts/verificar-catalogo.mjs",
+    "test": "playwright test",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@capacitor/cli": "^8.4.2",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.50.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

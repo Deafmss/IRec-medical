@@ -16,51 +16,59 @@ export function AccessibleTelemedicineView({ setActiveTab, onStartVideoCall }) {
   };
 
   return (
-    <div style={{
-      maxWidth: '600px',
+    <div className="animate-fade-in" style={{
+      maxWidth: '640px',
       margin: '0 auto',
-      padding: '20px 16px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '24px',
+      gap: '20px',
       fontFamily: 'var(--font-primary, sans-serif)',
       textAlign: 'center'
     }}>
       {/* Top Welcome Card */}
-      <div style={{
-        backgroundColor: '#1e293b',
-        border: '3px solid #0284c7',
-        borderRadius: '24px',
-        padding: '24px',
-        color: '#ffffff',
+      <div className="glass-card glass-card-cyan-glow" style={{
+        padding: '28px 24px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: '16px',
-        boxShadow: '0 10px 25px rgba(2, 132, 199, 0.2)'
+        border: '1px solid rgba(2, 132, 199, 0.25)',
+        backgroundColor: 'rgba(255, 255, 255, 0.96)'
       }}>
         <div style={{
-          width: '90px',
-          height: '90px',
+          width: '80px',
+          height: '80px',
           borderRadius: '50%',
-          backgroundColor: '#0284c7',
-          color: '#ffffff',
+          backgroundColor: 'rgba(2, 132, 199, 0.12)',
+          color: '#0284c7',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '44px',
+          fontSize: '40px',
           fontWeight: '900',
-          border: '4px solid #38bdf8'
+          border: '1px solid rgba(2, 132, 199, 0.3)'
         }}>
           👩‍⚕️
         </div>
 
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '900', margin: 0, color: '#ffffff' }}>
-            Atendimento de Enfermagem & Médico
+          <div style={{
+            display: 'inline-block',
+            backgroundColor: 'rgba(2, 132, 199, 0.15)',
+            color: '#0284c7',
+            fontSize: '11px',
+            fontWeight: '800',
+            padding: '3px 12px',
+            borderRadius: '50px',
+            marginBottom: '6px'
+          }}>
+            📹 TELECONSULTA DE ENFERMAGEM & MÉDICA
+          </div>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', margin: 0, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+            Atendimento Clínico por Vídeo
           </h2>
-          <p style={{ fontSize: '16px', color: '#94a3b8', margin: '6px 0 0 0', fontWeight: '600' }}>
-            Seu profissional de saúde está disponível para te atender
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '6px 0 0 0', fontWeight: '600' }}>
+            Seu profissional de saúde está a um toque de distância
           </p>
         </div>
 
@@ -68,13 +76,13 @@ export function AccessibleTelemedicineView({ setActiveTab, onStartVideoCall }) {
           type="button"
           onClick={() => speakNaturalText("Para falar por vídeo com o seu profissional de saúde, aperte no botão verde grande na tela.")}
           style={{
-            backgroundColor: '#0284c7',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '14px',
+            backgroundColor: 'rgba(2, 132, 199, 0.1)',
+            color: '#0284c7',
+            border: '1px solid rgba(2, 132, 199, 0.25)',
+            borderRadius: '50px',
             padding: '10px 20px',
             fontWeight: '800',
-            fontSize: '15px',
+            fontSize: '13.5px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -99,21 +107,22 @@ export function AccessibleTelemedicineView({ setActiveTab, onStartVideoCall }) {
           border: 'none',
           borderRadius: '28px',
           padding: '28px 20px',
-          fontSize: '22px',
+          fontSize: '20px',
           fontWeight: '900',
           cursor: 'pointer',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '12px',
-          boxShadow: '0 12px 30px rgba(16, 185, 129, 0.4)',
-          transition: 'transform 0.2s'
+          gap: '10px',
+          boxShadow: '0 12px 30px rgba(16, 185, 129, 0.35)',
+          fontFamily: 'var(--font-display)',
+          transition: 'all 0.2s ease'
         }}
       >
-        <span style={{ fontSize: '56px' }}>📞</span>
+        <span style={{ fontSize: '52px' }}>📞</span>
         <span>LIGAR POR VÍDEO AGORA</span>
-        <span style={{ fontSize: '14px', opacity: 0.9, fontWeight: '700' }}>(Toque 1 vez para iniciar a chamada)</span>
+        <span style={{ fontSize: '13px', opacity: 0.9, fontWeight: '700' }}>(Toque 1 vez para iniciar a chamada)</span>
       </button>
 
       {/* GIANT RETURN BUTTON */}
@@ -123,14 +132,13 @@ export function AccessibleTelemedicineView({ setActiveTab, onStartVideoCall }) {
           triggerVibration();
           setActiveTab('dashboard');
         }}
+        className="glass-card"
         style={{
-          backgroundColor: '#334155',
-          color: '#ffffff',
-          border: '2px solid #475569',
           borderRadius: '20px',
-          padding: '18px',
-          fontSize: '18px',
+          padding: '16px',
+          fontSize: '16px',
           fontWeight: '800',
+          color: 'var(--text-primary)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -176,36 +184,58 @@ export function AccessibleUploadView({ setActiveTab, onPhotoTaken }) {
   };
 
   return (
-    <div style={{
-      maxWidth: '600px',
+    <div className="animate-fade-in" style={{
+      maxWidth: '640px',
       margin: '0 auto',
-      padding: '20px 16px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '24px',
+      gap: '20px',
       fontFamily: 'var(--font-primary, sans-serif)',
       textAlign: 'center'
     }}>
       {/* Instructions Card */}
-      <div style={{
-        backgroundColor: '#1e293b',
-        border: '3px solid #6366f1',
-        borderRadius: '24px',
-        padding: '24px',
-        color: '#ffffff',
+      <div className="glass-card glass-card-cyan-glow" style={{
+        padding: '28px 24px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: '16px',
-        boxShadow: '0 10px 25px rgba(99, 102, 241, 0.2)'
+        border: '1px solid rgba(2, 132, 199, 0.25)',
+        backgroundColor: 'rgba(255, 255, 255, 0.96)'
       }}>
-        <span style={{ fontSize: '56px' }}>📷</span>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          backgroundColor: 'rgba(2, 132, 199, 0.12)',
+          color: '#0284c7',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '40px',
+          fontWeight: '900',
+          border: '1px solid rgba(2, 132, 199, 0.3)'
+        }}>
+          📷
+        </div>
 
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: '900', margin: 0, color: '#ffffff' }}>
+          <div style={{
+            display: 'inline-block',
+            backgroundColor: 'rgba(2, 132, 199, 0.15)',
+            color: '#0284c7',
+            fontSize: '11px',
+            fontWeight: '800',
+            padding: '3px 12px',
+            borderRadius: '50px',
+            marginBottom: '6px'
+          }}>
+            📸 REGISTRO FOTOGRÁFICO DE FERIDA
+          </div>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', margin: 0, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
             Fotografar Ferida ou Pele
           </h2>
-          <p style={{ fontSize: '16px', color: '#94a3b8', margin: '6px 0 0 0', fontWeight: '600' }}>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '6px 0 0 0', fontWeight: '600' }}>
             Tire uma foto bem nítida da lesão para a enfermagem avaliar
           </p>
         </div>
@@ -214,13 +244,13 @@ export function AccessibleUploadView({ setActiveTab, onPhotoTaken }) {
           type="button"
           onClick={() => speakNaturalText("Aperte no botão roxo grande para abrir a câmera e tirar a foto da ferida ou da pele.")}
           style={{
-            backgroundColor: '#6366f1',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '14px',
+            backgroundColor: 'rgba(2, 132, 199, 0.1)',
+            color: '#0284c7',
+            border: '1px solid rgba(2, 132, 199, 0.25)',
+            borderRadius: '50px',
             padding: '10px 20px',
             fontWeight: '800',
-            fontSize: '15px',
+            fontSize: '13.5px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -234,23 +264,25 @@ export function AccessibleUploadView({ setActiveTab, onPhotoTaken }) {
 
       {/* GIANT CAMERA TRIGGER BUTTON */}
       <label style={{
-        backgroundColor: '#6366f1',
+        backgroundColor: '#0284c7',
         color: '#ffffff',
         borderRadius: '28px',
         padding: '32px 20px',
-        fontSize: '22px',
+        fontSize: '20px',
         fontWeight: '900',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '14px',
-        boxShadow: '0 12px 30px rgba(99, 102, 241, 0.4)'
+        gap: '12px',
+        boxShadow: '0 12px 30px rgba(2, 132, 199, 0.35)',
+        fontFamily: 'var(--font-display)',
+        transition: 'all 0.2s ease'
       }}>
-        <span style={{ fontSize: '64px' }}>📸</span>
+        <span style={{ fontSize: '56px' }}>📸</span>
         <span>ABRIR CÂMERA E TIRAR FOTO</span>
-        <span style={{ fontSize: '14px', opacity: 0.9, fontWeight: '700' }}>(Toque aqui para usar a câmera do celular)</span>
+        <span style={{ fontSize: '13px', opacity: 0.9, fontWeight: '700' }}>(Toque aqui para usar a câmera do celular)</span>
         <input
           type="file"
           accept="image/*"
@@ -262,18 +294,18 @@ export function AccessibleUploadView({ setActiveTab, onPhotoTaken }) {
 
       {/* GIANT RETURN BUTTON */}
       <button
+        type="button"
         onClick={() => {
           triggerVibration();
           setActiveTab('dashboard');
         }}
+        className="glass-card"
         style={{
-          backgroundColor: '#334155',
-          color: '#ffffff',
-          border: '2px solid #475569',
           borderRadius: '20px',
-          padding: '18px',
-          fontSize: '18px',
+          padding: '16px',
+          fontSize: '16px',
           fontWeight: '800',
+          color: 'var(--text-primary)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',

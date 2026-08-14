@@ -23,7 +23,7 @@ export const createAuditLog = async (actionType, clinician, patient, details = '
     const existingLogs = JSON.parse(localStorage.getItem(AUDIT_STORAGE_KEY) || '[]');
     const updatedLogs = [newLog, ...existingLogs].slice(0, 200); // Guardar os últimos 200 registros de auditoria
     localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(updatedLogs));
-    console.log(`[iRec AuditLog] Evento registrado: ${actionType} por ${newLog.clinicianName} no prontuário de ${newLog.patientName}`);
+    console.log(`[iRec AuditLog] Evento registrado: ${actionType} por ${newLog.clinicianName}`);
     return newLog;
   } catch (err) {
     console.warn('[iRec AuditLog] Erro ao gravar log de auditoria:', err);

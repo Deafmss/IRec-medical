@@ -86,6 +86,8 @@ const getDoctorPremiumDetails = (doc) => {
 };
 
 export default function SpecialistDirectory({ currentUser, setActiveTab, setTelemedicineContactId }) {
+  const isClinician = currentUser?.role === 'doctor' || currentUser?.role === 'nurse';
+
   const [allDoctors, setAllDoctors] = useState([]);
   const [assignedDoctors, setAssignedDoctors] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,6 +95,40 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [bookingDoctor, setBookingDoctor] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  if (isClinician) {
+    return (
+      <div style={{ padding: '60px 24px', maxWidth: '520px', margin: '0 auto', textAlign: 'center' }}>
+        <div className="glass-card glass-card-cyan-glow" style={{ padding: '32px 24px', borderRadius: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{ fontSize: '48px', margin: 0 }}>🩺</div>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+            Área Exclusiva de Pacientes
+          </h2>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: '1.55', margin: 0 }}>
+            O diretório de contratação e busca de especialistas é destinado a pacientes. Como profissional credenciado, gerencie suas parcerias clínicas e atendimentos em <strong>Minhas Parcerias</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={() => setActiveTab && setActiveTab('doctor-partners')}
+            style={{
+              padding: '12px 24px',
+              borderRadius: '30px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              fontWeight: '700',
+              fontSize: '14px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+              marginTop: '8px'
+            }}
+          >
+            Ir para Minhas Parcerias Clínicas
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -196,73 +232,64 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
               <div 
                 key={doc.id} 
                 onClick={() => setSelectedDoctor(doc)}
-                className="glass-card" 
+                className="glass-card glass-card-cyan-glow" 
                 style={{ 
-                  padding: '22px', 
+                  padding: '24px', 
                   display: 'flex', 
                   flexDirection: 'column', 
                   justifyContent: 'space-between', 
-                  gap: '14px', 
+                  gap: '16px', 
                   margin: 0,
                   cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  border: '1px solid var(--border-color)',
+                  borderRadius: '20px',
                   position: 'relative',
-                  overflow: 'hidden'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.08)';
-                  e.currentTarget.style.borderColor = 'var(--primary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  overflow: 'hidden',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
                 {/* Upper Section */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <div style={{
-                      width: '48px',
-                      height: '48px',
+                      width: '50px',
+                      height: '50px',
                       borderRadius: '50%',
-                      backgroundColor: 'var(--primary-glow)',
-                      color: 'var(--primary)',
+                      background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.2) 0%, rgba(14, 165, 233, 0.1) 100%)',
+                      border: '1px solid rgba(2, 132, 199, 0.3)',
+                      color: '#0284c7',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '17px',
-                      fontWeight: '700',
+                      fontSize: '18px',
+                      fontWeight: '800',
                       flexShrink: 0
                     }}>
                       {docInitials}
                     </div>
                     <div>
-                      <h4 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>{doc.name}</h4>
-                      <p style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '700', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <h4 style={{ fontSize: '15.5px', fontWeight: '800', margin: 0, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>{doc.name}</h4>
+                      <p style={{ fontSize: '11.5px', color: '#0284c7', fontWeight: '700', margin: '3px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         🩺 {doc.specialty}
                       </p>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                    <span style={{ fontSize: '10.5px', backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#10b981', padding: '3px 8px', borderRadius: '20px', fontWeight: '800', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                    <span style={{ fontSize: '10.5px', backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#10b981', padding: '3px 10px', borderRadius: '50px', fontWeight: '800', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                       ✅ Verificado
                     </span>
                   </div>
                 </div>
 
                 {/* Brief bio description */}
-                <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.45', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {doc.bio}
                 </p>
 
                 {/* Price Display */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Particular:</span>
-                  <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--primary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(2, 132, 199, 0.06)', padding: '10px 14px', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>Particular:</span>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#0284c7', fontFamily: 'var(--font-display)' }}>
                     {doc.price ? `R$ ${doc.price.toFixed(2)}` : 'Sob Consulta'}
                   </span>
                 </div>
@@ -277,27 +304,29 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
                     }}
                     style={{
                       width: '100%',
-                      backgroundColor: '#0284c7',
+                      background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
                       color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '8px',
-                      fontWeight: '800',
-                      fontSize: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      borderRadius: '30px',
+                      padding: '10px 16px',
+                      fontWeight: '700',
+                      fontSize: '13px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '6px'
+                      gap: '6px',
+                      boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                     }}
                   >
                     <span>💳</span>
                     <span>CONTRATAR CONSULTA</span>
                   </button>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)', paddingTop: '2px' }}>
                     <span>CRM: {doc.crm}</span>
-                    <span style={{ color: 'var(--primary)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#0284c7', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       Ver Perfil Clínico →
                     </span>
                   </div>

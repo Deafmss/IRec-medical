@@ -47,7 +47,7 @@ const isValidExpiry = (expiryStr) => {
 
 export default function BookingModal({ professional, currentUser, onClose, onSuccess }) {
   const [step, setStep] = useState(1);
-  const [modality, setModality] = useState('online'); // 'online' or 'presential'
+  const [modality, setModality] = useState('online'); // 'online' or 'presencial'
   const [selectedDate, setSelectedDate] = useState(getTomorrowDateStr); // Fixes IREC-0061
   const [selectedTime, setSelectedTime] = useState('09:00');
   const [notes, setNotes] = useState('');
@@ -151,11 +151,11 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
         appointmentDate: selectedDate,
         appointmentTime: selectedTime,
         notes: notes,
-        address: modality === 'presential' ? patientAddress : 'Atendimento Online via Vídeo (Telemedicina)',
+        address: modality === 'presencial' ? patientAddress : 'Atendimento Online via Vídeo (Telemedicina)',
         price: price,
         paymentMethod: paymentMethod,
         paymentStatus: initialPaymentStatus,
-        status: 'Agendado'
+        status: 'confirmed'
       };
 
       const result = await createAppointment(appointmentData);
@@ -287,10 +287,10 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
 
               <button
                 type="button"
-                onClick={() => { triggerVibration(); setModality('presential'); }}
+                onClick={() => { triggerVibration(); setModality('presencial'); }}
                 style={{
-                  backgroundColor: modality === 'presential' ? '#10b981' : '#0f172a',
-                  border: `2px solid ${modality === 'presential' ? '#34d399' : '#334155'}`,
+                  backgroundColor: modality === 'presencial' ? '#10b981' : '#0f172a',
+                  border: `2px solid ${modality === 'presencial' ? '#34d399' : '#334155'}`,
                   color: '#ffffff',
                   borderRadius: '16px',
                   padding: '18px 12px',
@@ -406,7 +406,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
               3. Detalhes do Atendimento:
             </h4>
 
-            {modality === 'presential' && (
+            {modality === 'presencial' && (
               <div>
                 <label style={{ fontSize: '13px', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>Endereço Completo para Visita Domiciliar:</label>
                 <input

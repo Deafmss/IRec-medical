@@ -240,13 +240,14 @@ export default function AdminDashboard({ currentUser, activeTab: propActiveTab, 
   const countDoctors = totalClinicalUsers.filter(u => u.role === 'doctor').length;
   const countNurses = totalClinicalUsers.filter(u => u.role === 'nurse').length;
 
-  // Active / Online Users (last_seen within 15 minutes)
+  // Active / Online Users (lastSeenAt within 15 minutes)
   const getActiveUsersStats = (currentDate = new Date()) => {
     const fifteenMinsAgo = new Date(currentDate.getTime() - 15 * 60 * 1000);
     const onlineUsers = totalClinicalUsers.filter(u => {
-      if (!u.last_seen && !u.lastSeen) return false;
-      const lastSeenDate = new Date(u.last_seen || u.lastSeen);
-      return lastSeenDate >= fifteenMinsAgo;
+      const val = u.lastSeenAt || u.last_seen_at;
+      if (!val) return false;
+      const recentDate = new Date(val);
+      return recentDate >= fifteenMinsAgo;
     });
 
     return {
@@ -273,7 +274,7 @@ export default function AdminDashboard({ currentUser, activeTab: propActiveTab, 
     return clinicians.map(cli => {
       const activeAssignments = assignments.filter(a => a.doctor_id === cli.id).length;
       const totalCalls = callsFiltered.filter(c => c.caller_id === cli.id || c.receiver_id === cli.id).length;
-      const isOnline = activeUserStats.onlineCount > 0 && totalClinicalUsers.find(u => u.id === cli.id && (new Date(u.last_seen || u.lastSeen) >= new Date(Date.now() - 15 * 60 * 1000)));
+      const isOnline = activeUserStats.onlineCount > 0 && totalClinicalUsers.find(u => u.id === cli.id && (new Date(u.lastSeenAt || u.last_seen_at) >= new Date(Date.now() - 15 * 60 * 1000)));
       
       return {
         id: cli.id,

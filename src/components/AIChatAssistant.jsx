@@ -980,38 +980,42 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
       {/* Chat Window Principal */}
       <div className="chat-container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, maxHeight: '100%', overflow: 'hidden', position: 'relative', height: '100%' }}>
         {/* Chat Header */}
-        <div className="chat-header" style={{ 
+        <div className="chat-header glass-panel" style={{ 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between',
           gap: '12px', 
-          paddingBottom: '16px', 
-          borderBottom: '1px solid var(--border-color)',
+          padding: '14px 18px', 
+          borderRadius: '16px',
+          border: '1px solid var(--glass-border)',
           marginBottom: '16px',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           minWidth: 0,
           width: '100%'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <div style={{ 
-              width: '38px', 
-              height: '38px', 
+              width: '40px', 
+              height: '40px', 
               borderRadius: '12px', 
-              background: 'linear-gradient(135deg, var(--primary), var(--accent))', 
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
               color: '#ffffff',
               fontWeight: 'bold',
               fontSize: '18px',
-              flexShrink: 0
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
             }}>
-              iR
+              🤖
             </div>
             <div style={{ minWidth: 0 }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Assistente Clínico iRec</h3>
-              <p style={{ fontSize: '11px', color: 'var(--success-light)', display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
-                <span style={{ display: 'inline-block', width: '6px', height: '6px', backgroundColor: 'var(--success-light)', borderRadius: '50%', flexShrink: 0 }}></span>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>Online · Orientação de Cuidados & Tradução de Exames</span>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, fontFamily: 'var(--font-display)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Assistente Clínico iRec</h3>
+              <p style={{ fontSize: '11px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '5px', margin: '2px 0 0 0', minWidth: 0 }}>
+                <span style={{ display: 'inline-block', width: '7px', height: '7px', backgroundColor: '#10b981', borderRadius: '50%', flexShrink: 0, boxShadow: '0 0 6px #10b981' }}></span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, fontWeight: '600' }}>Online · Orientação de Cuidados & Tradução de Exames</span>
               </p>
             </div>
           </div>
@@ -1071,23 +1075,24 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
               >
                 <div style={{ 
                   backgroundColor: msg.sender === 'user' 
-                    ? (isUserFile ? 'rgba(14, 165, 233, 0.08)' : 'var(--primary)') 
-                    : (isExamReport ? 'var(--bg-secondary)' : 'var(--bg-secondary)'), 
+                    ? (isUserFile ? 'rgba(2, 132, 199, 0.12)' : '#0284c7') 
+                    : 'var(--glass-bg)', 
                   color: msg.sender === 'user' 
                     ? (isUserFile ? 'var(--text-primary)' : '#ffffff') 
                     : 'var(--text-primary)',
                   padding: '12px 16px', 
                   borderRadius: msg.sender === 'user' ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
                   border: isExamReport 
-                    ? '2.5px solid var(--accent)' 
+                    ? '2.5px solid #0284c7' 
                     : isUserFile
-                      ? '1.5px dashed var(--accent)'
+                      ? '1.5px dashed #0284c7'
                       : msg.sender === 'user' 
                         ? 'none' 
-                        : '1px solid var(--border-color)',
+                        : '1px solid var(--glass-border)',
+                  backdropFilter: msg.sender === 'user' ? 'none' : 'blur(12px)',
                   fontSize: '13.5px',
-                  lineHeight: '1.45',
-                  boxShadow: isExamReport ? '0 6px 20px rgba(14, 165, 233, 0.08)' : 'var(--shadow-sm)',
+                  lineHeight: '1.5',
+                  boxShadow: msg.sender === 'user' ? '0 4px 14px rgba(2, 132, 199, 0.25)' : '0 2px 8px rgba(0, 0, 0, 0.04)',
                   whiteSpace: 'pre-line'
                 }}>
                   {editingMessageId === msg.id ? (
@@ -1101,7 +1106,7 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
                           fontSize: '13.5px',
                           padding: '8px',
                           borderRadius: '8px',
-                          border: '1px solid var(--primary)',
+                          border: '1px solid #0284c7',
                           backgroundColor: 'var(--bg-primary)',
                           color: 'var(--text-primary)',
                           resize: 'vertical',
@@ -1132,7 +1137,7 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
                             fontSize: '11px',
                             borderRadius: '4px',
                             border: 'none',
-                            backgroundColor: 'var(--primary)',
+                            backgroundColor: '#0284c7',
                             color: '#ffffff',
                             cursor: 'pointer'
                           }}
@@ -1166,7 +1171,7 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
                           gap: '2px',
                           transition: 'color 0.2s'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                        onMouseEnter={(e) => e.currentTarget.style.color = '#0284c7'}
                         onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
                         title="Editar mensagem"
                       >
@@ -1187,7 +1192,7 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
                           gap: '2px',
                           transition: 'color 0.2s'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                        onMouseEnter={(e) => e.currentTarget.style.color = '#0284c7'}
                         onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
                         title="Reprocessar pergunta"
                       >
@@ -1204,7 +1209,7 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
                         border: 'none',
                         cursor: 'pointer',
                         fontSize: '12px',
-                        color: speakingMessageId === msg.id ? 'var(--primary)' : 'var(--text-muted)',
+                        color: speakingMessageId === msg.id ? '#0284c7' : 'var(--text-muted)',
                         padding: '2px',
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -1225,11 +1230,11 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
           })}
           
           {isTyping && (
-            <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-start', alignItems: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', gap: '8px', alignSelf: 'flex-start', alignItems: 'center', padding: '8px 12px', backgroundColor: 'var(--glass-bg)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
               <div className="dot-typing" style={{ display: 'flex', gap: '4px' }}>
-                <span style={{ width: '6px', height: '6px', backgroundColor: 'var(--primary)', borderRadius: '50%', display: 'inline-block', animation: 'bounce 1.4s infinite ease-in-out both' }}></span>
-                <span style={{ width: '6px', height: '6px', backgroundColor: 'var(--primary)', borderRadius: '50%', display: 'inline-block', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.2s' }}></span>
-                <span style={{ width: '6px', height: '6px', backgroundColor: 'var(--primary)', borderRadius: '50%', display: 'inline-block', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.4s' }}></span>
+                <span style={{ width: '6px', height: '6px', backgroundColor: '#0284c7', borderRadius: '50%', display: 'inline-block', animation: 'bounce 1.4s infinite ease-in-out both' }}></span>
+                <span style={{ width: '6px', height: '6px', backgroundColor: '#0284c7', borderRadius: '50%', display: 'inline-block', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.2s' }}></span>
+                <span style={{ width: '6px', height: '6px', backgroundColor: '#0284c7', borderRadius: '50%', display: 'inline-block', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.4s' }}></span>
               </div>
             </div>
           )}
@@ -1247,24 +1252,28 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '8px 12px',
-                  backgroundColor: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-color)',
+                  padding: '8px 14px',
+                  backgroundColor: 'var(--glass-bg)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid var(--glass-border)',
                   borderRadius: '20px',
                   fontSize: '12px',
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
-                  transition: 'var(--transition-fast)',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.borderColor = 'var(--primary)';
-                  e.target.style.backgroundColor = 'var(--primary-glow)';
+                  e.currentTarget.style.borderColor = '#0284c7';
+                  e.currentTarget.style.color = '#0284c7';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.borderColor = 'var(--border-color)';
-                  e.target.style.backgroundColor = 'var(--bg-secondary)';
+                  e.currentTarget.style.borderColor = 'var(--glass-border)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.transform = 'none';
                 }}
               >
                 <span>{sug.icon}</span>
@@ -1280,10 +1289,11 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
             position: 'absolute',
             bottom: '76px',
             left: '20px',
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1.5px solid var(--primary)',
+            backgroundColor: 'var(--glass-bg)',
+            backdropFilter: 'blur(16px)',
+            border: '1.5px solid #0284c7',
             borderRadius: '12px',
-            boxShadow: 'var(--shadow-md)',
+            boxShadow: '0 4px 16px rgba(2, 132, 199, 0.2)',
             padding: '10px 16px',
             zIndex: '1100',
             display: 'flex',
@@ -1296,7 +1306,7 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
                 {selectedFile.type.startsWith('image/') ? '🖼️' : '📄'}
               </span>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '12.5px', fontWeight: '750', color: '#ffffff' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: '750', color: 'var(--text-primary)' }}>
                   {selectedFile.name}
                 </span>
                 <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
@@ -1335,13 +1345,16 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
             e.preventDefault();
             handleSendMessage(inputText);
           }}
+          className="glass-panel"
           style={{ 
             display: 'flex', 
             alignItems: 'center',
             gap: '10px', 
-            paddingTop: '8px', 
-            borderTop: '1px solid var(--border-color)',
-            backgroundColor: 'var(--bg-primary)',
+            padding: '14px 18px', 
+            borderRadius: '20px',
+            border: '1px solid var(--glass-border)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
             flexShrink: 0,
             width: '100%',
             minWidth: 0
@@ -1361,21 +1374,21 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
             type="button"
             onClick={() => fileInputRef.current?.click()}
             style={{
-              width: '46px',
-              height: '46px',
+              width: '42px',
+              height: '42px',
               borderRadius: '50%',
               padding: '0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              backgroundColor: selectedFile ? 'var(--primary-glow)' : 'var(--bg-secondary)',
-              border: '1px solid var(--border-color)',
-              borderColor: selectedFile ? 'var(--primary)' : 'var(--border-color)',
-              color: selectedFile ? 'var(--primary)' : 'var(--text-secondary)',
+              backgroundColor: selectedFile ? 'rgba(2, 132, 199, 0.15)' : 'var(--glass-bg)',
+              border: '1px solid var(--glass-border)',
+              borderColor: selectedFile ? '#0284c7' : 'var(--glass-border)',
+              color: selectedFile ? '#0284c7' : 'var(--text-secondary)',
               cursor: 'pointer',
-              boxShadow: 'var(--shadow-sm)',
-              transition: 'var(--transition-fast)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+              transition: 'all 0.2s ease'
             }}
             title="Anexar arquivo de exame, imagem ou documento"
           >
@@ -1390,20 +1403,21 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
             onClick={handleAutocorrectText}
             disabled={isTyping || !inputText.trim()}
             style={{
-              width: '46px',
-              height: '46px',
+              width: '42px',
+              height: '42px',
               borderRadius: '50%',
               padding: '0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              backgroundColor: 'var(--bg-secondary)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--primary)',
-              cursor: 'pointer',
-              boxShadow: 'var(--shadow-sm)',
-              transition: 'var(--transition-fast)'
+              backgroundColor: 'var(--glass-bg)',
+              border: '1px solid var(--glass-border)',
+              color: '#0284c7',
+              cursor: isTyping || !inputText.trim() ? 'not-allowed' : 'pointer',
+              opacity: isTyping || !inputText.trim() ? 0.5 : 1,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+              transition: 'all 0.2s ease'
             }}
             title="✨ Corrigir ortografia automaticamente"
           >
@@ -1419,32 +1433,43 @@ Pacientes diabéticos exigem atenção redobrada no autocuidado. Gostaria de ver
             style={{ 
               flex: '1', 
               minWidth: 0,
-              padding: '12px 18px', 
-              borderRadius: '24px', 
-              border: '1px solid var(--border-color)', 
-              backgroundColor: 'var(--bg-secondary)',
+              padding: '11px 18px', 
+              borderRadius: '30px', 
+              border: '1px solid var(--glass-border)', 
+              backgroundColor: 'var(--bg-primary)',
+              color: 'var(--text-primary)',
               fontSize: '13.5px',
-              boxShadow: 'var(--shadow-sm)'
+              outline: 'none',
+              transition: 'all 0.2s ease'
             }}
           />
           
           <button 
             type="submit" 
             disabled={isTyping || !inputText.trim()}
-            className="btn btn-primary"
             style={{ 
-              width: '46px', 
-              height: '46px', 
-              borderRadius: '50%', 
-              padding: '0', 
-              display: 'flex', 
-              alignItems: 'center', 
+              display: 'inline-flex',
+              alignItems: 'center',
               justifyContent: 'center',
+              gap: '8px',
+              padding: '10px 22px',
+              borderRadius: '30px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              fontWeight: '700',
+              fontSize: '13px',
+              cursor: isTyping || !inputText.trim() ? 'not-allowed' : 'pointer',
+              opacity: isTyping || !inputText.trim() ? 0.6 : 1,
+              boxShadow: '0 4px 18px rgba(2, 132, 199, 0.4)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               flexShrink: 0
             }}
+            className="btn-send-message"
           >
-            <svg style={{ width: '18px', height: '18px', fill: 'none', stroke: 'currentColor', strokeWidth: '2.5', transform: 'rotate(45deg)' }} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+            <span>Enviar</span>
+            <svg style={{ width: '15px', height: '15px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.125A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.876L5.999 12zm0 0h7.5" />
             </svg>
           </button>
         </form>
