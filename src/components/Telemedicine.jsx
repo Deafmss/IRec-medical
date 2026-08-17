@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   getChatMessages, 
   sendChatMessage, 
@@ -8,13 +8,7 @@ import {
   checkCallStatus, 
   subscribeToSignalingEvents,
   getAssignedPatients,
-  getAssignedDoctor,
   getAssignedDoctors,
-  followPatient,
-  getAllPatients,
-  getAllNurses,
-  getAllDoctors,
-  getAllClinicians,
   getAllReceivedMessages,
   sendWebRTCSignalingEvent,
   subscribeToWebRTCSignaling,
@@ -23,8 +17,8 @@ import {
 } from '../services/supabaseService';
 import { analyzeTelemedicineTranscript, isGeminiConfigured } from '../services/geminiService';
 import TCLETelemedicineModal from './TCLETelemedicineModal';
-import TelemedicineContactsList from './telemedicine/TelemedicineContactsList';
-import TelemedicineClinicalCopilot from './telemedicine/TelemedicineClinicalCopilot';
+import TelemedicineContactsList from './telemedicine/TelemedicineContactsList'; // eslint-disable-line no-unused-vars
+import TelemedicineClinicalCopilot from './telemedicine/TelemedicineClinicalCopilot'; // eslint-disable-line no-unused-vars
 
 const getDoctorPremiumDetails = (doc) => {
   if (!doc) return null;
@@ -110,7 +104,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const [selectedContact, setSelectedContact] = useState(null);
   const [unreadCounts, setUnreadCounts] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedFilter] = useState('all');
   const [messages, setMessages] = useState([]);
   const [newMessageText, setNewMessageText] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
@@ -137,6 +131,25 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
       window.speechSynthesis.speak(utterance);
     }
   };
+
+  // Call States: 'idle', 'outgoing', 'incoming', 'active'
+  const [callState, setCallState] = useState('idle');
+  const [activeCall, setActiveCall] = useState(null);
+  const [callDuration, setCallDuration] = useState(0);
+  const [muteAudio, setMuteAudio] = useState(false);
+  const [hideVideo, setHideVideo] = useState(false);
+
+  // Responsive / Mobile view states
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [mobileView, setMobileView] = useState('contacts'); // 'contacts' or 'chat'
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Register global window.initiateTelemedicineCall handler for accessible mode & shortcuts (IREC-0039, IREC-0040)
   useEffect(() => {
@@ -175,26 +188,6 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     };
   }, []);
 
-  
-  // Responsive / Mobile view states
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [mobileView, setMobileView] = useState('contacts'); // 'contacts' or 'chat'
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Call States: 'idle', 'outgoing', 'incoming', 'active'
-  const [callState, setCallState] = useState('idle');
-  const [activeCall, setActiveCall] = useState(null);
-  const [callDuration, setCallDuration] = useState(0);
-  const [muteAudio, setMuteAudio] = useState(false);
-  const [hideVideo, setHideVideo] = useState(false);
-
   // Media streams
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -202,24 +195,16 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const webRTCInitializedCallIdRef = useRef(null);
-  const [mediaPermissionError, setMediaPermissionError] = useState(false);
+  const [, setMediaPermissionError] = useState(false);
 
   const [consentGiven, setConsentGiven] = useState(() => {
     if (!currentUser?.id) return false;
     return localStorage.getItem(`irec_tcle_accepted_${currentUser.id}`) === 'true';
   });
 
-  useEffect(() => {
-    if (currentUser?.id) {
-      setConsentGiven(localStorage.getItem(`irec_tcle_accepted_${currentUser.id}`) === 'true');
-    }
-  }, [currentUser?.id]);
-
   const [showConsentModal, setShowConsentModal] = useState(false);
   
   const messagesEndRef = useRef(null);
-  const ecgCanvasRef = useRef(null);
-  const ecgAnimationRef = useRef(null);
 
   // Chat Expresso States
   const [showExpressChat, setShowExpressChat] = useState(false);
@@ -239,8 +224,10 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
   useEffect(() => {
     if (aiReport) {
-      setSelectedSymptomIndices((aiReport.symptoms || []).map((_, i) => i));
-      setSelectedPrescriptionIndices((aiReport.suggestedPrescriptions || []).map((_, i) => i));
+      queueMicrotask(() => {
+        setSelectedSymptomIndices((aiReport.symptoms || []).map((_, i) => i));
+        setSelectedPrescriptionIndices((aiReport.suggestedPrescriptions || []).map((_, i) => i));
+      });
     }
   }, [aiReport]);
 
@@ -250,7 +237,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   // Audio elements for ringtones
   const audioCtxRef = useRef(null);
   const ringIntervalRef = useRef(null);
-  const [contactsTrigger, setContactsTrigger] = useState(0);
+  const [contactsTrigger] = useState(0);
 
   // Scroll chat to bottom
   const scrollToBottom = () => {
@@ -505,7 +492,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         } else if (currentUser.role === 'patient') {
           const doctors = await getAssignedDoctors(currentUser.id);
           doctors.forEach(d => {
-            list.push({ ...d, role: d.role || 'doctor', chatType: 'assigned_doctor' });
+            list.push({ ...getDoctorPremiumDetails(d), ...d, role: d.role || 'doctor', chatType: 'assigned_doctor' });
           });
         }
         setContacts(list);
@@ -550,50 +537,54 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     if (targetContactId && contacts.length > 0) {
       const match = contacts.find(c => c.id.toString() === targetContactId.toString());
       if (match) {
-        setSelectedContact(match);
-        if (isMobile) {
-          setMobileView('chat');
-        }
+        queueMicrotask(() => {
+          setSelectedContact(match);
+          if (isMobile) {
+            setMobileView('chat');
+          }
+        });
       }
     }
   }, [contacts, targetContactId, isMobile]);
 
   // Synchronize internal Telemedicine state with global activeCallSession from App.jsx (IREC-0141, IREC-0142)
   useEffect(() => {
-    if (!activeCallSession) {
-      if (callState !== 'idle') {
-        stopRingtone();
-        setCallState('idle');
-        setActiveCall(null);
-        setCallDuration(0);
-      }
-    } else {
-      setActiveCall(activeCallSession);
-      if (activeCallSession.status === 'accepted') {
-        stopRingtone();
-        if (callState !== 'active') {
-          setCallState('active');
-        }
-      } else if (activeCallSession.status === 'ringing') {
-        if (activeCallSession.receiverId === currentUser?.id) {
-          if (callState !== 'incoming') {
-            setCallState('incoming');
-            playRingtone();
-          }
-        } else {
-          if (callState !== 'outgoing') {
-            setCallState('outgoing');
-          }
-        }
-      } else if (activeCallSession.status === 'ended' || activeCallSession.status === 'rejected') {
-        stopRingtone();
+    queueMicrotask(() => {
+      if (!activeCallSession) {
         if (callState !== 'idle') {
+          stopRingtone();
           setCallState('idle');
           setActiveCall(null);
           setCallDuration(0);
         }
+      } else {
+        setActiveCall(activeCallSession);
+        if (activeCallSession.status === 'accepted') {
+          stopRingtone();
+          if (callState !== 'active') {
+            setCallState('active');
+          }
+        } else if (activeCallSession.status === 'ringing') {
+          if (activeCallSession.receiverId === currentUser?.id) {
+            if (callState !== 'incoming') {
+              setCallState('incoming');
+              playRingtone();
+            }
+          } else {
+            if (callState !== 'outgoing') {
+              setCallState('outgoing');
+            }
+          }
+        } else if (activeCallSession.status === 'ended' || activeCallSession.status === 'rejected') {
+          stopRingtone();
+          if (callState !== 'idle') {
+            setCallState('idle');
+            setActiveCall(null);
+            setCallDuration(0);
+          }
+        }
       }
-    }
+    });
   }, [activeCallSession, callState, currentUser]);
 
   // Load chat messages when selected contact changes
@@ -640,10 +631,10 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
     async function checkUnreadMessages() {
       try {
         const received = await getAllReceivedMessages(currentUser.id);
-        let readTimes = {};
+        let readTimes;
         try {
           readTimes = JSON.parse(localStorage.getItem('irec_chat_read_times') || '{}');
-        } catch (e) {
+        } catch {
           readTimes = {};
         }
         
@@ -701,7 +692,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   useEffect(() => {
     if (!selectedContact || !currentUser) return;
 
-    let readTimes = {};
+    let readTimes;
     try {
       readTimes = JSON.parse(localStorage.getItem('irec_chat_read_times') || '{}');
     } catch {

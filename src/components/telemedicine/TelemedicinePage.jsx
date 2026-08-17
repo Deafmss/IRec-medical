@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import Telemedicine from '../Telemedicine';
 
 export default function TelemedicinePage({

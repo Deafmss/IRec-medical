@@ -2866,64 +2866,12 @@ export const uploadProfessionalCredential = async (file) => {
 };
 
 export const verifyProfessionalRegistry = async (crmNumber, uf, type) => {
-  const apiKey = import.meta.env.VITE_INFOSIMPLES_API_KEY;
-  if (!apiKey) {
-    console.warn("Chave VITE_INFOSIMPLES_API_KEY não configurada no arquivo .env. Habilitando cadastro pendente automático.");
-    return { success: true, status: 'pending', message: 'Chave API não configurada. Cadastro pendente.' };
-  }
-
-  try {
-    const isDoctor = type === 'doctor';
-    const service = isDoctor ? 'cfm/busca-medicos' : 'cofen/busca-profissionais';
-    const params = new URLSearchParams({
-      token: apiKey,
-      uf: uf.toUpperCase(),
-      timeout: '600'
-    });
-
-    if (isDoctor) {
-      params.append('crm', crmNumber);
-    } else {
-      params.append('registro', crmNumber);
-    }
-
-    const response = await fetch(`https://api.infosimples.com/v1/${service}?${params.toString()}`);
-    const result = await response.json();
-
-    if (result.code === 200 && result.data && result.data.length > 0) {
-      const professional = result.data[0];
-      const situation = (professional.situacao || '').toLowerCase();
-      const isActive = situation.includes('ativo') || situation.includes('regular');
-
-      if (isActive) {
-        return {
-          success: true,
-          status: 'verified',
-          name: professional.nome,
-          specialties: professional.especialidades || []
-        };
-      } else {
-        return {
-          success: false,
-          status: 'rejected',
-          message: `Inscrição profissional inativa ou irregular: ${professional.situacao}`
-        };
-      }
-    }
-
-    return {
-      success: false,
-      status: 'pending',
-      message: 'Profissional não localizado na base do conselho. Cadastro sob análise manual.'
-    };
-  } catch (err) {
-    console.error("Erro na verificação de registro profissional via Infosimples:", err);
-    return {
-      success: true,
-      status: 'pending',
-      message: 'Falha temporária de comunicação com a base do conselho. Cadastro sob análise manual.'
-    };
-  }
+  // A verificação direta via API externa deve ser processada no servidor/Edge Function para não expor a chave de API no bundle do cliente.
+  return { 
+    success: true, 
+    status: 'pending', 
+    message: 'Cadastro submetido para validação cadastral junto ao conselho profissional (' + (type === 'doctor' ? 'CFM' : 'COFEN') + ').' 
+  };
 };
 
 export const updateVerificationStatus = async (userId, status) => {

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Portao de qualidade local. Bloqueia o commit se o codigo nao passar.
+# Escopo: lint-staged corrige apenas os arquivos do commit; os testes
+# unitarios rodam inteiros (sao rapidos e pegam quebra colateral).
+# O e2e (Playwright) NAO roda aqui — e lento demais para um hook.
+
+echo "→ checando os arquivos do commit..."
+npx lint-staged || exit 1
+
+echo "→ testes..."
+npm test || exit 1
+
+echo "✓ portao de qualidade aprovado"

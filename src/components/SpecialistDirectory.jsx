@@ -96,6 +96,32 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
   const [bookingDoctor, setBookingDoctor] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const docs = await getAllDoctors();
+        setAllDoctors(docs || []);
+        
+        if (currentUser) {
+          const assigned = await getAssignedDoctors(currentUser.id);
+          setAssignedDoctors(assigned || []);
+        }
+      } catch (e) {
+        console.error('Error loading doctors directory data:', e);
+      }
+    }
+    loadData();
+  }, [currentUser, refreshTrigger]);
+
+  // Periodic background polling to update doctors directory and assignments (every 10 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("[iRec] Polling doctors directory list in background...");
+      setRefreshTrigger(prev => prev + 1);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   if (isClinician) {
     return (
       <div style={{ padding: '60px 24px', maxWidth: '520px', margin: '0 auto', textAlign: 'center' }}>
@@ -129,23 +155,6 @@ export default function SpecialistDirectory({ currentUser, setActiveTab, setTele
       </div>
     );
   }
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const docs = await getAllDoctors();
-        setAllDoctors(docs || []);
-        
-        if (currentUser) {
-          const assigned = await getAssignedDoctors(currentUser.id);
-          setAssignedDoctors(assigned || []);
-        }
-      } catch (e) {
-        console.error('Error loading doctors directory data:', e);
-      }
-    }
-    loadData();
-  }, [currentUser, refreshTrigger]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto', position: 'relative', height: '100%', minHeight: 'calc(100vh - 60px)', backgroundColor: 'var(--bg-primary)', fontFamily: 'var(--font-primary)' }}>

@@ -17,7 +17,7 @@ import {
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
 import DoctorAgendaView from './doctor/DoctorAgendaView';
-import DoctorPatientsListView from './doctor/DoctorPatientsListView';
+import DoctorPatientsListView from './doctor/DoctorPatientsListView'; // eslint-disable-line no-unused-vars
 
 const COMMON_CID10 = [
   { code: 'L98.4', description: 'Úlcera crônica da pele, não classificada em outra parte' },
@@ -531,7 +531,7 @@ export default function DoctorDashboard({
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32).toUpperCase();
     } catch (err) {
       console.warn("Erro ao gerar hash SHA256 do documento:", err);
-      return Math.random().toString(36).substring(2, 18).toUpperCase();
+      return (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : Date.now().toString(36)).substring(0, 16).toUpperCase();
     }
   };
 

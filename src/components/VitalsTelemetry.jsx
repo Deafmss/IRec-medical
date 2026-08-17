@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../supabaseClient';
 
-export default function VitalsTelemetry({ patientId, isDoctorView = false, embeddedMode = false, onClose }) {
+export default function VitalsTelemetry({ patientId, embeddedMode = false, onClose }) {
   const [activeSubTab, setActiveSubTab] = useState('vitals');
   
   // Real-time Bluetooth States
@@ -56,42 +56,44 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false, embed
 
   // Carregar último histórico de telemetria do Supabase
   useEffect(() => {
-    fetchLatestTelemetry();
-  }, [patientId]);
+    let isMounted = true;
+    const loadTelemetry = async () => {
+      try {
+        if (!supabase) return;
+        const targetId = patientId || (await supabase.auth.getUser())?.data?.user?.id;
+        if (!targetId || !isMounted) return;
 
-  const fetchLatestTelemetry = async () => {
-    try {
-      if (!supabase) return;
-      const targetId = patientId || (await supabase.auth.getUser())?.data?.user?.id;
-      if (!targetId) return;
+        const { data, error } = await supabase
+          .from('vitals_telemetry')
+          .select('*')
+          .eq('patient_id', targetId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-      const { data, error } = await supabase
-        .from('vitals_telemetry')
-        .select('*')
-        .eq('patient_id', targetId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        if (data && !error && isMounted) {
+          setVitals({
+            heartRate: data.heart_rate || null,
+            bloodPressure: data.blood_pressure || null,
+            spo2: data.spo2 || null,
+            bodyTemp: data.body_temp || null,
+            glucose: data.glucose || null,
+            lastUpdated: new Date(data.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            source: data.source || 'Supabase Sync'
+          });
 
-      if (data && !error) {
-        setVitals({
-          heartRate: data.heart_rate || null,
-          bloodPressure: data.blood_pressure || null,
-          spo2: data.spo2 || null,
-          bodyTemp: data.body_temp || null,
-          glucose: data.glucose || null,
-          lastUpdated: new Date(data.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          source: data.source || 'Supabase Sync'
-        });
-
-        if (data.temperatures) {
-          setTemperatures(data.temperatures);
+          if (data.temperatures) {
+            setTemperatures(data.temperatures);
+          }
         }
+      } catch (err) {
+        console.log('Sem registros anteriores de telemetria no Supabase:', err.message);
       }
-    } catch (err) {
-      console.log('Sem registros anteriores de telemetria no Supabase:', err.message);
-    }
-  };
+    };
+
+    loadTelemetry();
+    return () => { isMounted = false; };
+  }, [patientId]);
 
   // Salvar medição no Supabase em Tempo Real
   const saveTelemetryToSupabase = async (newVitals, newTemps, sourceName) => {
@@ -171,7 +173,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false, embed
           const hr = (flags & 0x01) === 0 ? value.getUint8(1) : value.getUint16(1, true);
           saveTelemetryToSupabase({ heartRate: hr }, null, `Bluetooth: ${deviceName}`);
         });
-      } catch (e) {
+      } catch {
         console.log('Serviço de Frequência Cardíaca GATT não suportado neste dispositivo.');
       }
 
@@ -191,7 +193,7 @@ export default function VitalsTelemetry({ patientId, isDoctorView = false, embed
             saveTelemetryToSupabase({ bodyTemp: tempC }, null, `Bluetooth: ${deviceName}`);
           }
         });
-      } catch (e) {
+      } catch {
         console.log('Serviço de Termômetro GATT não suportado neste dispositivo.');
       }
 

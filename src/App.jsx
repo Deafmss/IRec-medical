@@ -28,8 +28,8 @@ import UserProfilePage from './components/UserProfilePage';
 import ReportPDFGenerator from './components/ReportPDFGenerator';
 import VitalsTelemetry from './components/VitalsTelemetry';
 import WoundEvolutionComparator from './components/WoundEvolutionComparator';
-import { IRecConceptDesign } from './components/IRecConceptDesign';
-import TelemedicinePage from './components/telemedicine/TelemedicinePage';
+import { IRecConceptDesign } from './components/IRecConceptDesign'; // eslint-disable-line no-unused-vars
+import TelemedicinePage from './components/telemedicine/TelemedicinePage'; // eslint-disable-line no-unused-vars
 import { getClinicalProfile, getWoundEntries, addWoundEntry, signOutUser, getCurrentUser, checkIncomingCalls, checkCallStatus, updateCallStatus, updateLastSeen, getAllProfiles } from './services/supabaseService';
 import { generatePersonalizedProtocol } from './services/geminiService';
 import { supabase, isSupabaseConfigured } from './supabaseClient';

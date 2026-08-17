@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createAuditLog } from '../services/supabaseService';
 
 export default function TCLETelemedicineModal({ currentUser, onAccept, onDecline }) {

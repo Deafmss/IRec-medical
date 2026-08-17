@@ -84,6 +84,32 @@ export default function NursesNetwork({ currentUser, setActiveTab, setTelemedici
   const [bookingNurse, setBookingNurse] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const nursesList = await getAllNurses();
+        setAllNurses(nursesList || []);
+        
+        if (currentUser) {
+          const assigned = await getAssignedDoctors(currentUser.id);
+          setAssignedNurses(assigned || []);
+        }
+      } catch (e) {
+        console.error('Error loading nurses directory data:', e);
+      }
+    }
+    loadData();
+  }, [currentUser, refreshTrigger]);
+
+  // Periodic background polling to update nurses directory and assignments (every 10 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("[iRec] Polling nurses network list in background...");
+      setRefreshTrigger(prev => prev + 1);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   if (isClinician) {
     return (
       <div style={{ padding: '60px 24px', maxWidth: '520px', margin: '0 auto', textAlign: 'center' }}>
@@ -117,32 +143,6 @@ export default function NursesNetwork({ currentUser, setActiveTab, setTelemedici
       </div>
     );
   }
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const nursesList = await getAllNurses();
-        setAllNurses(nursesList || []);
-        
-        if (currentUser) {
-          const assigned = await getAssignedDoctors(currentUser.id);
-          setAssignedNurses(assigned || []);
-        }
-      } catch (e) {
-        console.error('Error loading nurses directory data:', e);
-      }
-    }
-    loadData();
-  }, [currentUser, refreshTrigger]);
-
-  // Periodic background polling to update nurses directory and assignments (every 10 seconds)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log("[iRec] Polling nurses network list in background...");
-      setRefreshTrigger(prev => prev + 1);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto', position: 'relative', height: '100%', minHeight: 'calc(100vh - 60px)', backgroundColor: 'var(--bg-primary)', fontFamily: 'var(--font-primary)' }}>

@@ -29,6 +29,11 @@ jobs:
     - name: Verificar Erros de Runtime (ESLint)
       run: npm run lint:ci
 
+    # Testes unitários (Vitest). O e2e do Playwright roda separado —
+    # é lento demais para bloquear cada push.
+    - name: Executar Testes Unitários
+      run: npm test
+
     - name: Execute Production Build Verification
       run: npm run build
 
