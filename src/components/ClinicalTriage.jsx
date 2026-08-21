@@ -468,6 +468,8 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
       let finalResult = await analyzeWoundWithAI(photoFile, clinicalProfile, fullSymptoms);
       
       if (finalResult && finalResult.isValidWound === false) {
+        setIsAnalyzing(false);
+        setAnalysisStep('');
         alert(finalResult.invalidReason || "A imagem enviada não é uma foto de ferida ou lesão de pele. Por favor, envie uma foto nítida da região afetada.");
         return;
       }

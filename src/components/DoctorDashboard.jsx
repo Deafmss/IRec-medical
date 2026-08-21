@@ -233,16 +233,18 @@ export default function DoctorDashboard({
 
   // Periodic polling for selected patient details (documents and materials) (IREC-0095)
   useEffect(() => {
-    if (!selectedPatient) return;
+    if (!selectedPatient?.id) return;
 
     let cancelled = false;
+    const targetPatientId = selectedPatient.id;
+
     const refreshPatientDetails = async () => {
       try {
-        const docs = await getPatientDocuments(selectedPatient.id);
+        const docs = await getPatientDocuments(targetPatientId);
         if (cancelled) return;
         setPatientDocuments(docs);
         
-        const mats = await getRecommendedMaterials(selectedPatient.id, doctorProfile?.id);
+        const mats = await getRecommendedMaterials(targetPatientId, doctorProfile?.id);
         if (cancelled) return;
         setRecommendedMaterials(mats.filter(m => m.type === 'doctor_partner' && m.doctor_id === doctorProfile?.id));
       } catch (err) {
@@ -255,7 +257,7 @@ export default function DoctorDashboard({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [selectedPatient, doctorProfile]);
+  }, [selectedPatient?.id, doctorProfile?.id]);
 
   // Reload patient entries when a patient is selected (IREC-0096, IREC-0097, IREC-0098, IREC-0288)
   useEffect(() => {

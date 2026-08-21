@@ -64,6 +64,12 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
       return;
     }
 
+    const patientCpfDigits = (patientProfile?.cpf || '').replace(/\D/g, '');
+    if (!patientCpfDigits || patientCpfDigits.length !== 11) {
+      setErrorMessage('É obrigatório que o cadastro do paciente contenha um CPF válido (11 dígitos) para a emissão de documentos médicos oficiais.');
+      return;
+    }
+
     if (documentType === 'receita') {
       if (!isDoctor) {
         setErrorMessage('Apenas médicos credenciados (CRM) podem emitir receituários de medicamentos.');

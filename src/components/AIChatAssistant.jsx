@@ -251,7 +251,6 @@ Como posso te ajudar hoje?`;
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const activeAudioRef = useRef(null);
   const ttsStoppedRef = useRef(false);
-  const ttsTokenRef = useRef(0);
   const streamIntervalRef = useRef(null);
 
   // Renaming chat thread states
@@ -272,6 +271,9 @@ Como posso te ajudar hoje?`;
   useEffect(() => {
     return () => {
       ttsStoppedRef.current = true;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       if (activeAudioRef.current) {
         activeAudioRef.current.pause();
         activeAudioRef.current = null;
@@ -283,74 +285,11 @@ Como posso te ajudar hoje?`;
     };
   }, []);
 
-  // Split text into chunks safe for Google Translate TTS (max ~200 chars each)
-  const splitTextForTTS = (text) => {
-    const maxLen = 190;
-    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
-    const chunks = [];
-
-    sentences.forEach(sentence => {
-      let s = sentence.trim();
-      if (!s) return;
-      if (s.length <= maxLen) {
-        chunks.push(s);
-      } else {
-        while (s.length > maxLen) {
-          let breakIdx = s.lastIndexOf(',', maxLen);
-          if (breakIdx < 40) breakIdx = s.lastIndexOf(' ', maxLen);
-          if (breakIdx < 20) breakIdx = maxLen;
-          chunks.push(s.substring(0, breakIdx + 1).trim());
-          s = s.substring(breakIdx + 1).trim();
-        }
-        if (s.length > 0) chunks.push(s);
-      }
-    });
-
-    return chunks.filter(c => c.length > 0);
-  };
-
-  const buildGoogleTTSUrl = (textChunk) => {
-    return `https://translate.google.com/translate_tts?ie=UTF-8&tl=pt-BR&client=tw-ob&q=${encodeURIComponent(textChunk)}`;
-  };
-
-  const playTTSQueue = (chunks, sessionToken) => {
-    if (ttsStoppedRef.current || ttsTokenRef.current !== sessionToken || chunks.length === 0) {
-      setSpeakingMessageId(null);
-      activeAudioRef.current = null;
-      return;
-    }
-
-    const currentChunk = chunks[0];
-    const remainingChunks = chunks.slice(1);
-    const url = buildGoogleTTSUrl(currentChunk);
-    const audio = new Audio(url);
-    activeAudioRef.current = audio;
-
-    audio.onended = () => {
-      if (ttsTokenRef.current === sessionToken) {
-        playTTSQueue(remainingChunks, sessionToken);
-      }
-    };
-
-    audio.onerror = (err) => {
-      console.warn('[iRec TTS] Erro no chunk, pulando para o próximo:', err);
-      if (ttsTokenRef.current === sessionToken) {
-        playTTSQueue(remainingChunks, sessionToken);
-      }
-    };
-
-    audio.play().catch((err) => {
-      console.warn('[iRec TTS] Erro ao reproduzir:', err);
-      if (ttsTokenRef.current === sessionToken) {
-        playTTSQueue(remainingChunks, sessionToken);
-      }
-    });
-  };
-
   const speakMessage = (msgId, text) => {
     if (speakingMessageId === msgId) {
-      ttsStoppedRef.current = true;
-      ttsTokenRef.current += 1;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       if (activeAudioRef.current) {
         activeAudioRef.current.pause();
         activeAudioRef.current = null;
@@ -359,8 +298,9 @@ Como posso te ajudar hoje?`;
       return;
     }
 
-    ttsStoppedRef.current = true;
-    const sessionToken = ++ttsTokenRef.current;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
     if (activeAudioRef.current) {
       activeAudioRef.current.pause();
       activeAudioRef.current = null;
@@ -375,11 +315,18 @@ Como posso te ajudar hoje?`;
 
     if (!cleanText) return;
 
-    setSpeakingMessageId(msgId);
-    ttsStoppedRef.current = false;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 1.0;
+      utterance.onend = () => setSpeakingMessageId(null);
+      utterance.onerror = () => setSpeakingMessageId(null);
 
-    const chunks = splitTextForTTS(cleanText);
-    playTTSQueue(chunks, sessionToken);
+      setSpeakingMessageId(msgId);
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("A síntese de voz não é suportada neste navegador.");
+    }
   };
 
   const activeThread = threads.find(t => t.id === activeThreadId) || threads[0] || { id: 'thread-default', title: 'Conversa', messages: [] };

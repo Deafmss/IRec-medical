@@ -80,7 +80,9 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
   if (!professional) return null;
 
   const isNurse = (professional.specialty || '').toLowerCase().includes('enferm') || (professional.specialty || '').toLowerCase().includes('estomaterapia');
-  const price = professional.price || professional.consultationFee || (isNurse ? 130 : 250);
+  const rawPrice = professional.price ?? professional.consultationFee ?? (isNurse ? 130 : 250);
+  const parsedPrice = typeof rawPrice === 'number' ? rawPrice : parseFloat(rawPrice);
+  const price = isNaN(parsedPrice) ? (isNurse ? 130 : 250) : parsedPrice;
   const minDateStr = getLocalDateStr(); // Fixes IREC-0061
 
   // Valid PIX static format representation (fixes IREC-0062)

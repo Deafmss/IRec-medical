@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
   const [selectedEmergency, setSelectedEmergency] = useState(null);
   const [countdown, setCountdown] = useState(null);
   const [pendingCall, setPendingCall] = useState(null); // { number: '192', label: 'SAMU' }
   const [notificationActivated, setNotificationActivated] = useState(false);
+  const isCancelledRef = useRef(false);
 
   const street = clinicalProfile?.street || '';
   const number = clinicalProfile?.number || '';
@@ -61,6 +62,7 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
 
   // Anti-accidental click countdown for emergency call
   const startCallCountdown = (num, label) => {
+    isCancelledRef.current = false;
     triggerVibration();
     setPendingCall({ number: num, label });
     setCountdown(3);
@@ -68,22 +70,27 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
 
   useEffect(() => {
     let timer = null;
-    if (countdown !== null && countdown > 0) {
+    if (countdown !== null && countdown > 0 && !isCancelledRef.current) {
       timer = setTimeout(() => {
-        setCountdown(prev => prev - 1);
+        if (!isCancelledRef.current) {
+          setCountdown(prev => prev - 1);
+        }
       }, 1000);
-    } else if (countdown === 0 && pendingCall) {
+    } else if (countdown === 0 && pendingCall && !isCancelledRef.current) {
       const targetNumber = pendingCall.number;
       timer = setTimeout(() => {
-        setCountdown(null);
-        setPendingCall(null);
-        window.location.href = `tel:${targetNumber}`;
+        if (!isCancelledRef.current) {
+          setCountdown(null);
+          setPendingCall(null);
+          window.location.href = `tel:${targetNumber}`;
+        }
       }, 0);
     }
     return () => clearTimeout(timer);
   }, [countdown, pendingCall]);
 
   const cancelCallCountdown = () => {
+    isCancelledRef.current = true;
     triggerVibration();
     setCountdown(null);
     setPendingCall(null);
