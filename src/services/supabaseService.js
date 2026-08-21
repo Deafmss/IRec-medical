@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { reportDataFailure } from './dataFailureBus';
+import { uploadClinicalMedia, resolveMediaUrls } from './mediaStorage';
 
 // --- MOCK OFFLINE DATABASE WITH LOCALSTORAGE ---
 const getLocalUsers = () => JSON.parse(localStorage.getItem('irec_users') || '[]');
@@ -867,7 +868,7 @@ export const getWoundEntries = async (patientId = null) => {
 
     if (error) throw error;
 
-    return data.map(item => ({
+    const entries = data.map(item => ({
       id: item.id,
       patientId: item.patient_id,
       date: item.date,
@@ -899,6 +900,23 @@ export const getWoundEntries = async (patientId = null) => {
         fileName: att.file_name,
         fileType: att.file_type
       })) : []
+    }));
+
+    // `photo_url` e `file_url` guardam o caminho no bucket (formato novo) ou uma
+    // URL pública legada, que hoje responde 400 porque o bucket não é público.
+    // Assinar na leitura conserta os dois casos sem migrar dado.
+    const [fotos, anexos] = await Promise.all([
+      resolveMediaUrls('wounds', entries.map(e => e.photo)),
+      resolveMediaUrls('irec-attachments', entries.flatMap(e => e.attachments.map(a => a.fileUrl)))
+    ]);
+
+    return entries.map(e => ({
+      ...e,
+      photo: e.photo ? (fotos.get(e.photo) || e.photo) : e.photo,
+      attachments: e.attachments.map(a => ({
+        ...a,
+        fileUrl: a.fileUrl ? (anexos.get(a.fileUrl) || a.fileUrl) : a.fileUrl
+      }))
     }));
   } catch (err) {
     reportDataFailure('histórico de feridas do paciente', err);
@@ -964,23 +982,14 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null, arg4 = []) => {
   try {
     if (photoFile) {
       validateFileSize(photoFile);
-      const fileExt = photoFile.name.split('.').pop();
-      const fileName = `${Date.now()}_wound.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      // Upload file to 'wounds' bucket
-      const { error: uploadError } = await supabase.storage
-        .from('wounds')
-        .upload(filePath, photoFile);
-
-      if (uploadError) throw uploadError;
-
-      // Retrieve public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('wounds')
-        .getPublicUrl(filePath);
-
-      photoUrl = publicUrl;
+      // Grava o CAMINHO, não a URL. getPublicUrl() gerava
+      // /object/public/wounds/... que responde 400 (bucket não é público), e a
+      // URL ficava permanentemente quebrada no prontuário. O caminho é o dado
+      // durável; a URL assinada é emitida na leitura.
+      //
+      // O arquivo vai para a pasta do paciente — sem isso não é possível
+      // escrever policy de RLS por auth.uid() sobre o caminho.
+      photoUrl = await uploadClinicalMedia('wounds', patientId, photoFile, 'ferida');
     }
 
     const payload = {
@@ -1028,31 +1037,30 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null, arg4 = []) => {
         validAttachments.map(async (att) => {
           const file = att.file;
           validateFileSize(file);
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}_att_${Math.random().toString(36).substr(2, 5)}.${fileExt}`;
-          const filePath = `${fileName}`;
-          
-          const { error: uploadErr } = await supabase.storage
-            .from('irec-attachments')
-            .upload(filePath, file);
-            
-          if (uploadErr) throw uploadErr;
-          
-          const { data: { publicUrl } } = supabase.storage
-            .from('irec-attachments')
-            .getPublicUrl(filePath);
-            
+          const storagePath = await uploadClinicalMedia('irec-attachments', patientId, file, 'anexo');
+
           let fileType = 'document';
           if (file.type.startsWith('image/')) fileType = 'image';
           else if (file.type.startsWith('video/')) fileType = 'video';
           
-          return { publicUrl, fileName: file.name, fileType };
+          return { storagePath, fileName: file.name, fileType };
         })
       );
       
       const successfulUploads = uploadResults
         .filter(r => r.status === 'fulfilled')
         .map(r => r.value);
+
+      // Antes, um anexo que falhava no upload desaparecia sem rastro: o
+      // allSettled engolia a rejeição, o filtro descartava, e o usuário via
+      // "triagem salva" sem os exames que anexou.
+      const failedUploads = uploadResults.filter(r => r.status === 'rejected');
+      if (failedUploads.length > 0) {
+        reportDataFailure(
+          `anexo${failedUploads.length > 1 ? 's' : ''} da triagem (${failedUploads.length} de ${validAttachments.length} não subiu)`,
+          failedUploads[0].reason
+        );
+      }
       
       if (successfulUploads.length > 0) {
         // Bulk insert all attachment records at once
@@ -1060,14 +1068,14 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null, arg4 = []) => {
           .from('wound_entry_attachments')
           .insert(successfulUploads.map(u => ({
             entry_id: data.id,
-            file_url: u.publicUrl,
+            file_url: u.storagePath,
             file_name: u.fileName,
             file_type: u.fileType
           })));
         
         successfulUploads.forEach(u => {
           uploadedAttachments.push({
-            fileUrl: u.publicUrl,
+            fileUrl: u.storagePath,
             fileName: u.fileName,
             fileType: u.fileType
           });
