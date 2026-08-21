@@ -1274,6 +1274,38 @@ export const getAllPatients = async () => {
 };
 
 // 1.2. Get all registered nurses
+/**
+ * Mapeia uma linha da view `clinicians_directory`.
+ *
+ * As tres leituras de diretorio faziam `select('*')` em clinical_profile, o que
+ * trazia CPF, data de nascimento, e-mail e o documento de credenciamento junto —
+ * e obrigaria a RLS a liberar todo profissional para todo usuario logado. A view
+ * expoe so coluna publica.
+ *
+ * Tres colunas que EXISTEM no banco e nao eram mapeadas aqui:
+ * `consultation_fee`, `bio` e `education`. Por causa disso o preco configurado
+ * pelo profissional nunca chegava ao agendamento (BookingModal caia no valor
+ * fixo de 250/130) e a apresentacao escrita no perfil nunca aparecia no
+ * diretorio.
+ */
+const mapDirectoryRow = (item) => ({
+  id: item.id,
+  role: item.role,
+  name: item.name,
+  crm: item.crm || '',
+  specialty: item.specialty || '',
+  rqe: item.rqe || '',
+  bio: item.bio || '',
+  education: item.education || '',
+  consultationFee: item.consultation_fee ?? null,
+  price: item.consultation_fee ?? null,
+  avatarUrl: item.avatar_url || '',
+  city: item.city || '',
+  state: item.state || '',
+  lastSeenAt: item.last_seen_at || '',
+  verificationStatus: item.verification_status || 'unverified'
+});
+
 export const getAllNurses = async () => {
   const isNurseSpecialty = (spec) => {
     const s = (spec || '').toLowerCase();
@@ -1286,35 +1318,16 @@ export const getAllNurses = async () => {
   }
 
   try {
+    // A view ja filtra papel, verificacao e a conta de admin.
     const { data, error } = await supabase
-      .from('clinical_profile')
-      .select('*')
-      .eq('role', 'doctor')
-      .eq('verification_status', 'verified');
+      .from('clinicians_directory')
+      .select('*');
 
     if (error) throw error;
 
     const filtered = data.filter(item => isNurseSpecialty(item.specialty));
 
-    return filtered.map(item => ({
-      id: item.id,
-      role: item.role,
-      name: item.name,
-      email: item.email,
-      crm: item.crm || '',
-      specialty: item.specialty || '',
-      rqe: item.rqe || '',
-      birthDate: item.birth_date || '',
-      gender: item.gender || '',
-      healthUnit: item.health_unit || '',
-      phone: item.phone || '',
-      avatarUrl: item.avatar_url || '',
-      city: item.city || '',
-      state: item.state || '',
-      lastSeenAt: item.last_seen_at || '',
-      verificationStatus: item.verification_status || 'unverified',
-      professionalDocumentUrl: item.professional_document_url || ''
-    }));
+    return filtered.map(mapDirectoryRow);
   } catch (err) {
     reportDataFailure('lista de enfermeiros', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && isNurseSpecialty(u.specialty));
@@ -1335,35 +1348,16 @@ export const getAllDoctors = async () => {
   }
 
   try {
+    // A view ja filtra papel, verificacao e a conta de admin.
     const { data, error } = await supabase
-      .from('clinical_profile')
-      .select('*')
-      .eq('role', 'doctor')
-      .eq('verification_status', 'verified');
+      .from('clinicians_directory')
+      .select('*');
 
     if (error) throw error;
 
-    const filtered = data.filter(item => !isNurseSpecialty(item.specialty) && item.email !== 'admin@irec.com');
+    const filtered = data.filter(item => !isNurseSpecialty(item.specialty));
 
-    return filtered.map(item => ({
-      id: item.id,
-      role: item.role,
-      name: item.name,
-      email: item.email,
-      crm: item.crm || '',
-      specialty: item.specialty || '',
-      rqe: item.rqe || '',
-      birthDate: item.birth_date || '',
-      gender: item.gender || '',
-      healthUnit: item.health_unit || '',
-      phone: item.phone || '',
-      avatarUrl: item.avatar_url || '',
-      city: item.city || '',
-      state: item.state || '',
-      lastSeenAt: item.last_seen_at || '',
-      verificationStatus: item.verification_status || 'unverified',
-      professionalDocumentUrl: item.professional_document_url || ''
-    }));
+    return filtered.map(mapDirectoryRow);
   } catch (err) {
     reportDataFailure('lista de médicos', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty) && u.email !== 'admin@irec.com');
@@ -1638,35 +1632,15 @@ export const getAllClinicians = async () => {
   }
 
   try {
+    // A view ja filtra papel, verificacao e a conta de admin.
     const { data, error } = await supabase
-      .from('clinical_profile')
-      .select('*')
-      .eq('role', 'doctor')
-      .eq('verification_status', 'verified');
+      .from('clinicians_directory')
+      .select('*');
 
     if (error) throw error;
 
-    const filtered = data.filter(item => item.email !== 'admin@irec.com');
-
-    return filtered.map(item => ({
-      id: item.id,
-      role: item.role,
-      name: item.name,
-      email: item.email,
-      crm: item.crm || '',
-      specialty: item.specialty || '',
-      rqe: item.rqe || '',
-      birthDate: item.birth_date || '',
-      gender: item.gender || '',
-      healthUnit: item.health_unit || '',
-      phone: item.phone || '',
-      avatarUrl: item.avatar_url || '',
-      city: item.city || '',
-      state: item.state || '',
-      lastSeenAt: item.last_seen_at || '',
-      verificationStatus: item.verification_status || 'unverified',
-      professionalDocumentUrl: item.professional_document_url || ''
-    }));
+    // Sem filtro adicional: a view ja restringe a clinicos verificados.
+    return data.map(mapDirectoryRow);
   } catch (err) {
     reportDataFailure('lista de profissionais', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && u.email !== 'admin@irec.com');
