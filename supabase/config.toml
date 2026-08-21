@@ -1,0 +1,30 @@
+# Configuração do projeto Supabase — iRec
+#
+# Este arquivo não existia. Sem ele, o comportamento de `verify_jwt` das Edge
+# Functions não estava declarado em nenhum lugar do repositório: dependia do
+# padrão da CLI e do que estivesse configurado no painel, sem rastro em código.
+#
+# Item 5 da ronda de auditoria: a função gemini-analysis respondia com
+# `Access-Control-Allow-Origin: '*'` e não verificava JWT nenhum. Qualquer site
+# na internet a chamava com a anon key pública (que está no bundle publicado) e
+# consumia as chaves Gemini do projeto.
+
+project_id = "uiaeuzpojqhtjvbqwblb"
+
+[functions.gemini-analysis]
+# O gateway já barra requisição sem JWT antes de a função rodar. A função
+# valida o token outra vez, por conta própria, porque `verify_jwt` aceita
+# qualquer JWT válido do projeto — inclusive um token anônimo — e aqui é preciso
+# um usuário identificado, para o limite por pessoa fazer sentido.
+verify_jwt = true
+
+# Variáveis de ambiente esperadas por esta função (definir com
+# `supabase secrets set`, nunca commitar):
+#
+#   GEMINI_API_KEY_1 .. GEMINI_API_KEY_8   chaves do rodízio
+#   GEMINI_API_KEY                         chave única, alternativa ao rodízio
+#   ALLOWED_ORIGINS                        origens de CORS, separadas por vírgula
+#                                          ex.: https://irec-medical.vercel.app,capacitor://localhost
+#
+# SUPABASE_URL e SUPABASE_ANON_KEY são injetadas automaticamente pela
+# plataforma e são usadas para validar o JWT do chamador.
