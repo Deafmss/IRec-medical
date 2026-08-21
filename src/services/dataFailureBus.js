@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Barramento de falhas da camada de dados.
  *
@@ -56,9 +57,17 @@ const notify = () => {
  * @param {unknown} error
  */
 export const reportDataFailure = (operation, error) => {
-  const message =
-    (error && (error.message || error.error_description || error.details)) ||
-    String(error || 'erro desconhecido');
+  // `error` chega como unknown: pode ser Error, pode ser o objeto do PostgREST
+  // ({ code, message, details }), pode ser string. A guarda evita ler
+  // propriedade de algo que não é objeto.
+  const asObj = typeof error === 'object' && error !== null
+    ? /** @type {Record<string, unknown>} */ (error)
+    : null;
+  const message = String(
+    (asObj && (asObj.message || asObj.error_description || asObj.details))
+    || error
+    || 'erro desconhecido'
+  );
 
   const existing = failures.get(operation);
   seq += 1;

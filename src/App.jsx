@@ -6,6 +6,7 @@ import NursesNetwork from './components/NursesNetwork';
 import ProtocolGuide from './components/ProtocolGuide';
 import AIChatAssistant from './components/AIChatAssistant';
 import Login from './components/Login';
+import { clearSensitiveSessionDataDeep } from './services/sessionCleanup';
 import DoctorDashboard from './components/DoctorDashboard';
 import PatientDocuments from './components/PatientDocuments';
 import UserProfileModal from './components/UserProfileModal';
@@ -670,20 +671,14 @@ export default function App() {
     setCurrentUser(null);
     setSelectedPatientForDoctor(null);
     setSelectedPatientEntriesForDoctor([]);
-    
-    // Clear localStorage navigation, auth certificate & medical cache keys
-    localStorage.removeItem('irec_active_user');
-    localStorage.removeItem('irec_active_tab');
-    localStorage.removeItem('irec_selected_patient');
-    localStorage.removeItem('irec_doctor_active_tab');
-    localStorage.removeItem('irec_doctor_sub_tab');
-    localStorage.removeItem('irec_doctor_doc_tab');
-    localStorage.removeItem('irec_patient_sub_tab');
-    localStorage.removeItem('irec_cert_type');
-    localStorage.removeItem('irec_birdid_user');
-    localStorage.removeItem('irec_a1_name');
-    localStorage.removeItem('irec_medical_documents');
-    localStorage.removeItem('irec_appointments');
+    setEntries([]);
+
+    // Limpa TODO dado do iRec no armazenamento local, preservando apenas
+    // preferência de interface. A versão anterior listava 12 chaves e deixava
+    // para trás fotos de ferida, mensagens de chat, histórico de teleconsulta,
+    // o log de acesso a prontuário e o cadastro local com a senha — em tablet
+    // compartilhado de UBS, o próximo usuário lia o prontuário do anterior.
+    await clearSensitiveSessionDataDeep();
   };
 
   // Persist activeTab to localStorage

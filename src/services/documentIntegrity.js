@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Selo de integridade de documento clínico.
  *

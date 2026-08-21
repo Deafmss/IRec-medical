@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Autorização de emissão de documento clínico.
  *

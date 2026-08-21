@@ -1,0 +1,54 @@
+{
+  // Verificação estática de tipos — item 18 da ronda de auditoria.
+  //
+  // O projeto não tinha nenhuma: `@types/react` estava instalado e nada o
+  // consumia. Em 3.657 linhas de DoctorDashboard.jsx, o ESLint não pega erro
+  // de forma de objeto, campo inexistente nem argumento trocado — e foi
+  // exatamente assim que passaram coisas como `doc.coren` (coluna que não
+  // existe) e `item.consultation_fee` (coluna que existe e não era lida).
+  //
+  // COMO ESTE ARQUIVO ESTÁ CONFIGURADO
+  //
+  // `checkJs: false` por enquanto. Ligar de uma vez em 36.870 linhas de JS sem
+  // anotação produz centenas de erros e o resultado prático é o time desligar a
+  // verificação. Assim, `npm run typecheck` já passa hoje e serve de base: ele
+  // valida a resolução de módulo e a sintaxe de todo o projeto, e pega import
+  // quebrado — que o `vite build` só acusa se o caminho for atingido.
+  //
+  // COMO APERTAR, um passo por vez
+  //
+  //   1. Em cada arquivo que for tocado, adicione `// @ts-check` no topo. O
+  //      arquivo passa a ser verificado sem afetar os outros.
+  //   2. Quando a maioria dos arquivos tiver `// @ts-check`, troque
+  //      `checkJs` para true e remova as diretivas.
+  //   3. Depois disso, ligue `strict: true` e vá corrigindo por módulo.
+  //
+  // Comece pelos serviços (src/services/), que é onde a forma dos dados vive.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+
+    "allowJs": true,
+    "checkJs": false,
+
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+    "forceConsistentCasingInFileNames": true,
+
+    // Ainda não: ver o roteiro acima.
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+
+    "types": ["vite/client"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "android", "ios", "supabase"]
+}

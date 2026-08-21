@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Geração de BR Code (PIX estático) conforme o Manual de Padrões para Iniciação
  * do PIX do Banco Central — payload EMV®QRCPS-MPM.
@@ -107,6 +108,7 @@ export const buildPixPayload = ({ key, name, city, amount, txid = '***' }) => {
  * @returns {Record<string,string>} mapa id -> valor (nível raiz)
  */
 export const parseBrCode = (payload) => {
+  /** @type {Record<string,string>} */
   const out = {};
   let i = 0;
   while (i + 4 <= payload.length) {

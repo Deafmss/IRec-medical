@@ -1,7 +1,7 @@
 {
-  "name": "temp-vite",
+  "name": "irec",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "verificar:catalogo": "node scripts/verificar-catalogo.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "audit": "npm audit --audit-level=high"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
@@ -43,6 +45,7 @@
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^17.3.0",
+    "typescript": "^5.9.3",
     "vite": "^8.0.12",
     "vitest": "^4.1.10"
   },
@@ -50,5 +53,6 @@
     "src/**/*.{js,jsx}": [
       "eslint --fix"
     ]
-  }
+  },
+  "description": "iRec - plataforma de atendimento em saude, telemedicina e prevencao de feridas"
 }

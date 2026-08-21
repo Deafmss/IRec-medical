@@ -2,6 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>O iRec usa a camera para a teleconsulta por video e para registrar a evolucao da lesao no seu prontuario.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>O iRec usa o microfone para a teleconsulta por video e para a triagem por voz.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O iRec acessa suas fotos para voce anexar imagens da lesao e exames ao prontuario.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>O iRec salva na sua galeria os documentos e relatorios que voce escolher exportar.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>O iRec usa sua localizacao para indicar a unidade de saude ou o hospital mais proximo em caso de emergencia.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>O iRec pode usar Face ID para proteger o acesso ao seu prontuario.</string>
     <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -30,7 +42,7 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>

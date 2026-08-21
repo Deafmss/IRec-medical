@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Monta o perfil público de um profissional a partir de dado real.
  *

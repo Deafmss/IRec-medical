@@ -1,3 +1,4 @@
+// @ts-check
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 /**

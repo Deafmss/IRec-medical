@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 import { reportDataFailure } from './dataFailureBus';
 import { uploadClinicalMedia, resolveMediaUrls } from './mediaStorage';
+import { hashLocalPassword, verifyLocalPassword, isLegacyPasswordRecord } from './localPassword';
 
 // --- MOCK OFFLINE DATABASE WITH LOCALSTORAGE ---
 const getLocalUsers = () => JSON.parse(localStorage.getItem('irec_users') || '[]');
@@ -142,7 +143,9 @@ export const signUpUser = async (email, password, name, role, additionalData = {
       throw new Error('Este e-mail já está cadastrado.');
     }
     const userId = `user_${Date.now()}`;
-    const passwordHash = btoa(`irec_salt_${password}`); // Fixes IREC-0179 & IREC-0180
+    // PBKDF2-SHA256 com sal por usuario. Antes era btoa(`irec_salt_${password}`),
+    // que e Base64 — reversivel com atob() numa linha.
+    const passwordHash = await hashLocalPassword(password);
     const newUser = { id: userId, email, passwordHash, name, role, ...additionalData };
     delete newUser.password;
     users.push(newUser);
@@ -276,11 +279,26 @@ export const signUpUser = async (email, password, name, role, additionalData = {
 export const signInUser = async (email, password) => {
   if (!isSupabaseConfigured) {
     const users = getLocalUsers();
-    const inputHash = btoa(`irec_salt_${password}`);
-    const user = users.find(u => u.email === email && (u.passwordHash === inputHash || u.password === password));
-    if (!user) {
+    const candidato = users.find(u => u.email === email);
+
+    // O `|| u.password === password` que havia aqui casava senha em texto puro.
+    // E registro no formato antigo (Base64) e recusado de proposito: aceitar
+    // manteria o furo aberto. Cadastro de contingencia pode ser refeito.
+    if (candidato && isLegacyPasswordRecord(candidato.passwordHash)) {
+      throw new Error(
+        'Seu cadastro local usa um formato de senha inseguro que foi descontinuado. '
+        + 'Refaca o cadastro neste dispositivo ou entre com a conta online.'
+      );
+    }
+
+    const senhaOk = candidato
+      ? await verifyLocalPassword(password, candidato.passwordHash)
+      : false;
+
+    if (!candidato || !senhaOk) {
       throw new Error('E-mail ou senha incorretos.');
     }
+    const user = candidato;
     const profile = getLocalProfile(user.id);
     localStorage.setItem('irec_active_user', JSON.stringify(profile));
     return profile;
