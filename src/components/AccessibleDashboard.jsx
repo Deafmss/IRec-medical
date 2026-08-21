@@ -299,6 +299,21 @@ export default function AccessibleDashboard({
       recognition.onend = () => {
         setIsRecording(false);
       };
+
+      // Faltava esta chamada. O reconhecedor era criado, recebia todos os
+      // handlers, e nunca era iniciado: o botão de microfone do Modo Fácil não
+      // fazia nada — não gravava, não errava, não falava. `isRecording` nunca
+      // virava true porque só o `onstart` o alteraria.
+      try {
+        recognition.start();
+      } catch (err) {
+        // `start()` lança InvalidStateError se já houver reconhecimento ativo.
+        console.warn('[iRec] Não foi possível iniciar o reconhecimento de voz:', err);
+        setIsRecording(false);
+        const msg = 'Não consegui ligar o microfone. Toque em uma das fotos de sintomas abaixo.';
+        setAiResponse(msg);
+        speakText(msg);
+      }
     }
   };
 

@@ -190,6 +190,12 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
   // Media streams
   const [localStream, setLocalStream] = useState(null);
+  // Espelho do stream num ref. O cleanup de desmontagem roda com `[]` de
+  // dependência, então captura o `endMediaStream` do primeiro render — cujo
+  // `localStream` (state) era null. As tracks nunca eram paradas e a câmera
+  // ficava acesa depois de o profissional sair da consulta. O ref não sofre
+  // disso: sempre aponta para o stream atual.
+  const localStreamRef = useRef(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -321,12 +327,13 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
 
   // Webcam streamer helper
   const startMediaStream = async () => {
-    if (localStream) return localStream;
+    if (localStreamRef.current) return localStreamRef.current;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: 'user' },
         audio: true
       });
+      localStreamRef.current = stream;
       setLocalStream(stream);
       setMediaPermissionError(false);
       return stream;
@@ -338,8 +345,10 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   };
 
   const endMediaStream = () => {
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
+    const stream = localStreamRef.current;
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
       setLocalStream(null);
     }
     if (localVideoRef.current) {
@@ -468,6 +477,14 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
   };
 
   // Cleanup WebRTC, media streams, speech synthesis & ringtone on unmount (IREC-0139)
+  //
+  // O `[]` é intencional: isto tem de rodar uma única vez, na desmontagem.
+  // O ESLint avisa que `endMediaStream` está fora das dependências — antes esse
+  // aviso era um defeito real, porque `endMediaStream` lia `localStream` do
+  // state e o closure do primeiro render tinha `null`, deixando a câmera acesa.
+  // Agora ele lê de `localStreamRef`, então qualquer instância do closure para
+  // as tracks corretas. Incluir a dependência recriaria o cleanup a cada render
+  // e encerraria a chamada no meio.
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
@@ -477,6 +494,7 @@ export default function Telemedicine({ currentUser, activeCallSession, setActive
         webRTCInitializedCallIdRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Initial load & Polling: Fetch Contacts for real-time presence/last_seen_at sync

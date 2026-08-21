@@ -117,6 +117,19 @@ export const getSecureMediaUrl = async (bucket, filePath, expiresIn = 900) => {
   return publicUrl;
 };
 
+/**
+ * Só perfil efetivamente verificado aparece em listagem de profissional.
+ *
+ * A condição anterior era:
+ *
+ *     p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')
+ *
+ * — qualquer perfil com "teste" no nome era exibido como profissional
+ * verificado, em seis listagens diferentes. Resquício de QA em código de
+ * produção: bastava cadastrar-se como "Dr. Teste" para constar como habilitado.
+ */
+const isVerifiedProfile = (p) => Boolean(p) && p.verificationStatus === 'verified';
+
 // --- EXPORTED AUTHENTICATION API ---
 
 // 1. Sign Up User (Patient or Doctor)
@@ -1269,7 +1282,7 @@ export const getAllNurses = async () => {
 
   if (!isSupabaseConfigured) {
     const users = getLocalUsers().filter(u => u.role === 'doctor' && isNurseSpecialty(u.specialty));
-    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
+    return users.map(u => getLocalProfile(u.id)).filter(isVerifiedProfile);
   }
 
   try {
@@ -1305,7 +1318,7 @@ export const getAllNurses = async () => {
   } catch (err) {
     reportDataFailure('lista de enfermeiros', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && isNurseSpecialty(u.specialty));
-    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
+    return users.map(u => getLocalProfile(u.id)).filter(isVerifiedProfile);
   }
 };
 
@@ -1318,7 +1331,7 @@ export const getAllDoctors = async () => {
 
   if (!isSupabaseConfigured) {
     const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty) && u.email !== 'admin@irec.com');
-    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
+    return users.map(u => getLocalProfile(u.id)).filter(isVerifiedProfile);
   }
 
   try {
@@ -1354,7 +1367,7 @@ export const getAllDoctors = async () => {
   } catch (err) {
     reportDataFailure('lista de médicos', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty) && u.email !== 'admin@irec.com');
-    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
+    return users.map(u => getLocalProfile(u.id)).filter(isVerifiedProfile);
   }
 };
 
@@ -1621,7 +1634,7 @@ export const getDoctorAppointments = async (doctorId) => {
 export const getAllClinicians = async () => {
   if (!isSupabaseConfigured) {
     const users = getLocalUsers().filter(u => u.role === 'doctor' && u.email !== 'admin@irec.com');
-    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
+    return users.map(u => getLocalProfile(u.id)).filter(isVerifiedProfile);
   }
 
   try {
@@ -1657,7 +1670,7 @@ export const getAllClinicians = async () => {
   } catch (err) {
     reportDataFailure('lista de profissionais', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && u.email !== 'admin@irec.com');
-    return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
+    return users.map(u => getLocalProfile(u.id)).filter(isVerifiedProfile);
   }
 };
 

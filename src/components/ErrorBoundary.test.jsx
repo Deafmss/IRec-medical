@@ -69,4 +69,46 @@ describe('ErrorBoundary', () => {
     await userEvent.click(botao);
     expect(screen.getByRole('alert')).toBeInTheDocument();
   });
+
+  it('nao usa classes do Tailwind, que nao existe neste projeto', () => {
+    render(
+      <ErrorBoundary>
+        <ComponenteQueQuebra quebrar={true} />
+      </ErrorBoundary>,
+    );
+
+    // Todo o arquivo estava escrito em utilitarios do Tailwind. Sem Tailwind no
+    // projeto, as classes eram inertes: display block, min-height 0, fundo
+    // transparente, botao com o cinza padrao do navegador.
+    const alerta = screen.getByRole('alert');
+    const comClasse = alerta.querySelectorAll('[class]');
+    expect(alerta.getAttribute('class')).toBeNull();
+    expect(comClasse.length).toBe(0);
+  });
+
+  it('estiliza o container por style inline, como o resto do projeto', () => {
+    render(
+      <ErrorBoundary>
+        <ComponenteQueQuebra quebrar={true} />
+      </ErrorBoundary>,
+    );
+
+    const alerta = screen.getByRole('alert');
+    expect(alerta.style.display).toBe('flex');
+    expect(alerta.style.minHeight).toBe('100vh');
+    expect(alerta.style.backgroundColor).not.toBe('');
+  });
+
+  it('nao afirma que nenhum dado foi perdido', () => {
+    render(
+      <ErrorBoundary>
+        <ComponenteQueQuebra quebrar={true} />
+      </ErrorBoundary>,
+    );
+
+    // A versao anterior dizia "Nenhum dado seu foi perdido" — falso: um crash
+    // no meio do formulario de triagem perde tudo que estava digitado.
+    expect(screen.queryByText(/Nenhum dado seu foi perdido/i)).toBeNull();
+    expect(screen.getByText(/ainda n[aã]o salva foi/i)).toBeInTheDocument();
+  });
 });
