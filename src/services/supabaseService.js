@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
+import { reportDataFailure } from './dataFailureBus';
 
 // --- MOCK OFFLINE DATABASE WITH LOCALSTORAGE ---
 const getLocalUsers = () => JSON.parse(localStorage.getItem('irec_users') || '[]');
@@ -633,7 +634,7 @@ export const getClinicalProfile = async (userId = null) => {
 
     return resultProfile;
   } catch (err) {
-    console.error('Erro ao buscar perfil do Supabase (usando local):', err);
+    reportDataFailure('perfil clínico', err);
     return getLocalProfile(resolvedId);
   }
 };
@@ -900,7 +901,7 @@ export const getWoundEntries = async (patientId = null) => {
       })) : []
     }));
   } catch (err) {
-    console.error('Erro ao buscar histórico do Supabase:', err);
+    reportDataFailure('histórico de feridas do paciente', err);
     return getLocalEntries(resolvedId);
   }
 };
@@ -1245,7 +1246,7 @@ export const getAllPatients = async () => {
       lastSeenAt: item.last_seen_at || ''
     }));
   } catch (err) {
-    console.error('Erro ao buscar todos os pacientes do Supabase, caindo para local:', err);
+    reportDataFailure('lista de pacientes', err);
     const users = getLocalUsers().filter(u => u.role === 'patient');
     return users.map(u => getLocalProfile(u.id)).filter(Boolean);
   }
@@ -1294,7 +1295,7 @@ export const getAllNurses = async () => {
       professionalDocumentUrl: item.professional_document_url || ''
     }));
   } catch (err) {
-    console.error('Erro ao buscar enfermeiros do Supabase, caindo para local:', err);
+    reportDataFailure('lista de enfermeiros', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && isNurseSpecialty(u.specialty));
     return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
   }
@@ -1343,7 +1344,7 @@ export const getAllDoctors = async () => {
       professionalDocumentUrl: item.professional_document_url || ''
     }));
   } catch (err) {
-    console.error('Erro ao buscar médicos do Supabase, caindo para local:', err);
+    reportDataFailure('lista de médicos', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && !isNurseSpecialty(u.specialty) && u.email !== 'admin@irec.com');
     return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
   }
@@ -1353,18 +1354,54 @@ export const getAllDoctors = async () => {
 const getLocalAppointments = () => JSON.parse(localStorage.getItem('irec_appointments') || '[]');
 const saveLocalAppointments = (apps) => localStorage.setItem('irec_appointments', JSON.stringify(apps));
 
+/**
+ * Verifica se o horário do médico já está ocupado.
+ *
+ * Antes, o `catch` devolvia `false` — "não há conflito". Uma verificação de
+ * integridade que falha aberta: com a rede fora, o RLS bloqueando ou a tabela
+ * ausente, o agendamento passava por cima de outro já existente.
+ *
+ * Agora propaga o erro. Quem agenda decide o que fazer, mas não recebe mais uma
+ * resposta afirmativa que a função não tinha como dar.
+ *
+ * @throws quando não foi possível consultar a agenda
+ */
+const isSlotTaken = (apps, date, time) =>
+  apps.some(app => {
+    if (app.status === 'canceled' || app.status === 'Cancelado') return false;
+    return app.appointmentDate === date && app.appointmentTime === time;
+  });
+
 export const checkAppointmentCollision = async (doctorId, date, time) => {
-  try {
-    const existingApps = await getDoctorAppointments(doctorId);
-    const collision = existingApps.some(app => {
-      if (app.status === 'canceled' || app.status === 'Cancelado') return false;
-      return app.appointmentDate === date && app.appointmentTime === time;
-    });
-    return collision;
-  } catch (err) {
-    console.warn('[iRec] Erro ao verificar colisão de horário:', err);
-    return false;
+  // Modo de contingência: sem backend, o melhor possível é conferir o que existe
+  // neste dispositivo. Lançar aqui bloquearia todo agendamento offline.
+  if (!isSupabaseConfigured) {
+    const localApps = getLocalAppointments().filter(a => a.doctorId === doctorId);
+    return isSlotTaken(localApps, date, time);
   }
+
+  let existingApps;
+  try {
+    existingApps = await fetchDoctorAppointmentsRemote(doctorId);
+  } catch (err) {
+    reportDataFailure('agenda do profissional', err);
+    throw new Error(
+      'Não foi possível verificar a agenda do profissional para confirmar que o horário está livre. ' +
+      'Tente novamente em instantes.',
+      { cause: err }
+    );
+  }
+
+  if (!Array.isArray(existingApps)) {
+    throw new Error(
+      'Não foi possível verificar a agenda do profissional para confirmar que o horário está livre.'
+    );
+  }
+
+  return existingApps.some(app => {
+    if (app.status === 'canceled' || app.status === 'Cancelado') return false;
+    return app.appointmentDate === date && app.appointmentTime === time;
+  });
 };
 
 export const updateAppointmentStatus = async (appointmentId, status) => {
@@ -1428,14 +1465,31 @@ export const createAppointment = async (appointmentData) => {
         address: appointmentData.address,
         price: appointmentData.price,
         payment_method: appointmentData.paymentMethod,
-        payment_status: appointmentData.paymentStatus || 'paid',
+        payment_status: appointmentData.paymentStatus || 'pending',
         status: appointmentData.status || 'confirmed'
       };
 
       const { error } = await supabase.from('appointments').insert(payload);
-      if (error) console.warn('[iRec] Aviso ao salvar agendamento no Supabase (usando local):', error.message);
+      if (error) throw error;
+      newApp.syncedToServer = true;
     } catch (err) {
-      console.warn('[iRec] Erro ao criar agendamento no Supabase (usando local):', err);
+      // A gravação remota falhou. Antes isso era um console.warn e a função
+      // devolvia sucesso: o app dizia "consulta agendada", o registro existia
+      // só no navegador do paciente, e o médico nunca via nada. É assim que a
+      // ausência da tabela `appointments` em producao passou despercebida.
+      //
+      // O registro local é mantido — serve de rascunho para nova tentativa —,
+      // mas quem chamou precisa saber que não está agendado de verdade.
+      reportDataFailure('agendamento de consulta', err);
+      newApp.syncedToServer = false;
+      const erro = new Error(
+        'A consulta não pôde ser registrada no servidor. Ela ficou salva apenas neste ' +
+        'dispositivo e o profissional NÃO foi notificado. Tente novamente quando a ' +
+        'conexão voltar.',
+        { cause: err }
+      );
+      erro.localOnlyAppointment = newApp;
+      throw erro;
     }
   }
 
@@ -1445,40 +1499,25 @@ export const createAppointment = async (appointmentData) => {
 export const getPatientAppointments = async (patientId) => {
   const localApps = getLocalAppointments().filter(a => a.patientId === patientId);
 
-  if (isSupabaseConfigured) {
-    try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select('*')
-        .eq('patient_id', patientId)
-        .order('created_at', { ascending: false });
+  if (!isSupabaseConfigured) return localApps;
 
-      if (!error && data && data.length > 0) {
-        return data.map(item => ({
-          id: item.id,
-          createdAt: item.created_at,
-          patientId: item.patient_id,
-          doctorId: item.doctor_id,
-          patientName: item.patient_name,
-          doctorName: item.doctor_name,
-          doctorSpecialty: item.doctor_specialty,
-          modality: item.modality,
-          appointmentDate: item.appointment_date,
-          appointmentTime: item.appointment_time,
-          notes: item.notes,
-          address: item.address,
-          price: item.price ? parseFloat(item.price) : 0,
-          paymentMethod: item.payment_method,
-          paymentStatus: item.payment_status,
-          status: item.status
-        }));
-      }
-    } catch (err) {
-      console.warn('[iRec] Usando fallback local para agendamentos do paciente:', err);
-    }
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: false });
+
+    // Mesmo defeito que estava em getDoctorAppointments: a condição
+    // `!error && data && data.length > 0` tratava consulta com erro e agenda
+    // legitimamente vazia da mesma forma, devolvendo o conteúdo do localStorage
+    // nos dois casos.
+    if (error) throw error;
+    return (data || []).map(mapAppointmentRow);
+  } catch (err) {
+    reportDataFailure('minhas consultas', err);
+    return localApps;
   }
-
-  return localApps;
 };
 
 export const cancelAppointment = async (appointmentId) => {
@@ -1503,43 +1542,71 @@ export const cancelAppointment = async (appointmentId) => {
   return true;
 };
 
+const mapAppointmentRow = (item) => ({
+  id: item.id,
+  createdAt: item.created_at,
+  patientId: item.patient_id,
+  doctorId: item.doctor_id,
+  patientName: item.patient_name,
+  doctorName: item.doctor_name,
+  doctorSpecialty: item.doctor_specialty,
+  modality: item.modality,
+  appointmentDate: item.appointment_date,
+  appointmentTime: item.appointment_time,
+  notes: item.notes,
+  address: item.address,
+  price: item.price ? parseFloat(item.price) : 0,
+  paymentMethod: item.payment_method,
+  paymentStatus: item.payment_status,
+  status: item.status
+});
+
+/**
+ * Leitura remota da agenda do médico. **Lança** quando não consegue ler.
+ *
+ * Existe separada porque a versão tolerante (`getDoctorAppointments`) não
+ * consegue distinguir "agenda vazia" de "não consegui ler", e há chamador —
+ * a verificação de colisão de horário — para quem essa diferença é a única
+ * coisa que importa.
+ *
+ * @throws quando o Supabase não está configurado ou a consulta falha
+ */
+const fetchDoctorAppointmentsRemote = async (doctorId) => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase não configurado: agenda remota indisponível.');
+  }
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('*')
+    .eq('doctor_id', doctorId)
+    .order('created_at', { ascending: false });
+
+  // Erros do PostgREST chegam em `error`, não como exceção. Antes esta condição
+  // era `if (!error && data && data.length > 0)`, o que juntava três coisas
+  // diferentes — consulta com erro, agenda vazia e agenda cheia — e devolvia o
+  // conteúdo do localStorage nos dois primeiros casos. É o motivo de a tabela
+  // `appointments` estar ausente em produção sem ninguém notar.
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).map(mapAppointmentRow);
+};
+
 export const getDoctorAppointments = async (doctorId) => {
   const localApps = getLocalAppointments().filter(a => a.doctorId === doctorId);
 
-  if (isSupabaseConfigured) {
-    try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select('*')
-        .eq('doctor_id', doctorId)
-        .order('created_at', { ascending: false });
+  if (!isSupabaseConfigured) return localApps;
 
-      if (!error && data && data.length > 0) {
-        return data.map(item => ({
-          id: item.id,
-          createdAt: item.created_at,
-          patientId: item.patient_id,
-          doctorId: item.doctor_id,
-          patientName: item.patient_name,
-          doctorName: item.doctor_name,
-          doctorSpecialty: item.doctor_specialty,
-          modality: item.modality,
-          appointmentDate: item.appointment_date,
-          appointmentTime: item.appointment_time,
-          notes: item.notes,
-          address: item.address,
-          price: item.price ? parseFloat(item.price) : 0,
-          paymentMethod: item.payment_method,
-          paymentStatus: item.payment_status,
-          status: item.status
-        }));
-      }
-    } catch (err) {
-      console.warn('[iRec] Usando fallback local para agendamentos do médico:', err);
-    }
+  try {
+    return await fetchDoctorAppointmentsRemote(doctorId);
+  } catch (err) {
+    // Registra para o aviso da interface: o que a tela mostrar a partir daqui é
+    // só o que existe neste dispositivo, não a agenda real.
+    reportDataFailure('agenda do profissional', err);
+    return localApps;
   }
-
-  return localApps;
 };
 
 // 1.2.2. Get all clinical professionals (doctors + nurses)
@@ -1580,7 +1647,7 @@ export const getAllClinicians = async () => {
       professionalDocumentUrl: item.professional_document_url || ''
     }));
   } catch (err) {
-    console.error('Erro ao buscar profissionais do Supabase, caindo para local:', err);
+    reportDataFailure('lista de profissionais', err);
     const users = getLocalUsers().filter(u => u.role === 'doctor' && u.email !== 'admin@irec.com');
     return users.map(u => getLocalProfile(u.id)).filter(p => p && (p.verificationStatus === 'verified' || p.name?.toLowerCase().includes('teste')));
   }
@@ -1727,7 +1794,7 @@ export const getAssignedPatients = async (doctorId) => {
       lastSeenAt: item.last_seen_at || ''
     }));
   } catch (err) {
-    console.error('Erro ao buscar pacientes acompanhados do Supabase, caindo para local:', err);
+    reportDataFailure('pacientes acompanhados', err);
     const assignments = getLocalAssignments().filter(a => a.doctor_id === doctorId);
     const patientIds = assignments.map(a => a.patient_id);
     return patientIds.map(id => getLocalProfile(id)).filter(Boolean);
@@ -1782,7 +1849,7 @@ export const getAssignedDoctor = async (patientId) => {
       lastSeenAt: profile.last_seen_at || ''
     };
   } catch (err) {
-    console.error('Erro ao buscar médico acompanhante no Supabase:', err);
+    reportDataFailure('médico responsável', err);
     const assignments = getLocalAssignments().filter(a => a.patient_id === patientId);
     if (assignments.length === 0) return null;
     const docProfile = getLocalProfile(assignments[0].doctor_id);
@@ -1924,7 +1991,7 @@ export const getPatientDocuments = async (patientId) => {
       createdAt: item.created_at
     }));
   } catch (err) {
-    console.error('Erro ao buscar documentos do paciente no Supabase:', err);
+    reportDataFailure('documentos do paciente', err);
     const docs = getLocalDocuments();
     return docs.filter(d => d.patientId === patientId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
@@ -1957,7 +2024,7 @@ export const getDoctorDocuments = async (doctorId) => {
       createdAt: item.created_at
     }));
   } catch (err) {
-    console.error('Erro ao buscar documentos do médico no Supabase:', err);
+    reportDataFailure('documentos emitidos pelo médico', err);
     const docs = getLocalDocuments();
     return docs.filter(d => d.doctorId === doctorId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
@@ -2059,7 +2126,7 @@ export const getAllReceivedMessages = async (userId) => {
       createdAt: item.created_at
     }));
   } catch (err) {
-    console.error('Erro ao buscar mensagens recebidas no Supabase:', err);
+    reportDataFailure('mensagens do chat', err);
     const msgs = getLocalMessages();
     return msgs.filter(m => m.recipientId === userId)
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
@@ -2445,7 +2512,7 @@ export const getAssignedDoctors = async (patientId) => {
       state: profile.state || ''
     }));
   } catch (err) {
-    console.error('Error fetching assigned doctors:', err);
+    reportDataFailure('médicos vinculados', err);
     return [];
   }
 };
@@ -2510,7 +2577,7 @@ export const getRecommendedMaterials = async (patientId = null, doctorId = null)
       return data;
     }
   } catch (err) {
-    console.error('Error fetching recommended materials:', err);
+    reportDataFailure('materiais recomendados', err);
     return [];
   }
 };
@@ -2599,7 +2666,7 @@ export const getAuditLogs = async () => {
     if (error) throw error;
     return data;
   } catch (err) {
-    console.error('Error fetching audit logs:', err);
+    reportDataFailure('trilha de auditoria', err);
     return [];
   }
 };
@@ -2643,7 +2710,7 @@ export const getAllProfiles = async () => {
       professionalDocumentUrl: item.professional_document_url || ''
     }));
   } catch (err) {
-    console.error('Error fetching all profiles:', err);
+    reportDataFailure('perfis cadastrados', err);
     return [];
   }
 };
@@ -2701,7 +2768,7 @@ export const getAdminTelemedicineCalls = async () => {
     if (error) throw error;
     return data;
   } catch (err) {
-    console.error('Error fetching telemedicine calls:', err);
+    reportDataFailure('histórico de teleconsultas', err);
     return [];
   }
 };
