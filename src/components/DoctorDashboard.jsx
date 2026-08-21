@@ -16,6 +16,7 @@ import {
 } from '../services/supabaseService';
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
+import { getDocumentIssueDenial, canPrescribeMedication } from '../services/documentAuthorization';
 import DoctorAgendaView from './doctor/DoctorAgendaView';
 import DoctorPatientsListView from './doctor/DoctorPatientsListView'; // eslint-disable-line no-unused-vars
 
@@ -523,6 +524,36 @@ export default function DoctorDashboard({
     };
   }, []);
 
+  // Só médico prescreve. Usado para esconder a aba de receita de quem não pode
+  // emiti-la, em vez de deixar o botão levar a um alerta de recusa.
+  const canPrescribe = canPrescribeMedication(doctorProfile);
+
+  // `selectedDocTab` vem do localStorage e pode estar em 'receita' de uma sessão
+  // anterior. Sem normalizar, um enfermeiro cairia numa tela sem formulário
+  // nenhum: a aba de receita fica oculta e a de atestado não está selecionada.
+  const effectiveDocTab = canPrescribe ? selectedDocTab : 'atestado';
+
+  const denyDocumentIssue = (type) =>
+    getDocumentIssueDenial(type, doctorProfile, selectedPatient);
+
+  const confirmAllergyBeforePrescribing = () => {
+    const allergies = String(selectedPatient?.allergies || '').trim();
+    if (!allergies) return true;
+
+    const drugs = prescriptionItems
+      .map(item => item.name.trim())
+      .filter(Boolean)
+      .join(', ');
+
+    return window.confirm(
+      `⚠️ ALERGIA DECLARADA NO PRONTUÁRIO\n\n` +
+      `Paciente: ${selectedPatient?.name || 'Paciente'}\n` +
+      `Alergias: ${allergies}\n\n` +
+      `Medicamentos desta receita: ${drugs || '(nenhum informado)'}\n\n` +
+      `Confirme que nenhum dos itens acima é contraindicado para este paciente.`
+    );
+  };
+
   const generateDocHash = async (type, patientId, contentObj) => {
     try {
       const rawText = JSON.stringify({ type, patientId, content: contentObj });
@@ -538,6 +569,15 @@ export default function DoctorDashboard({
   };
 
   const executeIssueDocument = async (type, isSigned) => {
+    // Barreira final: o modal de assinatura chama esta função diretamente, sem
+    // passar por handleIssueDocument. Repetir a checagem aqui garante que não
+    // exista caminho de emissão sem autorização.
+    const denial = denyDocumentIssue(type);
+    if (denial) {
+      alert(`⛔ Emissão bloqueada\n\n${denial}`);
+      return;
+    }
+
     setSavingDoc(true);
     try {
       let content = {};
@@ -647,6 +687,17 @@ export default function DoctorDashboard({
 
   const handleIssueDocument = (type) => {
     if (!selectedPatient) return;
+
+    const denial = denyDocumentIssue(type);
+    if (denial) {
+      alert(`⛔ Emissão bloqueada\n\n${denial}`);
+      return;
+    }
+
+    if (type === 'receita' && !confirmAllergyBeforePrescribing()) {
+      return;
+    }
+
     if (shouldDigitallySign) {
       if (digitalCertType === 'none') {
         alert('Por favor, configure o seu Certificado Digital antes de realizar a assinatura ICP-Brasil.');
@@ -2774,17 +2825,19 @@ export default function DoctorDashboard({
                   
                   {/* Document Type Selector Tabs */}
                   <div className="login-tabs no-print" style={{ margin: '0 0 10px 0', width: 'fit-content', backgroundColor: 'var(--bg-secondary)' }}>
-                    <button 
+                    {canPrescribe && (
+                      <button
+                        type="button"
+                        className={`login-tab-btn ${effectiveDocTab === 'receita' ? 'active' : ''}`}
+                        onClick={() => setSelectedDocTab('receita')}
+                        style={{ minWidth: '130px', padding: '8px' }}
+                      >
+                        Receita Médica
+                      </button>
+                    )}
+                    <button
                       type="button" 
-                      className={`login-tab-btn ${selectedDocTab === 'receita' ? 'active' : ''}`}
-                      onClick={() => setSelectedDocTab('receita')}
-                      style={{ minWidth: '130px', padding: '8px' }}
-                    >
-                      Receita Médica
-                    </button>
-                    <button 
-                      type="button" 
-                      className={`login-tab-btn ${selectedDocTab === 'atestado' ? 'active' : ''}`}
+                      className={`login-tab-btn ${effectiveDocTab === 'atestado' ? 'active' : ''}`}
                       onClick={() => setSelectedDocTab('atestado')}
                       style={{ minWidth: '130px', padding: '8px' }}
                     >
@@ -2793,7 +2846,7 @@ export default function DoctorDashboard({
                   </div>
 
                   {/* Receita Form */}
-                  {selectedDocTab === 'receita' && (
+                  {effectiveDocTab === 'receita' && (
                     <div className="notes-compose-box no-print" style={{ backgroundColor: 'var(--bg-primary)' }}>
                       <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Nova Receita Médica</h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2894,7 +2947,7 @@ export default function DoctorDashboard({
                   )}
 
                   {/* Atestado Form */}
-                  {selectedDocTab === 'atestado' && (
+                  {effectiveDocTab === 'atestado' && (
                     <div className="notes-compose-box no-print" style={{ backgroundColor: 'var(--bg-primary)' }}>
                       <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Novo Atestado Médico</h4>
                       

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { speakNaturalText } from '../utils/speechUtils';
+import { getDocumentIssueDenial } from '../services/documentAuthorization';
 
 export default function PrescriptionGeneratorModal({ currentUser, patientProfile, onClose, onPrescriptionCreated, embeddedMode = false }) {
   const [documentType, setDocumentType] = useState('receita'); // receita, atestado, encaminhamento
@@ -15,7 +16,6 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
 
   const isDoctor = currentUser?.role === 'doctor';
   const isNurse = currentUser?.role === 'nurse';
-  const isClinician = isDoctor || isNurse;
   const professionalRoleTitle = isDoctor ? 'Médico(a) Credenciado(a)' : (isNurse ? 'Enfermeiro(a) Estomaterapeuta' : 'Profissional de Saúde');
   const registryType = isDoctor ? 'CRM' : (isNurse ? 'COREN' : 'REGISTRO');
   const registryNumber = currentUser?.crm || currentUser?.coren || '';
@@ -54,31 +54,41 @@ export default function PrescriptionGeneratorModal({ currentUser, patientProfile
     triggerVibration();
     setErrorMessage('');
 
-    if (!isClinician) {
-      setErrorMessage('Apenas profissionais de saúde credenciados (Médicos e Enfermeiros) podem emitir documentos.');
-      return;
-    }
-
-    if (!registryNumber) {
-      setErrorMessage('Registro profissional (CRM/COREN) não encontrado. Cadastre seu registro no perfil antes de emitir documentos.');
-      return;
-    }
-
-    const patientCpfDigits = (patientProfile?.cpf || '').replace(/\D/g, '');
-    if (!patientCpfDigits || patientCpfDigits.length !== 11) {
-      setErrorMessage('É obrigatório que o cadastro do paciente contenha um CPF válido (11 dígitos) para a emissão de documentos médicos oficiais.');
+    // Papel, registro profissional e CPF do paciente vêm de um só lugar, o
+    // mesmo que o DoctorDashboard usa. Antes cada tela tinha a sua versão da
+    // regra e a do painel principal não tinha nenhuma.
+    const denial = getDocumentIssueDenial(documentType, currentUser, patientProfile);
+    if (denial) {
+      setErrorMessage(denial);
       return;
     }
 
     if (documentType === 'receita') {
-      if (!isDoctor) {
-        setErrorMessage('Apenas médicos credenciados (CRM) podem emitir receituários de medicamentos.');
-        return;
-      }
       const validMeds = medications.filter(m => m.name.trim() !== '');
       if (validMeds.length === 0) {
         setErrorMessage('Por favor, informe ao menos um medicamento ou cobertura para a receita.');
         return;
+      }
+      // Alergias declaradas só eram exibidas em texto; nenhum fluxo de emissão
+      // as consultava. Sem base de medicamentos não há como checar interação,
+      // então a barreira possível é exigir confirmação explícita do prescritor.
+      const allergies = String(patientProfile?.allergies || '').trim();
+      if (allergies) {
+        const confirmed = window.confirm(
+          `⚠️ ALERGIA DECLARADA NO PRONTUÁRIO
+
+` +
+          `Paciente: ${patientProfile?.name || 'Paciente'}
+` +
+          `Alergias: ${allergies}
+
+` +
+          `Medicamentos desta receita: ${validMeds.map(m => m.name.trim()).join(', ')}
+
+` +
+          `Confirme que nenhum dos itens acima é contraindicado para este paciente.`
+        );
+        if (!confirmed) return;
       }
     } else if (documentType === 'atestado') {
       const days = parseInt(certificateDays, 10);
