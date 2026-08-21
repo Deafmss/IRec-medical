@@ -265,7 +265,21 @@ export const searchTrainingKnowledge = async (queryText) => {
     }
 
     if (results.length === 0 && queryText.length > 2) {
-      const cleanWord = queryText.trim().split(" ")[0];
+      // O termo era interpolado direto na string de filtro do PostgREST:
+      //   .or(`category.ilike.%${cleanWord}%,content.ilike.%${cleanWord}%`)
+      // Virgula, parenteses e ponto sao sintaxe de filtro ali, entao uma busca
+      // com esses caracteres alterava a consulta. Aqui o termo e reduzido a
+      // letras, digitos, espaco e hifen antes de entrar.
+      const cleanWord = queryText
+        .trim()
+        .split(' ')[0]
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-zA-Z0-9-]/g, '')
+        .slice(0, 40);
+
+      if (!cleanWord) return results;
+
       const { data: textData, error: textError } = await supabase
         .from('training_knowledge')
         .select('video_title, category, content')

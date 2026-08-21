@@ -7,6 +7,7 @@ import ProtocolGuide from './components/ProtocolGuide';
 import AIChatAssistant from './components/AIChatAssistant';
 import Login from './components/Login';
 import { clearSensitiveSessionDataDeep } from './services/sessionCleanup';
+import { isAdminUser, isClinicianUser, isVerifiedClinicianUser } from './services/accessControl';
 import DoctorDashboard from './components/DoctorDashboard';
 import PatientDocuments from './components/PatientDocuments';
 import UserProfileModal from './components/UserProfileModal';
@@ -103,10 +104,10 @@ export default function App() {
     localStorage.setItem('irec_ui_mode', nextMode);
   };
 
-  const isAdmin = currentUser && currentUser.email === 'admin@irec.com';
+  const isAdmin = isAdminUser(currentUser);
 
   const fetchPendingCount = useCallback(async () => {
-    if (currentUser && currentUser.email === 'admin@irec.com') {
+    if (isAdminUser(currentUser)) {
       try {
         const profiles = await getAllProfiles();
         if (profiles) {
@@ -121,7 +122,7 @@ export default function App() {
 
   useEffect(() => {
     let isMounted = true;
-    if (currentUser && currentUser.email === 'admin@irec.com') {
+    if (isAdminUser(currentUser)) {
       getAllProfiles().then(profiles => {
         if (isMounted && profiles) {
           const pending = profiles.filter(p => p.verification_status === 'pending');
@@ -445,7 +446,7 @@ export default function App() {
   const isValidTabForRole = (tab, userProfile) => {
     if (!tab || !userProfile) return false;
     const role = userProfile.role;
-    const isAdmin = userProfile.email === 'admin@irec.com' || role === 'admin';
+    const isAdmin = isAdminUser(userProfile);
     if (isAdmin) return tab.startsWith('admin-') || tab === 'profile';
     if (role === 'doctor' || role === 'nurse') {
       return ['doctor-dashboard', 'doctor-analytics', 'doctor-agenda', 'doctor-partners', 'telemedicine', 'protocols', 'prescriptions', 'vitals', 'telemetry', 'comparator', 'profile', 'history', 'documents', 'my-appointments', 'appointments'].includes(tab);
@@ -475,7 +476,7 @@ export default function App() {
         if (savedTab && isValidTabForRole(savedTab, userProfile)) {
           setActiveTab(savedTab);
         } else {
-          if (userProfile.email === 'admin@irec.com' || userProfile.role === 'admin') {
+          if (isAdminUser(userProfile)) {
             setActiveTab('admin-metrics');
           } else if (userProfile.role === 'doctor' || userProfile.role === 'nurse') {
             setActiveTab('doctor-dashboard');
@@ -653,9 +654,12 @@ export default function App() {
 
   const handleLoginSuccess = (profile) => {
     setCurrentUser(profile);
-    if (profile.email === 'admin@irec.com') {
+    // Mesma regra de papel usada em applyUserSession. Antes esta funcao testava
+    // so `role === 'doctor'`, entao enfermeiro caia na aba de paciente ao logar
+    // — e a decisao de admin era por e-mail aqui e por e-mail-ou-papel la.
+    if (isAdminUser(profile)) {
       setActiveTab('admin-metrics');
-    } else if (profile.role === 'doctor') {
+    } else if (profile.role === 'doctor' || profile.role === 'nurse') {
       setActiveTab('doctor-dashboard');
     } else {
       setActiveTab('dashboard');
@@ -1031,12 +1035,8 @@ export default function App() {
   //
   // `isClinician` também só testava 'doctor', deixando enfermeiro fora do
   // portão. Ambos exigem registro profissional válido (CRM / COREN).
-  const isAdminAccount = currentUser.email === 'admin@irec.com' || currentUser.role === 'admin';
-  const isClinician = (currentUser.role === 'doctor' || currentUser.role === 'nurse') && !isAdminAccount;
-
-  // `unverified` aparece quando o perfil vem do banco sem o campo preenchido
-  // (getClinicalProfile usa esse valor como padrão). Tratado como não liberado.
-  const isVerifiedClinician = currentUser.verificationStatus === 'verified';
+  const isClinician = isClinicianUser(currentUser);
+  const isVerifiedClinician = isVerifiedClinicianUser(currentUser);
 
   if (isClinician && !isVerifiedClinician) {
     return (

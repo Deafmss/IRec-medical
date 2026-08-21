@@ -2,6 +2,12 @@
  * Service to handle geocoding, nearby health resources lookup via OpenStreetMap APIs,
  * and geographical calculations.
  */
+import {
+  RECURSOS_DECLARADOS,
+  VERIFICADO_EM,
+  FONTE,
+  estaVencido
+} from '../data/recursosLocaisDeclarados';
 
 // Haversine formula to calculate distance in km between two lat/lon coordinates
 export function getDistance(lat1, lon1, lat2, lon2) {
@@ -132,80 +138,27 @@ export async function fetchNearbyHealthcareResources(lat, lon, radiusMeters = 70
   const hospitals = [];
   const pharmacies = [];
 
-  // Check if position is within/near Itapuranga, GO (within 12km) to inject exact local establishments
-  const itapurangaCenterLat = -15.5605889;
-  const itapurangaCenterLon = -49.9489571;
-  const isItapuranga = getDistance(numLat, numLon, itapurangaCenterLat, itapurangaCenterLon) <= 12;
+  // Recursos declarados manualmente, para regiao com cobertura incompleta no
+  // OpenStreetMap. A lista saiu daqui para src/data/recursosLocaisDeclarados.js,
+  // onde tem data de verificacao e origem — antes eram nome, endereco e telefone
+  // fixos no meio desta funcao, injetados como resultado real sem nenhuma
+  // indicacao de quando foram conferidos.
+  RECURSOS_DECLARADOS.forEach((regiao) => {
+    const dentroDoRaio = getDistance(numLat, numLon, regiao.centro.lat, regiao.centro.lon) <= regiao.raioKm;
+    if (!dentroDoRaio) return;
 
-  if (isItapuranga) {
-    const predefinedHospitals = [
-      {
-        id: "itapuranga_hosp_sf",
-        name: "Hospital São Francisco",
-        lat: -15.562111,
-        lon: -49.949483,
-        address: "Rua João do Couto Rosa, 249, Centro - Itapuranga/GO",
-        phone: "(62) 3312-1154"
-      },
-      {
-        id: "itapuranga_hosp_muni",
-        name: "Hospital Municipal de Itapuranga (HMI)",
-        lat: -15.564264,
-        lon: -49.947838,
-        address: "Av. Olavo Bilac Marinho, 645, Centro - Itapuranga/GO",
-        phone: "(62) 3312-1190"
-      },
-      {
-        id: "itapuranga_hosp_sc",
-        name: "Hospital Santa Casa do Povo",
-        lat: -15.560800,
-        lon: -49.937400,
-        address: "Av. Agoncílio da Silva Moreira, S/N, Parque Alvorada - Itapuranga/GO",
-        phone: "(62) 3312-1200"
-      }
-    ];
-
-    const predefinedPharmacies = [
-      {
-        id: "itapuranga_pharm_nr1",
-        name: "Drogarias Nossa Rede (São Pedro)",
-        lat: -15.561260,
-        lon: -49.947018,
-        address: "Rua 48, 1020, Centro - Itapuranga/GO",
-        phone: "(62) 3312-1500"
-      },
-      {
-        id: "itapuranga_pharm_fil",
-        name: "Drogaria Filadélfia",
-        lat: -15.562400,
-        lon: -49.948500,
-        address: "Rua 45, 899, Centro - Itapuranga/GO",
-        phone: "(62) 3312-1800"
-      },
-      {
-        id: "itapuranga_pharm_sp",
-        name: "Farmácia São Pedro",
-        lat: -15.561900,
-        lon: -49.947800,
-        address: "Rua 45, 1668, Centro - Itapuranga/GO",
-        phone: "(62) 3312-2000"
-      }
-    ];
-
-    predefinedHospitals.forEach(h => {
-      hospitals.push({
-        ...h,
-        distance: getDistance(numLat, numLon, h.lat, h.lon)
-      });
+    const marcar = (item) => ({
+      ...item,
+      distance: getDistance(numLat, numLon, item.lat, item.lon),
+      // A interface usa estes campos para avisar de onde vem a informacao.
+      fonte: FONTE,
+      verificadoEm: VERIFICADO_EM,
+      informacaoVencida: estaVencido()
     });
 
-    predefinedPharmacies.forEach(p => {
-      pharmacies.push({
-        ...p,
-        distance: getDistance(numLat, numLon, p.lat, p.lon)
-      });
-    });
-  }
+    regiao.hospitais.forEach((h) => hospitals.push(marcar(h)));
+    regiao.farmacias.forEach((f) => pharmacies.push(marcar(f)));
+  });
 
   // Define optimized Overpass QL query using 'nwr' and expanded tags
   const query = `[out:json][timeout:8];(

@@ -45,6 +45,13 @@ for (const f of ARQUIVOS) {
 }
 
 /** Busca um padrão nos arquivos que casam com o escopo. Devolve [{arquivo, linha, texto}] */
+/**
+ * Busca linha a linha. Serve para padrao que cabe numa linha.
+ *
+ * ATENCAO: nao use para procurar objeto multilinha — foi assim que a checagem
+ * FAB-5 reportou PASSOU durante toda a auditoria enquanto o defeito estava
+ * inteiro no codigo. Para isso existe `buscarBloco`.
+ */
 const buscar = (padrao, escopo = /^src\//) => {
   const achados = [];
   for (const [arquivo, texto] of CONTEUDO) {
@@ -54,6 +61,33 @@ const buscar = (padrao, escopo = /^src\//) => {
       if (padrao.test(linhas[i])) {
         achados.push({ arquivo, linha: i + 1, texto: linhas[i].trim().slice(0, 110) });
       }
+    }
+  }
+  return achados;
+};
+
+/**
+ * Busca sobre o arquivo inteiro, nao linha a linha. Necessario para padrao que
+ * atravessa linhas — objeto literal, chamada de varias linhas, JSX.
+ */
+/**
+ * Escopo padrao de "codigo de producao": src/, fora de src/test/ e de arquivos
+ * .test.*. Um registro profissional de exemplo dentro de um teste e fixture, nao
+ * dado fabricado em producao — e reprovar por isso treina o time a ignorar o
+ * portao.
+ */
+const PRODUCAO = /^src[/\\](?!test[/\\])(?!data[/\\])(?!.*\.test\.).*/;
+
+const buscarBloco = (padrao, escopo = PRODUCAO) => {
+  const achados = [];
+  for (const [arquivo, texto] of CONTEUDO) {
+    if (!escopo.test(arquivo)) continue;
+    const re = new RegExp(padrao.source, padrao.flags.includes('g') ? padrao.flags : padrao.flags + 'g');
+    let m;
+    while ((m = re.exec(texto)) !== null) {
+      const linha = (texto.slice(0, m.index).match(/\n/g) || []).length + 1;
+      achados.push({ arquivo, linha, texto: m[0].replace(/\s+/g, ' ').slice(0, 110) });
+      if (m.index === re.lastIndex) re.lastIndex++;
     }
   }
   return achados;
@@ -138,7 +172,7 @@ const CHECAGENS = [
   {
     id: 'FAB-3', desc: 'Registro profissional falso 123456-SP removido',
     fn: () => {
-      const h = buscar(/123456-SP/, /^src\//);
+      const h = buscar(/123456-SP/, PRODUCAO);
       return { ok: h.length === 0, detalhe: h.map(x => `${x.arquivo}:${x.linha}`).join(', ') };
     },
   },
@@ -152,9 +186,65 @@ const CHECAGENS = [
   {
     id: 'FAB-5', desc: 'Nenhuma lista de estabelecimentos de saúde hardcoded injetada como resultado real',
     fn: () => {
-      // Só conta objeto com nome + telefone de unidade de saúde no código, não placeholder de formulário.
-      const h = buscar(/(hospital|upa|clinica|posto).*(phone|telefone)\s*:\s*['"]\s*\(?\d/i, /^src\//);
-      return { ok: h.length === 0, detalhe: h.length ? `${h.length} ocorrências, ex.: ${h[0].arquivo}:${h[0].linha}` : 'ok' };
+      // A versão anterior usava `buscar`, que varre LINHA A LINHA, com um regex
+      // que exigia nome e telefone na mesma linha. Os objetos de
+      // locationService.js são multilinha, então o padrão nunca casava: a
+      // checagem reportou PASSOU durante toda a auditoria enquanto seis
+      // estabelecimentos de saúde — nome, endereço e telefone — estavam
+      // integralmente no código, injetados como resultado real na busca de
+      // recursos de emergência.
+      //
+      // Um portão que afirma que algo foi corrigido quando não foi é pior que
+      // portão nenhum: encerra a investigação.
+      const h = buscarBloco(
+        /name:\s*["'][^"']*(?:Hospital|UPA|Cl[ií]nica|Posto|Drogaria|Farm[aá]cia|Santa Casa)[^"']*["'][\s\S]{0,400}?phone:\s*["']\s*\(?\d/i
+      );
+      return {
+        ok: h.length === 0,
+        detalhe: h.length
+          ? `${h.length} estabelecimento(s) hardcoded, ex.: ${h[0].arquivo}:${h[0].linha}`
+          : 'ok'
+      };
+    },
+  },
+
+  {
+    id: 'FAB-5b', desc: 'Nenhuma coordenada geográfica de estabelecimento fixa no código',
+    fn: () => {
+      // Complemento do FAB-5: pega o caso em que o nome foi removido mas a
+      // lista de lat/lon continua.
+      const h = buscarBloco(/lat:\s*-?\d+\.\d{4,}[\s\S]{0,120}?lon:\s*-?\d+\.\d{4,}/);
+      return {
+        ok: h.length === 0,
+        detalhe: h.length ? `${h.length} coordenada(s) fixa(s), ex.: ${h[0].arquivo}:${h[0].linha}` : 'ok'
+      };
+    },
+  },
+
+  {
+    id: 'REC-1', desc: 'Recursos de saude declarados manualmente estao dentro do prazo de reconferencia',
+    fn: () => {
+      const arquivo = 'src/data/recursosLocaisDeclarados.js';
+      // As chaves de CONTEUDO usam o separador do sistema; procurar pelo
+      // sufixo evita depender de barra ou barra invertida.
+      let texto = null;
+      for (const [chave, valor] of CONTEUDO) {
+        if (chave.endsWith('recursosLocaisDeclarados.js')) { texto = valor; break; }
+      }
+      if (!texto) return { ok: true, detalhe: 'arquivo de recursos declarados ausente' };
+
+      const mData = texto.match(/VERIFICADO_EM = '(\d{4}-\d{2}-\d{2})'/);
+      const mPrazo = texto.match(/VALIDADE_DIAS = (\d+)/);
+      if (!mData) return { ok: false, detalhe: 'VERIFICADO_EM nao encontrado' };
+
+      const prazo = mPrazo ? Number(mPrazo[1]) : 180;
+      const dias = Math.floor((Date.now() - Date.parse(mData[1] + 'T00:00:00Z')) / 86400000);
+      return {
+        ok: dias <= prazo,
+        detalhe: dias <= prazo
+          ? `verificado ha ${dias} dia(s), prazo de ${prazo}`
+          : `VENCIDO: verificado ha ${dias} dias (prazo ${prazo}). Reconfira telefone e endereco em ${arquivo} e atualize VERIFICADO_EM.`
+      };
     },
   },
 
@@ -368,8 +458,12 @@ const CHECAGENS = [
   {
     id: 'SEC-2', desc: 'Nenhum dado de paciente em console.log',
     fn: () => {
-      const h = buscar(/console\.(log|warn|error)\([^)]*\b(patientName|patient\.name|cpf|clinicalProfile\.name)\b/, /^src\//);
-      return { ok: h.length === 0, detalhe: h.map(x => `${x.arquivo}:${x.linha}`).join(', ') };
+      // Tambem estava linha a linha e so cobria quatro nomes de campo, ate o
+      // primeiro `)`. Um template literal de varias linhas escapava.
+      const h = buscarBloco(
+        /console\.(log|warn|error|info|debug)\([\s\S]{0,200}?(patientName|patient\.name|clinicianName|clinicalProfile\.name|selectedPatient\.name|\.cpf)/
+      );
+      return { ok: h.length === 0, detalhe: h.map(x => `${x.arquivo}:${x.linha}`).join(', ') || 'ok' };
     },
   },
 ];

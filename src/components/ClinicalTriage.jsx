@@ -338,16 +338,31 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     skinProtectionColor = '#0284c7';
   }
 
-  // Revoke Blob URLs on unmount (IREC-0255)
+  // Revogacao das blob URLs na desmontagem (IREC-0255).
+  //
+  // Com `attachments` na lista de dependencias, o cleanup rodava a CADA
+  // alteracao — revogando as URLs dos anexos anteriores, que continuavam na
+  // lista nova (`[...attachments, ...novos]` reaproveita os mesmos objetos).
+  // Resultado visivel: anexar a segunda foto apagava a previa da primeira.
+  //
+  // O ref acompanha a lista atual, e o cleanup roda uma unica vez, na
+  // desmontagem, com `[]`.
+  const attachmentsRef = useRef([]);
+
+  // Ref atualizado em efeito, nao no corpo do render (react-hooks/refs).
+  useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
+
   useEffect(() => {
     return () => {
-      attachments.forEach(att => {
+      attachmentsRef.current.forEach(att => {
         if (att.url && att.url.startsWith('blob:')) {
           URL.revokeObjectURL(att.url);
         }
       });
     };
-  }, [attachments]);
+  }, []);
 
   // Sync complaint type & handle card selection without synchronous effect state setters
   const handleSelectComplaintCard = (cardId) => {

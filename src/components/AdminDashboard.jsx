@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAdminStats, getAllProfiles, getAuditLogs, getRecommendedMaterials, addRecommendedMaterial, deleteRecommendedMaterial, getAdminTelemedicineCalls, getAdminAssignments, getAdminWoundEntries, updateVerificationStatus, getTrainingKnowledgeList, updateTrainingKnowledgeChapter, deleteTrainingKnowledgeChapter } from '../services/supabaseService';
 import AdminReports from './AdminReports';
 import DateRangePicker from './DateRangePicker';
+import { isAdminUser } from '../services/accessControl';
 
 export default function AdminDashboard({ currentUser, activeTab: propActiveTab, onVerificationProcessed }) {
   const activeTab = propActiveTab === 'dashboard' ? 'metrics' : propActiveTab;
@@ -98,8 +99,10 @@ export default function AdminDashboard({ currentUser, activeTab: propActiveTab, 
     }
   };
 
-  // Fixes IREC-0046: verify admin access
-  if (currentUser && currentUser.role !== 'admin') {
+  // Fail-closed. Antes era `if (currentUser && currentUser.role !== 'admin')`:
+  // com currentUser nulo a condicao e falsa e o painel administrativo
+  // renderizava. E a regra divergia da que o App.jsx usava para liberar a aba.
+  if (!isAdminUser(currentUser)) {
     return (
       <div className="glass-card" style={{ padding: '40px', textAlign: 'center', margin: '40px auto', maxWidth: '500px' }}>
         <h2 style={{ color: 'var(--danger)', fontSize: '20px', fontWeight: '800' }}>⛔ Acesso Restrito</h2>
