@@ -19,85 +19,10 @@ import { analyzeTelemedicineTranscript, isGeminiConfigured } from '../services/g
 import TCLETelemedicineModal from './TCLETelemedicineModal';
 import TelemedicineContactsList from './telemedicine/TelemedicineContactsList'; // eslint-disable-line no-unused-vars
 import TelemedicineClinicalCopilot from './telemedicine/TelemedicineClinicalCopilot'; // eslint-disable-line no-unused-vars
+import { buildPublicProfessionalProfile } from '../services/professionalProfile';
 
-const getDoctorPremiumDetails = (doc) => {
-  if (!doc) return null;
-  const idHash = doc.id ? doc.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
-  
-  const specialties = [
-    {
-      specialty: 'Estomaterapia',
-      bio: 'Especialista em prevenção e tratamento avançado de feridas complexas, ostomias e incontinências. Pesquisadora em cicatrização acelerada por laserterapia.',
-      education: 'Doutorado em Enfermagem Clínica - USP; Especialização em Estomaterapia - SOBEST.',
-      stats: { rating: '4.9', patients: '420+', successRate: '98.5%' },
-      reviews: [
-        { patient: 'M. S.', text: 'Excelente profissional! Minha lesão venosa crônica de 2 anos cicatrizou completamente em apenas 5 semanas seguindo seu protocolo.' },
-        { patient: 'R. A.', text: 'Muito atenciosa e precisa nas orientações sobre os curativos de alginato. Sempre disponível no chat.' }
-      ]
-    },
-    {
-      specialty: 'Dermatologia',
-      bio: 'Especialista em patologias da pele, diagnóstico precoce de lesões teciduais e regeneração cutânea avançada.',
-      education: 'Graduação em Medicina - UNICAMP; Residência em Dermatologia - HC-USP; Membro Titular da SBD.',
-      stats: { rating: '4.8', patients: '680+', successRate: '97%' },
-      reviews: [
-        { patient: 'J. L.', text: 'Tratamento preciso e muito eficaz para minha dermatite e lesões na perna. Recomendo muito.' },
-        { patient: 'A. C.', text: 'Ótima consulta por telemedicina. Conseguiu avaliar a lesão perfeitamente por foto e ajustar o creme cicatrizante.' }
-      ]
-    },
-    {
-      specialty: 'Endocrinologia',
-      bio: 'Especialista em controle metabólico, prevenção e manejo clínico do Pé Diabético e neuropatias diabéticas periféricas.',
-      education: 'Graduação em Medicina - UFMG; Título de Especialista pela SBEM; Fellow em Pé Diabético na Harvard Medical School.',
-      stats: { rating: '4.9', patients: '950+', successRate: '99%' },
-      reviews: [
-        { patient: 'F. H.', text: 'O controle do meu diabetes melhorou 100% e evitamos uma complicação grave no meu pé. Profissional fantástico!' },
-        { patient: 'G. M.', text: 'Explica tudo com muita clareza e empatia. A melhor escolha para quem tem diabetes e quer evitar feridas.' }
-      ]
-    },
-    {
-      specialty: 'Angiologia',
-      bio: 'Especialista em sistema circulatório, tratamento clínico de varizes e úlceras venosas e arteriais crônicas.',
-      education: 'Graduação em Medicina - UFRJ; Membro da Sociedade Brasileira de Angiologia e Cirurgia Vascular (SBACV).',
-      stats: { rating: '4.7', patients: '510+', successRate: '96.8%' },
-      reviews: [
-        { patient: 'V. P.', text: 'Minha circulação melhorou muito e a úlcera varicosa finalmente fechou com a terapia de compressão recomendada.' }
-      ]
-    }
-  ];
-
-  const isDemoDoctor = doc.email && 
-    (doc.email.includes('example.com') || doc.email.includes('demo.com') || doc.email.includes('mock')) && 
-    !doc.name?.toLowerCase().includes('teste') && 
-    !doc.name?.toLowerCase().includes('test');
-
-  if (!isDemoDoctor) {
-    return {
-      ...doc,
-      specialty: doc.specialty || 'Clínico Geral',
-      bio: doc.bio || 'Profissional de saúde cadastrado no iRec.',
-      education: doc.education || `Registro Profissional: ${doc.crm || doc.coren || 'Não informado'}`,
-      price: doc.price || null,
-      stats: { rating: 'Novo', patients: '0', successRate: '-' },
-      reviews: []
-    };
-  }
-
-  let specProfile = specialties.find(s => doc.specialty && doc.specialty.toLowerCase().includes(s.specialty.toLowerCase()));
-  if (!specProfile) {
-    specProfile = specialties[idHash % specialties.length];
-  }
-
-  return {
-    ...doc,
-    specialty: doc.specialty || specProfile.specialty,
-    bio: specProfile.bio,
-    education: specProfile.education,
-    price: specProfile.price || null,
-    stats: specProfile.stats,
-    reviews: specProfile.reviews
-  };
-};
+const getDoctorPremiumDetails = (doc) =>
+  buildPublicProfessionalProfile(doc, { defaultSpecialty: 'Clínico Geral' });
 
 export default function Telemedicine({ currentUser, activeCallSession, setActiveCallSession, targetContactId = null, isAppActiveTab, setAppActiveTab, onUnreadCountChange }) {
   const [contacts, setContacts] = useState([]);

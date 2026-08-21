@@ -1025,8 +1025,23 @@ export default function App() {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
-  const isClinician = currentUser.role === 'doctor' && currentUser.email !== 'admin@irec.com';
-  const isVerifiedClinician = true; // Clinicians are always bypass-verified
+  // Portão de credenciamento profissional.
+  //
+  // A linha anterior aqui era `const isVerifiedClinician = true;` com o
+  // comentário "Clinicians are always bypass-verified" — ou seja, o portão
+  // estava desligado. Quem se cadastrava como médico, digitava um CRM qualquer
+  // e entrava direto no painel clínico: lia prontuário e emitia receita e
+  // atestado. A tela "Cadastro em Análise" logo abaixo era código morto,
+  // porque `isClinician && !true` nunca é verdadeiro.
+  //
+  // `isClinician` também só testava 'doctor', deixando enfermeiro fora do
+  // portão. Ambos exigem registro profissional válido (CRM / COREN).
+  const isAdminAccount = currentUser.email === 'admin@irec.com' || currentUser.role === 'admin';
+  const isClinician = (currentUser.role === 'doctor' || currentUser.role === 'nurse') && !isAdminAccount;
+
+  // `unverified` aparece quando o perfil vem do banco sem o campo preenchido
+  // (getClinicalProfile usa esse valor como padrão). Tratado como não liberado.
+  const isVerifiedClinician = currentUser.verificationStatus === 'verified';
 
   if (isClinician && !isVerifiedClinician) {
     return (

@@ -1,77 +1,10 @@
 import { useState, useEffect } from 'react';
 import { getAllNurses, getAssignedDoctors, followPatient } from '../services/supabaseService';
 import BookingModal from './BookingModal';
+import { buildPublicProfessionalProfile } from '../services/professionalProfile';
 
-const getNursePremiumDetails = (doc) => {
-  if (!doc) return null;
-  const idHash = doc.id ? doc.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
-  
-  const specialties = [
-    {
-      specialty: 'Estomaterapia e Feridas Vasculares',
-      bio: 'Enfermeira estomaterapeuta especialista em tratamentos de úlceras de perna crônicas, curativos compressivos e coberturas especiais de alta tecnologia.',
-      education: 'Pós-graduação em Enfermagem em Estomaterapia - SOBEST; Especialização em Laserterapia Clínica.',
-      price: 130,
-      stats: { rating: '4.9', patients: '240+', successRate: '98%' },
-      reviews: [
-        { patient: 'M. F.', text: 'Excelente atendimento domiciliar! O curativo compressivo que ela realizou aliviou minha dor e ajudou a fechar a ferida.' },
-        { patient: 'P. R.', text: 'Super profissional e muito higiênica nas trocas de curativo. Nota 10!' }
-      ]
-    },
-    {
-      specialty: 'Pé Diabético e Lesões por Pressão',
-      bio: 'Atendimento estomaterápico especializado em offloading, avaliação de neuropatias diabéticas, desbridamento e prevenção de amputações.',
-      education: 'Graduação em Enfermagem - UNIFESP; Especialização em Pé Diabético e Cicatrização de Feridas Complexas.',
-      price: 145,
-      stats: { rating: '4.8', patients: '180+', successRate: '97.2%' },
-      reviews: [
-        { patient: 'T. O.', text: 'Cuidado exemplar com o pé diabético do meu pai. Evitou uma internação grave.' }
-      ]
-    },
-    {
-      specialty: 'Enfermagem Geral & Lesões Cirúrgicas',
-      bio: 'Especialista em cuidados pós-operatórios imediatos, retirada de pontos, lavagem estéril e curativos cirúrgicos limpos cotidianos.',
-      education: 'Graduação em Enfermagem - USP; Treinamento Avançado em Manejo de Feridas Cirúrgicas e Drenos.',
-      price: 110,
-      stats: { rating: '4.7', patients: '310+', successRate: '99%' },
-      reviews: [
-        { patient: 'J. C.', text: 'Pontual, educada e tirou meus pontos com total delicadeza. Recomendo de olhos fechados!' }
-      ]
-    }
-  ];
-
-  const isDemoNurse = doc.email && 
-    (doc.email.includes('example.com') || doc.email.includes('demo.com') || doc.email.includes('mock')) && 
-    !doc.name?.toLowerCase().includes('teste') && 
-    !doc.name?.toLowerCase().includes('test');
-
-  if (!isDemoNurse) {
-    return {
-      ...doc,
-      specialty: doc.specialty || 'Enfermagem Geral',
-      bio: doc.bio || 'Enfermeiro(a) cadastrado(a) no iRec.',
-      education: doc.education || `Registro Profissional: ${doc.crm || doc.coren || 'Não informado'}`,
-      price: doc.consultationFee ? parseFloat(doc.consultationFee) : null,
-      stats: { rating: 'Novo', patients: '0', successRate: '-' },
-      reviews: []
-    };
-  }
-
-  let specProfile = specialties.find(s => doc.specialty && doc.specialty.toLowerCase().includes(s.specialty.toLowerCase()));
-  if (!specProfile) {
-    specProfile = specialties[idHash % specialties.length];
-  }
-
-  return {
-    ...doc,
-    specialty: doc.specialty || specProfile.specialty,
-    bio: doc.bio || specProfile.bio,
-    education: doc.education || specProfile.education,
-    price: doc.consultationFee ? parseFloat(doc.consultationFee) : specProfile.price,
-    stats: specProfile.stats,
-    reviews: specProfile.reviews
-  };
-};
+const getNursePremiumDetails = (doc) =>
+  buildPublicProfessionalProfile(doc, { defaultSpecialty: 'Enfermagem' });
 
 export default function NursesNetwork({ currentUser, setActiveTab, setTelemedicineContactId }) {
   const isClinician = currentUser?.role === 'doctor' || currentUser?.role === 'nurse';
