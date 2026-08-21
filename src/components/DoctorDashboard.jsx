@@ -17,6 +17,8 @@ import {
 import { chatWithDoctorCopilot, formatSOAPNote } from '../services/geminiService';
 import { exportFHIRBundle } from '../services/fhirService';
 import { getDocumentIssueDenial, canPrescribeMedication } from '../services/documentAuthorization';
+import { computeDocumentDigest, buildIntegrityRecord, LEGAL_NOTICE_NO_ICP } from '../services/documentIntegrity';
+import DocumentIntegritySeal from './DocumentIntegritySeal';
 import DoctorAgendaView from './doctor/DoctorAgendaView';
 import DoctorPatientsListView from './doctor/DoctorPatientsListView'; // eslint-disable-line no-unused-vars
 
@@ -99,7 +101,6 @@ export default function DoctorDashboard({
 
   // ICP-Brasil Signature states
   const [signatureModalOpen, setSignatureModalOpen] = useState(false);
-  const [signaturePin, setSignaturePin] = useState('');
   const [signatureError, setSignatureError] = useState('');
   const [pendingDocType, setPendingDocType] = useState(null);
 
@@ -554,19 +555,11 @@ export default function DoctorDashboard({
     );
   };
 
-  const generateDocHash = async (type, patientId, contentObj) => {
-    try {
-      const rawText = JSON.stringify({ type, patientId, content: contentObj });
-      const encoder = new TextEncoder();
-      const data = encoder.encode(rawText);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32).toUpperCase();
-    } catch (err) {
-      console.warn("Erro ao gerar hash SHA256 do documento:", err);
-      return (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : Date.now().toString(36)).substring(0, 16).toUpperCase();
-    }
-  };
+  // Delega ao modulo, que nao cai em valor aleatorio quando o WebCrypto falha.
+  // A versao anterior devolvia crypto.randomUUID() no catch, produzindo um
+  // "hash" sem relacao com o conteudo — que nunca conferiria numa verificacao.
+  const generateDocHash = (type, patientId, contentObj) =>
+    computeDocumentDigest(type, patientId, contentObj);
 
   const executeIssueDocument = async (type, isSigned) => {
     // Barreira final: o modal de assinatura chama esta função diretamente, sem
@@ -596,19 +589,12 @@ export default function DoctorDashboard({
           doctorCrm: doctorProfile.crm,
           doctorSpecialty: doctorProfile.specialty,
           doctorRqe: doctorProfile.rqe || '',
-          isSigned: !!isSigned,
-          signedAt: isSigned ? new Date().toISOString() : null,
-          signatureDetails: isSigned ? {
-            certType: digitalCertType === 'birdid' ? 'Nuvem - BirdID (ICP-Brasil)' :
-                      digitalCertType === 'a1' ? `Arquivo Local A1 (${a1CertName || 'pfx'})` :
-                      digitalCertType === 'a3' ? 'Token Físico/Smartcard A3 (ICP-Brasil)' :
-                      'A1 (ICP-Brasil)',
-            authority: digitalCertType === 'birdid' ? 'AC Soluti Multipla v5' :
-                       digitalCertType === 'a3' ? 'AC Serpro e-CPF v5' :
-                       'AC ITI Federal v5',
-            serial: `BR-${doctorProfile.crm ? doctorProfile.crm.replace(/\D/g, '') : '00000'}-${Date.now().toString().slice(-6)}-CFM`,
-            hash: `SHA256:${docHash}`
-          } : null
+          isIntegritySealed: !!isSigned,
+          sealedAt: isSigned ? new Date().toISOString() : null,
+          // `isSigned` significa que o profissional pediu o selo de integridade.
+          // Nao significa assinatura ICP-Brasil — nao ha certificado envolvido.
+          integrity: buildIntegrityRecord({ digest: docHash, professional: doctorProfile }),
+          legalNotice: LEGAL_NOTICE_NO_ICP
         };
       } else if (type === 'atestado') {
         const daysNum = Number(atestadoDays);
@@ -628,30 +614,24 @@ export default function DoctorDashboard({
           doctorCrm: doctorProfile.crm,
           doctorSpecialty: doctorProfile.specialty,
           doctorRqe: doctorProfile.rqe || '',
-          isSigned: !!isSigned,
-          signedAt: isSigned ? new Date().toISOString() : null,
-          signatureDetails: isSigned ? {
-            certType: digitalCertType === 'birdid' ? 'Nuvem - BirdID (ICP-Brasil)' :
-                      digitalCertType === 'a1' ? `Arquivo Local A1 (${a1CertName || 'pfx'})` :
-                      digitalCertType === 'a3' ? 'Token Físico/Smartcard A3 (ICP-Brasil)' :
-                      'A1 (ICP-Brasil)',
-            authority: digitalCertType === 'birdid' ? 'AC Soluti Multipla v5' :
-                       digitalCertType === 'a3' ? 'AC Serpro e-CPF v5' :
-                       'AC ITI Federal v5',
-            serial: `BR-${doctorProfile.crm ? doctorProfile.crm.replace(/\D/g, '') : '00000'}-${Date.now().toString().slice(-6)}-CFM`,
-            hash: `SHA256:${docHash}`
-          } : null
+          isIntegritySealed: !!isSigned,
+          sealedAt: isSigned ? new Date().toISOString() : null,
+          // `isSigned` significa que o profissional pediu o selo de integridade.
+          // Nao significa assinatura ICP-Brasil — nao ha certificado envolvido.
+          integrity: buildIntegrityRecord({ digest: docHash, professional: doctorProfile }),
+          legalNotice: LEGAL_NOTICE_NO_ICP
         };
       }
 
       const doc = await issueDocument(selectedPatient.id, doctorProfile.id, type, content);
       if (doc) {
         if (isSigned) {
-          await createAuditLog('SIGN_MEDICAL_DOCUMENT', doc.id, {
+          await createAuditLog('SEAL_MEDICAL_DOCUMENT', doc.id, {
             type,
             doctorName: doctorProfile.name,
             patientName: selectedPatient.name,
-            certType: 'A1 (ICP-Brasil)'
+            method: 'SHA-256 (selo de integridade interno)',
+            icpBrasilSigned: false
           });
         } else {
           await createAuditLog('ISSUE_MEDICAL_DOCUMENT', doc.id, {
@@ -661,7 +641,9 @@ export default function DoctorDashboard({
           });
         }
 
-        alert(`${type === 'receita' ? 'Receita' : 'Atestado'} ${isSigned ? 'assinado e ' : ''}emitido com sucesso!`);
+        alert(`${type === 'receita' ? 'Receita' : 'Atestado'} emitido com sucesso${isSigned ? ' e com selo de integridade aplicado' : ''}.
+
+O documento NÃO possui assinatura digital ICP-Brasil e não vale para dispensação controlada, perícia ou INSS.`);
         
         // Refresh local documents list
         const updatedDocs = await getPatientDocuments(selectedPatient.id);
@@ -700,12 +682,11 @@ export default function DoctorDashboard({
 
     if (shouldDigitallySign) {
       if (digitalCertType === 'none') {
-        alert('Por favor, configure o seu Certificado Digital antes de realizar a assinatura ICP-Brasil.');
+        alert('Registre sua preferência de certificado digital antes de aplicar o selo de integridade.');
         setDigitalCertModalOpen(true);
         return;
       }
       setPendingDocType(type);
-      setSignaturePin('');
       setSignatureError('');
       setSignatureModalOpen(true);
     } else {
@@ -1512,7 +1493,7 @@ export default function DoctorDashboard({
                 <span style={{ fontSize: '24px' }}>🔑</span>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', margin: 0 }}>Vincular Certificado Digital</h3>
-                  <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>ICP-Brasil e e-CPF para Assinatura Regulamentar</p>
+                  <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>Preferência de certificado — assinatura ICP-Brasil pendente de integração</p>
                 </div>
               </div>
               <button 
@@ -1535,11 +1516,11 @@ export default function DoctorDashboard({
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ fontWeight: '800', color: digitalCertType === 'none' ? '#f87171' : '#10b981', fontSize: '13px' }}>
-                  {digitalCertType === 'none' ? '🔴 Status: Não Configurado' : '🟢 Status: Ativo e Reconhecido pelo ITI / ICP-Brasil'}
+                  {digitalCertType === 'none' ? '🔴 Status: Não Configurado' : '🟡 Status: Preferência salva — integração com provedor ICP-Brasil ainda não implementada'}
                 </div>
                 {digitalCertType !== 'none' && (
                   <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '50px' }}>
-                    ICP-Brasil Válido
+                    Não validado
                   </span>
                 )}
               </div>
@@ -1551,7 +1532,7 @@ export default function DoctorDashboard({
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'rgba(255, 255, 255, 0.9)' }}>
                   <div>📅 <strong>Validade do Certificado:</strong> Válido até 27/07/2027 (Restam 365 dias)</div>
-                  <div>🏢 <strong>Autoridade Certificadora:</strong> AC SOLUTI v5 / Serasa Experian (Cadeia Oficial ICP-Brasil)</div>
+                  <div>🏢 <strong>Autoridade Certificadora:</strong> nenhuma — não há certificado instalado nesta plataforma</div>
                   <div>👨‍⚕️ <strong>Titular do Certificado:</strong> Dr(a). {doctorProfile?.name || 'Médico Logado'}</div>
                   <div>
                     🔍 <strong>Tipo Reconhecido:</strong>{' '}
@@ -1697,7 +1678,13 @@ export default function DoctorDashboard({
                   <button
                     type="button"
                     onClick={() => {
-                      alert(`✅ Validação de Assinatura ICP-Brasil realizada com sucesso!\n\nProvedor: ${digitalCertType.toUpperCase()}\nStatus: Certificado Válido (Criptografia RSA 2048-bit)\nTitular: Dr(a). ${doctorProfile?.name || 'Médico'}`);
+                      alert(
+                        'Nao e possivel validar. ' +
+                        'A integracao com provedor ICP-Brasil (BirdID, Soluti, Serpro) ainda nao foi ' +
+                        'implementada nesta plataforma. Nenhum certificado esta instalado, entao nao ha ' +
+                        'assinatura a verificar. Os documentos recebem apenas selo interno de integridade ' +
+                        '(resumo SHA-256), sem validade de assinatura digital.'
+                      );
                     }}
                     className="btn"
                     style={{
@@ -1753,7 +1740,9 @@ export default function DoctorDashboard({
                   setDigitalCertType(certModalTab);
                   localStorage.setItem('irec_cert_type', certModalTab);
                   setDigitalCertModalOpen(false);
-                  alert(`✅ Certificado Digital (${certModalTab.toUpperCase()}) configurado e ativado com sucesso! As receitas e atestados emitidos receberão assinatura ICP-Brasil.`);
+                  alert(`Preferência de certificado (${certModalTab.toUpperCase()}) salva.
+
+ATENÇÃO: a integração com provedor ICP-Brasil ainda não foi implementada. As receitas e atestados receberão apenas selo interno de integridade e NÃO terão validade de assinatura digital.`);
                 }}
                 className="btn btn-primary"
                 style={{ flex: 1, padding: '10px', fontSize: '12.5px', borderRadius: '8px', fontWeight: 'bold', backgroundColor: '#10b981' }}
@@ -1781,7 +1770,12 @@ export default function DoctorDashboard({
               type="button"
               onClick={() => {
                 if (digitalCertType === 'none') {
-                  alert('⚠️ BLOQUEIO REGULAMENTAR (CFM / ICP-Brasil):\n\nA emissão de receitas e atestados médicos exige um Certificado Digital ICP-Brasil (A1 ou A3) ativo.\n\nPor favor, configure seu certificado digital primeiro.');
+                  alert(
+                    'Antes de emitir, registre sua preferencia de certificado digital. ' +
+                    'Observacao: a assinatura ICP-Brasil ainda nao esta integrada nesta plataforma. ' +
+                    'Documento com validade legal para dispensacao controlada, pericia ou INSS ' +
+                    'precisa ser assinado fora do iRec.'
+                  );
                   setDigitalCertModalOpen(true);
                   return;
                 }
@@ -1800,7 +1794,7 @@ export default function DoctorDashboard({
                 fontWeight: '800',
                 opacity: digitalCertType === 'none' ? 0.8 : 1
               }}
-              title={digitalCertType === 'none' ? 'Bloqueado: Configure seu Certificado Digital primeiro' : 'Emitir Receita / Atestado médico com Assinatura Digital'}
+              title={digitalCertType === 'none' ? 'Registre sua preferência de certificado primeiro' : 'Emitir receita / atestado com selo interno de integridade (sem assinatura ICP-Brasil)'}
             >
               📝 Emitir Receita / Atestado {digitalCertType === 'none' && '🔒'}
             </button>
@@ -1828,7 +1822,7 @@ export default function DoctorDashboard({
               border: digitalCertType === 'none' ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid rgba(16, 185, 129, 0.35)',
               boxShadow: digitalCertType === 'none' ? '0 0 8px rgba(239, 68, 68, 0.2)' : '0 0 8px rgba(16, 185, 129, 0.2)'
             }}
-            title={digitalCertType === 'none' ? 'Clique para configurar seu Certificado Digital ICP-Brasil (A1/A3)' : 'Certificado Digital Configurado e Ativo'}
+            title={digitalCertType === 'none' ? 'Registrar preferência de certificado digital' : 'Preferência de certificado registrada — assinatura ICP-Brasil não integrada'}
           >
             {digitalCertType === 'none' && '🔴 Certificado (Pendente)'}
             {digitalCertType === 'a1' && '🟢 Certificado A1 (.PFX Ativo)'}
@@ -2930,7 +2924,7 @@ export default function DoctorDashboard({
                             style={{ width: '15px', height: '15px', cursor: 'pointer' }}
                           />
                           <label htmlFor="sign-receita-checkbox" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer', margin: 0 }}>
-                            ✍️ Assinar com ICP-Brasil
+                            🔒 Aplicar selo de integridade
                           </label>
                         </div>
                         <button 
@@ -3064,7 +3058,7 @@ export default function DoctorDashboard({
                             style={{ width: '15px', height: '15px', cursor: 'pointer' }}
                           />
                           <label htmlFor="sign-atestado-checkbox" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer', margin: 0 }}>
-                            ✍️ Assinar com ICP-Brasil
+                            🔒 Aplicar selo de integridade
                           </label>
                         </div>
                         <button 
@@ -3423,7 +3417,7 @@ export default function DoctorDashboard({
           </div>
         </div>
       )}
-      {/* ICP-Brasil Digital Signature Verification Modal */}
+      {/* Modal do selo de integridade (nao e assinatura ICP-Brasil) */}
       {signatureModalOpen && (
         <div style={{
           position: 'fixed',
@@ -3455,8 +3449,8 @@ export default function DoctorDashboard({
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '14px' }}>
               <span style={{ fontSize: '24px' }}>✍️</span>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#10b981', margin: 0 }}>Assinatura ICP-Brasil</h3>
-                <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>Validação de Documento Clínico Digital</p>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#f59e0b', margin: 0 }}>Selo de integridade</h3>
+                <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>Resumo SHA-256 do conteúdo — não é assinatura ICP-Brasil</p>
               </div>
             </div>
 
@@ -3471,41 +3465,34 @@ export default function DoctorDashboard({
             }}>
               <strong>Profissional:</strong> Dr(a). {doctorProfile.name} <br />
               <strong>CRM:</strong> {doctorProfile.crm} • <strong>Especialidade:</strong> {doctorProfile.specialty} <br />
-              <strong>Certificado Ativo:</strong> {
-                digitalCertType === 'birdid' ? 'Nuvem - BirdID (ICP-Brasil)' :
-                digitalCertType === 'a1' ? `Arquivo Local A1 (${a1CertName || 'pfx'})` :
-                digitalCertType === 'a3' ? 'Token Físico/Smartcard A3 (ICP-Brasil)' :
-                'A1 (ICP-Brasil)'
-              }
+              <strong>Preferência registrada:</strong> {
+                digitalCertType === 'birdid' ? 'Nuvem - BirdID' :
+                digitalCertType === 'a1' ? `Arquivo local A1 (${a1CertName || 'pfx'})` :
+                digitalCertType === 'a3' ? 'Token físico/Smartcard A3' :
+                'A1'
+              } <br />
+              <strong style={{ color: '#fcd34d' }}>Nenhum certificado instalado.</strong> O documento receberá selo
+              interno de integridade, sem validade de assinatura digital.
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'rgba(255, 255, 255, 0.8)' }}>
-                {digitalCertType === 'birdid' ? 'Digite o token OTP temporário (gerado no app BirdID/Gov.br):' :
-                 digitalCertType === 'a1' ? 'Digite a senha de proteção do certificado A1 (.pfx):' :
-                 'Digite a senha PIN do seu Token USB A3:'}
-              </label>
-              <input 
-                type="password"
-                placeholder={digitalCertType === 'birdid' ? "Insira o código OTP (ex: 789123)" : "Insira a senha/PIN (ex: 1234)"}
-                value={signaturePin}
-                onChange={(e) => setSignaturePin(e.target.value)}
-                style={{
-                  padding: '12px',
-                  borderRadius: '8px',
-                  border: '1.5px solid rgba(255, 255, 255, 0.15)',
-                  backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                  color: '#fff',
-                  fontSize: '15px',
-                  letterSpacing: '3px',
-                  textAlign: 'center',
-                  outline: 'none'
-                }}
-                autoFocus
-              />
-              <span style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center', marginTop: '2px' }}>
-                {digitalCertType === 'birdid' ? 'Abra o app do seu celular para gerar o código OTP dinâmico.' : 'Senha/PIN cadastrado junto ao conselho emissor.'}
-              </span>
+            {/* O campo de PIN/OTP foi removido. Pedia a senha de um certificado que
+                nao existe: o valor era aceito com qualquer string nao vazia e
+                descartado em seguida. Manter o campo dava ao profissional a
+                impressao de que havia certificado em uso. */}
+            <div style={{
+              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              borderRadius: '8px',
+              padding: '12px',
+              fontSize: '11.5px',
+              lineHeight: '1.5',
+              color: '#fcd34d'
+            }}>
+              Ao confirmar, o documento recebe um resumo SHA-256 do proprio conteudo, que
+              permite detectar alteracao posterior. Isso <strong>nao</strong> e assinatura
+              digital: nao ha certificado, chave privada nem cadeia de confianca envolvidos.
+              Para receita de medicamento controlado, pericia ou INSS, o documento precisa
+              ser assinado com certificado ICP-Brasil fora desta plataforma.
             </div>
 
             {signatureError && (
@@ -3536,16 +3523,12 @@ export default function DoctorDashboard({
                 className="btn btn-primary"
                 type="button"
                 onClick={() => {
-                  if (signaturePin.trim() !== '') {
-                    setSignatureModalOpen(false);
-                    executeIssueDocument(pendingDocType, true);
-                  } else {
-                    setSignatureError('Por favor, informe a senha/PIN/OTP do certificado para assinar.');
-                  }
+                  setSignatureModalOpen(false);
+                  executeIssueDocument(pendingDocType, true);
                 }}
                 style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '8px', backgroundColor: '#10b981', borderColor: '#10b981', color: '#fff', fontWeight: 'bold', height: '40px' }}
               >
-                Assinar Documento
+                Aplicar selo e emitir
               </button>
             </div>
           </div>
@@ -3652,27 +3635,7 @@ export default function DoctorDashboard({
                   />
                 </div>
 
-                {/* ICP-Brasil Seal Info */}
-                <div style={{ fontSize: '11px', lineHeight: '1.4', color: '#4b5563' }}>
-                  {activePrintDoc.content.isSigned ? (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#166534', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
-                        <span>🛡️</span> ASSINATURA DIGITAL VALIDADA (ICP-BRASIL)
-                      </div>
-                      Este documento foi assinado eletronicamente por <strong>Dr(a). {activePrintDoc.content.doctorName}</strong> utilizando infraestrutura de chaves públicas credenciada pela Medida Provisória nº 2.200-2/2001. A validade pode ser confirmada em https://irec.com.br/validar:
-                      <div style={{ fontWeight: 'bold', color: '#166534', marginTop: '2px', fontFamily: 'monospace' }}>
-                        HASH: {activePrintDoc.content.signatureDetails?.hash || `validation_${activePrintDoc.id}`}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#b91c1c', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
-                        <span>⚠️</span> DOCUMENTO EMITIDO SEM ASSINATURA DIGITAL
-                      </div>
-                      Este documento foi registrado no prontuário do iRec para fins de histórico clínico, mas não possui certificação digital criptográfica ICP-Brasil.
-                    </>
-                  )}
-                </div>
+                <DocumentIntegritySeal doc={activePrintDoc} />
 
                 {/* Doctor Signature Stamp */}
                 <div style={{ textAlign: 'center', borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>

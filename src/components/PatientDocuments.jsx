@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getPatientDocuments } from '../services/supabaseService';
+import DocumentIntegritySeal from './DocumentIntegritySeal';
 
 // Local SVG vector QR Code generator Data URI (fixes IREC-0329 & IREC-0330)
 const generateQRDataUri = (docId) => {
@@ -332,28 +333,7 @@ export default function PatientDocuments({ clinicalProfile, onOpenReportPDF }) {
                   />
                 </div>
 
-                {/* Conditional ICP-Brasil Seal Info (fixes IREC-0017 & IREC-0331) */}
-                {activePrintDoc.content?.isSigned ? (
-                  <div style={{ fontSize: '11px', lineHeight: '1.4', color: '#4b5563' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#166534', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
-                      <span>🛡️</span> ASSINATURA DIGITAL VALIDADA (ICP-BRASIL)
-                    </div>
-                    Este documento foi assinado eletronicamente por <strong>Dr(a). {activePrintDoc.content?.doctorName || 'Profissional'}</strong> utilizando infraestrutura de chaves públicas credenciada pela Medida Provisória nº 2.200-2/2001. A integridade e autenticidade da receita/atestado médico podem ser verificadas via QR Code ou no site oficial de validação:
-                    <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginTop: '2px' }}>
-                      https://irec.com.br/validar (Código: validation_{activePrintDoc.id})
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '11px', lineHeight: '1.4', color: '#4b5563' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#dc2626', fontWeight: 'bold', marginBottom: '4px', fontSize: '11px' }}>
-                      <span>⚠️</span> DOCUMENTO EMITIDO SEM ASSINATURA DIGITAL
-                    </div>
-                    Este documento foi emitido sem certificado digital ICP-Brasil e possui caráter informativo/declaratório. Para fins de dispensação controlada ou perícia, solicite ao profissional médico a versão assinada digitalmente.
-                    <div style={{ fontWeight: 'bold', color: '#4b5563', marginTop: '2px' }}>
-                      https://irec.com.br/validar (Código: validation_{activePrintDoc.id})
-                    </div>
-                  </div>
-                )}
+                <DocumentIntegritySeal doc={activePrintDoc} />
 
                 {/* Doctor Signature Stamp */}
                 <div style={{ textAlign: 'center', borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>
