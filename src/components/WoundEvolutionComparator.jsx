@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { isChronologicallyInverted, formatClinicalDate } from '../utils/clinicalDate';
 
 // Neutral SVG placeholder for missing/failed wound photo comparisons
 const NEUTRAL_COMPARE_PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="280" viewBox="0 0 300 280"><rect width="100%" height="100%" fill="%231e293b"/><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="%2394a3b8" font-size="36">📷</text><text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" fill="%2364748b" font-size="12" font-weight="bold">Imagem Não Disponível</text></svg>`;
@@ -191,10 +192,22 @@ export default function WoundEvolutionComparator({ entries = [], onClose = () =>
 
   const isHealing = percentReductionNum !== null ? percentReductionNum > 0 : null;
 
-  // Chronological order verification (fixes IREC-0383)
-  const dateA = new Date(entryA?.date || 0);
-  const dateB = new Date(entryB?.date || 0);
-  const isChronologicalInverted = dateA > dateB;
+  // Verificacao de ordem cronologica (IREC-0383).
+  //
+  // Antes: `new Date(entryA?.date)` sobre "20/08/2026" — Invalid Date em todos
+  // os navegadores, porque o parser espera MM/DD e nao existe mes 20. Entao
+  // `dateA > dateB` era `NaN > NaN`, ou seja SEMPRE false: este aviso nunca
+  // aparecia, e o medico podia ler "30% de reducao" com as fotos na ordem
+  // trocada, quando a ferida havia piorado.
+  //
+  // `isChronologicallyInverted` devolve null quando nao consegue interpretar
+  // alguma das datas — caso que agora e tratado, em vez de virar um false
+  // silencioso.
+  const inversaoCronologica = isChronologicallyInverted(entryA, entryB);
+  const isChronologicalInverted = inversaoCronologica === true;
+  const datasIndeterminadas = inversaoCronologica === null;
+  const dataA = formatClinicalDate(entryA?.entryDate || entryA?.date) || 'data nao registrada';
+  const dataB = formatClinicalDate(entryB?.entryDate || entryB?.date) || 'data nao registrada';
 
   const innerContent = (
     <div className="glass-card glass-card-cyan-glow" style={{
@@ -383,7 +396,24 @@ export default function WoundEvolutionComparator({ entries = [], onClose = () =>
             color: '#f59e0b',
             fontWeight: '700'
           }}>
-            ⚠️ <strong>Atenção:</strong> A Foto Anterior ({entryA.date}) é posterior à Foto Atual ({entryB.date}). Para uma comparação temporal correta, selecione a avaliação mais antiga à esquerda.
+            ⚠️ <strong>Atenção:</strong> A avaliação da esquerda ({dataA}) é posterior à da direita ({dataB}). Para uma comparação temporal correta, selecione a avaliação mais antiga à esquerda.
+          </div>
+        )}
+
+        {/* Datas ilegíveis: sem isto, o painel apresentaria a comparação como se
+            a ordem estivesse conferida. */}
+        {datasIndeterminadas && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '12px',
+            padding: '10px 14px',
+            fontSize: '12px',
+            color: '#f87171',
+            fontWeight: '700'
+          }}>
+            ⚠️ <strong>Não foi possível conferir a ordem das datas</strong> ({dataA} / {dataB}).
+            Confirme qual avaliação é a mais antiga antes de interpretar a evolução.
           </div>
         )}
 

@@ -1,3 +1,5 @@
+import { getEntryDate } from '../utils/clinicalDate';
+
 /**
  * FHIR/HL7 Service for iRec
  * Serializes database records into international standard FHIR JSON resources.
@@ -20,14 +22,42 @@ export const exportPatientToFHIR = (profile) => {
     else fhirGender = 'other';
   }
 
-  // Build name array
-  const nameParts = profile.name ? profile.name.trim().split(' ') : ['Paciente'];
-  const givenNames = nameParts.slice(1);
-  const familyName = nameParts[0];
+  // Nome. A versao anterior fazia `familyName = nameParts[0]` e
+  // `givenNames = nameParts.slice(1)`: "Maria Silva Santos" virava
+  // family "Maria", given ["Silva","Santos"]. O sobrenome e o ULTIMO nome — e
+  // essa inversao quebra exatamente a interoperabilidade que o FHIR existe para
+  // prover.
+  const nameParts = profile.name
+    ? profile.name.trim().split(/\s+/).filter(Boolean)
+    : ['Paciente'];
+  const familyName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
+  const givenNames = nameParts.length > 1 ? nameParts.slice(0, -1) : [];
+
+  // Sem `identifier`, o recurso nao casa com nenhum sistema brasileiro — a RNDS
+  // exige CNS, e o CPF e o identificador minimo. A versao anterior nao tinha
+  // nenhum dos dois.
+  const identifiers = [];
+  const cpfDigits = String(profile.cpf || '').replace(/\D/g, '');
+  if (cpfDigits.length === 11) {
+    identifiers.push({
+      use: "official",
+      system: "https://estruturante.saude.gov.br/fhir/sid/cpf",
+      value: cpfDigits
+    });
+  }
+  const cnsDigits = String(profile.cns || '').replace(/\D/g, '');
+  if (cnsDigits.length === 15) {
+    identifiers.push({
+      use: "official",
+      system: "https://estruturante.saude.gov.br/fhir/sid/cns",
+      value: cnsDigits
+    });
+  }
 
   const fhirPatient = {
     resourceType: "Patient",
     id: profile.id,
+    identifier: identifiers.length > 0 ? identifiers : undefined,
     active: true,
     name: [
       {
@@ -57,7 +87,8 @@ export const exportPatientToFHIR = (profile) => {
             profile.complement ? ` - ${profile.complement}` : ''
           ].join('').trim()
         ],
-        neighborhood: profile.neighborhood || undefined,
+        // `neighborhood` nao existe em FHIR Address; o campo correto e `district`.
+        district: profile.neighborhood || undefined,
         city: profile.city || undefined,
         state: profile.state || undefined,
         postalCode: profile.cep || undefined,
@@ -92,21 +123,12 @@ export const exportPatientToFHIR = (profile) => {
 export const exportObservationToFHIR = (profile, entry) => {
   if (!entry || !profile) return null;
 
-  // Format date
-  let effectiveDate = new Date().toISOString();
-  if (entry.date) {
-    try {
-      const parts = entry.date.split('/');
-      if (parts.length === 3) {
-        // DD/MM/YYYY to YYYY-MM-DD
-        effectiveDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).toISOString();
-      } else {
-        effectiveDate = new Date(entry.date).toISOString();
-      }
-    } catch {
-      effectiveDate = new Date().toISOString();
-    }
-  }
+  // Data. `new Date(entry.date)` sobre "20/08/2026" e Invalid Date, e
+  // `.toISOString()` nesse caso lanca RangeError — derrubando a exportacao
+  // inteira. O parser dedicado interpreta pt-BR e ISO, e devolve null quando nao
+  // da, caindo para created_at.
+  const dataRegistro = getEntryDate(entry);
+  const effectiveDate = (dataRegistro || new Date()).toISOString();
 
   const fhirObservation = {
     resourceType: "Observation",
@@ -198,7 +220,7 @@ export const exportObservationToFHIR = (profile, entry) => {
         code: {
           text: "Intensidade da Dor"
         },
-        valueInteger: entry.pain || 0
+        valueInteger: Number.isFinite(Number(entry.pain)) ? Number(entry.pain) : 0
       },
       {
         code: {

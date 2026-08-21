@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { addWoundEntry as addWoundEntryService } from '../services/supabaseService';
 import { analyzeWoundWithAI } from '../services/geminiService';
+import { avaliarBraden } from '../services/bradenScale';
+import { classifyContingency } from '../services/contingencyTriage';
 
 // Interactive Tissue Overlay Canvas for Segmented Wound Areas
 function WoundTissueOverlay({ entry }) {
@@ -204,82 +206,47 @@ const PATIENT_COMPLAINT_CARDS = [
   }
 ];
 
-// Fallback algorithm for contingency mode (IREC-0007, IREC-0072, IREC-0252)
-const generateLocalFallbackAnalysis = (woundType, lesionStage, clinicalProfile, symptomsText, pain, odor, infectionSigns, fullSymptoms) => {
-  const isDiabetes = clinicalProfile?.hasDiabetes;
-  const isHypertension = clinicalProfile?.hasHypertension;
-  const isPeripheralArterial = clinicalProfile?.hasPeripheralArterialDisease;
-  const isSmoker = clinicalProfile?.isSmoker;
-  const hasAmputationHistory = clinicalProfile?.hasAmputationHistory;
-
-  let severity = "Leve";
-  let isRedirect = false;
-  let specialist = "";
-  let reason = "";
-
-  const text = ((symptomsText || '') + ' ' + (fullSymptoms || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-  // Escalate severity based on clinical signs (IREC-0072)
-  const isHighPain = pain >= 8;
-  const hasSevereOdor = !!odor;
-  const hasInfection = infectionSigns && infectionSigns !== 'Nenhum';
-  const hasBleedingOrDeep = /\b(sangramento|profundo|gordura)\b/.test(text);
-
-  if (isPeripheralArterial || (isDiabetes && hasAmputationHistory) || (hasInfection && isHighPain) || hasBleedingOrDeep) {
-    severity = "Crítico";
-    isRedirect = true;
-    specialist = "Cirurgião Vascular / Pronto-Socorro";
-    reason = "Paciente apresentando sinais clínicos críticos (possível infecção avançada, lesão profunda ou comprometimento vascular).";
-  } else if (isDiabetes || isSmoker || hasInfection || hasSevereOdor || isHighPain) {
-    severity = "Alto Risco";
-    isRedirect = true;
-    specialist = "Médico Especialista (Angiologia / Estomaterapia)";
-    reason = "Paciente com fatores de risco sistêmicos ou sinais de alerta local (odor/dor intensa/infecção) que necessitam de avaliação especializada.";
-  } else if (isHypertension || pain > 4) {
-    severity = "Risco Moderado";
-  }
-
-  // Tissue breakdown (IREC-0252)
-  let necrose = 0;
-  let fibrina = 0;
-  let granulacao = 60;
-  let epitelizacao = 40;
-
-  if (/\b(preto|escuro|necro)\b/.test(text) && !/\b(nao|sem)\s+(preto|escuro|necro)\b/.test(text)) {
-    necrose = 30;
-    fibrina = 20;
-    granulacao = 30;
-    epitelizacao = 20;
-  } else if (/\b(amarel|secrec|pus)\b/.test(text) || (hasInfection && !/\b(nao|sem)\s+(pus|secrec)\b/.test(text))) {
-    fibrina = 35;
-    granulacao = 45;
-    epitelizacao = 20;
-  }
-
-  const treatmentPlan = [
-    "Limpeza criteriosa da lesão com Soro Fisiológico 0,9% morno em jato suave.",
-    "Aplicação de cobertura protetora (Hidrogel ou AGE conforme nível de exsudação).",
-    "Manutenção da pele perilesional protegida contra umidade."
-  ];
+/**
+ * Classificacao de contingencia, usada quando o motor remoto nao responde.
+ *
+ * A implementacao anterior vivia aqui e classificava gravidade clinica casando
+ * palavra em texto livre: `/(sangramento|profundo|gordura)/` casava dentro
+ * de "nao tem sangramento" e a gravidade virava "Critico". Ainda inventava a
+ * composicao tecidual (granulacao 60 / epitelizacao 40 por padrao) e a entregava
+ * como avaliacao.
+ *
+ * Agora vive em services/contingencyTriage.js, decide pelos campos estruturados
+ * e trata negacao. Ver os testes em src/test/clinicalScoring.test.js.
+ */
+const gerarAnaliseDeContingencia = ({
+  woundType, lesionStage, clinicalProfile, symptomsText,
+  pain, odor, infectionSigns, structuredAnswers
+}) => {
+  const classificacao = classifyContingency({
+    clinicalProfile,
+    pain,
+    odor,
+    infectionSigns,
+    freeText: symptomsText,
+    structuredAnswers
+  });
 
   return {
-    type: woundType || "Avaliação de Pele",
-    lesionStage: lesionStage || "Estágio I",
-    severity: severity,
-    isRedirect: isRedirect,
-    specialist: specialist || "Clínico Geral / Estomaterapeuta",
-    reason: reason || "Acompanhamento clínico de rotina recomendado.",
-    geminiSummary: `Queixa registrada: ${symptomsText || 'Avaliação rotineira de pele'}.`,
-    medPalmDiagnosis: `Avaliação algorítmica iRec baseada no protocolo de contingência e sintomas reportados.`,
-    treatmentPlan: treatmentPlan,
-    aiAreaCm2: null, // IREC-0007: Do not generate fake random measurements
-    aiLengthCm: null,
-    aiWidthCm: null,
-    aiTissueAnalysis: { necrose, fibrina, granulacao, epitelizacao },
-    aiRecommendation: "Seguir conduta prescrita pelo seu médico assistente.",
-    clinicalEvolution: "Estável",
-    isLocalFallback: true,
-    glossaryKeys: ["necrose", "desbridamento", "granulacao"]
+    ...classificacao,
+    type: woundType || 'Avaliacao de pele',
+    // O estagio vem do que o profissional selecionou. Nao se deduz estagiamento
+    // de lesao por pressao de um cartao que o paciente clicou.
+    lesionStage: lesionStage || '',
+    geminiSummary: symptomsText ? `Queixa registrada: ${symptomsText}` : 'Sem queixa adicional registrada.',
+    medPalmDiagnosis: classificacao.disclaimer,
+    treatmentPlan: [
+      'Limpeza da lesao com soro fisiologico 0,9% morno, em jato suave.',
+      'Cobertura conforme prescricao do profissional responsavel.',
+      'Protecao da pele perilesional contra umidade.'
+    ],
+    aiRecommendation: 'Seguir a conduta prescrita pelo profissional responsavel.',
+    clinicalEvolution: 'Estavel',
+    isLocalFallback: true
   };
 };
 
@@ -315,28 +282,35 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
   const [patientComplaintType, setPatientComplaintType] = useState('vermelhidao');
   const [dynamicAnswers, setDynamicAnswers] = useState({});
 
-  // Escala de Braden States (IREC-0253)
-  const [bradenSensory, setBradenSensory] = useState(4);
-  const [bradenMoisture, setBradenMoisture] = useState(4);
-  const [bradenActivity, setBradenActivity] = useState(4);
-  const [bradenMobility, setBradenMobility] = useState(4);
-  const [bradenNutrition, setBradenNutrition] = useState(4);
-  const [bradenFriction, setBradenFriction] = useState(3);
+  // Escala de Braden (IREC-0253).
+  //
+  // Os valores iniciais eram 4,4,4,4,4,3 = 23 = risco minimo. Nao preencher
+  // produzia uma afirmacao clinica positiva ("Excelente - Pele Protegida") em
+  // vez de "nao avaliado". Agora comeca vazio: sem as seis sub-escalas nao ha
+  // classificacao.
+  const [bradenSensory, setBradenSensory] = useState(null);
+  const [bradenMoisture, setBradenMoisture] = useState(null);
+  const [bradenActivity, setBradenActivity] = useState(null);
+  const [bradenMobility, setBradenMobility] = useState(null);
+  const [bradenNutrition, setBradenNutrition] = useState(null);
+  const [bradenFriction, setBradenFriction] = useState(null);
 
-  const bradenTotalScore = Number(bradenSensory) + Number(bradenMoisture) + Number(bradenActivity) + Number(bradenMobility) + Number(bradenNutrition) + Number(bradenFriction);
-  
-  let skinProtectionText = 'Excelente (Pele Protegida)';
-  let skinProtectionColor = '#10b981';
-  if (bradenTotalScore <= 12) {
-    skinProtectionText = 'Atenção Elevada (Risco de Lesão por Pressão / Necessita Mudança de Posição constante)';
-    skinProtectionColor = '#ef4444';
-  } else if (bradenTotalScore <= 14) {
-    skinProtectionText = 'Atenção Moderada (Necessita Hidratação e Cuidados de Posição)';
-    skinProtectionColor = '#f59e0b';
-  } else if (bradenTotalScore <= 18) {
-    skinProtectionText = 'Bom (Cuidados Convencionais)';
-    skinProtectionColor = '#0284c7';
-  }
+  const bradenSubscores = {
+    sensorial: bradenSensory,
+    umidade: bradenMoisture,
+    atividade: bradenActivity,
+    mobilidade: bradenMobility,
+    nutricao: bradenNutrition,
+    friccao: bradenFriction
+  };
+
+  // Limiares de Bergstrom, no modulo. Os que estavam aqui juntavam risco alto
+  // com muito alto (perdendo a faixa critica) e chamavam 15-18 — que e risco
+  // baixo, com indicacao preventiva — de "Bom (Cuidados Convencionais)".
+  const bradenResultado = avaliarBraden(bradenSubscores);
+  const bradenTotalScore = bradenResultado.total;
+  const skinProtectionText = bradenResultado.rotulo;
+  const skinProtectionColor = bradenResultado.cor;
 
   // Revogacao das blob URLs na desmontagem (IREC-0255).
   //
@@ -477,7 +451,9 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
 
     try {
       const dynamicAnswersText = Object.entries(dynamicAnswers).map(([k, v]) => `${k}: ${v}`).join(', ');
-      const bradenSummary = `Escala Braden (${bradenTotalScore}/23) - Sensorial: ${bradenSensory}, Umidade: ${bradenMoisture}, Atividade: ${bradenActivity}, Mobilidade: ${bradenMobility}, Nutrição: ${bradenNutrition}, Fricção: ${bradenFriction}`;
+      const bradenSummary = bradenTotalScore === null
+        ? 'Escala Braden: nao avaliada'
+        : `Escala Braden (${bradenTotalScore}/23, ${bradenResultado.rotulo}) - Sensorial: ${bradenSensory}, Umidade: ${bradenMoisture}, Atividade: ${bradenActivity}, Mobilidade: ${bradenMobility}, Nutricao: ${bradenNutrition}, Friccao: ${bradenFriction}`;
       const fullSymptoms = `Tipo/Queixa: ${woundType}. Respostas Específicas: ${dynamicAnswersText}. ${bradenSummary}. Local Anatômico: ${anatomicalLocation || 'Não especificado'}. Data de Aparecimento: ${appearanceDate || 'Não informada'}. Estágio: ${lesionStage}. Odor: ${odor ? 'Sim' : 'Não'}. Temperatura Local: ${localTemperature}. Infecção: ${infectionSigns}. Cobertura: ${appliedDressing || 'Nenhuma'}. Quantidade: ${dressingQuantity}. Frequência: ${dressingFrequency || 'Conforme necessidade'}. Procedimentos: ${performedProcedures || 'Nenhum'}. Evolução: ${clinicalEvolution}. Sintomas: ${symptomsText}`;
 
       let finalResult = await analyzeWoundWithAI(photoFile, clinicalProfile, fullSymptoms);
@@ -490,7 +466,10 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
       }
 
       if (!finalResult) {
-        finalResult = generateLocalFallbackAnalysis(woundType, lesionStage, clinicalProfile, symptomsText, pain, odor, infectionSigns, fullSymptoms);
+        finalResult = gerarAnaliseDeContingencia({
+          woundType, lesionStage, clinicalProfile, symptomsText,
+          pain, odor, infectionSigns, structuredAnswers: dynamicAnswers
+        });
       }
 
       if (finalResult.type) setWoundType(finalResult.type);
@@ -502,14 +481,21 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
 
       setAnalysisStep('Gravando no Prontuário do Paciente...');
       
+      const agora = new Date();
       const newEntryData = {
-        date: new Date().toLocaleDateString('pt-BR'),
+        // `date` continua em pt-BR porque a coluna e text NOT NULL e ha registro
+        // nela; `entryDate` e a data de verdade, em ISO, que passa a ser usada
+        // para ordenar e comparar. `toLocaleDateString('pt-BR')` gerava
+        // "20/08/2026", e `new Date("20/08/2026")` e Invalid Date — foi o que
+        // quebrou o comparador de evolucao e o aviso de ordem invertida.
+        date: agora.toLocaleDateString('pt-BR'),
+        entryDate: `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`,
         type: finalResult.type || woundType,
         appearanceDate: appearanceDate || null,
         anatomicalLocation: anatomicalLocation || null,
         lesionStage: finalResult.lesionStage || lesionStage, // IREC-0073
         pain: pain, // IREC-0462
-        exudate: (finalResult.exudate || exudate).toUpperCase(),
+        exudate: String(finalResult.exudate || exudate || '').toUpperCase(),
         odor: odor,
         localTemperature: localTemperature,
         infectionSigns: infectionSigns,
@@ -518,12 +504,24 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
         dressingFrequency: dressingFrequency || null,
         performedProcedures: performedProcedures || null,
         clinicalEvolution: finalResult.clinicalEvolution || clinicalEvolution,
+        // Estes campos eram calculados, exibidos na tela e descartados ao
+        // salvar: a tabela nao tinha coluna para eles (ver migracao
+        // 20260821000400). O medico que abrisse o prontuario depois nunca via a
+        // classificacao "Critico" que a analise havia gerado.
         bradenScore: bradenTotalScore, // IREC-0254
+        bradenSubscores: bradenTotalScore === null ? null : bradenSubscores,
+        severity: finalResult.severity || null,
+        isRedirect: Boolean(finalResult.isRedirect),
+        specialist: finalResult.specialist || null,
+        redirectReason: finalResult.reason || null,
+        // Proveniencia: 'ai' quando o motor remoto respondeu, 'contingency'
+        // quando foi o classificador local.
+        analysisSource: finalResult.isLocalFallback ? 'contingency' : 'ai',
         photo: image && image.startsWith('blob:') ? '' : (image || ''),
         aiAreaCm2: finalResult.aiAreaCm2 || null,
         aiLengthCm: finalResult.aiLengthCm || null,
         aiWidthCm: finalResult.aiWidthCm || null,
-        aiTissueAnalysis: finalResult.aiTissueAnalysis || {},
+        aiTissueAnalysis: finalResult.aiTissueAnalysis || null,
         aiRecommendation: finalResult.aiRecommendation || (finalResult.treatmentPlan ? finalResult.treatmentPlan.join('\n') : ''),
         clinicalOutcome: clinicalOutcome
       };
@@ -580,12 +578,12 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
     setPerformedProcedures('');
     setClinicalEvolution('Estável');
     setClinicalOutcome('Tratamento em andamento');
-    setBradenSensory(4); // IREC-0258
-    setBradenMoisture(4);
-    setBradenActivity(4);
-    setBradenMobility(4);
-    setBradenNutrition(4);
-    setBradenFriction(3);
+    setBradenSensory(null); // IREC-0258
+    setBradenMoisture(null);
+    setBradenActivity(null);
+    setBradenMobility(null);
+    setBradenNutrition(null);
+    setBradenFriction(null);
     setSaveError('');
     setResult(null);
     setSelectedHotspot(null);
@@ -909,7 +907,12 @@ export default function ClinicalTriage({ setActiveTab, addClinicalEntry, clinica
                     🚶‍♂️ Mobilidade & Escala de Braden
                   </span>
                   <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                    Nível de Proteção da Pele ({bradenTotalScore}/23): <strong style={{ color: skinProtectionColor }}>{skinProtectionText}</strong>
+                    Risco de lesão por pressão {bradenTotalScore === null ? '' : `(${bradenTotalScore}/23)`}: <strong style={{ color: skinProtectionColor }}>{skinProtectionText}</strong>
+                    {bradenResultado.faltando.length > 0 && (
+                      <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Falta avaliar: {bradenResultado.faltando.join(', ')}.
+                      </span>
+                    )}
                   </span>
                 </div>
 

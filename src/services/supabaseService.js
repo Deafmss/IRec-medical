@@ -895,6 +895,10 @@ export const getWoundEntries = async (patientId = null) => {
       .from('wound_entries')
       .select('*, wound_entry_attachments(*)')
       .eq('patient_id', resolvedId)
+      // Ordena por data real. Antes era so por `id`, que funcionava por acaso e
+      // quebraria com qualquer importacao fora de ordem. `entry_date` pode ser
+      // nulo em registro antigo, entao `id` fica como desempate.
+      .order('entry_date', { ascending: true, nullsFirst: true })
       .order('id', { ascending: true });
 
     if (error) throw error;
@@ -925,6 +929,16 @@ export const getWoundEntries = async (patientId = null) => {
       aiRecommendation: item.ai_recommendation || '',
       clinicalOutcome: item.clinical_outcome || 'Tratamento em andamento',
       doctorNotes: item.doctor_notes || '',
+
+      entryDate: item.entry_date || null,
+      bradenScore: item.braden_score ?? null,
+      bradenSubscores: item.braden_subscores || null,
+      severity: item.severity || null,
+      isRedirect: Boolean(item.is_redirect),
+      specialist: item.specialist || '',
+      redirectReason: item.redirect_reason || '',
+      analysisSource: item.analysis_source || 'manual',
+
       attachments: item.wound_entry_attachments ? item.wound_entry_attachments.map(att => ({
         id: att.id,
         fileUrl: att.file_url,
@@ -1047,7 +1061,19 @@ export const addWoundEntry = async (arg1, arg2, arg3 = null, arg4 = []) => {
       ai_tissue_analysis: entry.aiTissueAnalysis,
       ai_recommendation: entry.aiRecommendation,
       clinical_outcome: entry.clinicalOutcome,
-      doctor_notes: entry.doctorNotes || ''
+      doctor_notes: entry.doctorNotes || '',
+
+      // Colunas adicionadas pela migracao 20260821000400. Antes o dado era
+      // coletado, exibido e descartado no insert: a escala de Braden e a
+      // classificacao de risco da analise nunca chegavam ao prontuario.
+      entry_date: entry.entryDate || null,
+      braden_score: entry.bradenScore ?? null,
+      braden_subscores: entry.bradenSubscores || null,
+      severity: entry.severity || null,
+      is_redirect: Boolean(entry.isRedirect),
+      specialist: entry.specialist || null,
+      redirect_reason: entry.redirectReason || null,
+      analysis_source: entry.analysisSource || 'manual'
     };
 
     const { data, error } = await supabase
