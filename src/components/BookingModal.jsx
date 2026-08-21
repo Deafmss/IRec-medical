@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createAppointment, getPatientAppointments } from '../services/supabaseService';
+import { buildPixPayload } from '../utils/pixBrCode';
 
 const getLocalDateStr = (d = new Date()) => {
   const year = d.getFullYear();
@@ -8,41 +9,16 @@ const getLocalDateStr = (d = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
+// Dados do recebedor PIX. Continuam fixos como estavam, mas agora nomeados —
+// quando existir split para o profissional, e aqui que muda.
+const PIX_RECEIVER_KEY = 'irec.pix.saude@irec.com.br';
+const PIX_RECEIVER_NAME = 'iRec Saude';
+const PIX_RECEIVER_CITY = 'Sao Paulo';
+
 const getTomorrowDateStr = () => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   return getLocalDateStr(tomorrow);
-};
-
-// Luhn Algorithm for Credit Card validation (fixes IREC-0063)
-const isValidLuhn = (numStr) => {
-  const clean = numStr.replace(/\D/g, '');
-  if (clean.length < 13 || clean.length > 19) return false;
-  let sum = 0;
-  let shouldDouble = false;
-  for (let i = clean.length - 1; i >= 0; i--) {
-    let digit = parseInt(clean.charAt(i), 10);
-    if (shouldDouble) {
-      digit *= 2;
-      if (digit > 9) digit -= 9;
-    }
-    sum += digit;
-    shouldDouble = !shouldDouble;
-  }
-  return sum % 10 === 0;
-};
-
-// Validate MM/YY expiry date (fixes IREC-0063)
-const isValidExpiry = (expiryStr) => {
-  if (!/^\d{2}\/\d{2}$/.test(expiryStr)) return false;
-  const [mm, yy] = expiryStr.split('/').map(n => parseInt(n, 10));
-  if (mm < 1 || mm > 12) return false;
-  const now = new Date();
-  const currentYear = parseInt(now.getFullYear().toString().substring(2), 10);
-  const currentMonth = now.getMonth() + 1;
-  if (yy < currentYear) return false;
-  if (yy === currentYear && mm < currentMonth) return false;
-  return true;
 };
 
 export default function BookingModal({ professional, currentUser, onClose, onSuccess }) {
@@ -56,11 +32,6 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
       ? `${currentUser.street}, ${currentUser.number || 'S/N'} - ${currentUser.neighborhood || ''}, ${currentUser.city || ''}` 
       : ''
   );
-  const [paymentMethod, setPaymentMethod] = useState('pix'); // 'pix' or 'card'
-  const [cardHolder, setCardHolder] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvc, setCardCvc] = useState('');
   const [loading, setLoading] = useState(false);
   const [pixCopied, setPixCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -85,8 +56,21 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
   const price = isNaN(parsedPrice) ? (isNurse ? 130 : 250) : parsedPrice;
   const minDateStr = getLocalDateStr(); // Fixes IREC-0061
 
-  // Valid PIX static format representation (fixes IREC-0062)
-  const pixCode = `00020126580014BR.GOV.BCB.PIX0136irec.pix.saude@irec.com.br520400005303986540${price.toFixed(2)}5802BR5910iRec Saude6009Sao Paulo62070503***6304`;
+  // O payload PIX era montado a mao e era invalido: campo 54 sem comprimento e
+  // CRC literal "6304". Nenhum app bancario lia o QR. Agora vem de
+  // utils/pixBrCode.js, que monta o TLV e calcula o CRC-16/CCITT-FALSE.
+  let pixCode = '';
+  let pixError = '';
+  try {
+    pixCode = buildPixPayload({
+      key: PIX_RECEIVER_KEY,
+      name: PIX_RECEIVER_NAME,
+      city: PIX_RECEIVER_CITY,
+      amount: price
+    });
+  } catch (err) {
+    pixError = err.message;
+  }
 
   const availableTimes = ['08:00', '09:00', '10:30', '14:00', '15:30', '17:00', '19:00'];
 
@@ -124,23 +108,12 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
         throw new Error(`Você já possui uma consulta agendada para ${selectedDate.split('-').reverse().join('/')} às ${selectedTime}. Por favor, escolha outro horário.`);
       }
 
-      if (paymentMethod === 'card') {
-        if (!cardHolder.trim()) {
-          throw new Error('Por favor, digite o nome impresso no cartão.');
-        }
-        if (!isValidLuhn(cardNumber)) {
-          throw new Error('Número de cartão de crédito inválido. Por favor, verifique os dígitos.');
-        }
-        if (!isValidExpiry(cardExpiry)) {
-          throw new Error('Data de validade do cartão inválida ou vencida (Use o formato MM/AA).');
-        }
-        if (!/^\d{3,4}$/.test(cardCvc.trim())) {
-          throw new Error('Código CVV inválido (deve conter 3 ou 4 dígitos numéricos).');
-        }
-      }
-
-      // Fixes IREC-0005: set paymentStatus as 'pending' for PIX or 'confirmed' for validated card
-      const initialPaymentStatus = paymentMethod === 'pix' ? 'pending' : 'paid';
+      // Nao existe integracao com adquirente. Antes, o caminho de cartao validava
+      // o formato do numero, descartava os dados e gravava paymentStatus 'paid':
+      // o app declarava pago o que nunca foi cobrado, e o profissional atendia
+      // de graca. Enquanto nao houver gateway, o unico status honesto e
+      // 'pending' — confirmado manualmente pelo recebimento do PIX.
+      const initialPaymentStatus = 'pending';
 
       const appointmentData = {
         patientId: currentUser.id,
@@ -155,7 +128,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
         notes: notes,
         address: modality === 'presencial' ? patientAddress : 'Atendimento Online via Vídeo (Telemedicina)',
         price: price,
-        paymentMethod: paymentMethod,
+        paymentMethod: 'pix',
         paymentStatus: initialPaymentStatus,
         status: 'confirmed'
       };
@@ -489,52 +462,31 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
             </div>
 
             {/* Payment Method Selector */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => { triggerVibration(); setPaymentMethod('pix'); }}
-                style={{
-                  backgroundColor: paymentMethod === 'pix' ? '#059669' : '#0f172a',
-                  border: `2px solid ${paymentMethod === 'pix' ? '#34d399' : '#334155'}`,
-                  color: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  fontWeight: '800',
-                  fontSize: '15px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>⚡ PIX (Instantâneo)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { triggerVibration(); setPaymentMethod('card'); }}
-                style={{
-                  backgroundColor: paymentMethod === 'card' ? '#0284c7' : '#0f172a',
-                  border: `2px solid ${paymentMethod === 'card' ? '#38bdf8' : '#334155'}`,
-                  color: '#ffffff',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  fontWeight: '800',
-                  fontSize: '15px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>💳 Cartão de Crédito</span>
-              </button>
+            <div style={{
+              backgroundColor: '#0f172a',
+              border: '1px solid #334155',
+              borderRadius: '12px',
+              padding: '12px 14px',
+              fontSize: '13px',
+              color: '#94a3b8',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <span style={{ fontSize: '18px' }}>⚡</span>
+              <span>
+                Pagamento por <strong style={{ color: '#e2e8f0' }}>PIX</strong>. O agendamento
+                fica <strong style={{ color: '#e2e8f0' }}>pendente</strong> até a equipe confirmar
+                o recebimento. Cartão de crédito ainda não está disponível.
+              </span>
             </div>
 
             {/* PIX Payment view */}
-            {paymentMethod === 'pix' && (
+            {pixError ? (
+              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid #ef4444', borderRadius: '12px', padding: '14px', color: '#fca5a5', fontSize: '13px' }}>
+                Não foi possível gerar o código PIX: {pixError}
+              </div>
+            ) : (
               <div style={{ backgroundColor: '#0f172a', border: '1px solid #059669', borderRadius: '16px', padding: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                 <span style={{ fontSize: '13px', color: '#a7f3d0', fontWeight: '700' }}>
                   Escaneie o QR Code ou copie a chave PIX abaixo:
@@ -569,57 +521,6 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
               </div>
             )}
 
-            {/* Credit Card Payment view */}
-            {paymentMethod === 'card' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: '#0f172a', padding: '14px', borderRadius: '14px', border: '1px solid #334155' }}>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#94a3b8' }}>Nome impresso no cartão:</label>
-                  <input
-                    type="text"
-                    placeholder="Nome Completo"
-                    value={cardHolder}
-                    onChange={(e) => setCardHolder(e.target.value)}
-                    style={{ width: '100%', padding: '10px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '13.5px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#94a3b8' }}>Número do Cartão:</label>
-                  <input
-                    type="text"
-                    placeholder="0000 0000 0000 0000"
-                    maxLength={19}
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value.replace(/[^\d\s]/g, ''))}
-                    style={{ width: '100%', padding: '10px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '13.5px' }}
-                  />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#94a3b8' }}>Validade (MM/AA):</label>
-                    <input
-                      type="text"
-                      placeholder="MM/AA"
-                      maxLength={5}
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      style={{ width: '100%', padding: '10px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '13.5px' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#94a3b8' }}>CVV:</label>
-                    <input
-                      type="text"
-                      placeholder="123"
-                      maxLength={4}
-                      value={cardCvc}
-                      onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ''))}
-                      style={{ width: '100%', padding: '10px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '13.5px' }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button
                 type="button"
@@ -630,11 +531,11 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
               </button>
               <button
                 type="button"
-                disabled={loading}
+                disabled={loading || !!pixError}
                 onClick={handleConfirmPayment}
                 style={{
                   flex: 2,
-                  backgroundColor: loading ? '#64748b' : '#10b981',
+                  backgroundColor: (loading || pixError) ? '#64748b' : '#10b981',
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: '12px',
@@ -665,7 +566,7 @@ export default function BookingModal({ professional, currentUser, onClose, onSuc
             <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px', padding: '16px', width: '100%', textAlign: 'left', fontSize: '13.5px', color: '#94a3b8' }}>
               <div>📍 <strong>Modalidade:</strong> {modality === 'online' ? '💻 Telemedicina por Vídeo' : '🏠 Visita Domiciliar'}</div>
               <div>📅 <strong>Data/Hora:</strong> {selectedDate.split('-').reverse().join('/')} às {selectedTime}h</div>
-              <div>💳 <strong>Pagamento:</strong> {paymentMethod === 'pix' ? 'Aguardando confirmação PIX (Pendente)' : 'Pago via Cartão'}</div>
+              <div>💳 <strong>Pagamento:</strong> Aguardando confirmação do PIX (pendente)</div>
             </div>
 
             <button
