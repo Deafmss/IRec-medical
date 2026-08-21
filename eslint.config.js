@@ -29,4 +29,14 @@ export default defineConfig([
       globals: globals.serviceworker,
     },
   },
+  {
+    // Testes do Vitest e arquivos de configuração rodam em Node, não no
+    // navegador: `process`, `__dirname` e afins são globais legítimos ali.
+    // Sem isto, um teste que leia arquivo do disco reprova em `no-undef` — que
+    // é uma das regras fatais do portão de CI (scripts/ci-lint-gate.mjs).
+    files: ['src/test/**/*.{js,jsx}', 'tests/**/*.{js,jsx}', '*.config.js', 'scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
 ])

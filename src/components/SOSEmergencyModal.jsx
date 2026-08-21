@@ -1,9 +1,33 @@
 import { useState, useEffect, useRef } from 'react';
 
+/**
+ * A notificação de emergência abre o app em `/?sos=true&discar=192`. O service
+ * worker não consegue discar — `clients.openWindow` só aceita http/https —, então
+ * a discagem tem de partir da página.
+ *
+ * Lido na inicialização do estado, não num efeito: a contagem já nasce em
+ * andamento e o parâmetro é consumido uma única vez, sem redisparar num F5.
+ */
+const consumirNumeroDaNotificacao = () => {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const numero = params.get('discar');
+  if (!numero || !/^[0-9]{3,5}$/.test(numero)) return null;
+
+  params.delete('discar');
+  const query = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
+
+  const rotulos = { 192: 'SAMU', 193: 'BOMBEIROS', 190: 'POLÍCIA' };
+  return { number: numero, label: rotulos[numero] || 'EMERGÊNCIA' };
+};
+
 export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
   const [selectedEmergency, setSelectedEmergency] = useState(null);
-  const [countdown, setCountdown] = useState(null);
-  const [pendingCall, setPendingCall] = useState(null); // { number: '192', label: 'SAMU' }
+  // Inicializador preguiçoso: `consumirNumeroDaNotificacao` altera a URL, então
+  // roda uma única vez, na montagem — não a cada render.
+  const [pendingCall, setPendingCall] = useState(consumirNumeroDaNotificacao); // { number: '192', label: 'SAMU' }
+  const [countdown, setCountdown] = useState(pendingCall ? 3 : null);
   const [notificationActivated, setNotificationActivated] = useState(false);
   const isCancelledRef = useRef(false);
 
@@ -43,13 +67,14 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
         setNotificationActivated(true);
         if ('serviceWorker' in navigator) {
           const reg = await navigator.serviceWorker.ready;
-          reg.showNotification('🚨 SOS iRec - Atendimento de Emergência', {
-            body: 'Toque para socorro imediato, ligar 192 ou rota da UPA mais próxima.',
-            icon: '/favicon.png',
-            badge: '/favicon.png',
-            tag: 'irec-sos-persistent-fixed',
-            requireInteraction: true
-          });
+          // A notificação é criada pelo service worker, via postMessage, para
+          // que a definição (texto e botões de ação) viva num só lugar. Antes,
+          // a página a criava sem `actions`, então o usuário não recebia botão
+          // nenhum — os botões só apareciam quando o SW recriava a notificação
+          // depois de o usuário tentar dispensá-la.
+          if (reg.active) {
+            reg.active.postMessage({ type: 'IREC_SOS_SHOW' });
+          }
         }
         alert("Notificação fixa de emergência ativada com sucesso no seu celular!");
       } else {
@@ -67,27 +92,6 @@ export default function SOSEmergencyModal({ onClose, clinicalProfile }) {
     setPendingCall({ number: num, label });
     setCountdown(3);
   };
-
-  useEffect(() => {
-    let timer = null;
-    if (countdown !== null && countdown > 0 && !isCancelledRef.current) {
-      timer = setTimeout(() => {
-        if (!isCancelledRef.current) {
-          setCountdown(prev => prev - 1);
-        }
-      }, 1000);
-    } else if (countdown === 0 && pendingCall && !isCancelledRef.current) {
-      const targetNumber = pendingCall.number;
-      timer = setTimeout(() => {
-        if (!isCancelledRef.current) {
-          setCountdown(null);
-          setPendingCall(null);
-          window.location.href = `tel:${targetNumber}`;
-        }
-      }, 0);
-    }
-    return () => clearTimeout(timer);
-  }, [countdown, pendingCall]);
 
   const cancelCallCountdown = () => {
     isCancelledRef.current = true;
