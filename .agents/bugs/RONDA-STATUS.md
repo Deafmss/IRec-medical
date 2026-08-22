@@ -26,9 +26,23 @@ staging. Ordem obrigatória:
 | Ordem | Arquivo | O que faz |
 |---|---|---|
 | 1 | `20260821000100_criar_appointments_e_vitals_telemetry.sql` | Cria as duas tabelas que **não existem** em produção |
-| 2 | `20260821000400_colunas_clinicas_descartadas.sql` | Colunas para Braden, severidade e proveniência |
-| 3 | `20260821000200_aprovar_clinicos_existentes.sql` | Anistia de transição (no-op em produção) |
-| 4 | `20260821000300_rls_e_storage.sql` | **RLS em 11 tabelas + policies de storage** |
+| 2 | `20260821000200_aprovar_clinicos_existentes.sql` | Anistia de transição (no-op em produção) |
+| 3 | `20260821000300_rls_e_storage.sql` | **RLS em 11 tabelas + policies de storage** |
+| 4 | `20260821000400_colunas_clinicas_descartadas.sql` | Colunas para Braden, severidade e proveniência |
+
+Esta é a ordem por nome de arquivo, que é a que o `supabase db push` usa. Ela é
+segura, e a ordem importa num ponto específico: a anistia (2) tem de rodar
+**antes** dos gatilhos criados em (3), que bloqueiam alteração de
+`verification_status`.
+
+### Caminho mais simples: pelo painel
+
+Se não quiser instalar e autenticar a CLI, `supabase/APLICAR-TUDO.sql` é a junção
+das quatro na ordem certa, pronta para colar no SQL Editor:
+
+<https://supabase.com/dashboard/project/uiaeuzpojqhtjvbqwblb/sql/new>
+
+### Pela CLI
 
 ```bash
 cd "C:\manus projects\Irec" && npx supabase db push
